@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Phila">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1C7D58"/>
+      <stop offset="1" stop-color="#34BC83"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#g)"/>
+  <g transform="translate(106 106) scale(0.586)" fill="none" stroke="#ffffff" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M256 446 C232 332 232 206 256 86 C280 206 280 332 256 446 Z"/>
+    <path d="M256 446 C212 356 176 262 158 150 C204 244 240 342 256 446 Z"/>
+    <path d="M256 446 C300 356 336 262 354 150 C308 244 272 342 256 446 Z"/>
+    <path d="M256 446 C196 402 142 344 100 268 C168 332 220 388 256 446 Z"/>
+    <path d="M256 446 C316 402 370 344 412 268 C344 332 292 388 256 446 Z"/>
+  </g>
+</svg>

@@ -1,0 +1,29 @@
+{
+  "name": "Phila — counselling practice platform",
+  "short_name": "Phila",
+  "description": "Run the practice, hold the whole journey. A calm, POPIA-grade platform for South African counselling organisations.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F3F5F4",
+  "theme_color": "#1C7D58",
+  "lang": "en-ZA",
+  "dir": "ltr",
+  "categories": ["medical", "health", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

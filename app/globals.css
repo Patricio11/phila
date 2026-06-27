@@ -1,26 +1,285 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ============================================================================
+   Phila — design tokens (locked to DESIGN.md §2–4, the approved dashboard).
+   Neutral system + one green. Light is the default; dark is a true companion.
+   Every colour is a runtime CSS variable so the whole product is theme-tokenised
+   from commit one — re-skinning is an edit here, not a component change (§10).
+   ========================================================================== */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* surfaces & text */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-hover: var(--surface-hover);
+  --color-sidebar: var(--sidebar-bg);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+
+  /* brand green — the only "loud" colour */
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
+
+  /* status — small dots, never a rainbow */
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
+  /* type */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /* radius scale (§4) */
+  --radius-card: 12px;
+  --radius-control: 9px;
+  --radius-chip: 8px;
+  --radius-pill: 999px;
+
+  /* elevation */
+  --shadow-sm: var(--elev-sm);
+  --shadow-card: var(--elev-card);
+
+  /* motion (§4) — calm, GPU-only */
+  --ease-smooth: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ---- Light (default) -------------------------------------------------- */
+:root {
+  --bg: #f3f5f4;
+  --surface: #ffffff;
+  --surface-2: #f8faf9;
+  --surface-hover: #f1f4f2;
+  --sidebar-bg: #ffffff;
+  --border: #e5e9e7;
+  --border-strong: #d5dad8;
+
+  --text: #141916;
+  --text-2: #5b635e;
+  --text-3: #8b938e;
+
+  --accent: #1c7d58;
+  --accent-hover: #176a4a;
+  --accent-soft: #e5f1eb;
+  --accent-ink: #ffffff;
+
+  --warn: #c77f2a;
+  --warn-soft: #f6ecdd;
+  --danger: #c2554d;
+  --danger-soft: #f4e2e0;
+  --info: #3c7fb0;
+  --info-soft: #e2ecf3;
+
+  --elev-sm: 0 1px 2px rgba(16, 24, 20, 0.05);
+  --elev-card: 0 1px 2px rgba(16, 24, 20, 0.05), 0 10px 26px -14px rgba(16, 24, 20, 0.14);
+
+  color-scheme: light;
+}
+
+/* ---- Dark (true companion) -------------------------------------------- */
+.dark {
+  --bg: #0d1210;
+  --surface: #151b18;
+  --surface-2: #1a211d;
+  --surface-hover: #1e2622;
+  --sidebar-bg: #101512;
+  --border: #252d29;
+  --border-strong: #323b36;
+
+  --text: #e7ece9;
+  --text-2: #9aa39e;
+  --text-3: #6b746f;
+
+  --accent: #34bc83;
+  --accent-hover: #43c98f;
+  --accent-soft: rgba(52, 188, 131, 0.13);
+  --accent-ink: #06140e;
+
+  --warn: #dba257;
+  --warn-soft: rgba(219, 162, 87, 0.14);
+  --danger: #d7726a;
+  --danger-soft: rgba(215, 114, 106, 0.15);
+  --info: #5e9ac4;
+  --info-soft: rgba(94, 154, 196, 0.15);
+
+  --elev-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --elev-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 30px -16px rgba(0, 0, 0, 0.6);
+
+  color-scheme: dark;
+}
+
+/* ============================================================================
+   Base
+   ========================================================================== */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    letter-spacing: -0.006em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* theme cross-fade (§4) — surfaces only, never on interaction-critical paint */
+    transition:
+      background-color 0.3s var(--ease-smooth),
+      color 0.3s var(--ease-smooth);
+  }
+
+  /* All data reads with tabular numerals (§3). */
+  table,
+  [data-tabular],
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Visible accent focus ring — WCAG 2.2 AA, both themes (§10). */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: var(--accent-soft);
+    color: var(--text);
+  }
+
+  /* Quiet, themed scrollbars. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ============================================================================
+   Motion — the one orchestrated moment is the content `rise` on load (§4).
+   Sparse on purpose: over-animation is an AI-design tell. ≤ 2 concurrent.
+   ========================================================================== */
+@layer utilities {
+  @keyframes phila-rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .rise {
+    animation: phila-rise 0.5s var(--ease-out) both;
+  }
+
+  /* Children rise with a small, capped stagger. */
+  .rise-stagger > * {
+    animation: phila-rise 0.5s var(--ease-out) both;
+  }
+  .rise-stagger > *:nth-child(1) {
+    animation-delay: 0.02s;
+  }
+  .rise-stagger > *:nth-child(2) {
+    animation-delay: 0.06s;
+  }
+  .rise-stagger > *:nth-child(3) {
+    animation-delay: 0.1s;
+  }
+  .rise-stagger > *:nth-child(4) {
+    animation-delay: 0.14s;
+  }
+  .rise-stagger > *:nth-child(n + 5) {
+    animation-delay: 0.16s;
+  }
+
+  /* Scroll-reveal — GPU-only, driven by a tiny IntersectionObserver island.
+     Hidden only when JS is present, so no-JS content is never invisible. */
+  .js .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition:
+      opacity 0.7s var(--ease-out),
+      transform 0.7s var(--ease-out);
+  }
+  .js .reveal-soft {
+    transform: translateY(12px);
+  }
+  .js .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* A slow, ambient float for the hero product frame — the one ambient touch. */
+  @keyframes phila-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+  .float {
+    animation: phila-float 7s ease-in-out infinite;
+  }
+
+  /* A faint drifting brand glow behind the hero. Opacity/transform only. */
+  @keyframes phila-drift {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+      opacity: 0.9;
+    }
+    50% {
+      transform: translate3d(2%, -3%, 0) scale(1.08);
+      opacity: 1;
+    }
+  }
+  .drift {
+    animation: phila-drift 16s ease-in-out infinite;
+  }
+}
+
+/* prefers-reduced-motion → all movement off, final state shown (§4, §10). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* Never leave reveal content hidden for reduced-motion users. */
+  .js .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }

@@ -1,0 +1,277 @@
+"use client";
+
+import { useRef, useState, useTransition } from "react";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  Check,
+  Clock,
+  Lock,
+  MapPin,
+  Paperclip,
+  Send,
+  Sparkles,
+  Video,
+} from "lucide-react";
+import type { SessionEditorData } from "@/lib/data-provider";
+import type { AppointmentState } from "@/lib/domain/enums";
+import { Button } from "@/components/ui/button";
+import { Card, CardHead } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/input";
+import { useToast } from "@/components/ui/toast";
+import { Avatar } from "@/components/ui/avatar";
+import { SafeguardingPanel } from "@/components/workspace/safeguarding-panel";
+import { cn } from "@/lib/utils";
+import {
+  generateAiDraft,
+  markProgress,
+  shareCarePlan,
+  signNote,
+} from "@/app/app/sessions/[id]/actions";
+
+const PROGRESS: { state: AppointmentState; label: string }[] = [
+  { state: "completed", label: "Completed" },
+  { state: "no_show", label: "No-show" },
+  { state: "postponed", label: "Postponed" },
+];
+
+function whenLabel(iso: string): string {
+  const d = new Date(iso);
+  const date = new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", weekday: "long", day: "numeric", month: "long" }).format(d);
+  const time = new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", hour: "2-digit", minute: "2-digit" }).format(d);
+  return `${date} · ${time}`;
+}
+
+export function SessionEditor({ data, counsellorName }: { data: SessionEditorData; counsellorName: string }) {
+  const { appointment: appt, client } = data;
+  const { toast } = useToast();
+
+  const [body, setBody] = useState(data.note?.body ?? "");
+  const [aiGenerated, setAiGenerated] = useState(data.note?.aiGenerated ?? false);
+  const [signedAt, setSignedAt] = useState<string | null>(data.note?.signedAt ?? null);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(data.note ? "saved" : "idle");
+  const [state, setState] = useState<AppointmentState>(appt.state);
+  const [careSummary, setCareSummary] = useState(data.carePlan?.summary ?? "");
+
+  const [generating, startGenerate] = useTransition();
+  const [signing, startSign] = useTransition();
+  const [marking, startMark] = useTransition();
+  const [sharing, startShare] = useTransition();
+  const [attachments, setAttachments] = useState<string[]>([]);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const onAttach: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Mock: attach to the session record. Phase 10 stores to Supabase (signed URL).
+    setAttachments((prev) => [file.name, ...prev]);
+    toast({ tone: "success", title: "Attached to this session", description: file.name });
+    e.target.value = "";
+  };
+
+  // Local "autosave" indicator — never blocks typing. Phase 10 wires real autosave.
+  const onBodyChange = (value: string) => {
+    setBody(value);
+    if (signedAt) setSignedAt(null); // editing after signing re-opens the draft
+    setSaveState("saving");
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => setSaveState("saved"), 700);
+  };
+
+  const onGenerate = () =>
+    startGenerate(async () => {
+      const res = await generateAiDraft({ appointmentId: appt.id });
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      setBody((prev) => (prev.trim() ? `${prev}\n\n${res.draft}` : res.draft));
+      setAiGenerated(true);
+      setSignedAt(null);
+      setSaveState("saved");
+      toast({ tone: "success", title: "AI draft ready", description: "Review and edit it — you're the author. Sign when it's right." });
+    });
+
+  const onSign = () =>
+    startSign(async () => {
+      const res = await signNote({ appointmentId: appt.id, body });
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      setSignedAt(res.signedAt);
+      toast({ tone: "success", title: "Note signed", description: "You're the author of record." });
+    });
+
+  const onMark = (next: AppointmentState) =>
+    startMark(async () => {
+      const res = await markProgress({ appointmentId: appt.id, state: next });
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      setState(next);
+      toast({ tone: "success", title: `Marked ${PROGRESS.find((p) => p.state === next)?.label.toLowerCase() ?? next}` });
+    });
+
+  const onShare = () =>
+    startShare(async () => {
+      const res = await shareCarePlan({ clientId: client.id, summary: careSummary });
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      toast({ tone: "success", title: `Shared with ${client.name.split(" ")[0]}`, description: "They'll see it in their portal — your private note stays private." });
+    });
+
+  return (
+    <div className="rise space-y-5">
+      <Link href="/app/sessions" className="inline-flex items-center gap-1.5 text-[13px] text-text-2 hover:text-text">
+        <ArrowLeft className="size-4" strokeWidth={2} aria-hidden /> All sessions
+      </Link>
+
+      {/* Header */}
+      <div className="flex flex-wrap items-center gap-3">
+        <Avatar name={client.name} size="lg" />
+        <div className="min-w-0 flex-1">
+          <Link href={`/app/clients/${client.id}`} className="text-[19px] font-[680] tracking-[-0.02em] text-text hover:text-accent">
+            {client.name}
+          </Link>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-text-2">
+            <span>{appt.serviceName}</span>
+            <span className="inline-flex items-center gap-1"><Clock className="size-3.5 text-text-3" strokeWidth={2} aria-hidden /> {whenLabel(appt.startsAt)}</span>
+            <span className="inline-flex items-center gap-1">
+              {appt.type === "online" ? <Video className="size-3.5 text-info" strokeWidth={2} aria-hidden /> : <MapPin className="size-3.5 text-text-3" strokeWidth={2} aria-hidden />}
+              {appt.type === "online" ? "Online" : (appt.roomName ?? "In person")}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {client.riskFlag && <SafeguardingPanel clientName={client.name} />}
+
+      <div className="grid gap-5 lg:grid-cols-3">
+        {/* Note — the private clinical note */}
+        <Card className="lg:col-span-2">
+          <CardHead
+            title={
+              <span className="flex items-center gap-2">
+                <Lock className="size-4 text-text-3" strokeWidth={2} aria-hidden /> Private clinical note
+              </span>
+            }
+            action={<SaveBadge state={saveState} />}
+          />
+          <div className="space-y-3 px-[17px] pb-[17px]">
+            <p className="text-[12px] text-text-3">
+              Only you and your supervisor can read this. It&apos;s never shared with the client.
+            </p>
+
+            {aiGenerated && !signedAt && (
+              <div className="inline-flex items-center gap-1.5 rounded-chip bg-warn-soft px-2 py-1 text-[11.5px] font-semibold text-warn">
+                <Sparkles className="size-3.5" strokeWidth={2} aria-hidden /> AI-generated draft — edit before signing
+              </div>
+            )}
+
+            <Textarea
+              value={body}
+              onChange={(e) => onBodyChange(e.target.value)}
+              placeholder="Type your note as you talk — it autosaves and never blocks."
+              className="min-h-[260px] text-[14px] leading-relaxed"
+              aria-label="Private clinical note"
+            />
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="ghost" onClick={onGenerate} loading={generating}>
+                <Sparkles className="size-4" strokeWidth={2} aria-hidden /> Generate draft with AI
+              </Button>
+              <input ref={fileRef} type="file" className="hidden" onChange={onAttach} aria-hidden />
+              <Button variant="ghost" onClick={() => fileRef.current?.click()}>
+                <Paperclip className="size-4" strokeWidth={2} aria-hidden /> Attach
+              </Button>
+              <Button onClick={onSign} loading={signing} disabled={!body.trim()} className="ml-auto">
+                <Check className="size-4" strokeWidth={2.4} aria-hidden /> {signedAt ? "Re-sign note" : "Sign note"}
+              </Button>
+            </div>
+
+            {attachments.length > 0 && (
+              <ul className="space-y-1">
+                {attachments.map((name, i) => (
+                  <li key={i} className="flex items-center gap-2 rounded-control bg-surface-2 px-3 py-2 text-[12.5px] text-text-2">
+                    <Paperclip className="size-3.5 shrink-0 text-text-3" strokeWidth={2} aria-hidden />
+                    <span className="truncate">{name}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {signedAt && (
+              <div className="flex items-center gap-2 rounded-control bg-accent-soft/50 px-3 py-2 text-[12.5px] text-text-2">
+                <Check className="size-4 text-accent" strokeWidth={2.4} aria-hidden />
+                Signed by {counsellorName} ·{" "}
+                {new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" }).format(new Date(signedAt))}
+                {aiGenerated ? " · AI-assisted, edited and signed by you" : ""}
+              </div>
+            )}
+          </div>
+        </Card>
+
+        {/* Side: progress + video + care plan */}
+        <div className="space-y-5">
+          {appt.type === "online" && (
+            <Card className="p-4">
+              <div className="text-[13px] font-[600] text-text">Online session</div>
+              <Button
+                className="mt-3 w-full"
+                onClick={() => toast({ tone: "default", title: "The video room opens here", description: "Owned, in-region video arrives next." })}
+              >
+                <Video className="size-4" strokeWidth={2} aria-hidden /> Open video room
+              </Button>
+            </Card>
+          )}
+
+          <Card className="p-4">
+            <div className="text-[13px] font-[600] text-text">Mark progress</div>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {PROGRESS.map((p) => (
+                <button
+                  key={p.state}
+                  type="button"
+                  onClick={() => onMark(p.state)}
+                  disabled={marking}
+                  aria-pressed={state === p.state}
+                  className={cn(
+                    "h-9 rounded-control border text-[12.5px] font-medium transition-colors disabled:opacity-60",
+                    state === p.state
+                      ? "border-accent bg-accent-soft text-accent"
+                      : "border-border bg-surface text-text-2 hover:bg-surface-hover hover:text-text",
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] text-text-3">AI never marks a session — only you do.</p>
+          </Card>
+
+          <Card>
+            <CardHead title="Share with the client" />
+            <div className="space-y-3 px-[17px] pb-[17px]">
+              <p className="text-[12px] leading-relaxed text-text-3">
+                A separate care plan the client sees — advice, tasks, next steps. Your private note above
+                is never included.
+              </p>
+              <Textarea
+                value={careSummary}
+                onChange={(e) => setCareSummary(e.target.value)}
+                placeholder="What would help between now and next time?"
+                className="min-h-[120px]"
+                aria-label="Care plan to share"
+              />
+              <Button variant="ghost" className="w-full" onClick={onShare} loading={sharing} disabled={!careSummary.trim()}>
+                <Send className="size-4" strokeWidth={2} aria-hidden /> Share with client
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SaveBadge({ state }: { state: "idle" | "saving" | "saved" }) {
+  if (state === "idle") return null;
+  return (
+    <span className="text-[11.5px] text-text-3">
+      {state === "saving" ? "Saving…" : "Saved"}
+    </span>
+  );
+}

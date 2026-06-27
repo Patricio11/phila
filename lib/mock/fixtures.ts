@@ -299,6 +299,53 @@ export const invoices: Record<string, import("@/lib/mock/types").Invoice[]> = {
   ],
 };
 
+/** Mock message threads per counsellor (WhatsApp-first; the rail is dormant). */
+export interface ChatMessage {
+  id: string;
+  from: "client" | "counsellor";
+  text: string;
+  at: string;
+}
+export interface ConversationSeed {
+  clientId: string;
+  clientName: string;
+  unread: number;
+  messages: ChatMessage[];
+}
+
+export const conversations: Record<string, ConversationSeed[]> = {
+  couns_nomsa: [
+    {
+      clientId: "cl_lerato",
+      clientName: "Lerato Mahlangu",
+      unread: 1,
+      messages: [
+        { id: "m1", from: "counsellor", text: "Hi Lerato — looking forward to our session on Monday. The wind-down routine we spoke about is on your care plan.", at: "2026-06-26T14:10:00+02:00" },
+        { id: "m2", from: "client", text: "Thank you Nomsa. The breathing has really been helping at night 🙏", at: "2026-06-26T18:32:00+02:00" },
+        { id: "m3", from: "client", text: "Quick question — should I keep the journal even on the good days?", at: "2026-06-27T07:15:00+02:00" },
+      ],
+    },
+    {
+      clientId: "cl_fatima",
+      clientName: "Fatima Adams",
+      unread: 0,
+      messages: [
+        { id: "m4", from: "counsellor", text: "Hi Fatima, your online assessment is at 11:00 today. You'll join from your Phila portal.", at: "2026-06-27T08:00:00+02:00" },
+        { id: "m5", from: "client", text: "Perfect, I'm ready. See you then.", at: "2026-06-27T08:22:00+02:00" },
+      ],
+    },
+    {
+      clientId: "cl_johan",
+      clientName: "Johan Botha",
+      unread: 0,
+      messages: [
+        { id: "m6", from: "client", text: "Had to move some things around this week — are we still on for Thursday?", at: "2026-06-25T16:40:00+02:00" },
+        { id: "m7", from: "counsellor", text: "We are, Johan — 14:00 in Consulting room 1. See you then.", at: "2026-06-25T17:05:00+02:00" },
+      ],
+    },
+  ],
+};
+
 /* ---- Platform (super-admin) ------------------------------------------ */
 
 export const plans: import("@/lib/mock/types").Plan[] = [

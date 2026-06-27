@@ -97,7 +97,7 @@ export function DataTable<T>({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-card border border-border">
+      <div className="overflow-x-auto rounded-card border border-border bg-surface shadow-sm">
         <table className="w-full border-collapse text-left">
           <thead className="sticky top-0 z-10 bg-surface-2">
             <tr className="border-b border-border">

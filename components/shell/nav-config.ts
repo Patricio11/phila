@@ -18,7 +18,6 @@ import {
   PieChart,
   ReceiptText,
   ScrollText,
-  Settings,
   ShieldCheck,
   Target,
   UserCog,
@@ -60,16 +59,16 @@ export const counsellorNav: NavSection[] = [
       { label: "Calendar", href: "/app/calendar", icon: CalendarDays, ready: true },
       { label: "Clients", href: "/app/clients", icon: Users, ready: true },
       { label: "Sessions", href: "/app/sessions", icon: NotebookPen, ready: true },
-      { label: "Messages", href: "/app/messages", icon: MessagesSquare },
+      { label: "Messages", href: "/app/messages", icon: MessagesSquare, ready: true },
     ],
   },
   {
     label: "Practice",
     items: [
       { label: "Supervision", href: "/app/supervision", icon: UserCog, ready: true },
-      { label: "Rooms", href: "/app/rooms", icon: DoorOpen },
-      { label: "Reports", href: "/app/reports", icon: PieChart },
-      { label: "Billing", href: "/app/billing", icon: CreditCard },
+      { label: "Rooms", href: "/app/rooms", icon: DoorOpen, ready: true },
+      { label: "Reports", href: "/app/reports", icon: PieChart, ready: true },
+      { label: "Billing", href: "/app/billing", icon: CreditCard, ready: true },
     ],
   },
 ];
@@ -107,7 +106,6 @@ export const hubNav: NavSection[] = [
       { label: "Rooms", href: "/hub/rooms", icon: DoorOpen, ready: true },
       { label: "Intake", href: "/hub/intake", icon: ClipboardList, ready: true },
       { label: "Invoicing", href: "/hub/invoicing", icon: ReceiptText, ready: true },
-      { label: "Settings", href: "/hub/settings", icon: Settings, ready: true },
     ],
   },
 ];
@@ -136,7 +134,6 @@ export const adminNav: NavSection[] = [
       { label: "AI rail", href: "/admin/ai", icon: Bot, ready: true },
       { label: "Integrations", href: "/admin/integrations", icon: Blocks, ready: true },
       { label: "Audit", href: "/admin/audit", icon: ScrollText, ready: true },
-      { label: "Settings", href: "/admin/settings", icon: Settings, ready: true },
     ],
   },
 ];

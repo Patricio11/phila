@@ -110,6 +110,33 @@ export interface SessionEditorData {
   outcomes: OutcomeMeasure[];
 }
 
+export interface ChatMessage {
+  id: string;
+  from: "client" | "counsellor";
+  text: string;
+  at: string;
+}
+export interface Conversation {
+  clientId: string;
+  clientName: string;
+  unread: number;
+  lastAt: string;
+  messages: ChatMessage[];
+}
+
+export interface CounsellorRoomAssignment {
+  roomName: string;
+  siteName: string;
+  colour: string;
+  days: number[];
+  start: string;
+  end: string;
+}
+export interface CounsellorRoomsView {
+  assignments: CounsellorRoomAssignment[];
+  bookings: AppointmentView[];
+}
+
 export interface SupervisionItem {
   id: string;
   superviseeId: string;
@@ -329,6 +356,9 @@ export interface DataProvider {
   listCounsellorSessions(counsellorId: string, now: string): Promise<AppointmentView[]>;
   getSession(appointmentId: string, now: string): Promise<SessionEditorData | null>;
   getSupervisionQueue(supervisorId: string, now: string): Promise<SupervisionItem[]>;
+  listConversations(counsellorId: string): Promise<Conversation[]>;
+  getCounsellorRooms(counsellorId: string, now: string): Promise<CounsellorRoomsView>;
+  listCounsellorInvoices(counsellorId: string): Promise<Invoice[]>;
 
   // Client portal (a client only ever sees their own data)
   getClient(clientId: string): Promise<Client | null>;

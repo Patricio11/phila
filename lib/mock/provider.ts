@@ -11,7 +11,9 @@ import type {
   Breakdown,
   CaseloadRow,
   CaseloadStatus,
+  Conversation,
   CounsellorDashboard,
+  CounsellorRoomsView,
   DataProvider,
   FunderGrantView,
   GrantBreakdowns,
@@ -52,6 +54,7 @@ import {
   clientOutcomes,
   clients as allClients,
   consents as allConsents,
+  conversations,
   integrationsCatalogue,
   plans,
   platformAuditEvents,
@@ -481,6 +484,50 @@ export const mockProvider: DataProvider = {
       carePlan: carePlans[appt.clientId] ?? null,
       outcomes: materialiseOutcomes(appt.clientId, now),
     });
+  },
+
+  listConversations: (counsellorId): Promise<Conversation[]> =>
+    ok(
+      (conversations[counsellorId] ?? [])
+        .map((c) => ({
+          clientId: c.clientId,
+          clientName: c.clientName,
+          unread: c.unread,
+          lastAt: c.messages[c.messages.length - 1]?.at ?? "",
+          messages: c.messages,
+        }))
+        .sort((a, b) => b.lastAt.localeCompare(a.lastAt)),
+    ),
+
+  getCounsellorRooms: (counsellorId, now): Promise<CounsellorRoomsView> => {
+    const weekDates = weekDatesOf(now);
+    const bookings = materialise(counsellorId, now)
+      .map(toView)
+      .filter((a) => a.roomId && weekDates.some((d) => a.startsAt.startsWith(d)))
+      .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+    const assignments = roomAssignments
+      .filter((ra) => ra.counsellorId === counsellorId)
+      .map((ra) => {
+        const room = allRooms.find((r) => r.id === ra.roomId);
+        return {
+          roomName: room?.name ?? "Room",
+          siteName: allSites.find((s) => s.id === room?.siteId)?.name ?? "",
+          colour: room?.colour ?? "#1C7D58",
+          days: ra.days,
+          start: ra.start,
+          end: ra.end,
+        };
+      });
+    return ok({ assignments, bookings });
+  },
+
+  listCounsellorInvoices: (counsellorId) => {
+    const counsellor = allCounsellors.find((c) => c.id === counsellorId);
+    if (!counsellor) return ok([]);
+    const clientIds = new Set(
+      allClients.filter((c) => c.primaryCounsellorId === counsellorId).map((c) => c.id),
+    );
+    return ok(orgInvoicesFor(counsellor.orgId).filter((i) => clientIds.has(i.clientId)));
   },
 
   getSupervisionQueue: (supervisorId, now) => {

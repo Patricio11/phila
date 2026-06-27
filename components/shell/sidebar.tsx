@@ -19,12 +19,14 @@ export function Sidebar({
   collapsed,
   onToggleCollapse,
   onNavigate,
+  settingsHref,
 }: {
   sections: NavSection[];
   orgName: string;
   collapsed: boolean;
   onToggleCollapse: () => void;
   onNavigate?: () => void;
+  settingsHref?: string;
 }) {
   const pathname = usePathname();
 
@@ -144,19 +146,24 @@ export function Sidebar({
 
       {/* Foot */}
       <div className="border-t border-border px-2.5 py-2.5">
-        <span
-          title={collapsed ? "Settings — coming soon" : undefined}
-          aria-disabled
-          className={cn(
-            "flex h-9 cursor-default items-center gap-2.5 rounded-control px-2.5 text-[13.5px] font-medium text-text-3/80",
-            collapsed && "justify-center",
-          )}
-        >
-          <Settings className="size-[18px] shrink-0" strokeWidth={1.9} aria-hidden />
-          <span className={cn("flex-1 transition-opacity duration-150", collapsed && "opacity-0")}>
-            Settings
-          </span>
-        </span>
+        {settingsHref && (
+          <Link
+            href={settingsHref}
+            title={collapsed ? "Settings" : undefined}
+            onClick={onNavigate}
+            aria-current={pathname === settingsHref || pathname.startsWith(`${settingsHref}/`) ? "page" : undefined}
+            className={cn(
+              "flex h-9 items-center gap-2.5 rounded-control px-2.5 text-[13.5px] font-medium transition-colors",
+              pathname === settingsHref || pathname.startsWith(`${settingsHref}/`)
+                ? "bg-accent-soft font-semibold text-accent"
+                : "text-text-2 hover:bg-surface-hover hover:text-text",
+              collapsed && "justify-center",
+            )}
+          >
+            <Settings className="size-[18px] shrink-0" strokeWidth={1.9} aria-hidden />
+            <span className={cn("flex-1 transition-opacity duration-150", collapsed && "opacity-0")}>Settings</span>
+          </Link>
+        )}
         <button
           type="button"
           onClick={onToggleCollapse}

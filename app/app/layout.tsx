@@ -29,6 +29,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         navKey="counsellor"
         orgName={membership.orgName}
         user={{ name: principal.name, email: principal.email, roleLabel }}
+        settingsHref="/app/settings"
       >
         {children}
       </AppShell>

@@ -89,6 +89,7 @@ export function AppShell({
           orgName={orgName}
           collapsed={collapsed}
           onToggleCollapse={toggleCollapse}
+          settingsHref={settingsHref}
         />
       </aside>
 
@@ -119,6 +120,7 @@ export function AppShell({
             collapsed={false}
             onToggleCollapse={() => setMobileOpen(false)}
             onNavigate={() => setMobileOpen(false)}
+            settingsHref={settingsHref}
           />
         </div>
       </div>

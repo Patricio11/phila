@@ -128,7 +128,17 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
   CSV export**, audited), `/admin/settings` (feature flags). New: `requireSuperAdmin`, `components/admin/*`,
   6 seam methods + platform fixtures. **All five roles now built.** `build`/`typecheck`/`lint` clean; 37
   routes. See `docs/completed/PHASE_6_COMPLETE.md`.
-- **Phase 7** (signature surfaces: calendar, create-modal, video shell + AI-draft, A4 builder, outcomes) — ⏳ next.
+- **Phase 7** (signature surfaces) — ✅ **2026-06-27**. `Dialog` + `Select` primitives; the
+  **create-appointment modal** (wired to dashboard, counsellor calendar, Hub) + Zod-audited action;
+  the **`VideoRoom`** shell (pre-join → in-call → end-to-note, or paste-link fallback) + AI
+  structured-extraction preview; the **A4 `InvoiceBuilder`** (`/hub/invoicing/new`, live VAT, print
+  stylesheet); **PHQ-9/GAD-7 outcome capture** (with the safeguarding item). See PHASE_7_COMPLETE.md.
+- **Phase 8** (states + responsive + motion + a11y — the demo-ready gate) — ✅ **2026-06-27**. Skeletons
+  + route `loading.tsx`, `error.tsx`/`global-error.tsx`, `BlockedState` (consent/dormant/cap), skip-link
+  + `#main-content`, toasts as aria-live, reduced-motion throughout, light/dark verified, PWA installable
+  + offline shell. **Part-A ship gate MET** — 38 routes, all five roles demoable on a phone in either
+  theme, installed as an app, zero dead ends. See PHASE_8_COMPLETE.md.
+- **Phase 9** (Part B begins: Better Auth + consent persistence, mock→real behind the seam) — ⏳ next.
 - *(Update this block as phases ship. Part A is mock-first: nothing below Phase 9 touches a real DB.)*
 
 ---

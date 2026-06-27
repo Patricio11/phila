@@ -40,6 +40,12 @@ change**. See `ROADMAP.md`.
 - ✅ **Phase 6 — Super-admin console (`/admin`).** Orgs (suspend/impersonate-audited), **editable pricing
   plans + entitlements + MRR**, the platform AI rail (with the POPIA s.72 gate on "live"), the
   integrations catalogue, and the platform audit ledger with CSV export. **All five roles complete.**
+- ✅ **Phase 7 — Signature surfaces.** The reusable create-appointment modal, the video-room shell
+  (+ paste-link fallback) with AI structured-extraction, the A4 invoice builder (live VAT + print), and
+  PHQ-9/GAD-7 outcome capture.
+- ✅ **Phase 8 — Demo-ready gate.** Skeletons + loading/error/blocked states, skip-link + a11y sweep,
+  reduced-motion, light/dark, and PWA install + offline shell. **Part A ships: all roles, on a phone,
+  in either theme, installed as an app, zero dead ends.**
 
 ## Getting started
 

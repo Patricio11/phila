@@ -296,22 +296,22 @@ auto-rolls up to them, and a scoped, k-anon, read-only **funder portal**. The gr
 
 ---
 
-## ✨ PHASE 8: STATES + RESPONSIVE + MOTION + A11Y — THE DEMO-READY GATE
+## ✨ PHASE 8: STATES + RESPONSIVE + MOTION + A11Y — THE DEMO-READY GATE ✅ (2026-06-27)
 *Goal: the entire product is a beautiful, clickable, mock-driven demo of all roles.*
 
 ### Task 8.1: Cross-cutting states
-- [ ] Every loading (`<RosterSkeleton>`), empty (instructional), error (calm/actionable), **blocked** (consent missing / feature dormant / over cost-cap — states the reason + next step), and offline/queued state, on every surface.
+- [x] Every loading (`<RosterSkeleton>`), empty (instructional), error (calm/actionable), **blocked** (consent missing / feature dormant / over cost-cap — states the reason + next step), and offline/queued state, on every surface.
 
 ### Task 8.2: Responsive pass (360px-first)
-- [ ] Every surface verified at 360px incl. calendar (agenda), video room (fills screen), A4 builder (scrolls), org public page, all modals/sheets.
+- [x] Every surface verified at 360px incl. calendar (agenda), video room (fills screen), A4 builder (scrolls), org public page, all modals/sheets.
 
 ### Task 8.3: Motion + accessibility
-- [ ] The one page-load reveal + count settle + calm sheet/route transitions choreographed (`DESIGN.md` §4); **reduced-motion** strips movement, keeps clarity. (Sparse on purpose — over-animation is an AI-design tell.)
-- [ ] WCAG 2.2 AA sweep: keyboard-operate the calendar, focus rings, `aria-live` on counts/states, labelled controls, 200% text.
+- [x] The one page-load reveal + count settle + calm sheet/route transitions choreographed (`DESIGN.md` §4); **reduced-motion** strips movement, keeps clarity. (Sparse on purpose — over-animation is an AI-design tell.)
+- [x] WCAG 2.2 AA sweep: keyboard-operate the calendar, focus rings, `aria-live` on counts/states, labelled controls, 200% text.
 
 ### Task 8.4: Theme + PWA pass
-- [ ] **Dark + light** verified on every surface (calendar, video room, A4 builder, dossier, public page); the `system | light | dark` toggle persists; no flash-of-wrong-theme; AA contrast holds in both.
-- [ ] **PWA:** installable on Android + desktop; offline shell loads; the offline send-queue **stubs** behave (queued booking/note shows a "will send when online" state). Real sync wires in Part B.
+- [x] **Dark + light** verified on every surface (calendar, video room, A4 builder, dossier, public page); the `system | light | dark` toggle persists; no flash-of-wrong-theme; AA contrast holds in both.
+- [x] **PWA:** installable on Android + desktop; offline shell loads; the offline send-queue **stubs** behave (queued booking/note shows a "will send when online" state). Real sync wires in Part B.
 
 **Done when (mock):** a stranger can demo the whole product across all roles on a phone, **in either theme, installed as an app**, it looks finished and alive, and there are zero dead ends. **This is the Part-A ship gate.**
 

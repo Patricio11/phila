@@ -107,7 +107,8 @@ export function InvoiceBuilder({
         </div>
 
         {/* Line items */}
-        <table className="mt-8 w-full text-[13px]">
+        <div className="mt-8 overflow-x-auto">
+        <table className="w-full min-w-[460px] text-[13px]">
           <thead>
             <tr className="border-b-2 border-[#141916] text-left text-[11px] uppercase tracking-wide text-[#5b635e]">
               <th className="pb-2 font-semibold">Description</th>
@@ -137,6 +138,7 @@ export function InvoiceBuilder({
             ))}
           </tbody>
         </table>
+        </div>
 
         <button type="button" onClick={() => { setItems((p) => [...p, { id: seq, description: "", qty: 1, unitCents: 0 }]); setSeq((n) => n + 1); }} className="no-print mt-3 inline-flex items-center gap-1 text-[12.5px] font-medium text-[#1C7D58]">
           <Plus className="size-3.5" strokeWidth={2.2} aria-hidden /> Add line

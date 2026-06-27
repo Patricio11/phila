@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, FileText, Lock, Mail, NotebookPen, Phone } from "lucide-react";
+import { ArrowLeft, FileText, Mail, NotebookPen, Phone } from "lucide-react";
 import { requireOrg } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
@@ -15,6 +15,7 @@ import { SessionTimeline } from "@/components/client/session-timeline";
 import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";
 import { SafeguardingPanel } from "@/components/workspace/safeguarding-panel";
 import { StatusDot } from "@/components/ui/status-dot";
+import { BlockedState } from "@/components/ui/blocked-state";
 
 export const dynamic = "force-dynamic";
 
@@ -154,10 +155,11 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
                   <Field label="Age band" value={AGE_BAND_LABELS[demographics.ageBand]} />
                 </dl>
               ) : (
-                <div className="flex items-start gap-2.5 rounded-control bg-surface-2 p-3 text-[12.5px] text-text-2">
-                  <Lock className="mt-0.5 size-4 shrink-0 text-text-3" strokeWidth={2} aria-hidden />
-                  Not shared — this client hasn&apos;t consented to demographic information. It stays hidden until they do.
-                </div>
+                <BlockedState
+                  reason="consent"
+                  title="Demographics not shared"
+                  body="This client hasn't consented to demographic information. It stays hidden until they do."
+                />
               )}
             </div>
           </Card>

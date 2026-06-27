@@ -73,6 +73,12 @@ export function AppShell({
 
   return (
     <div className="flex h-dvh overflow-hidden bg-bg">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-control focus:bg-accent focus:px-3 focus:py-2 focus:text-[13px] focus:font-medium focus:text-accent-ink"
+      >
+        Skip to content
+      </a>
       {/* Desktop sidebar — width animates smoothly on collapse. */}
       <aside
         className="hidden shrink-0 border-r border-border transition-[width] duration-300 ease-[cubic-bezier(.2,0,0,1)] lg:block"
@@ -126,7 +132,7 @@ export function AppShell({
           hasNotifications={hasNotifications}
           onOpenMobileNav={() => setMobileOpen(true)}
         />
-        <main className="flex-1 overflow-y-auto">
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto outline-none">
           <div className="mx-auto w-full max-w-[1320px] px-4 py-6 sm:px-6 sm:py-8">{children}</div>
         </main>
       </div>

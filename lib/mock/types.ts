@@ -298,6 +298,66 @@ export interface FunderContact {
   grantIds: string[];
 }
 
+/* ---- Platform (super-admin) ------------------------------------------ */
+
+/** A subscription plan tier, sourced from the plans table (no entitlement drift). */
+export interface Plan {
+  id: string;
+  name: string;
+  tagline: string;
+  /** Monthly price in cents (ZAR). 0 = free. */
+  priceCents: number;
+  /** null = unlimited. */
+  seats: number | null;
+  aiTokens: number; // monthly AI token allowance
+  videoMinutes: number;
+  messaging: boolean; // WhatsApp + SMS
+  rooms: number | null;
+  popular?: boolean;
+  ngo?: boolean;
+}
+
+export interface PlatformOrg {
+  id: string;
+  name: string;
+  province: Province;
+  planId: string;
+  subscriptionStatus: import("@/lib/domain/enums").SubscriptionStatus;
+  members: number;
+  sessions7d: number;
+  aiSpendCents: number;
+  createdAt: ISODate;
+  suspended: boolean;
+}
+
+export interface AiRailConfig {
+  provider: "openai" | "anthropic" | "bedrock";
+  model: string;
+  maxTokens: number;
+  status: "off" | "mock" | "live";
+  s72Acknowledged: boolean;
+  monthlySpendCents: number;
+  defaultOrgCapCents: number;
+}
+
+export interface IntegrationCatalogItem {
+  key: string;
+  name: string;
+  category: "messaging" | "video" | "payments" | "platform";
+  status: "off" | "mock" | "live";
+  description: string;
+}
+
+export interface PlatformAuditEvent {
+  id: string;
+  at: ISODateTime;
+  action: string;
+  actor: string;
+  orgName: string | null;
+  target: string;
+  reason: string | null;
+}
+
 /** Versioned, purpose-bound consent (Consent-Before-Capture Rule). */
 export interface ConsentRecord {
   clientId: string;

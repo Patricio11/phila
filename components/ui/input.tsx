@@ -45,19 +45,20 @@ export function Label({
   children,
   htmlFor,
   required,
+  optional,
   className,
 }: {
   children: React.ReactNode;
   htmlFor?: string;
   required?: boolean;
+  optional?: boolean;
   className?: string;
 }) {
   return (
     <label htmlFor={htmlFor} className={cn("block text-[13.5px] font-medium text-text", className)}>
       {children}
-      {required ? <span className="ml-0.5 text-danger">*</span> : (
-        <span className="ml-1.5 text-[11.5px] font-normal text-text-3">optional</span>
-      )}
+      {required && <span className="ml-0.5 text-danger">*</span>}
+      {optional && <span className="ml-1.5 text-[11.5px] font-normal text-text-3">optional</span>}
     </label>
   );
 }

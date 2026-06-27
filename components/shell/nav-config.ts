@@ -1,5 +1,8 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Blocks,
+  Bot,
+  Building2,
   CalendarDays,
   CalendarHeart,
   ClipboardList,
@@ -14,6 +17,7 @@ import {
   NotebookPen,
   PieChart,
   ReceiptText,
+  ScrollText,
   Settings,
   ShieldCheck,
   Target,
@@ -45,7 +49,7 @@ export interface NavSection {
  * the server→client boundary. So a Server Component never passes a config across
  * — it passes a `NavKey`, and the client shell resolves the config here.
  */
-export type NavKey = "counsellor" | "client" | "hub" | "funder";
+export type NavKey = "counsellor" | "client" | "hub" | "funder" | "admin";
 
 /** Counsellor workspace nav. Dashboard is the Phase-0 reference build. */
 export const counsellorNav: NavSection[] = [
@@ -116,9 +120,31 @@ export const funderNav: NavSection[] = [
   },
 ];
 
+/** Super-admin platform console nav (DESIGN.md §5.4). */
+export const adminNav: NavSection[] = [
+  {
+    label: "Platform",
+    items: [
+      { label: "Overview", href: "/admin", icon: LayoutDashboard, ready: true },
+      { label: "Organisations", href: "/admin/orgs", icon: Building2, ready: true },
+      { label: "Plans & billing", href: "/admin/plans", icon: CreditCard, ready: true },
+    ],
+  },
+  {
+    label: "Rails & trust",
+    items: [
+      { label: "AI rail", href: "/admin/ai", icon: Bot, ready: true },
+      { label: "Integrations", href: "/admin/integrations", icon: Blocks, ready: true },
+      { label: "Audit", href: "/admin/audit", icon: ScrollText, ready: true },
+      { label: "Settings", href: "/admin/settings", icon: Settings, ready: true },
+    ],
+  },
+];
+
 export const NAVS: Record<NavKey, NavSection[]> = {
   counsellor: counsellorNav,
   client: clientNav,
   hub: hubNav,
   funder: funderNav,
+  admin: adminNav,
 };

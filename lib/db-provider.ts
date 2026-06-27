@@ -50,4 +50,10 @@ export const dbProvider: DataProvider = {
   getGrantView: notYet,
   listFunderGrants: notYet,
   getFunderGrantView: notYet,
+  getPlatformOverview: notYet,
+  listPlatformOrgs: notYet,
+  listPlans: notYet,
+  getAiRail: notYet,
+  listIntegrations: notYet,
+  listPlatformAudit: notYet,
 };

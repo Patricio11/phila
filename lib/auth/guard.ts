@@ -7,6 +7,7 @@ import {
   getCurrentPrincipal,
   getFunderPrincipal,
   getOrgAdminPrincipal,
+  getSuperAdminPrincipal,
   type OrgMembership,
   type Principal,
 } from "@/lib/auth/session";
@@ -119,5 +120,15 @@ export async function requireOrgFeature(feature: OrgFeature): Promise<void> {
 export async function requireFunder(): Promise<Principal> {
   const principal = await getFunderPrincipal();
   if (principal.platformRole !== "funder") throw new ForbiddenError("Requires a funder account");
+  return principal;
+}
+
+/**
+ * The platform operator (super-admin) — cross-org by design, but every crossing
+ * and impersonation is audited (Tenant-Isolation Rule). 2FA enforced in Phase 9.
+ */
+export async function requireSuperAdmin(): Promise<Principal> {
+  const principal = await getSuperAdminPrincipal();
+  if (principal.platformRole !== "super_admin") throw new ForbiddenError("Requires the platform console");
   return principal;
 }

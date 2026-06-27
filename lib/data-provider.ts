@@ -8,6 +8,7 @@
  * counsellor dashboard reference build needs.
  */
 import type {
+  AiRailConfig,
   Appointment,
   CarePlan,
   Client,
@@ -20,9 +21,13 @@ import type {
   GrantIndicator,
   GrantNarrative,
   IntakeForm,
+  IntegrationCatalogItem,
   Invoice,
   Org,
   OutcomeMeasure,
+  Plan,
+  PlatformAuditEvent,
+  PlatformOrg,
   Room,
   Service,
   SessionNote,
@@ -233,6 +238,32 @@ export interface GrantSummary {
   allocatedCount: number;
 }
 
+/* ---- Platform (super-admin) ------------------------------------------ */
+
+export interface PlatformOverview {
+  orgCount: number;
+  activeOrgs: number;
+  trialingOrgs: number;
+  suspendedOrgs: number;
+  totalMembers: number;
+  sessions7d: number;
+  aiSpendCents: number;
+  mrrCents: number;
+  integrationHealth: { live: number; mock: number; off: number };
+}
+
+export interface PlatformOrgRow {
+  org: PlatformOrg;
+  planName: string;
+  planPriceCents: number;
+}
+
+export interface PlanWithUsage {
+  plan: Plan;
+  subscribers: number;
+  mrrCents: number;
+}
+
 /** Funder-portal view — read-only, k-anon, no client list, nothing identifiable. */
 export interface FunderGrantView {
   grant: Grant;
@@ -324,6 +355,14 @@ export interface DataProvider {
   /** Funder portal: the grants a funder user is scoped to (read-only). */
   listFunderGrants(funderUserId: string): Promise<{ grant: Grant; funderName: string; orgName: string }[]>;
   getFunderGrantView(funderUserId: string, grantId: string, now: string): Promise<FunderGrantView | null>;
+
+  // Platform (super-admin)
+  getPlatformOverview(): Promise<PlatformOverview>;
+  listPlatformOrgs(): Promise<PlatformOrgRow[]>;
+  listPlans(): Promise<PlanWithUsage[]>;
+  getAiRail(): Promise<AiRailConfig>;
+  listIntegrations(): Promise<IntegrationCatalogItem[]>;
+  listPlatformAudit(): Promise<PlatformAuditEvent[]>;
 }
 
 let provider: DataProvider | null = null;

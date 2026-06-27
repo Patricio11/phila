@@ -119,7 +119,16 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
   to; verified). New: `requireFunder` + demo funder principal, `components/funder/*`, 5 seam methods.
   All five Part-A roles now demoable. `build`/`typecheck`/`lint` clean; 30 routes. See
   `docs/completed/PHASE_5.5_COMPLETE.md`.
-- **Phase 6** (super-admin console `/admin`: orgs, plans & billing, AI rail, integrations, audit) — ⏳ next.
+- **Phase 6** (super-admin console) — ✅ **2026-06-27**. Seven `/admin/*` surfaces behind
+  `requireSuperAdmin` (demo operator Sizwe) with a **2FA eyebrow**: overview (orgs/MRR/AI spend/integration
+  health), `/admin/orgs` (5 orgs, billing states, suspend + impersonate-audited), `/admin/plans`
+  (**editable pricing + per-feature entitlements** + MRR — no drift), `/admin/ai` (platform AI rail:
+  provider/key, off/mock/live, model/max-tokens, **POPIA s.72 acknowledgement that gates "live"**, spend
+  caps), `/admin/integrations` (provider catalogue off/mock/live + Test), `/admin/audit` (ledger + **real
+  CSV export**, audited), `/admin/settings` (feature flags). New: `requireSuperAdmin`, `components/admin/*`,
+  6 seam methods + platform fixtures. **All five roles now built.** `build`/`typecheck`/`lint` clean; 37
+  routes. See `docs/completed/PHASE_6_COMPLETE.md`.
+- **Phase 7** (signature surfaces: calendar, create-modal, video shell + AI-draft, A4 builder, outcomes) — ⏳ next.
 - *(Update this block as phases ship. Part A is mock-first: nothing below Phase 9 touches a real DB.)*
 
 ---

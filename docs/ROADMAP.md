@@ -253,21 +253,21 @@ auto-rolls up to them, and a scoped, k-anon, read-only **funder portal**. The gr
 
 ---
 
-## 🛰️ PHASE 6: SUPER-ADMIN CONSOLE
+## 🛰️ PHASE 6: SUPER-ADMIN CONSOLE ✅ (2026-06-27)
 *Goal: the platform operator's console — orgs, plans, the AI rail, integrations, audit. Mock data.*
 > Screen detail: `DESIGN.md` §8. 2FA eyebrow on every page (enforced in Phase 9).
 
 ### Task 6.1: Orgs, plans & platform billing
-- [ ] `/admin` overview (orgs, active team members, sessions 7d, AI spend, integration health, **subscription/MRR**).
-- [ ] `/admin/orgs`: create / suspend / configure; per-org plan + entitlements; **impersonate (audit-logged)**.
-- [ ] `/admin/plans`: tiers + per-feature AI/video/messaging/room entitlements, sourced from a `plans` table (no drift).
-- [ ] **Platform subscription billing:** orgs subscribe to a Phila plan and **pay Phila** through Phila's own PSP — invoices, trial, upgrade/downgrade, dunning. (This is distinct from an org's *own* gateway in 5.5, which is how the org's clients pay the org.)
+- [x] `/admin` overview (orgs, active team members, sessions 7d, AI spend, integration health, **subscription/MRR**).
+- [x] `/admin/orgs`: create / suspend / configure; per-org plan + entitlements; **impersonate (audit-logged)**.
+- [x] `/admin/plans`: tiers + per-feature AI/video/messaging/room entitlements, sourced from a `plans` table (no drift).
+- [x] **Platform subscription billing:** orgs subscribe to a Phila plan and **pay Phila** through Phila's own PSP — invoices, trial, upgrade/downgrade, dunning. (This is distinct from an org's *own* gateway in 5.5, which is how the org's clients pay the org.)
 
 ### Task 6.2: AI rail, integrations catalogue & audit
-- [ ] `/admin/ai`: **platform-only** AI provider + key; off / mock / live + Test connection; model + max-tokens; **POPIA s.72 cross-border acknowledgement**; per-org spend caps; AI audit. Every org uses the platform key automatically (no BYO).
-- [ ] `/admin/integrations`: the catalogue of providers and what's available to orgs — WhatsApp · LiveKit video · **the payment providers an org may connect** (Stitch / Ozow / Yoco / Paystack) + Phila's own platform PSP. Enable/disable a provider platform-wide; off/mock/live + Test.
-- [ ] `/admin/audit`: platform-wide PII-access + admin-action ledger; CSV export (audit-logged).
-- [ ] `/admin/settings`: feature flags + platform settings.
+- [x] `/admin/ai`: **platform-only** AI provider + key; off / mock / live + Test connection; model + max-tokens; **POPIA s.72 cross-border acknowledgement**; per-org spend caps; AI audit. Every org uses the platform key automatically (no BYO).
+- [x] `/admin/integrations`: the catalogue of providers and what's available to orgs — WhatsApp · LiveKit video · **the payment providers an org may connect** (Stitch / Ozow / Yoco / Paystack) + Phila's own platform PSP. Enable/disable a provider platform-wide; off/mock/live + Test.
+- [x] `/admin/audit`: platform-wide PII-access + admin-action ledger; CSV export (audit-logged).
+- [x] `/admin/settings`: feature flags + platform settings.
 
 **Done when (mock):** an operator can create an org, set its plan + entitlements, see platform subscription billing, toggle the (mock) AI rail, curate which payment providers orgs can connect, and read the audit trail.
 

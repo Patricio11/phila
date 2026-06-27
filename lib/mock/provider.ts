@@ -23,6 +23,9 @@ import type {
   IntakeStatusRow,
   OrgClientRow,
   OutcomePoint,
+  PlanWithUsage,
+  PlatformOrgRow,
+  PlatformOverview,
   ReportingResult,
   RoomView,
   TeamMemberView,
@@ -42,12 +45,17 @@ import type {
   SessionNote,
 } from "@/lib/mock/types";
 import {
+  aiRailConfig,
   carePlans,
   clientApptTemplates,
   clientDocuments,
   clientOutcomes,
   clients as allClients,
   consents as allConsents,
+  integrationsCatalogue,
+  plans,
+  platformAuditEvents,
+  platformOrgs,
   counsellorDayTemplates,
   counsellors as allCounsellors,
   demographics as allDemographics,
@@ -785,6 +793,46 @@ export const mockProvider: DataProvider = {
       narratives: grantNarratives.filter((n) => n.grantId === grant.id).sort((a, b) => b.postedAt.localeCompare(a.postedAt)),
     });
   },
+
+  // ---- Platform (super-admin) -----------------------------------------
+  getPlatformOverview: (): Promise<PlatformOverview> => {
+    const planPrice = (planId: string) => plans.find((p) => p.id === planId)?.priceCents ?? 0;
+    const health = { live: 0, mock: 0, off: 0 };
+    for (const i of integrationsCatalogue) health[i.status]++;
+    return ok({
+      orgCount: platformOrgs.length,
+      activeOrgs: platformOrgs.filter((o) => o.subscriptionStatus === "active").length,
+      trialingOrgs: platformOrgs.filter((o) => o.subscriptionStatus === "trialing").length,
+      suspendedOrgs: platformOrgs.filter((o) => o.suspended).length,
+      totalMembers: platformOrgs.reduce((s, o) => s + o.members, 0),
+      sessions7d: platformOrgs.reduce((s, o) => s + o.sessions7d, 0),
+      aiSpendCents: platformOrgs.reduce((s, o) => s + o.aiSpendCents, 0),
+      mrrCents: platformOrgs
+        .filter((o) => o.subscriptionStatus === "active")
+        .reduce((s, o) => s + planPrice(o.planId), 0),
+      integrationHealth: health,
+    });
+  },
+
+  listPlatformOrgs: (): Promise<PlatformOrgRow[]> =>
+    ok(
+      platformOrgs.map((org) => {
+        const plan = plans.find((p) => p.id === org.planId);
+        return { org, planName: plan?.name ?? "—", planPriceCents: plan?.priceCents ?? 0 };
+      }),
+    ),
+
+  listPlans: (): Promise<PlanWithUsage[]> =>
+    ok(
+      plans.map((plan) => {
+        const subs = platformOrgs.filter((o) => o.planId === plan.id && o.subscriptionStatus === "active");
+        return { plan, subscribers: subs.length, mrrCents: subs.length * plan.priceCents };
+      }),
+    ),
+
+  getAiRail: () => ok(aiRailConfig),
+  listIntegrations: () => ok(integrationsCatalogue),
+  listPlatformAudit: () => ok([...platformAuditEvents].sort((a, b) => b.at.localeCompare(a.at))),
 };
 
 /* ---- The grant-indicator engine (actuals auto-computed, never typed) -- */

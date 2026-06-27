@@ -37,6 +37,9 @@ change**. See `ROADMAP.md`.
 - ✅ **Phase 5.5 — Funder & grant module + funder portal.** The grant-indicator engine (actuals
   auto-computed from the clinical work, paced vs the period, on-track/at-risk/behind), narrative updates,
   and a scoped, k-anon, read-only **funder portal** (`/funder`) — a funder reaches only their own grant.
+- ✅ **Phase 6 — Super-admin console (`/admin`).** Orgs (suspend/impersonate-audited), **editable pricing
+  plans + entitlements + MRR**, the platform AI rail (with the POPIA s.72 gate on "live"), the
+  integrations catalogue, and the platform audit ledger with CSV export. **All five roles complete.**
 
 ## Getting started
 

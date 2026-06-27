@@ -299,6 +299,55 @@ export const invoices: Record<string, import("@/lib/mock/types").Invoice[]> = {
   ],
 };
 
+/* ---- Platform (super-admin) ------------------------------------------ */
+
+export const plans: import("@/lib/mock/types").Plan[] = [
+  { id: "p_community", name: "Community", tagline: "For NGOs, faith-based & community services", priceCents: 65000, seats: 8, aiTokens: 50000, videoMinutes: 300, messaging: true, rooms: 5, ngo: true },
+  { id: "p_practice", name: "Practice", tagline: "For a growing private practice", priceCents: 120000, seats: 5, aiTokens: 0, videoMinutes: 0, messaging: false, rooms: 3 },
+  { id: "p_programme", name: "Programme", tagline: "For multi-counsellor programmes & EAPs", priceCents: 350000, seats: 15, aiTokens: 100000, videoMinutes: 600, messaging: true, rooms: 10, popular: true },
+  { id: "p_enterprise", name: "Enterprise", tagline: "For large EAPs & provider networks", priceCents: 750000, seats: null, aiTokens: 500000, videoMinutes: 2000, messaging: true, rooms: null },
+];
+
+export const platformOrgs: import("@/lib/mock/types").PlatformOrg[] = [
+  { id: "org_masizakhe", name: "Masizakhe Counselling", province: "Gauteng", planId: "p_programme", subscriptionStatus: "active", members: 8, sessions7d: 42, aiSpendCents: 18500, createdAt: "2024-02-01", suspended: false },
+  { id: "org_thrive", name: "Thrive EAP", province: "Western Cape", planId: "p_enterprise", subscriptionStatus: "active", members: 22, sessions7d: 96, aiSpendCents: 124300, createdAt: "2023-11-15", suspended: false },
+  { id: "org_ubuntu", name: "Ubuntu Community Care", province: "KwaZulu-Natal", planId: "p_community", subscriptionStatus: "trialing", members: 6, sessions7d: 18, aiSpendCents: 4200, createdAt: "2026-06-10", suspended: false },
+  { id: "org_mindwell", name: "MindWell Wellness", province: "Gauteng", planId: "p_practice", subscriptionStatus: "past_due", members: 4, sessions7d: 11, aiSpendCents: 0, createdAt: "2025-03-20", suspended: false },
+  { id: "org_khula", name: "Khula Trust", province: "Eastern Cape", planId: "p_community", subscriptionStatus: "cancelled", members: 3, sessions7d: 0, aiSpendCents: 0, createdAt: "2024-09-01", suspended: true },
+];
+
+export const aiRailConfig: import("@/lib/mock/types").AiRailConfig = {
+  provider: "anthropic",
+  model: "claude-sonnet-4-6",
+  maxTokens: 4000,
+  status: "mock",
+  s72Acknowledged: false,
+  monthlySpendCents: 147000,
+  defaultOrgCapCents: 200000,
+};
+
+export const integrationsCatalogue: import("@/lib/mock/types").IntegrationCatalogItem[] = [
+  { key: "whatsapp", name: "WhatsApp (Meta Cloud API)", category: "messaging", status: "mock", description: "Booking, reminder, and follow-up messages — WhatsApp-first." },
+  { key: "sms", name: "SMS (Clickatell)", category: "messaging", status: "off", description: "SMS fallback for clients without WhatsApp." },
+  { key: "livekit", name: "LiveKit video", category: "video", status: "mock", description: "Self-hosted, in-region video rooms for online sessions." },
+  { key: "stitch", name: "Stitch", category: "payments", status: "mock", description: "PayShap & pay-by-bank — orgs connect their own account." },
+  { key: "ozow", name: "Ozow", category: "payments", status: "off", description: "PayShap & instant EFT." },
+  { key: "yoco", name: "Yoco", category: "payments", status: "mock", description: "Card payments." },
+  { key: "paystack", name: "Paystack", category: "payments", status: "off", description: "Card payments." },
+  { key: "platform_psp", name: "Phila platform billing", category: "platform", status: "live", description: "Phila's own PSP — how orgs pay their subscription." },
+];
+
+export const platformAuditEvents: import("@/lib/mock/types").PlatformAuditEvent[] = [
+  { id: "pa1", at: "2026-06-27T09:14:00+02:00", action: "impersonate.start", actor: "Sizwe Ndlovu", orgName: "MindWell Wellness", target: "org_mindwell", reason: "support_ticket_4821" },
+  { id: "pa2", at: "2026-06-27T08:52:00+02:00", action: "note.read_hub_override", actor: "Thandeka Mbeki", orgName: "Masizakhe Counselling", target: "appointment:appt_couns_nomsa_1/note", reason: "hub_override" },
+  { id: "pa3", at: "2026-06-26T16:30:00+02:00", action: "pii.export", actor: "Bongani Nkosi", orgName: "Thrive EAP", target: "funder_report.pdf", reason: "funder_export_k_anon" },
+  { id: "pa4", at: "2026-06-26T14:05:00+02:00", action: "consent.change", actor: "Lerato Mahlangu", orgName: "Masizakhe Counselling", target: "consent:funder_reporting", reason: "client_revoked" },
+  { id: "pa5", at: "2026-06-26T11:20:00+02:00", action: "admin.action", actor: "Sizwe Ndlovu", orgName: "Ubuntu Community Care", target: "plan:p_community", reason: "trial_started" },
+  { id: "pa6", at: "2026-06-25T15:48:00+02:00", action: "demographics.read", actor: "Thandeka Mbeki", orgName: "Masizakhe Counselling", target: "org/reporting", reason: "demographic_filter" },
+  { id: "pa7", at: "2026-06-25T10:02:00+02:00", action: "funder.view", actor: "Palesa Mokoena", orgName: "Masizakhe Counselling", target: "grant:g_dsd", reason: "view_grant_progress" },
+  { id: "pa8", at: "2026-06-24T17:33:00+02:00", action: "admin.action", actor: "Sizwe Ndlovu", orgName: "Khula Trust", target: "org_khula", reason: "suspend_nonpayment" },
+];
+
 /* ---- Funders & grants (M&E) ------------------------------------------ */
 
 export const funders: import("@/lib/mock/types").Funder[] = [

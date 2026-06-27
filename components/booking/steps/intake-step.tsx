@@ -29,7 +29,7 @@ export function IntakeStep({
           const id = `intake-${field.id}`;
           return (
             <div key={field.id} className="space-y-1.5">
-              <Label htmlFor={id} required={field.required}>
+              <Label htmlFor={id} required={field.required} optional={!field.required}>
                 {field.label}
               </Label>
 

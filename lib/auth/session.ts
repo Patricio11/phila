@@ -111,6 +111,21 @@ export async function getFunderPrincipal(): Promise<Principal> {
   return MOCK_FUNDER;
 }
 
+/** Part-A demo platform operator (super-admin). 2FA enforced (Phase 9). */
+const MOCK_SUPER_ADMIN: Principal = {
+  userId: "user_operator",
+  name: "Sizwe Ndlovu",
+  email: "ops@philasa.com",
+  platformRole: "super_admin",
+  memberships: [],
+  activeOrgId: null,
+  twoFactorEnabled: true,
+};
+
+export async function getSuperAdminPrincipal(): Promise<Principal> {
+  return MOCK_SUPER_ADMIN;
+}
+
 export function activeMembership(principal: Principal): OrgMembership | null {
   return (
     principal.memberships.find((m) => m.orgId === principal.activeOrgId) ?? null

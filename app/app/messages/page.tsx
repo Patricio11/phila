@@ -14,12 +14,18 @@ export default async function MessagesPage() {
   const me = counsellors.find((c) => c.userId === principal.userId);
   if (!me) notFound();
 
-  const conversations = await provider.listConversations(me.id);
+  const [conversations, allClients] = await Promise.all([
+    provider.listConversations(me.id),
+    provider.listClients(membership.orgId),
+  ]);
+  const clients = allClients
+    .filter((c) => c.primaryCounsellorId === me.id)
+    .map((c) => ({ id: c.id, name: c.name }));
 
   return (
     <div className="rise space-y-5">
       <PageHead title="Messages" summary="Your conversations with clients — WhatsApp-first when it's live." />
-      <MessagesView conversations={conversations} />
+      <MessagesView conversations={conversations} clients={clients} />
     </div>
   );
 }

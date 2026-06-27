@@ -210,6 +210,7 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 ### Task 5.3: Intake + invoicing
 - [x] `/hub/intake`: send intake forms to a client / a programme cohort; track completion.
 - [x] `/hub/invoicing`: create/send invoices (A4 builder); see paid / unpaid / cancelled (mock; PayShap in Phase 15).
+- [x] **Intake + invoicing actions (2026-06-27):** intake gains a status summary (completed · awaiting · not-sent) and the **Send/Resend** action flips the row live. Invoicing gains an **overdue** total (unpaid past due, shown in red on the due date) alongside outstanding/paid, plus per-row **Mark paid** (live reconcile) and **Remind** — both validated + audited (`markInvoicePaid` / `sendInvoiceReminder`); honest that no message fires until messaging is connected.
 
 ### Task 5.4: Reporting (the differentiator)
 - [x] `/hub/reporting`: filter clients by province / gender / age band / employment status / service; outcome trends (`<OutcomeTrend>` aggregate); **consent-gated**; **k-anon floor** on any export (`applyKAnon`); one-click funder report (mock PDF/CSV). Coverage caption everywhere ("412 of 530 clients have demographics").

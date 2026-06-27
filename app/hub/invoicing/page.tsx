@@ -33,7 +33,7 @@ export default async function HubInvoicingPage() {
         title="Invoicing"
         summary="Create, send, and track invoices. Payments settle to your own gateway once connected."
       />
-      <InvoiceBoard rows={rows} />
+      <InvoiceBoard rows={rows} nowISO={now} />
     </div>
   );
 }

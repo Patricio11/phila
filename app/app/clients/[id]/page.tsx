@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, FileText, Mail, NotebookPen, Phone } from "lucide-react";
+import { ArrowLeft, CalendarPlus, CheckCircle2, FileText, Mail, MessageSquare, NotebookPen, Phone, Target, TrendingDown, TrendingUp } from "lucide-react";
 import { requireOrg } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
@@ -10,6 +10,7 @@ import { AGE_BAND_LABELS, EMPLOYMENT_LABELS, GENDER_LABELS, POPULATION_GROUP_LAB
 import { Card, CardHead } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Tag } from "@/components/ui/tag";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SessionTimeline } from "@/components/client/session-timeline";
 import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";
@@ -18,6 +19,15 @@ import { StatusDot } from "@/components/ui/status-dot";
 import { BlockedState } from "@/components/ui/blocked-state";
 
 export const dynamic = "force-dynamic";
+
+function timeInCare(createdAt: string, now: string): string {
+  const months = Math.round((new Date(now).getTime() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24 * 30.4));
+  if (months < 1) return "< 1 month";
+  if (months < 12) return `${months} month${months === 1 ? "" : "s"}`;
+  const y = Math.floor(months / 12);
+  const m = months % 12;
+  return m === 0 ? `${y} year${y === 1 ? "" : "s"}` : `${y}y ${m}m`;
+}
 
 export default async function DossierPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -37,7 +47,7 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
     reason: "clinical_care",
   });
 
-  const { client, counsellor, consents, demographics, sessions, outcomes, documents } = dossier;
+  const { client, counsellor, consents, demographics, sessions, outcomes, documents, carePlan } = dossier;
   const nowMs = new Date(now).getTime();
   const nextScheduled = sessions
     .filter((s) => new Date(s.startsAt).getTime() > nowMs && s.state === "scheduled")
@@ -51,6 +61,15 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
       label: new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "short" }).format(new Date(o.takenAt)),
       value: o.score,
     }));
+
+  // At-a-glance clinical metrics — attendance never counts soft-deleted records.
+  const attended = sessions.filter((s) => s.state === "completed" || s.state === "discharged").length;
+  const noShow = sessions.filter((s) => s.state === "no_show").length;
+  const attendanceRate = attended + noShow > 0 ? Math.round((attended / (attended + noShow)) * 100) : null;
+  const firstScore = points[0]?.value ?? null;
+  const lastScore = points[points.length - 1]?.value ?? null;
+  const delta = firstScore !== null && lastScore !== null ? lastScore - firstScore : null;
+  const goalsDone = carePlan ? carePlan.tasks.filter((t) => t.done).length : 0;
 
   return (
     <div className="rise space-y-6">
@@ -79,20 +98,83 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
         </div>
-        {openSession && (
-          <Button asChild>
-            <Link href={`/app/sessions/${openSession.id}`}>
-              <NotebookPen className="size-4" strokeWidth={2} aria-hidden /> Open session
+        <div className="flex items-center gap-2">
+          <Button asChild variant="ghost">
+            <Link href="/app/messages">
+              <MessageSquare className="size-4" strokeWidth={2} aria-hidden /> Message
             </Link>
           </Button>
-        )}
+          <Button asChild variant="ghost">
+            <Link href="/app/calendar">
+              <CalendarPlus className="size-4" strokeWidth={2} aria-hidden /> Book
+            </Link>
+          </Button>
+          {openSession && (
+            <Button asChild>
+              <Link href={`/app/sessions/${openSession.id}`}>
+                <NotebookPen className="size-4" strokeWidth={2} aria-hidden /> Open session
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       {client.riskFlag && <SafeguardingPanel clientName={client.name} />}
 
+      {/* At a glance */}
+      <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+        <Stat value={String(attended)} label={`Session${attended === 1 ? "" : "s"} attended`} />
+        <Stat value={attendanceRate === null ? "—" : `${attendanceRate}%`} label={noShow > 0 ? `Attendance · ${noShow} no-show${noShow === 1 ? "" : "s"}` : "Attendance"} />
+        <Stat value={timeInCare(client.createdAt, now)} label="In care" />
+        <Stat
+          value={lastScore === null ? "—" : String(lastScore)}
+          label={outcomes[0]?.tool ?? "Outcome"}
+          trend={
+            delta === null || delta === 0 ? null : delta < 0
+              ? { icon: TrendingDown, text: `${Math.abs(delta)} pts · improving`, tone: "accent" as const }
+              : { icon: TrendingUp, text: `${delta} pts · watch`, tone: "warn" as const }
+          }
+        />
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left */}
         <div className="space-y-6 lg:col-span-2">
+          {/* Care plan */}
+          <Card>
+            <CardHead
+              title="Care plan"
+              action={carePlan ? <Tag tone="accent">{goalsDone}/{carePlan.tasks.length} goals on track</Tag> : undefined}
+            />
+            <div className="px-[17px] pb-[17px]">
+              {carePlan ? (
+                <div className="space-y-4">
+                  <p className="text-[13.5px] leading-relaxed text-text-2">{carePlan.summary}</p>
+                  <div>
+                    <div className="mb-2 flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-text-3">
+                      <Target className="size-3.5" strokeWidth={2} aria-hidden /> Goals
+                    </div>
+                    <ul className="space-y-1.5">
+                      {carePlan.tasks.map((t) => (
+                        <li key={t.id} className="flex items-start gap-2 text-[13px]">
+                          <CheckCircle2 className={t.done ? "mt-0.5 size-4 shrink-0 text-accent" : "mt-0.5 size-4 shrink-0 text-text-3/40"} strokeWidth={2} aria-hidden />
+                          <span className={t.done ? "text-text-3 line-through" : "text-text-2"}>{t.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  {carePlan.nextStep && (
+                    <div className="rounded-control border border-accent/20 bg-accent-soft/40 p-3 text-[12.5px] text-text-2">
+                      <span className="font-semibold text-text">Next step · </span>{carePlan.nextStep}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <EmptyState icon={Target} title="No care plan yet" body="Set a few shared goals and a next step — the client can see this in their portal once shared." />
+              )}
+            </div>
+          </Card>
+
           <Card>
             <CardHead title="Outcome trend" />
             <div className="px-[17px] pb-[17px]">
@@ -196,6 +278,20 @@ function Field({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between gap-3">
       <dt className="text-text-3">{label}</dt>
       <dd className="font-medium text-text">{value}</dd>
+    </div>
+  );
+}
+
+function Stat({ value, label, trend }: { value: string; label: string; trend?: { icon: typeof TrendingDown; text: string; tone: "accent" | "warn" } | null }) {
+  return (
+    <div className="rounded-card border border-border bg-surface p-4 shadow-sm">
+      <div className="text-[22px] font-bold tabular-nums text-text">{value}</div>
+      <div className="truncate text-[12px] text-text-2">{label}</div>
+      {trend && (
+        <div className={`mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold ${trend.tone === "accent" ? "text-accent" : "text-warn"}`}>
+          <trend.icon className="size-3.5" strokeWidth={2.2} aria-hidden /> {trend.text}
+        </div>
+      )}
     </div>
   );
 }

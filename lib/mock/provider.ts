@@ -462,6 +462,7 @@ export const mockProvider: DataProvider = {
         .sort((a, b) => b.startsAt.localeCompare(a.startsAt)),
       outcomes: materialiseOutcomes(clientId, now),
       documents: clientDocuments[clientId] ?? [],
+      carePlan: carePlans[clientId] ?? null,
     });
   },
 

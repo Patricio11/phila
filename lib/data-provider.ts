@@ -96,6 +96,7 @@ export interface ClientDossier {
   sessions: AppointmentView[];
   outcomes: OutcomeMeasure[];
   documents: ClientDocument[];
+  carePlan: CarePlan | null;
 }
 
 /** Everything the session + note editor needs. */

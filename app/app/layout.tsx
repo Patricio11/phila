@@ -28,8 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <AppShell
         navKey="counsellor"
         orgName={membership.orgName}
-        user={{ name: principal.name, roleLabel }}
-        hasNotifications
+        user={{ name: principal.name, email: principal.email, roleLabel }}
       >
         {children}
       </AppShell>

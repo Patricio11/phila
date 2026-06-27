@@ -49,7 +49,11 @@ export default function RootLayout({
       <head>
         <ThemeScript />
       </head>
-      <body className="flex min-h-full flex-col bg-bg text-text">
+      {/* suppressHydrationWarning: some browser extensions inject attributes onto
+          <body> (e.g. bis_register, __processed_*) before React hydrates. That's
+          outside our control; this suppresses only the body element's own attribute
+          diff (one level deep), not the tree. */}
+      <body className="flex min-h-full flex-col bg-bg text-text" suppressHydrationWarning>
         {children}
         <RegisterSW />
       </body>

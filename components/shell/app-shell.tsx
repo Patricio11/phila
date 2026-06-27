@@ -44,13 +44,13 @@ export function AppShell({
   navKey,
   orgName,
   user,
-  hasNotifications,
+  settingsHref,
   children,
 }: {
   navKey: NavKey;
   orgName: string;
-  user: { name: string; roleLabel: string };
-  hasNotifications?: boolean;
+  user: { name: string; email: string; roleLabel: string };
+  settingsHref?: string;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -129,7 +129,8 @@ export function AppShell({
           title={title}
           date={today}
           user={user}
-          hasNotifications={hasNotifications}
+          sections={sections}
+          settingsHref={settingsHref}
           onOpenMobileNav={() => setMobileOpen(true)}
         />
         <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto outline-none">

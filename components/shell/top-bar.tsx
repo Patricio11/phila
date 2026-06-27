@@ -1,29 +1,47 @@
 "use client";
 
-import { Bell, Menu, Search } from "lucide-react";
-import { Avatar } from "@/components/ui/avatar";
+import { useEffect, useState } from "react";
+import { Menu, Search } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { cn } from "@/lib/utils";
+import { CommandPalette } from "@/components/shell/command-palette";
+import { NotificationsMenu } from "@/components/shell/notifications-menu";
+import { AccountMenu } from "@/components/shell/account-menu";
+import type { NavSection } from "@/components/shell/nav-config";
 
 /**
- * The top bar (DESIGN.md §5.2). 64px, sticky, translucent with a backdrop blur
- * so content scrolls cleanly under it. Page title + date on the left; search
- * pushed right; theme toggle; notifications (amber dot when there's something);
- * the account chip. The menu button reveals the sidebar drawer on phones.
+ * The top bar (DESIGN.md §5.2). 64px, sticky, translucent. The search opens the
+ * ⌘K command palette; the bell opens notifications; the account chip opens the
+ * account menu — all real and keyboard-reachable.
  */
 export function TopBar({
   title,
   date,
   user,
-  hasNotifications = false,
+  sections,
+  settingsHref,
   onOpenMobileNav,
 }: {
   title: string;
   date: string;
-  user: { name: string; roleLabel: string };
-  hasNotifications?: boolean;
+  user: { name: string; email: string; roleLabel: string };
+  sections: NavSection[];
+  settingsHref?: string;
   onOpenMobileNav: () => void;
 }) {
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // ⌘K / Ctrl-K opens the palette anywhere in the app.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-surface/80 px-4 backdrop-blur-md sm:px-6">
       <button
@@ -41,45 +59,33 @@ export function TopBar({
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
-        {/* Search — ⌘K (wired in a later phase). */}
         <button
           type="button"
-          className="hidden h-9 items-center gap-2 rounded-control border border-border bg-surface-2 px-2.5 text-[13px] text-text-3 transition-colors hover:border-border-strong sm:inline-flex"
-          aria-label="Search"
+          onClick={() => setSearchOpen(true)}
+          className="hidden h-9 items-center gap-2 rounded-control border border-border bg-surface-2 px-2.5 text-[13px] text-text-3 transition-colors hover:border-border-strong hover:text-text-2 sm:inline-flex"
+          aria-label="Search (Command or Control K)"
         >
           <Search className="size-4" strokeWidth={1.9} aria-hidden />
           <span className="pr-6">Search</span>
-          <kbd className="rounded bg-surface px-1.5 py-0.5 font-sans text-[11px] text-text-3 shadow-sm">
-            ⌘K
-          </kbd>
+          <kbd className="rounded bg-surface px-1.5 py-0.5 font-sans text-[11px] text-text-3 shadow-sm">⌘K</kbd>
+        </button>
+
+        {/* Mobile search icon */}
+        <button
+          type="button"
+          onClick={() => setSearchOpen(true)}
+          className="inline-flex size-9 items-center justify-center rounded-control text-text-2 transition-colors hover:bg-surface-hover hover:text-text sm:hidden"
+          aria-label="Search"
+        >
+          <Search className="size-[18px]" strokeWidth={1.9} aria-hidden />
         </button>
 
         <ThemeToggle />
-
-        <button
-          type="button"
-          className="relative inline-flex size-9 items-center justify-center rounded-control text-text-2 transition-colors hover:bg-surface-hover hover:text-text"
-          aria-label={hasNotifications ? "Notifications — you have new items" : "Notifications"}
-        >
-          <Bell className="size-[18px]" strokeWidth={1.9} aria-hidden />
-          {hasNotifications && (
-            <span
-              className={cn(
-                "absolute right-2 top-2 size-2 rounded-full bg-warn ring-2 ring-surface",
-              )}
-              aria-hidden
-            />
-          )}
-        </button>
-
-        <div className="ml-1 flex items-center gap-2 rounded-pill border border-border bg-surface py-1 pl-1 pr-2.5">
-          <Avatar name={user.name} size="sm" />
-          <span className="hidden min-w-0 flex-col leading-tight sm:flex">
-            <span className="truncate text-[12.5px] font-medium text-text">{user.name}</span>
-            <span className="truncate text-[11px] text-text-3">{user.roleLabel}</span>
-          </span>
-        </div>
+        <NotificationsMenu />
+        <AccountMenu name={user.name} email={user.email} roleLabel={user.roleLabel} settingsHref={settingsHref} />
       </div>
+
+      <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} sections={sections} />
     </header>
   );
 }

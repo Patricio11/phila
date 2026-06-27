@@ -16,7 +16,7 @@ export default async function FunderLayout({ children }: { children: React.React
       <AppShell
         navKey="funder"
         orgName="Funder portal"
-        user={{ name: principal.name, roleLabel: "Funder · read-only" }}
+        user={{ name: principal.name, email: principal.email, roleLabel: "Funder · read-only" }}
       >
         <div className="mb-5 flex items-start gap-2.5 rounded-control border border-accent/25 bg-accent-soft/40 p-3.5">
           <ShieldCheck className="mt-0.5 size-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />

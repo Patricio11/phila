@@ -16,8 +16,8 @@ export default async function HubLayout({ children }: { children: React.ReactNod
       <AppShell
         navKey="hub"
         orgName={membership.orgName}
-        user={{ name: principal.name, roleLabel: "Org admin" }}
-        hasNotifications
+        user={{ name: principal.name, email: principal.email, roleLabel: "Org admin" }}
+        settingsHref="/hub/settings"
       >
         {children}
       </AppShell>

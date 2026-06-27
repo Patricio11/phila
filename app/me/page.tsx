@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarPlus, ShieldCheck } from "lucide-react";
+import { CalendarPlus, Heart, Phone, ShieldCheck } from "lucide-react";
 import { requireClient } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
@@ -142,6 +142,20 @@ export default async function MeHomePage() {
               </Link>
             </Card>
           )}
+
+          {/* Always reachable — calm, never alarming (Safeguarding Rule). */}
+          <Card className="border-accent/20 bg-accent-soft/40 p-4">
+            <div className="flex items-center gap-2 text-[13.5px] font-[640] text-text">
+              <Heart className="size-4 text-accent" strokeWidth={2} aria-hidden /> If you need to talk now
+            </div>
+            <p className="mt-1.5 text-[12.5px] leading-relaxed text-text-2">
+              You don&apos;t have to wait for your next session. SADAG is free and open any time, day or night.
+            </p>
+            <a href="tel:0800567567" className="mt-3 inline-flex items-center gap-2 rounded-control bg-surface px-3 py-2 text-[13px] font-semibold text-accent shadow-sm transition-colors hover:bg-surface-hover">
+              <Phone className="size-4" strokeWidth={2.2} aria-hidden /> SADAG · 0800 567 567
+            </a>
+            <p className="mt-2 text-[11px] text-text-3">In an emergency, call 10111 or go to your nearest hospital.</p>
+          </Card>
         </div>
       </div>
     </div>

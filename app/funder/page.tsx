@@ -42,6 +42,13 @@ export default async function FunderHomePage() {
           <EmptyState icon={Target} title="No grants yet" body="When an organisation invites you to a grant, it appears here." />
         </Card>
       ) : (
+        <>
+        <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+          <Stat value={rands(grants.reduce((s, g) => s + g.grant.amountCents, 0))} label="Committed" />
+          <Stat value={String(grants.length)} label={`Grant${grants.length === 1 ? "" : "s"}`} />
+          <Stat value={String(grants.filter((g) => g.grant.status === "active").length)} label="Active" />
+          <Stat value={String(new Set(grants.map((g) => g.orgName)).size)} label="Organisations" />
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
           {grants.map(({ grant, orgName }) => (
             <Link
@@ -66,7 +73,17 @@ export default async function FunderHomePage() {
             </Link>
           ))}
         </div>
+        </>
       )}
+    </div>
+  );
+}
+
+function Stat({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="rounded-card border border-border bg-surface p-4 shadow-sm">
+      <div className="truncate text-[20px] font-bold tabular-nums text-text">{value}</div>
+      <div className="text-[12px] text-text-2">{label}</div>
     </div>
   );
 }

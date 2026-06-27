@@ -141,6 +141,7 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 ### Task 3.1: `/me` overview
 - [x] Upcoming session card (with **Join** when online + link-ready, mock); today/next nudge.
 - [x] The client's own **session history** (a clean timeline); previous sessions; recurring series.
+- [x] **Always-reachable crisis support (2026-06-27):** a calm, never-alarming "If you need to talk now" card — **SADAG 0800 567 567** (free, any time, `tel:` link) plus the 10111 / nearest-hospital line. A counselling portal should never make a person in distress hunt for help.
 
 ### Task 3.2: Records + control
 - [x] Documents (mock uploads), invoices (mock, "pay" stub), profile editor.
@@ -243,6 +244,7 @@ auto-rolls up to them, and a scoped, k-anon, read-only **funder portal**. The gr
 
 ### Task 5.5.5: The Funder portal — `/funder` (role `funder`)
 - [x] `<FunderPortalShell>`: a funder logs in and sees **only their grant(s)** — live progress vs target, k-anon breakdowns, outcome trends, session counts, the org's narrative updates, and downloadable period reports. Read-only. Nothing identifiable. Every view audited. The org controls exactly what each funder sees.
+- [x] **Portfolio summary (2026-06-27):** the funder home now opens with an at-a-glance strip — total **committed**, number of grants, **active** count, and **organisations** funded — computed only from the funder's own scoped grants, before the per-grant cards.
 
 ### Task 5.5.6: Invite a funder (mock)
 - [x] Org invites a funder contact (email); scoped to specific grant(s); the invite + scope is mock here (real flow in Phase 9).

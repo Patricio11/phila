@@ -7,19 +7,10 @@ import { Card, CardHead } from "@/components/ui/card";
 import { IntegrationToggles } from "@/components/hub/integration-toggles";
 import { PaymentConnectionCard } from "@/components/hub/payment-connection-card";
 import { PublicPageEditor } from "@/components/hub/public-page-editor";
+import { BusinessHoursEditor } from "@/components/hub/business-hours-editor";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Settings" };
-
-const DAYS: { n: 1 | 2 | 3 | 4 | 5 | 6 | 7; label: string }[] = [
-  { n: 1, label: "Monday" },
-  { n: 2, label: "Tuesday" },
-  { n: 3, label: "Wednesday" },
-  { n: 4, label: "Thursday" },
-  { n: 5, label: "Friday" },
-  { n: 6, label: "Saturday" },
-  { n: 7, label: "Sunday" },
-];
 
 export default async function HubSettingsPage() {
   const { membership } = await requireHub();
@@ -46,25 +37,7 @@ export default async function HubSettingsPage() {
               <Stat label="Buffer between sessions" value={`${org.scheduling.bufferMin} min`} />
             </div>
             <div>
-              <h3 className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-text-3">Business hours</h3>
-              <ul className="space-y-1">
-                {DAYS.map(({ n, label }) => {
-                  const h = bh[n];
-                  return (
-                    <li key={n} className="flex items-center justify-between text-[13px]">
-                      <span className="text-text-2">{label}</span>
-                      {h ? (
-                        <span className="tabular-nums text-text">
-                          {h.start}–{h.end}
-                          {h.breaks?.length ? <span className="text-text-3"> · break {h.breaks[0]!.start}–{h.breaks[0]!.end}</span> : null}
-                        </span>
-                      ) : (
-                        <span className="text-text-3">Closed</span>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
+              <BusinessHoursEditor initial={bh} />
             </div>
           </div>
         </Card>

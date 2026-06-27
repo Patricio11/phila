@@ -8,6 +8,8 @@ import { Input, Label, Textarea, RadioGroup, FieldError } from "@/components/ui/
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { createAppointment } from "@/lib/scheduling/actions";
+import { isoWeekday } from "@/lib/mock/helpers";
+import type { BusinessHours } from "@/lib/mock/types";
 import { cn } from "@/lib/utils";
 
 export interface SchedulingOptions {
@@ -17,7 +19,11 @@ export interface SchedulingOptions {
   counsellors: { id: string; name: string }[];
   rooms: { id: string; name: string }[];
   defaultCounsellorId?: string;
+  /** When present, the booking is validated against the practice's working hours. */
+  businessHours?: BusinessHours;
 }
+
+function hm(t: string): number { return Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)); }
 
 const DURATIONS = [30, 45, 60, 90];
 
@@ -73,8 +79,27 @@ export function CreateAppointmentModal({
     if (!date) e.date = "Pick a date.";
     if (!time) e.time = "Pick a time.";
     if (!isOnline && !roomId) e.room = "Pick a room.";
+
+    // Working-hours guard — an in-person or online booking can't fall on a
+    // closed day or outside the practice's hours (Phase 11 enforces server-side).
+    const bh = options.businessHours;
+    if (bh && date) {
+      const day = bh[isoWeekday(date) as keyof BusinessHours];
+      if (!day) {
+        e.date = "The practice is closed that day — pick a working day.";
+      } else if (time) {
+        const t = hm(time);
+        if (t < hm(day.start) || t >= hm(day.end)) {
+          e.time = `Outside working hours (${day.start}–${day.end}).`;
+        } else if (t + durationMin > hm(day.end)) {
+          e.time = `Not enough time before close (${day.end}).`;
+        } else if (day.breaks?.some((b) => t < hm(b.end) && t + durationMin > hm(b.start))) {
+          e.time = "That overlaps a break.";
+        }
+      }
+    }
     return e;
-  }, [clientId, serviceId, counsellorId, date, time, isOnline, roomId]);
+  }, [clientId, serviceId, counsellorId, date, time, isOnline, roomId, durationMin, options.businessHours]);
 
   const submit = () => {
     setAttempted(true);

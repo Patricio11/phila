@@ -32,6 +32,7 @@ export default async function CalendarPage() {
     services: services.map((s) => ({ id: s.id, name: s.name, durationMin: s.durationMin })),
     counsellors: counsellors.map((c) => ({ id: c.id, name: c.name })),
     rooms: rooms.map((r) => ({ id: r.id, name: r.name })),
+    businessHours: org.scheduling.businessHours,
   };
 
   return (

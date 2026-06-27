@@ -30,10 +30,11 @@ export default async function DashboardPage() {
   const dash = await provider.getCounsellorDashboard(me.id, now);
   if (!dash) notFound();
 
-  const [allClients, services, rooms] = await Promise.all([
+  const [allClients, services, rooms, org] = await Promise.all([
     provider.listClients(membership.orgId),
     provider.listServices(membership.orgId),
     provider.listRooms(membership.orgId),
+    provider.getOrg(membership.orgId),
   ]);
   const scheduling = {
     orgId: membership.orgId,
@@ -42,6 +43,7 @@ export default async function DashboardPage() {
     services: services.map((s) => ({ id: s.id, name: s.name, durationMin: s.durationMin })),
     counsellors: counsellors.map((c) => ({ id: c.id, name: c.name })),
     rooms: rooms.map((r) => ({ id: r.id, name: r.name })),
+    businessHours: org?.scheduling.businessHours,
   };
 
   // Reading one's own caseload is permitted  and still recorded (Protected & Audited Rule).

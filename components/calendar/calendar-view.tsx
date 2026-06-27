@@ -34,6 +34,7 @@ function addMonths(date: string, n: number): string { const d = parse(date); d.s
 function startOfWeek(date: string): string { return addDays(date, -(isoWeekday(date) - 1)); }
 function startOfMonth(date: string): string { return `${date.slice(0, 7)}-01`; }
 function minutesOf(iso: string): number { return Number(iso.slice(11, 13)) * 60 + Number(iso.slice(14, 16)); }
+function hm(hhmm: string): number { return Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5)); }
 function hhmm(iso: string): string { return iso.slice(11, 16); }
 function fmt(date: string, opts: Intl.DateTimeFormatOptions): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "UTC", ...opts }).format(parse(date));
@@ -139,7 +140,7 @@ export function CalendarView({
       </div>
 
       {view === "month" ? (
-        <MonthView anchor={anchor} today={today} events={events} onDay={(d) => { setAnchor(d); setView("day"); }} onCreate={(d) => openCreate(d)} onEvent={(e) => setDetail(e)} />
+        <MonthView anchor={anchor} today={today} events={events} businessHours={businessHours} onDay={(d) => { setAnchor(d); setView("day"); }} onCreate={(d) => openCreate(d)} onEvent={(e) => setDetail(e)} />
       ) : view === "agenda" ? (
         <AgendaView anchor={anchor} today={today} events={events} onEvent={(e) => setDetail(e)} />
       ) : (
@@ -204,9 +205,14 @@ function TimeGrid({ dates, today, nowMin, businessHours, events, onCreate, onEve
   const gridH = (END_HOUR - START_HOUR) * HOUR_PX;
 
   const clickToTime = (e: React.MouseEvent<HTMLDivElement>, date: string) => {
+    const bh = businessHours[isoWeekday(date)];
+    if (!bh) return; // closed day — not bookable
     const rect = e.currentTarget.getBoundingClientRect();
     const y = e.clientY - rect.top;
     const mins = START_HOUR * 60 + Math.floor((y / HOUR_PX) * 60 / 30) * 30;
+    // Block anything outside the open window or inside a break.
+    if (mins < hm(bh.start) || mins >= hm(bh.end)) return;
+    if (bh.breaks?.some((b) => mins >= hm(b.start) && mins < hm(b.end))) return;
     onCreate(date, `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`);
   };
 
@@ -238,13 +244,18 @@ function TimeGrid({ dates, today, nowMin, businessHours, events, onCreate, onEve
                   <span className={cn("inline-flex size-6 items-center justify-center rounded-full font-semibold tabular-nums", isToday ? "bg-accent text-accent-ink" : "text-text")}>{fmt(date, { day: "numeric" })}</span>
                 </div>
                 {/* Grid body */}
-                <div className="relative" style={{ height: gridH }} onClick={(e) => clickToTime(e, date)}>
+                <div className={cn("relative", bh ? "cursor-pointer" : "cursor-not-allowed")} style={{ height: gridH }} onClick={bh ? (e) => clickToTime(e, date) : undefined}>
                   {/* hour lines + shading */}
                   {hours.map((h) => {
                     const open = bh && h >= Number(bh.start.slice(0, 2)) && h < Number(bh.end.slice(0, 2));
                     const inBreak = bh?.breaks?.some((b) => h >= Number(b.start.slice(0, 2)) && h < Number(b.end.slice(0, 2)));
                     return <div key={h} className={cn("border-b border-border/60", !open && "bg-surface-2/50", inBreak && "bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,var(--color-surface-2)_5px,var(--color-surface-2)_10px)]", isToday && open && "bg-accent-soft/10")} style={{ height: HOUR_PX }} />;
                   })}
+                  {!bh && (
+                    <div className="pointer-events-none absolute inset-0 flex items-start justify-center pt-6">
+                      <span className="rounded-chip bg-surface-2 px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-wide text-text-3">Closed</span>
+                    </div>
+                  )}
                   {/* now line */}
                   {isToday && nowMin >= START_HOUR * 60 && nowMin <= END_HOUR * 60 && (
                     <div className="pointer-events-none absolute inset-x-0 z-20 flex items-center" style={{ top: ((nowMin - START_HOUR * 60) / 60) * HOUR_PX }}>
@@ -302,8 +313,8 @@ function DropLayer({ date, events, onDrop }: { date: string; events: Appointment
 }
 
 /* ---- Month view ------------------------------------------------------- */
-function MonthView({ anchor, today, events, onDay, onCreate, onEvent }: {
-  anchor: string; today: string; events: AppointmentView[]; onDay: (d: string) => void; onCreate: (d: string) => void; onEvent: (e: AppointmentView) => void;
+function MonthView({ anchor, today, events, businessHours, onDay, onCreate, onEvent }: {
+  anchor: string; today: string; events: AppointmentView[]; businessHours: BusinessHours; onDay: (d: string) => void; onCreate: (d: string) => void; onEvent: (e: AppointmentView) => void;
 }) {
   const first = startOfMonth(anchor);
   const gridStart = startOfWeek(first);
@@ -319,12 +330,17 @@ function MonthView({ anchor, today, events, onDay, onCreate, onEvent }: {
         {cells.map((date) => {
           const inMonth = date.slice(0, 7) === month;
           const isToday = date === today;
+          const closed = !businessHours[isoWeekday(date)];
           const dayEvents = events.filter((e) => e.startsAt.startsWith(date)).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
           return (
-            <div key={date} className={cn("group min-h-[104px] border-b border-l border-border p-1.5 [&:nth-child(7n+1)]:border-l-0", !inMonth && "bg-surface-2/40")}>
+            <div key={date} className={cn("group min-h-[104px] border-b border-l border-border p-1.5 [&:nth-child(7n+1)]:border-l-0", !inMonth && "bg-surface-2/40", closed && inMonth && "bg-surface-2/30")}>
               <div className="flex items-center justify-between">
-                <button type="button" onClick={() => onDay(date)} className={cn("inline-flex size-6 items-center justify-center rounded-full text-[12px] font-semibold tabular-nums transition-colors hover:bg-surface-hover", isToday ? "bg-accent text-accent-ink" : inMonth ? "text-text" : "text-text-3")}>{fmt(date, { day: "numeric" })}</button>
-                <button type="button" onClick={() => onCreate(date)} aria-label="New appointment" className="rounded p-0.5 opacity-0 transition-opacity hover:bg-surface-hover focus:opacity-100 group-hover:opacity-100"><Plus className="size-3.5 text-text-3" /></button>
+                <button type="button" onClick={() => onDay(date)} className={cn("inline-flex size-6 items-center justify-center rounded-full text-[12px] font-semibold tabular-nums transition-colors hover:bg-surface-hover", isToday ? "bg-accent text-accent-ink" : inMonth && !closed ? "text-text" : "text-text-3")}>{fmt(date, { day: "numeric" })}</button>
+                {closed ? (
+                  <span className="text-[9.5px] font-medium uppercase tracking-wide text-text-3">Closed</span>
+                ) : (
+                  <button type="button" onClick={() => onCreate(date)} aria-label="New appointment" className="rounded p-0.5 opacity-0 transition-opacity hover:bg-surface-hover focus:opacity-100 group-hover:opacity-100"><Plus className="size-3.5 text-text-3" /></button>
+                )}
               </div>
               <div className="mt-1 space-y-0.5">
                 {dayEvents.slice(0, 3).map((e) => (

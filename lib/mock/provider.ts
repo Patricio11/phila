@@ -34,6 +34,7 @@ import type {
   RoomView,
   TeamMemberDetail,
   TeamMemberView,
+  TeamThread,
 } from "@/lib/data-provider";
 import type {
   Appointment,
@@ -84,6 +85,7 @@ import {
   supervisionTemplates,
   teamMembers,
   teamProfiles,
+  teamThreads,
 } from "@/lib/mock/fixtures";
 import { isConsentActive } from "@/lib/consent";
 import { liveOnly } from "@/lib/retention";
@@ -520,6 +522,26 @@ export const mockProvider: DataProvider = {
           lastAt: c.messages[c.messages.length - 1]?.at ?? "",
           messages: c.messages,
         }))
+        .sort((a, b) => b.lastAt.localeCompare(a.lastAt)),
+    ),
+
+  listTeamThreads: (userId): Promise<TeamThread[]> =>
+    ok(
+      teamThreads
+        .filter((t) => t.participants.includes(userId))
+        .map((t) => {
+          const otherId = t.participants[0] === userId ? t.participants[1] : t.participants[0];
+          const other = teamMembers.find((m) => m.userId === otherId);
+          return {
+            id: t.id,
+            otherUserId: otherId,
+            otherName: other?.name ?? "Team member",
+            otherRole: other?.teamRole ?? "counsellor",
+            unread: t.unreadFor === userId ? 1 : 0,
+            lastAt: t.messages[t.messages.length - 1]?.at ?? "",
+            messages: t.messages.map((m) => ({ id: m.id, from: m.from === userId ? ("me" as const) : ("them" as const), text: m.text, at: m.at })),
+          };
+        })
         .sort((a, b) => b.lastAt.localeCompare(a.lastAt)),
     ),
 

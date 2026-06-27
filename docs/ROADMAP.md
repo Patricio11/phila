@@ -179,8 +179,8 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 ### Task 4.4: Supervision (if `supervisor`)
 - [x] `/app/supervision`: queue of supervisee notes to review + sign-off; provenance is honest.
 
-### Task 4.5: Messages (counsellor)
-- [x] **Two-pane messaging (2026-06-27):** `/app/messages`  a WhatsApp-style thread list + conversation view with optimistic send wired to an audited `sendMessage` action (nothing is delivered until the Phase 12 channel rail turns on  said plainly in the composer). **Thread search**, **start a new conversation** with any caseload client, and **quick-reply templates** (confirm session · check-in · running late) that personalise with the client's name. Day separators, unread badges, mobile back-stack.
+### Task 4.5: Messages — internal team communication
+- [x] **Internal team messaging (2026-06-28):** `/app/messages` (counsellor) and `/hub/messages` (hub) are a two-pane chat for **staff-to-staff** communication — hub ↔ counsellor and counsellor ↔ counsellor (supervision, handovers, scheduling). Optimistic send wired to an audited `sendTeamMessage`; thread search; start a new conversation with any active colleague; day separators, unread badges, mobile back-stack. **This is internal/private to the practice** — client notices (booking, reminder, reschedule/cancel) go out over **SMS/WhatsApp**, configured BYO in Settings → Messaging channels and fired on booking events (Phase 12). Provider: `listTeamThreads(userId)` over a `teamThreads` fixture; the old client-chat view was replaced.
 
 **Done when (mock):** a counsellor walks a full day  see calendar → open session → AI-draft a note → sign → mark completed → the thread updates.
 

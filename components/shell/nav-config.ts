@@ -103,6 +103,7 @@ export const hubNav: NavSection[] = [
     label: "Run the practice",
     items: [
       { label: "Team", href: "/hub/team", icon: Users, ready: true },
+      { label: "Messages", href: "/hub/messages", icon: MessagesSquare, ready: true },
       { label: "Rooms", href: "/hub/rooms", icon: DoorOpen, ready: true },
       { label: "Intake", href: "/hub/intake", icon: ClipboardList, ready: true },
       { label: "Invoicing", href: "/hub/invoicing", icon: ReceiptText, ready: true },

@@ -133,6 +133,24 @@ export interface Conversation {
   messages: ChatMessage[];
 }
 
+export interface TeamMessage {
+  id: string;
+  from: "me" | "them";
+  text: string;
+  at: string;
+}
+
+/** An internal staff-to-staff thread (hub ↔ counsellor, counsellor ↔ counsellor). */
+export interface TeamThread {
+  id: string;
+  otherUserId: string;
+  otherName: string;
+  otherRole: import("@/lib/domain/enums").TeamRole;
+  unread: number;
+  lastAt: string;
+  messages: TeamMessage[];
+}
+
 export interface CounsellorRoomAssignment {
   roomName: string;
   siteName: string;
@@ -445,6 +463,7 @@ export interface DataProvider {
   getSession(appointmentId: string, now: string): Promise<SessionEditorData | null>;
   getSupervisionQueue(supervisorId: string, now: string): Promise<SupervisionItem[]>;
   listConversations(counsellorId: string): Promise<Conversation[]>;
+  listTeamThreads(userId: string): Promise<TeamThread[]>;
   getCounsellorRooms(counsellorId: string, now: string): Promise<CounsellorRoomsView>;
   listCounsellorInvoices(counsellorId: string): Promise<Invoice[]>;
 

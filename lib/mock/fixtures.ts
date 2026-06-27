@@ -301,6 +301,57 @@ export const invoices: Record<string, import("@/lib/mock/types").Invoice[]> = {
   ],
 };
 
+/**
+ * Internal team threads — staff-to-staff messaging (hub ↔ counsellor,
+ * counsellor ↔ counsellor). This is private practice communication; client
+ * notices go out over SMS/WhatsApp, not here.
+ */
+export interface TeamThreadSeed {
+  id: string;
+  participants: [string, string]; // two team-member userIds
+  unreadFor?: string; // the userId with an unread message
+  messages: { id: string; from: string; text: string; at: string }[];
+}
+
+export const teamThreads: TeamThreadSeed[] = [
+  {
+    id: "tt_thandeka_nomsa",
+    participants: ["user_thandeka", "user_nomsa"],
+    unreadFor: "user_nomsa",
+    messages: [
+      { id: "tm1", from: "user_thandeka", text: "Hi Nomsa — the DSD funder report is due Friday. Can you confirm the outcome measures for your caseload are captured?", at: "2026-06-27T08:40:00+02:00" },
+      { id: "tm2", from: "user_nomsa", text: "Morning Thandeka. Yes, all up to date. I'll send the narrative notes by Thursday.", at: "2026-06-27T09:05:00+02:00" },
+      { id: "tm3", from: "user_thandeka", text: "Wonderful, thank you 🙏 Also — Lerato has two records on the system, looks like a double entry. Could you flag it for the front desk to merge?", at: "2026-06-28T07:50:00+02:00" },
+    ],
+  },
+  {
+    id: "tt_nomsa_thabo",
+    participants: ["user_nomsa", "user_thabo"],
+    unreadFor: "user_nomsa",
+    messages: [
+      { id: "tm4", from: "user_thabo", text: "Nomsa, when you have a moment could you review my note for Naledi? I've flagged it for supervision.", at: "2026-06-27T15:20:00+02:00" },
+      { id: "tm5", from: "user_nomsa", text: "Of course, Thabo. I'll read it this afternoon and sign off.", at: "2026-06-27T15:34:00+02:00" },
+      { id: "tm6", from: "user_thabo", text: "Thank you, appreciate it 🙏", at: "2026-06-28T08:02:00+02:00" },
+    ],
+  },
+  {
+    id: "tt_thandeka_lindiwe",
+    participants: ["user_thandeka", "user_lindiwe"],
+    messages: [
+      { id: "tm7", from: "user_lindiwe", text: "Consulting room 2 was double-booked Thursday 14:00 — I moved Aisha's session to room J1. All sorted.", at: "2026-06-26T11:15:00+02:00" },
+      { id: "tm8", from: "user_thandeka", text: "Great catch, thank you Lindiwe.", at: "2026-06-26T11:40:00+02:00" },
+    ],
+  },
+  {
+    id: "tt_nomsa_aisha",
+    participants: ["user_nomsa", "user_aisha"],
+    messages: [
+      { id: "tm9", from: "user_aisha", text: "Do you have a good trauma-informed referral in the Cape? A client of mine is relocating to Stellenbosch.", at: "2026-06-25T13:05:00+02:00" },
+      { id: "tm10", from: "user_nomsa", text: "Yes! I'll send you two contacts there this afternoon.", at: "2026-06-25T13:20:00+02:00" },
+    ],
+  },
+];
+
 /** Mock message threads per counsellor (WhatsApp-first; the rail is dormant). */
 export interface ChatMessage {
   id: string;

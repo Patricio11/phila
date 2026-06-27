@@ -109,6 +109,14 @@ export interface SessionEditorData {
   note: SessionNote | null;
   carePlan: CarePlan | null;
   outcomes: OutcomeMeasure[];
+  /** "Since last time" — continuity of care across the client's sessions. */
+  continuity: {
+    sessionNumber: number;
+    totalSessions: number;
+    previousDate: string | null;
+    previousSummary: string | null;
+    openGoals: string[];
+  };
 }
 
 export interface ChatMessage {

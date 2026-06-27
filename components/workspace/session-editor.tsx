@@ -6,11 +6,13 @@ import {
   ArrowLeft,
   Check,
   Clock,
+  History,
   Lock,
   MapPin,
   Paperclip,
   Send,
   Sparkles,
+  Target,
   Video,
 } from "lucide-react";
 import type { SessionEditorData } from "@/lib/data-provider";
@@ -38,6 +40,17 @@ const PROGRESS: { state: AppointmentState; label: string }[] = [
   { state: "postponed", label: "Postponed" },
 ];
 
+// Note frameworks counsellors actually use — inserted as a scaffold, never forced.
+const TEMPLATES: { key: string; label: string; body: string }[] = [
+  { key: "soap", label: "SOAP", body: "Subjective:\n\nObjective:\n\nAssessment:\n\nPlan:\n" },
+  { key: "dap", label: "DAP", body: "Data:\n\nAssessment:\n\nPlan:\n" },
+  { key: "brief", label: "Brief", body: "Focus of session:\n\nWhat came up:\n\nAgreed next steps:\n" },
+];
+
+function sinceLabel(iso: string): string {
+  return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", weekday: "long", day: "numeric", month: "long" }).format(new Date(iso));
+}
+
 function whenLabel(iso: string): string {
   const d = new Date(iso);
   const date = new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", weekday: "long", day: "numeric", month: "long" }).format(d);
@@ -54,7 +67,7 @@ export function SessionEditor({
   counsellorName: string;
   videoEnabled: boolean;
 }) {
-  const { appointment: appt, client } = data;
+  const { appointment: appt, client, continuity } = data;
   const { toast } = useToast();
 
   const [body, setBody] = useState(data.note?.body ?? "");
@@ -91,6 +104,8 @@ export function SessionEditor({
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => setSaveState("saved"), 700);
   };
+
+  const insertTemplate = (tpl: string) => onBodyChange(body.trim() ? `${body}\n\n${tpl}` : tpl);
 
   const onGenerate = () =>
     startGenerate(async () => {
@@ -141,6 +156,8 @@ export function SessionEditor({
             {client.name}
           </Link>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-text-2">
+            <span className="font-medium text-text-2">Session {continuity.sessionNumber}{continuity.totalSessions > continuity.sessionNumber ? ` of ${continuity.totalSessions}` : ""}</span>
+            <span className="text-text-3">·</span>
             <span>{appt.serviceName}</span>
             <span className="inline-flex items-center gap-1"><Clock className="size-3.5 text-text-3" strokeWidth={2} aria-hidden /> {whenLabel(appt.startsAt)}</span>
             <span className="inline-flex items-center gap-1">
@@ -152,6 +169,43 @@ export function SessionEditor({
       </div>
 
       {client.riskFlag && <SafeguardingPanel clientName={client.name} />}
+
+      {(continuity.previousDate || continuity.openGoals.length > 0) && (
+        <Card>
+          <CardHead
+            title={<span className="flex items-center gap-2"><History className="size-4 text-text-3" strokeWidth={2} aria-hidden /> Since last time</span>}
+          />
+          <div className="grid gap-4 px-[17px] pb-[17px] sm:grid-cols-2">
+            <div>
+              <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-text-3">Last seen</div>
+              {continuity.previousDate ? (
+                <>
+                  <p className="text-[12.5px] font-medium text-text">{sinceLabel(continuity.previousDate)}</p>
+                  {continuity.previousSummary && <p className="mt-1 text-[12.5px] leading-relaxed text-text-2">{continuity.previousSummary}</p>}
+                </>
+              ) : (
+                <p className="text-[12.5px] text-text-2">First session with {client.name.split(" ")[0]} — a clean start.</p>
+              )}
+            </div>
+            <div>
+              <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-text-3">
+                <Target className="size-3.5" strokeWidth={2} aria-hidden /> Open goals
+              </div>
+              {continuity.openGoals.length > 0 ? (
+                <ul className="space-y-1">
+                  {continuity.openGoals.map((g, i) => (
+                    <li key={i} className="flex items-start gap-2 text-[12.5px] text-text-2">
+                      <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-accent" aria-hidden />{g}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[12.5px] text-text-3">No open goals on the care plan.</p>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Note — the private clinical note */}
@@ -174,6 +228,15 @@ export function SessionEditor({
                 <Sparkles className="size-3.5" strokeWidth={2} aria-hidden /> AI-generated draft — edit before signing
               </div>
             )}
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-text-3">Insert framework</span>
+              {TEMPLATES.map((t) => (
+                <button key={t.key} type="button" onClick={() => insertTemplate(t.body)} className="rounded-chip border border-border bg-surface px-2.5 py-1 text-[11.5px] font-medium text-text-2 transition-colors hover:border-accent/40 hover:bg-accent-soft hover:text-accent">
+                  {t.label}
+                </button>
+              ))}
+            </div>
 
             <Textarea
               value={body}

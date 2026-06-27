@@ -478,13 +478,32 @@ export const mockProvider: DataProvider = {
     if (!appt) return ok(null);
     const client = allClients.find((c) => c.id === appt.clientId);
     if (!client) return ok(null);
+
+    // Continuity of care — where this session sits in the client's journey.
+    const journey = clientAppointments(appt.clientId, now).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+    const idx = journey.findIndex((a) => a.id === appt.id);
+    const prior = [...journey]
+      .reverse()
+      .find((a) => a.startsAt < appt.startsAt && (a.state === "completed" || a.state === "discharged" || a.state === "risk_flagged"));
+    const priorNote = prior ? seedNote(prior) : null;
+    const plan = carePlans[appt.clientId] ?? null;
+
     return ok({
       appointment: toView(appt),
       client,
       demographicsConsented: consentActiveFor(appt.clientId, "demographics"),
       note: seedNote(appt),
-      carePlan: carePlans[appt.clientId] ?? null,
+      carePlan: plan,
       outcomes: materialiseOutcomes(appt.clientId, now),
+      continuity: {
+        sessionNumber: idx >= 0 ? idx + 1 : journey.length,
+        totalSessions: journey.length,
+        previousDate: prior?.startsAt ?? null,
+        previousSummary: priorNote?.body
+          ? priorNote.body.length > 240 ? `${priorNote.body.slice(0, 240).trimEnd()}…` : priorNote.body
+          : null,
+        openGoals: plan ? plan.tasks.filter((t) => !t.done).map((t) => t.text) : [],
+      },
     });
   },
 

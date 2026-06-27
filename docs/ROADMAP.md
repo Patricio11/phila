@@ -172,6 +172,7 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 - [x] **`<AIDraft>`** states off/mock/draft-ready ("AI-generated") → edit → **sign**; mark progress (completed / no-show / postponed); upload; online → **VideoRoom** entry (shell).
 - [x] **Compose the client-facing care plan / summary** — a *separate* artifact the counsellor explicitly chooses to share with the client (advice, between-session tasks, resources, next step). The private note stays private; sharing is a deliberate action (Rule #1). The AI can draft the client summary too (labelled, edited, then shared).
 - [x] Marking a session updates its row in the schedule + the client's session history + its quiet status dot (a calm cross-fade, honest count).
+- [x] **Continuity of care (2026-06-27):** every session opens with a **"Since last time"** panel — session number in the journey, when the client was last seen, a recap of the previous note, and the **open care-plan goals** — so the counsellor picks up exactly where they left off. Plus **note-framework scaffolds** (SOAP · DAP · Brief) the counsellor can insert, never forced.
 
 ### Task 4.4: Supervision (if `supervisor`)
 - [x] `/app/supervision`: queue of supervisee notes to review + sign-off; provenance is honest.

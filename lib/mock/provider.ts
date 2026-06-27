@@ -29,6 +29,7 @@ import type {
   PlatformOrgRow,
   PlatformOverview,
   ReportingResult,
+  DuplicateGroup,
   RoomDetail,
   RoomView,
   TeamMemberDetail,
@@ -671,6 +672,62 @@ export const mockProvider: DataProvider = {
       };
     });
     return ok(rows);
+  },
+
+  findDuplicateClients: (orgId, now): Promise<DuplicateGroup[]> => {
+    const list = liveOnly(allClients.filter((c) => c.orgId === orgId));
+    const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+    const digits = (s: string) => s.replace(/\D/g, "");
+
+    // Union-find: link clients that share a normalised name, phone, or email.
+    const parent = new Map<string, string>(list.map((c) => [c.id, c.id]));
+    const find = (x: string): string => {
+      let r = x;
+      while (parent.get(r) !== r) r = parent.get(r)!;
+      return r;
+    };
+    const union = (a: string, b: string) => { const ra = find(a), rb = find(b); if (ra !== rb) parent.set(ra, rb); };
+
+    const keyToIds = new Map<string, string[]>();
+    const addKey = (k: string, id: string) => keyToIds.set(k, [...(keyToIds.get(k) ?? []), id]);
+    for (const c of list) {
+      addKey(`n:${norm(c.name)}`, c.id);
+      if (c.phone) addKey(`p:${digits(c.phone)}`, c.id);
+      if (c.email) addKey(`e:${norm(c.email)}`, c.id);
+    }
+    for (const ids of keyToIds.values()) {
+      for (let i = 1; i < ids.length; i++) union(ids[0]!, ids[i]!);
+    }
+
+    const groups = new Map<string, string[]>();
+    for (const c of list) {
+      const r = find(c.id);
+      groups.set(r, [...(groups.get(r) ?? []), c.id]);
+    }
+
+    const result: DuplicateGroup[] = [];
+    for (const ids of groups.values()) {
+      if (ids.length < 2) continue;
+      const cs = ids.map((id) => list.find((c) => c.id === id)!);
+      const sameName = new Set(cs.map((c) => norm(c.name))).size === 1;
+      const samePhone = cs.every((c) => c.phone) && new Set(cs.map((c) => digits(c.phone!))).size === 1;
+      const reason = sameName && samePhone ? "Same name and phone" : sameName ? "Same name" : samePhone ? "Same phone number" : "Shared contact details";
+      result.push({
+        reason,
+        clients: cs
+          .map((c) => ({
+            id: c.id,
+            name: c.name,
+            phone: c.phone ?? null,
+            email: c.email ?? null,
+            counsellorName: allCounsellors.find((cc) => cc.id === c.primaryCounsellorId)?.name ?? "—",
+            sessions: clientAppointments(c.id, now).length,
+            createdAt: c.createdAt,
+          }))
+          .sort((a, b) => b.sessions - a.sessions || a.createdAt.localeCompare(b.createdAt)),
+      });
+    }
+    return ok(result);
   },
 
   listTeam: (orgId): Promise<TeamMemberView[]> => {

@@ -61,6 +61,35 @@ export async function importClients(
   return { ok: true, count: parsed.data.clients.length };
 }
 
+const mergeInput = z.object({
+  keepId: z.string().min(1),
+  mergeIds: z.array(z.string().min(1)).min(1, "Nothing to merge."),
+});
+
+/**
+ * Merge duplicate client records (mock). Keeps one record; the others are
+ * soft-merged into it. Phase 10 re-points sessions/notes/invoices/consents to
+ * the kept id and soft-deletes the rest — history is never lost or duplicated
+ * (Outcome-Honesty Rule).
+ */
+export async function mergeClients(
+  raw: z.infer<typeof mergeInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = mergeInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the merge." };
+  if (parsed.data.mergeIds.includes(parsed.data.keepId)) return { ok: false, error: "Can't merge a record into itself." };
+
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `client:${parsed.data.keepId}`,
+    reason: `merge_clients:${parsed.data.mergeIds.join(",")}`,
+  });
+  return { ok: true };
+}
+
 const reassignInput = z.object({
   clientId: z.string().min(1),
   counsellorId: z.string().min(1, "Pick a counsellor."),

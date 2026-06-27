@@ -42,6 +42,7 @@ export const dbProvider: DataProvider = {
   listCounsellorInvoices: notYet,
   getHubOverview: notYet,
   listOrgClients: notYet,
+  findDuplicateClients: notYet,
   listTeam: notYet,
   getTeamMemberDetail: notYet,
   getRoomsOverview: notYet,

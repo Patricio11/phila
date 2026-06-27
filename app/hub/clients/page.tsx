@@ -5,6 +5,7 @@ import { PageHead } from "@/components/shell/page-head";
 import { HubClientsTable } from "@/components/hub/hub-clients-table";
 import { AddClientButton } from "@/components/hub/add-client-modal";
 import { ImportClientsButton } from "@/components/hub/import-clients-modal";
+import { DedupeBanner } from "@/components/hub/dedupe-clients";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Clients" };
@@ -13,9 +14,10 @@ export default async function HubClientsPage() {
   const { principal, membership } = await requireHub();
   const provider = await getDataProvider();
   const now = new Date().toISOString();
-  const [rows, counsellors] = await Promise.all([
+  const [rows, counsellors, duplicates] = await Promise.all([
     provider.listOrgClients(membership.orgId, now),
     provider.listCounsellors(membership.orgId),
+    provider.findDuplicateClients(membership.orgId, now),
   ]);
 
   await logAccess({
@@ -44,6 +46,8 @@ export default async function HubClientsPage() {
           </div>
         }
       />
+
+      <DedupeBanner groups={duplicates} />
 
       <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
         <Stat value={String(active)} label="Active" />

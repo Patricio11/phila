@@ -149,6 +149,8 @@ export const clients: Client[] = [
   client("cl_naledi", "Naledi Tshabalala", "+27 79 145 6620", "naledi.t@example.co.za", "Gauteng", "couns_thabo"),
   client("cl_kabelo", "Kabelo Moeketsi", "+27 60 778 3344", undefined, "Gauteng", "couns_aisha"),
   client("cl_megan", "Megan Pillay", "+27 83 661 9027", "megan.pillay@example.co.za", "KwaZulu-Natal", "couns_pieter"),
+  // A realistic double-entry: same person captured twice (same name + phone) — the dedupe surfaces it.
+  client("cl_lerato_2", "Lerato Mahlangu", "+27 82 451 7720", undefined, "Gauteng", "couns_nomsa"),
 ];
 
 function client(

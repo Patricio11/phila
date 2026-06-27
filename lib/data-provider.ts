@@ -247,6 +247,22 @@ export interface IntakeStatusRow {
   sentAt: string | null;
 }
 
+export interface DuplicateClient {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  counsellorName: string;
+  sessions: number;
+  createdAt: string;
+}
+
+export interface DuplicateGroup {
+  /** Why these were grouped — matched name / phone / email. */
+  reason: string;
+  clients: DuplicateClient[];
+}
+
 export interface ReportingFilters {
   province?: string;
   gender?: string;
@@ -433,6 +449,7 @@ export interface DataProvider {
   // Org-admin Hub
   getHubOverview(orgId: string, now: string): Promise<HubOverview | null>;
   listOrgClients(orgId: string, now: string): Promise<OrgClientRow[]>;
+  findDuplicateClients(orgId: string, now: string): Promise<DuplicateGroup[]>;
   listTeam(orgId: string): Promise<TeamMemberView[]>;
   getTeamMemberDetail(orgId: string, userId: string, now: string): Promise<TeamMemberDetail | null>;
   getRoomsOverview(orgId: string, now: string): Promise<RoomView[]>;

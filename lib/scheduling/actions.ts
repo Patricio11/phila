@@ -20,6 +20,8 @@ const input = z.object({
   time: z.string().regex(/^\d{2}:\d{2}$/),
   durationMin: z.number().int().positive().max(600),
   recurring: z.boolean(),
+  /** Weeks in the series; null = ongoing/indefinite. Only used when recurring. */
+  recurringCount: z.number().int().min(1).max(52).nullable().optional(),
   notes: z.string().max(1000).optional(),
   sendConfirmation: z.boolean(),
 });
@@ -38,7 +40,7 @@ export async function createAppointment(
     actor: { userId: "scheduler", platformRole: null, teamRole: "counsellor" },
     orgId: data.orgId,
     target: `appointment:new/${data.clientId}`,
-    reason: data.recurring ? "create_recurring" : "create_appointment",
+    reason: data.recurring ? `create_recurring:${data.recurringCount ?? "ongoing"}` : "create_appointment",
   });
 
   return { ok: true };

@@ -53,6 +53,7 @@ export function CreateAppointmentModal({
   const [time, setTime] = useState(initial?.time ?? "");
   const [durationMin, setDurationMin] = useState(60);
   const [recurring, setRecurring] = useState(false);
+  const [recurringCount, setRecurringCount] = useState<number | null>(8);
   const [notes, setNotes] = useState("");
   const [sendConfirmation, setSendConfirmation] = useState(true);
 
@@ -90,12 +91,14 @@ export function CreateAppointmentModal({
         time,
         durationMin,
         recurring,
+        recurringCount: recurring ? recurringCount : null,
         notes: notes || undefined,
         sendConfirmation,
       });
       if (!res.ok) return toast({ tone: "error", title: res.error });
       const name = options.clients.find((c) => c.id === clientId)?.name ?? "client";
-      toast({ tone: "success", title: "Appointment created", description: sendConfirmation ? `${name} will be sent a confirmation once messaging is set up.` : `Booked for ${name}.` });
+      const seriesNote = recurring ? (recurringCount ? ` · ${recurringCount}-session series` : " · ongoing series") : "";
+      toast({ tone: "success", title: "Appointment created", description: (sendConfirmation ? `${name} will be sent a confirmation once messaging is set up.` : `Booked for ${name}.`) + seriesNote });
       onClose();
     });
   };
@@ -147,6 +150,23 @@ export function CreateAppointmentModal({
         </Row>
 
         <Toggle label="Repeat weekly" checked={recurring} onChange={setRecurring} hint="Create a recurring series." />
+
+        {recurring && (
+          <Row label="How many">
+            <Select
+              value={recurringCount === null ? "0" : String(recurringCount)}
+              onChange={(v) => setRecurringCount(v === "0" ? null : Number(v))}
+              options={[
+                { value: "4", label: "4 sessions" },
+                { value: "6", label: "6 sessions" },
+                { value: "8", label: "8 sessions" },
+                { value: "12", label: "12 sessions" },
+                { value: "24", label: "24 sessions" },
+                { value: "0", label: "Ongoing (no end date)" },
+              ]}
+            />
+          </Row>
+        )}
 
         <Row label="Notes">
           <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Anything the counsellor should know (optional)" className="min-h-[72px]" />

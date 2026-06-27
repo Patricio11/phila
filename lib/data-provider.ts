@@ -162,8 +162,18 @@ export interface HubOverview {
   clientsToday: number;
   clientsWeek: number;
   clientsMonth: number;
+  newClientsToday: number;
+  newClientsWeek: number;
+  newClientsMonth: number;
   incomeMonthCents: number;
   incomePredictionCents: number;
+  /** Actual (paid) + predicted income for the day and the week. */
+  income: {
+    todayCents: number;
+    weekCents: number;
+    predictedTodayCents: number;
+    predictedWeekCents: number;
+  };
   noShowRate: number;
   openIntakes: number;
   pendingCredentials: number;

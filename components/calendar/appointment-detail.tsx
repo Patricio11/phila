@@ -170,6 +170,7 @@ export function AppointmentDetail({
                   <ActionChip icon={CalendarDays} label="Reschedule" onClick={() => setShowReschedule(true)} disabled={pending} />
                   <ActionChip icon={Check} label="Completed" tone="accent" active={appt.state === "completed"} onClick={() => mark("completed")} disabled={pending} />
                   <ActionChip icon={UserX} label="No-show" tone="warn" active={appt.state === "no_show"} onClick={() => mark("no_show")} disabled={pending} />
+                  <ActionChip icon={Hourglass} label="Postponed" tone="warn" active={appt.state === "postponed"} onClick={() => mark("postponed")} disabled={pending} />
                   <ActionChip icon={X} label="Cancel" tone="danger" active={appt.state === "cancelled"} onClick={() => mark("cancelled")} disabled={pending} />
                 </div>
               )}

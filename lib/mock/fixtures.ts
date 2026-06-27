@@ -142,15 +142,15 @@ export const services: Service[] = [
 
 export const clients: Client[] = [
   client("cl_lerato", "Lerato Mahlangu", "+27 82 451 7720", "lerato.m@example.co.za", "Gauteng", "couns_nomsa"),
-  client("cl_sipho", "Sipho Khumalo", "+27 73 902 1185", undefined, "Gauteng", "couns_nomsa", true),
-  client("cl_fatima", "Fatima Adams", "+27 21 696 4410", "fatima.adams@example.co.za", "Western Cape", "couns_nomsa"),
-  client("cl_johan", "Johan Botha", "+27 84 220 9931", "jbotha@example.co.za", "Free State", "couns_nomsa"),
-  client("cl_zanele", "Zanele Ngcobo", "+27 71 884 2207", undefined, "KwaZulu-Natal", "couns_nomsa"),
-  client("cl_naledi", "Naledi Tshabalala", "+27 79 145 6620", "naledi.t@example.co.za", "Gauteng", "couns_thabo"),
-  client("cl_kabelo", "Kabelo Moeketsi", "+27 60 778 3344", undefined, "Gauteng", "couns_aisha"),
-  client("cl_megan", "Megan Pillay", "+27 83 661 9027", "megan.pillay@example.co.za", "KwaZulu-Natal", "couns_pieter"),
+  client("cl_sipho", "Sipho Khumalo", "+27 73 902 1185", undefined, "Gauteng", "couns_nomsa", true, "2026-06-23T09:00:00+02:00"),
+  client("cl_fatima", "Fatima Adams", "+27 21 696 4410", "fatima.adams@example.co.za", "Western Cape", "couns_nomsa", false, "2026-03-15T09:00:00+02:00"),
+  client("cl_johan", "Johan Botha", "+27 84 220 9931", "jbotha@example.co.za", "Free State", "couns_nomsa", false, "2026-06-10T09:00:00+02:00"),
+  client("cl_zanele", "Zanele Ngcobo", "+27 71 884 2207", undefined, "KwaZulu-Natal", "couns_nomsa", false, "2025-12-01T09:00:00+02:00"),
+  client("cl_naledi", "Naledi Tshabalala", "+27 79 145 6620", "naledi.t@example.co.za", "Gauteng", "couns_thabo", false, "2026-06-25T09:00:00+02:00"),
+  client("cl_kabelo", "Kabelo Moeketsi", "+27 60 778 3344", undefined, "Gauteng", "couns_aisha", false, "2026-01-20T09:00:00+02:00"),
+  client("cl_megan", "Megan Pillay", "+27 83 661 9027", "megan.pillay@example.co.za", "KwaZulu-Natal", "couns_pieter", false, "2026-04-02T09:00:00+02:00"),
   // A realistic double-entry: same person captured twice (same name + phone)  the dedupe surfaces it.
-  client("cl_lerato_2", "Lerato Mahlangu", "+27 82 451 7720", undefined, "Gauteng", "couns_nomsa"),
+  client("cl_lerato_2", "Lerato Mahlangu", "+27 82 451 7720", undefined, "Gauteng", "couns_nomsa", false, "2026-06-26T09:00:00+02:00"),
 ];
 
 function client(
@@ -161,6 +161,7 @@ function client(
   province: Client["province"],
   primaryCounsellorId: string,
   riskFlag = false,
+  createdAt = "2025-11-03T09:00:00+02:00",
 ): Client {
   return {
     id,
@@ -171,8 +172,7 @@ function client(
     province,
     primaryCounsellorId,
     riskFlag,
-    // Anchored relative dates are materialised by the provider; this stays fixed.
-    createdAt: "2025-11-03T09:00:00+02:00",
+    createdAt,
     deletedAt: null,
   };
 }

@@ -3,7 +3,7 @@ import {
   BadgeCheck,
   CalendarDays,
   ClipboardList,
-  TrendingUp,
+  UserPlus,
   UserX,
   Users,
 } from "lucide-react";
@@ -80,10 +80,10 @@ export default async function HubOverviewPage() {
           coverage={`${overview.clientsToday} today · ${overview.clientsMonth} this month`}
         />
         <StatCard
-          icon={TrendingUp}
-          label="Income this month"
-          value={rands(overview.incomeMonthCents)}
-          coverage={`predicted ${rands(overview.incomePredictionCents)} by month end`}
+          icon={UserPlus}
+          label="New clients this week"
+          value={overview.newClientsWeek}
+          coverage={`${overview.newClientsToday} today · ${overview.newClientsMonth} this month`}
         />
         <StatCard
           icon={UserX}
@@ -110,6 +110,16 @@ export default async function HubOverviewPage() {
           coverage={coverageNote(overview.outcomesCoverage.captured, overview.outcomesCoverage.total, "clients measured")}
         />
       </div>
+
+      {/* Income — actual & predicted, day / week / month */}
+      <Card>
+        <CardHead title="Income — actual & predicted" />
+        <div className="grid grid-cols-3 divide-x divide-border px-[17px] pb-[17px] pt-1">
+          <IncomeCol label="Today" actual={rands(overview.income.todayCents)} predicted={rands(overview.income.predictedTodayCents)} />
+          <IncomeCol label="This week" actual={rands(overview.income.weekCents)} predicted={rands(overview.income.predictedWeekCents)} />
+          <IncomeCol label="This month" actual={rands(overview.incomeMonthCents)} predicted={rands(overview.incomePredictionCents)} />
+        </div>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -146,6 +156,16 @@ export default async function HubOverviewPage() {
           </div>
         </Card>
       </div>
+    </div>
+  );
+}
+
+function IncomeCol({ label, actual, predicted }: { label: string; actual: string; predicted: string }) {
+  return (
+    <div className="px-4 first:pl-0">
+      <div className="text-[11.5px] font-medium uppercase tracking-wide text-text-3">{label}</div>
+      <div className="mt-1 text-[20px] font-bold tabular-nums tracking-[-0.02em] text-text">{actual}</div>
+      <div className="mt-0.5 text-[11.5px] text-text-2">predicted {predicted}</div>
     </div>
   );
 }

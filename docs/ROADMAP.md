@@ -163,7 +163,7 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 - [x] `/app` today: `<AppointmentRow>` list, "starting soon" nudge, today’s counts, the create-appointment **FAB**.
 - [x] `/app/calendar`: week resource view (desktop) / agenda (mobile); business-hours/buffer/break shading; drag-to-reschedule with a confirm step (no notification fires in mock).
 - [x] **Multi-view calendar (2026-06-27):** rebuilt as a real `<CalendarView>`  **Day / Week / Month / Agenda** with ‹ Prev · Today · Next › navigation; a proportional time-grid (events sized/positioned by the minute, overlaps laid out side-by-side); a live "now" line; **click an empty slot → create-appointment, pre-filled** with that date/time. Replaces the old flat week grid (Hub `/hub/calendars` shares it, view-only on notes).
-- [x] **Appointment detail (2026-06-27):** clicking a calendar event opens a calm `<AppointmentDetail>` card  client (linked), status, full date + time range, duration, counsellor, room/online  with **View client**, **Open session**, and **inline actions**: reschedule (date + time), mark Completed / No-show / Cancel (the event updates live). **Reschedule runs a room/counsellor double-booking check** and warns before you confirm (a soft "move anyway"  Phase 11 enforces server-side).
+- [x] **Appointment detail (2026-06-27):** clicking a calendar event opens a calm `<AppointmentDetail>` card  client (linked), status, full date + time range, duration, counsellor, room/online  with **View client**, **Open session**, and **inline actions**: reschedule (date + time), mark Completed / No-show / **Postponed** / Cancel (the event updates live). The create-appointment modal can size a recurring series (**4 / 6 / 8 / 12 / 24 sessions or Ongoing**). **Reschedule runs a room/counsellor double-booking check** and warns before you confirm (a soft "move anyway"  Phase 11 enforces server-side).
 
 ### Task 4.2: Caseload + dossier
 - [x] `/app/clients`: a clients **DataTable** (next/last session, status, risk flag); filter + search.
@@ -193,8 +193,10 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 ### Task 5.1: Overview + calendars oversight
 - [x] `/hub` overview: clients today/week/month, income + **income prediction**, no-show rate, open intakes, pending credential checks  all `<StatCard>` with honest coverage captions.
 - [x] `/hub/calendars`: oversight of **every** counsellor's calendar (resource lanes); book on behalf; reschedule/cancel; allocate counsellor + **room**.
+- [x] **Day/week/month depth (2026-06-28):** income is now **actual + predicted for today, this week, and this month** (not month-only), plus a **new-clients** stat (today · week · month). Spec-driven.
 
 ### Task 5.2: Team, roles & clients
+- [x] **Clinic access model (2026-06-28):** the **Hub (org admin) owns the record — full access to every client, note and upload**. A read-only `/hub/sessions/[id]` lets the Hub open any counsellor's clinical note (with care-plan + AI/sign provenance); **every open is audit-logged** (`note.read_hub_override`). Each **counsellor is scoped to their own caseload** (+ supervisees) — `/app/clients/[id]` 404s on another counsellor's client, and notes stay author+supervisor-only.
 - [x] `/hub/team`: invite / add / deactivate team members and **set each member's org role**  `org_admin`, `counsellor` (+`supervisor`), `front_desk` / `intake_coordinator`, `finance`, `programme_manager`. Permissions differ per role (clinical-note access = counsellor + supervisor only; front desk schedules; finance bills; programme manager sees aggregate/consented reporting).
 - [x] Counsellor credential status (HPCSA / ASCHP) + supervisor edges; **per-counsellor room schedule** (see 5.6).
 - [x] `/hub/clients`: full list; reassign counsellor; **cancel/delete client with stats preserved** (Outcome-Honesty Rule  deletion never distorts compiled stats).

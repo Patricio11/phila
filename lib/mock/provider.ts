@@ -598,15 +598,32 @@ export const mockProvider: DataProvider = {
     const clientsMonth = new Set(live.filter((a) => a.startsAt.startsWith(month)).map((a) => a.clientId)).size;
 
     const invoices = orgInvoicesFor(orgId);
-    const incomeMonthCents = invoices
-      .filter((i) => i.status === "paid" && i.issuedAt.startsWith(month))
-      .reduce((s, i) => s + i.amountCents, 0);
-    const futureMonth = appts.filter(
-      (a) => a.startsAt.startsWith(month) && new Date(a.startsAt).getTime() > nowMs && a.state === "scheduled",
-    );
-    const incomePredictionCents =
-      incomeMonthCents +
-      futureMonth.reduce((s, a) => s + (allServices.find((x) => x.id === a.serviceId)?.priceCents ?? 0), 0);
+    const inDay = (iso: string) => iso.startsWith(today);
+    const inWk = (iso: string) => { const d = iso.slice(0, 10); return d >= week.from && d <= week.to; };
+    const paidSum = (pred: (iso: string) => boolean) =>
+      invoices.filter((i) => i.status === "paid" && pred(i.issuedAt)).reduce((s, i) => s + i.amountCents, 0);
+    const priceOf = (serviceId: string) => allServices.find((x) => x.id === serviceId)?.priceCents ?? 0;
+    const futureSum = (pred: (iso: string) => boolean) =>
+      appts
+        .filter((a) => a.state === "scheduled" && new Date(a.startsAt).getTime() > nowMs && pred(a.startsAt))
+        .reduce((s, a) => s + priceOf(a.serviceId), 0);
+
+    const incomeMonthCents = paidSum((iso) => iso.startsWith(month));
+    const incomeTodayCents = paidSum(inDay);
+    const incomeWeekCents = paidSum(inWk);
+    const incomePredictionCents = incomeMonthCents + futureSum((iso) => iso.startsWith(month));
+    const income = {
+      todayCents: incomeTodayCents,
+      weekCents: incomeWeekCents,
+      predictedTodayCents: incomeTodayCents + futureSum(inDay),
+      predictedWeekCents: incomeWeekCents + futureSum(inWk),
+    };
+
+    // New clients (by intake/createdAt) per period — honest, soft-deletes excluded.
+    const createdInDay = (iso: string) => iso.startsWith(today);
+    const newClientsToday = clients.filter((c) => createdInDay(c.createdAt)).length;
+    const newClientsWeek = clients.filter((c) => inWk(c.createdAt)).length;
+    const newClientsMonth = clients.filter((c) => c.createdAt.startsWith(month)).length;
 
     const heldWeek = inWeek.filter((a) => ["completed", "no_show", "risk_flagged"].includes(a.state));
     const noShows = inWeek.filter((a) => a.state === "no_show").length;
@@ -642,8 +659,12 @@ export const mockProvider: DataProvider = {
       clientsToday,
       clientsWeek,
       clientsMonth,
+      newClientsToday,
+      newClientsWeek,
+      newClientsMonth,
       incomeMonthCents,
       incomePredictionCents,
+      income,
       noShowRate,
       openIntakes,
       pendingCredentials,

@@ -21,14 +21,22 @@ export interface SchedulingOptions {
 
 const DURATIONS = [30, 45, 60, 90];
 
+export interface CreateInitial {
+  date?: string;
+  time?: string;
+  counsellorId?: string;
+}
+
 export function CreateAppointmentModal({
   open,
   onClose,
   options,
+  initial,
 }: {
   open: boolean;
   onClose: () => void;
   options: SchedulingOptions;
+  initial?: CreateInitial;
 }) {
   const { toast } = useToast();
   const [pending, start] = useTransition();
@@ -36,11 +44,11 @@ export function CreateAppointmentModal({
 
   const [clientId, setClientId] = useState<string | null>(null);
   const [serviceId, setServiceId] = useState<string | null>(null);
-  const [counsellorId, setCounsellorId] = useState<string | null>(options.defaultCounsellorId ?? null);
+  const [counsellorId, setCounsellorId] = useState<string | null>(initial?.counsellorId ?? options.defaultCounsellorId ?? null);
   const [type, setType] = useState("In person");
   const [roomId, setRoomId] = useState<string | null>(null);
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
+  const [date, setDate] = useState(initial?.date ?? "");
+  const [time, setTime] = useState(initial?.time ?? "");
   const [durationMin, setDurationMin] = useState(60);
   const [recurring, setRecurring] = useState(false);
   const [notes, setNotes] = useState("");

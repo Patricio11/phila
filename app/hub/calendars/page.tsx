@@ -4,6 +4,7 @@ import { getDataProvider } from "@/lib/data-provider";
 import { isoWeekday } from "@/lib/mock/helpers";
 import { PageHead } from "@/components/shell/page-head";
 import { CalendarWeek } from "@/components/workspace/calendar-week";
+import { CreateAppointmentButton } from "@/components/scheduling/create-appointment-button";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Calendars" };
@@ -41,14 +42,27 @@ export default async function HubCalendarsPage() {
   }));
 
   // Everyone's sessions, merged.
-  const lists = await Promise.all(counsellors.map((c) => provider.listCounsellorSessions(c.id, now)));
+  const [lists, orgClients, services, rooms] = await Promise.all([
+    Promise.all(counsellors.map((c) => provider.listCounsellorSessions(c.id, now))),
+    provider.listClients(membership.orgId),
+    provider.listServices(membership.orgId),
+    provider.listRooms(membership.orgId),
+  ]);
   const events = lists.flat().filter((ev) => weekDates.some((d) => ev.startsAt.startsWith(d)));
+  const scheduling = {
+    orgId: membership.orgId,
+    clients: orgClients.map((c) => ({ id: c.id, name: c.name })),
+    services: services.map((s) => ({ id: s.id, name: s.name, durationMin: s.durationMin })),
+    counsellors: counsellors.map((c) => ({ id: c.id, name: c.name })),
+    rooms: rooms.map((r) => ({ id: r.id, name: r.name })),
+  };
 
   return (
     <div className="rise space-y-6">
       <PageHead
         title="Calendars"
         summary={`Every counsellor's week in one view — ${counsellors.length} counsellors. Drag to reschedule.`}
+        actions={<CreateAppointmentButton options={scheduling} label="Book on behalf" />}
       />
       <CalendarWeek days={days} businessHours={org.scheduling.businessHours} events={events} openSessions={false} />
     </div>

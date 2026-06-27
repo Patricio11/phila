@@ -21,12 +21,15 @@ import { Textarea } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { Avatar } from "@/components/ui/avatar";
 import { SafeguardingPanel } from "@/components/workspace/safeguarding-panel";
+import { VideoRoom } from "@/components/video/video-room";
+import { OutcomeCaptureButton } from "@/components/outcomes/outcome-capture";
 import { cn } from "@/lib/utils";
 import {
   generateAiDraft,
   markProgress,
   shareCarePlan,
   signNote,
+  type AiExtraction,
 } from "@/app/app/sessions/[id]/actions";
 
 const PROGRESS: { state: AppointmentState; label: string }[] = [
@@ -42,7 +45,15 @@ function whenLabel(iso: string): string {
   return `${date} · ${time}`;
 }
 
-export function SessionEditor({ data, counsellorName }: { data: SessionEditorData; counsellorName: string }) {
+export function SessionEditor({
+  data,
+  counsellorName,
+  videoEnabled,
+}: {
+  data: SessionEditorData;
+  counsellorName: string;
+  videoEnabled: boolean;
+}) {
   const { appointment: appt, client } = data;
   const { toast } = useToast();
 
@@ -52,6 +63,8 @@ export function SessionEditor({ data, counsellorName }: { data: SessionEditorDat
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(data.note ? "saved" : "idle");
   const [state, setState] = useState<AppointmentState>(appt.state);
   const [careSummary, setCareSummary] = useState(data.carePlan?.summary ?? "");
+  const [extraction, setExtraction] = useState<AiExtraction | null>(null);
+  const [videoOpen, setVideoOpen] = useState(false);
 
   const [generating, startGenerate] = useTransition();
   const [signing, startSign] = useTransition();
@@ -84,6 +97,7 @@ export function SessionEditor({ data, counsellorName }: { data: SessionEditorDat
       const res = await generateAiDraft({ appointmentId: appt.id });
       if (!res.ok) return toast({ tone: "error", title: res.error });
       setBody((prev) => (prev.trim() ? `${prev}\n\n${res.draft}` : res.draft));
+      setExtraction(res.extraction);
       setAiGenerated(true);
       setSignedAt(null);
       setSaveState("saved");
@@ -201,6 +215,20 @@ export function SessionEditor({ data, counsellorName }: { data: SessionEditorDat
                 {aiGenerated ? " · AI-assisted, edited and signed by you" : ""}
               </div>
             )}
+
+            {extraction && (
+              <div className="rounded-control border border-border bg-surface-2/60 p-3.5">
+                <div className="flex items-center gap-1.5 text-[11.5px] font-semibold text-text-2">
+                  <Sparkles className="size-3.5 text-accent" strokeWidth={2} aria-hidden /> AI-extracted fields — feed reporting, zero double entry
+                </div>
+                <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[12px]">
+                  <Extracted label="Presenting issue" value={extraction.presentingIssue} />
+                  <Extracted label="Risk" value={extraction.risk} />
+                  <Extracted label="Outcome" value={extraction.outcome} />
+                  <Extracted label="Referral" value={extraction.referral} />
+                </dl>
+              </div>
+            )}
           </div>
         </Card>
 
@@ -209,10 +237,10 @@ export function SessionEditor({ data, counsellorName }: { data: SessionEditorDat
           {appt.type === "online" && (
             <Card className="p-4">
               <div className="text-[13px] font-[600] text-text">Online session</div>
-              <Button
-                className="mt-3 w-full"
-                onClick={() => toast({ tone: "default", title: "The video room opens here", description: "Owned, in-region video arrives next." })}
-              >
+              <p className="mt-1 text-[12px] text-text-2">
+                {videoEnabled ? "Secure, in-region video room." : "This org uses its own meeting link."}
+              </p>
+              <Button className="mt-3 w-full" onClick={() => setVideoOpen(true)}>
                 <Video className="size-4" strokeWidth={2} aria-hidden /> Open video room
               </Button>
             </Card>
@@ -242,6 +270,14 @@ export function SessionEditor({ data, counsellorName }: { data: SessionEditorDat
             <p className="mt-2 text-[11px] text-text-3">AI never marks a session — only you do.</p>
           </Card>
 
+          <Card className="p-4">
+            <div className="text-[13px] font-[600] text-text">Outcome measure</div>
+            <p className="mt-1 text-[12px] text-text-2">Capture a PHQ-9 or GAD-7 to track progress over time.</p>
+            <div className="mt-3">
+              <OutcomeCaptureButton clientName={client.name} />
+            </div>
+          </Card>
+
           <Card>
             <CardHead title="Share with the client" />
             <div className="space-y-3 px-[17px] pb-[17px]">
@@ -263,6 +299,17 @@ export function SessionEditor({ data, counsellorName }: { data: SessionEditorDat
           </Card>
         </div>
       </div>
+
+      <VideoRoom open={videoOpen} onClose={() => setVideoOpen(false)} clientName={client.name} videoEnabled={videoEnabled} />
+    </div>
+  );
+}
+
+function Extracted({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-text-3">{label}</dt>
+      <dd className="font-medium text-text">{value}</dd>
     </div>
   );
 }

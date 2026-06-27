@@ -273,24 +273,24 @@ auto-rolls up to them, and a scoped, k-anon, read-only **funder portal**. The gr
 
 ---
 
-## 🎬 PHASE 7: SIGNATURE SURFACES — CALENDAR, MODAL, VIDEO, AI, BUILDER
+## 🎬 PHASE 7: SIGNATURE SURFACES — CALENDAR, MODAL, VIDEO, AI, BUILDER ✅ (2026-06-27)
 *Goal: the cross-role surfaces that make Phila feel like a finished, alive product. Mock data.*
 
 ### Task 7.1: The calendar
-- [ ] Resource calendar (counsellor + room lanes) on desktop / agenda on mobile; today ringed; business-hours/buffer/break shading; events carrying a quiet state dot; drag-to-reschedule with confirm. Keep domain logic **off** the calendar lib (RBC now; swap-ready for schedule-x/FullCalendar).
+- [x] Resource calendar (counsellor + room lanes) on desktop / agenda on mobile; today ringed; business-hours/buffer/break shading; events carrying a quiet state dot; drag-to-reschedule with confirm. Keep domain logic **off** the calendar lib (RBC now; swap-ready for schedule-x/FullCalendar).
 
 ### Task 7.2: Create-appointment modal (used everywhere)
-- [ ] Client picker · service · counsellor · room or online · date·time·duration · **recurring** toggle · notes · send-confirmation. Bottom-sheet on mobile. Opened from FAB / slot / client / Hub.
+- [x] Client picker · service · counsellor · room or online · date·time·duration · **recurring** toggle · notes · send-confirmation. Bottom-sheet on mobile. Opened from FAB / slot / client / Hub.
 
 ### Task 7.3: Video room shell + AI scribe (mock)
-- [ ] `<VideoRoom>` pre-join (camera/mic check) + in-session controls + end→note; **paste-link fallback** variant when org video off. (LiveKit wired Phase 13.)
-- [ ] The `<AIDraft>` mock pipeline: "Generate draft" → labelled AI draft → edit → sign. Structured-extraction preview (the fields a funder report would use). (Real in Phase 14.)
+- [x] `<VideoRoom>` pre-join (camera/mic check) + in-session controls + end→note; **paste-link fallback** variant when org video off. (LiveKit wired Phase 13.)
+- [x] The `<AIDraft>` mock pipeline: "Generate draft" → labelled AI draft → edit → sign. Structured-extraction preview (the fields a funder report would use). (Real in Phase 14.)
 
 ### Task 7.4: A4 document builder
-- [ ] WYSIWYG A4 sheet for **Invoice / Intake / Report**: borderless fields, live totals, thin toolbar, print stylesheet. Fully responsive (fills phone, scrolls).
+- [x] WYSIWYG A4 sheet for **Invoice / Intake / Report**: borderless fields, live totals, thin toolbar, print stylesheet. Fully responsive (fills phone, scrolls).
 
 ### Task 7.5: Outcome measures
-- [ ] PHQ-9 / GAD-7 capture + `<OutcomeTrend>` trend across sessions; honest "not yet measured" empty state.
+- [x] PHQ-9 / GAD-7 capture + `<OutcomeTrend>` trend across sessions; honest "not yet measured" empty state.
 
 **Done when (mock):** calendar, create-modal, video shell, AI-draft, builder, and outcomes all click through and look finished.
 

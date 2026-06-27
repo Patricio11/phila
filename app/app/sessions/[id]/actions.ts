@@ -13,9 +13,17 @@ import { APPOINTMENT_STATES } from "@/lib/domain/enums";
 
 const idInput = z.object({ appointmentId: z.string().min(1) });
 
+/** The structured fields the scribe extracts — these feed funder reporting (zero double entry). */
+export interface AiExtraction {
+  presentingIssue: string;
+  risk: string;
+  outcome: string;
+  referral: string;
+}
+
 export async function generateAiDraft(
   raw: z.infer<typeof idInput>,
-): Promise<{ ok: true; draft: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; draft: string; extraction: AiExtraction } | { ok: false; error: string }> {
   const parsed = idInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid request" };
 
@@ -35,7 +43,14 @@ export async function generateAiDraft(
     "Plan: continue weekly. Review the morning wind-down routine next session and adjust together.",
   ].join("\n\n");
 
-  return { ok: true, draft };
+  const extraction: AiExtraction = {
+    presentingIssue: "Work–life stress, low morning energy",
+    risk: "None raised today",
+    outcome: "Engaged; routine helping",
+    referral: "None",
+  };
+
+  return { ok: true, draft, extraction };
 }
 
 const signInput = z.object({

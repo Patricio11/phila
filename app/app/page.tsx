@@ -1,17 +1,11 @@
 import { notFound } from "next/navigation";
-import {
-  CalendarDays,
-  CheckCircle2,
-  Plus,
-  Users,
-  UserX,
-} from "lucide-react";
+import { CalendarDays, CheckCircle2, Users, UserX } from "lucide-react";
 import { requireOrg } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
 import { coverageNote } from "@/lib/mock/helpers";
 import { PageHead } from "@/components/shell/page-head";
-import { Button } from "@/components/ui/button";
+import { CreateAppointmentButton } from "@/components/scheduling/create-appointment-button";
 import { Card, CardBody, CardHead } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
 import { ScheduleList } from "@/components/schedule/schedule-list";
@@ -35,6 +29,20 @@ export default async function DashboardPage() {
   const now = new Date().toISOString();
   const dash = await provider.getCounsellorDashboard(me.id, now);
   if (!dash) notFound();
+
+  const [allClients, services, rooms] = await Promise.all([
+    provider.listClients(membership.orgId),
+    provider.listServices(membership.orgId),
+    provider.listRooms(membership.orgId),
+  ]);
+  const scheduling = {
+    orgId: membership.orgId,
+    defaultCounsellorId: me.id,
+    clients: allClients.map((c) => ({ id: c.id, name: c.name })),
+    services: services.map((s) => ({ id: s.id, name: s.name, durationMin: s.durationMin })),
+    counsellors: counsellors.map((c) => ({ id: c.id, name: c.name })),
+    rooms: rooms.map((r) => ({ id: r.id, name: r.name })),
+  };
 
   // Reading one's own caseload is permitted — and still recorded (Protected & Audited Rule).
   await logAccess({
@@ -62,12 +70,7 @@ export default async function DashboardPage() {
             ? "Your day is clear."
             : `You have ${dash.today.length} ${plural(dash.today.length, "session")} today · ${remaining} still to come.`
         }
-        actions={
-          <Button>
-            <Plus className="size-4" strokeWidth={2.2} aria-hidden />
-            New appointment
-          </Button>
-        }
+        actions={<CreateAppointmentButton options={scheduling} />}
       />
 
       {/* Stat cards — honest coverage, no vanity numbers, no fabricated trends. */}

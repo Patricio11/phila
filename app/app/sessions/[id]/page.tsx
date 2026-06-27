@@ -14,7 +14,10 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
   const provider = await getDataProvider();
 
   const now = new Date().toISOString();
-  const counsellors = await provider.listCounsellors(membership.orgId);
+  const [counsellors, org] = await Promise.all([
+    provider.listCounsellors(membership.orgId),
+    provider.getOrg(membership.orgId),
+  ]);
   const me = counsellors.find((c) => c.userId === principal.userId);
   const data = await provider.getSession(id, now);
   if (!me || !data || data.appointment.orgId !== membership.orgId) notFound();
@@ -37,5 +40,5 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
     reason: access.reason,
   });
 
-  return <SessionEditor data={data} counsellorName={me.name} />;
+  return <SessionEditor data={data} counsellorName={me.name} videoEnabled={Boolean(org?.features.video)} />;
 }

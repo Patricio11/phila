@@ -4,6 +4,7 @@ import { getDataProvider } from "@/lib/data-provider";
 import { isoWeekday } from "@/lib/mock/helpers";
 import { PageHead } from "@/components/shell/page-head";
 import { CalendarWeek } from "@/components/workspace/calendar-week";
+import { CreateAppointmentButton } from "@/components/scheduling/create-appointment-button";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Calendar" };
@@ -43,14 +44,27 @@ export default async function CalendarPage() {
   }));
 
   const now = new Date().toISOString();
-  const all = await provider.listCounsellorSessions(me.id, now);
+  const [all, allClients, services, rooms] = await Promise.all([
+    provider.listCounsellorSessions(me.id, now),
+    provider.listClients(membership.orgId),
+    provider.listServices(membership.orgId),
+    provider.listRooms(membership.orgId),
+  ]);
   const events = all.filter((ev) => weekDates.some((d) => ev.startsAt.startsWith(d)));
+  const scheduling = {
+    orgId: membership.orgId,
+    defaultCounsellorId: me.id,
+    clients: allClients.map((c) => ({ id: c.id, name: c.name })),
+    services: services.map((s) => ({ id: s.id, name: s.name, durationMin: s.durationMin })),
+    counsellors: counsellors.map((c) => ({ id: c.id, name: c.name })),
+    rooms: rooms.map((r) => ({ id: r.id, name: r.name })),
+  };
 
   const label = `${new Intl.DateTimeFormat("en-ZA", { timeZone: "UTC", day: "numeric", month: "short" }).format(new Date(`${weekDates[0]}T12:00:00Z`))} – ${new Intl.DateTimeFormat("en-ZA", { timeZone: "UTC", day: "numeric", month: "short" }).format(new Date(`${weekDates[weekDates.length - 1]}T12:00:00Z`))}`;
 
   return (
     <div className="rise space-y-6">
-      <PageHead title="Calendar" summary={`This week · ${label}`} />
+      <PageHead title="Calendar" summary={`This week · ${label}`} actions={<CreateAppointmentButton options={scheduling} />} />
       <CalendarWeek days={days} businessHours={org.scheduling.businessHours} events={events} />
     </div>
   );

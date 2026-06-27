@@ -1,11 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { FilePlus2 } from "lucide-react";
 import type { Invoice } from "@/lib/mock/types";
 import type { PaymentStatus } from "@/lib/domain/enums";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 export interface InvoiceRow {
@@ -28,8 +28,6 @@ function shortDate(iso: string): string {
 }
 
 export function InvoiceBoard({ rows }: { rows: InvoiceRow[] }) {
-  const { toast } = useToast();
-
   const outstanding = rows.filter((r) => r.invoice.status === "unpaid").reduce((s, r) => s + r.invoice.amountCents, 0);
   const paid = rows.filter((r) => r.invoice.status === "paid").reduce((s, r) => s + r.invoice.amountCents, 0);
 
@@ -97,12 +95,10 @@ export function InvoiceBoard({ rows }: { rows: InvoiceRow[] }) {
         rowKey={(r) => r.invoice.id}
         search={{ placeholder: "Search invoices…", getText: (r) => `${r.invoice.number} ${r.clientName} ${r.invoice.serviceName}` }}
         toolbar={
-          <Button
-            size="sm"
-            className="ml-auto"
-            onClick={() => toast({ tone: "default", title: "New invoice", description: "Opens the A4 builder to draft and send." })}
-          >
-            <FilePlus2 className="size-4" strokeWidth={2} aria-hidden /> Create invoice
+          <Button asChild size="sm" className="ml-auto">
+            <Link href="/hub/invoicing/new">
+              <FilePlus2 className="size-4" strokeWidth={2} aria-hidden /> Create invoice
+            </Link>
           </Button>
         }
       />

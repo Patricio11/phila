@@ -9,6 +9,7 @@ import { DataTable, type Column } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { markInvoicePaid, sendInvoiceReminder } from "@/app/hub/invoicing/actions";
+import { InvoicePreview } from "@/components/hub/invoice-preview";
 import { cn } from "@/lib/utils";
 
 export interface InvoiceRow {
@@ -30,11 +31,12 @@ function shortDate(iso: string): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "short" }).format(new Date(iso));
 }
 
-export function InvoiceBoard({ rows, nowISO }: { rows: InvoiceRow[]; nowISO: string }) {
+export function InvoiceBoard({ rows, nowISO, orgName, province }: { rows: InvoiceRow[]; nowISO: string; orgName: string; province: string }) {
   const { toast } = useToast();
   const nowMs = new Date(nowISO).getTime();
   const [statusOf, setStatusOf] = useState<Record<string, PaymentStatus>>({});
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [preview, setPreview] = useState<InvoiceRow | null>(null);
   const [, start] = useTransition();
 
   const effective = (r: InvoiceRow): PaymentStatus => statusOf[r.invoice.id] ?? r.invoice.status;
@@ -68,7 +70,7 @@ export function InvoiceBoard({ rows, nowISO }: { rows: InvoiceRow[]; nowISO: str
   };
 
   const columns: Column<InvoiceRow>[] = [
-    { key: "number", header: "Invoice", sortValue: (r) => r.invoice.number, render: (r) => <span className="font-medium tabular-nums text-text">{r.invoice.number}</span> },
+    { key: "number", header: "Invoice", sortValue: (r) => r.invoice.number, render: (r) => <button type="button" onClick={() => setPreview(r)} className="font-medium tabular-nums text-text hover:text-accent hover:underline">{r.invoice.number}</button> },
     { key: "client", header: "Client", sortValue: (r) => r.clientName, render: (r) => <span className="text-text-2">{r.clientName}</span> },
     { key: "service", header: "Service", hideBelow: "md", render: (r) => <span className="text-text-3">{r.invoice.serviceName}</span> },
     {
@@ -139,6 +141,17 @@ export function InvoiceBoard({ rows, nowISO }: { rows: InvoiceRow[]; nowISO: str
           </Button>
         }
       />
+
+      {preview && (
+        <InvoicePreview
+          invoice={preview.invoice}
+          clientName={preview.clientName}
+          orgName={orgName}
+          province={province}
+          status={effective(preview)}
+          onClose={() => setPreview(null)}
+        />
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { logAccess } from "@/lib/audit";
 import { PageHead } from "@/components/shell/page-head";
 import { HubClientsTable } from "@/components/hub/hub-clients-table";
 import { AddClientButton } from "@/components/hub/add-client-modal";
+import { ImportClientsButton } from "@/components/hub/import-clients-modal";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Clients" };
@@ -36,7 +37,12 @@ export default async function HubClientsPage() {
       <PageHead
         title="Clients"
         summary={`${rows.length} across the practice. Reassign or remove without distorting your reporting.`}
-        actions={<AddClientButton counsellors={counsellorOpts} />}
+        actions={
+          <div className="flex items-center gap-2">
+            <ImportClientsButton counsellors={counsellorOpts} />
+            <AddClientButton counsellors={counsellorOpts} />
+          </div>
+        }
       />
 
       <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">

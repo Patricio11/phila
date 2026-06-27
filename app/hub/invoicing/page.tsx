@@ -12,9 +12,10 @@ export default async function HubInvoicingPage() {
   const provider = await getDataProvider();
   const now = new Date().toISOString();
 
-  const [invoices, clients] = await Promise.all([
+  const [invoices, clients, org] = await Promise.all([
     provider.listOrgInvoices(membership.orgId),
     provider.listOrgClients(membership.orgId, now),
+    provider.getOrg(membership.orgId),
   ]);
   const nameOf = new Map(clients.map((c) => [c.client.id, c.client.name]));
   const rows: InvoiceRow[] = invoices.map((invoice) => ({ invoice, clientName: nameOf.get(invoice.clientId) ?? "Client" }));
@@ -33,7 +34,7 @@ export default async function HubInvoicingPage() {
         title="Invoicing"
         summary="Create, send, and track invoices. Payments settle to your own gateway once connected."
       />
-      <InvoiceBoard rows={rows} nowISO={now} />
+      <InvoiceBoard rows={rows} nowISO={now} orgName={org?.name ?? membership.orgName} province={org?.province ?? ""} />
     </div>
   );
 }

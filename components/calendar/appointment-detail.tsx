@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { CalendarDays, Check, Clock, Hourglass, MapPin, NotebookPen, Stethoscope, User, UserX, Video, X } from "lucide-react";
+import { AlertTriangle, CalendarDays, Check, Clock, Hourglass, MapPin, NotebookPen, Stethoscope, User, UserX, Video, X } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
 import { Dialog } from "@/components/ui/dialog";
@@ -45,6 +45,7 @@ export function AppointmentDetail({
   appt,
   onClose,
   onUpdated,
+  conflictFor,
   openSessions = true,
   canManage = true,
   clientBasePath = "/app/clients",
@@ -52,6 +53,7 @@ export function AppointmentDetail({
   appt: AppointmentView | null;
   onClose: () => void;
   onUpdated?: (appt: AppointmentView) => void;
+  conflictFor?: (appt: AppointmentView, newStartISO: string) => string | null;
   openSessions?: boolean;
   canManage?: boolean;
   clientBasePath?: string;
@@ -61,8 +63,11 @@ export function AppointmentDetail({
   const [showReschedule, setShowReschedule] = useState(false);
   const [date, setDate] = useState(appt?.startsAt.slice(0, 10) ?? "");
   const [time, setTime] = useState(appt?.startsAt.slice(11, 16) ?? "");
+  const [override, setOverride] = useState(false);
 
   const state = appt ? STATE[appt.state] : null;
+  const proposedStart = date && time ? `${date}T${time}:00+02:00` : null;
+  const conflict = appt && proposedStart && conflictFor ? conflictFor(appt, proposedStart) : null;
 
   const mark = (next: AppointmentState) => {
     if (!appt) return;
@@ -75,13 +80,15 @@ export function AppointmentDetail({
   };
 
   const doReschedule = () => {
-    if (!appt || !date || !time) return;
-    const newStart = `${date}T${time}:00+02:00`;
+    if (!appt || !proposedStart) return;
+    if (conflict && !override) { setOverride(true); return; } // first click warns, second proceeds
+    const newStart = proposedStart;
     start(async () => {
       const res = await rescheduleAppointment({ appointmentId: appt.id, newStart });
       if (!res.ok) return toast({ tone: "error", title: res.error });
       onUpdated?.({ ...appt, startsAt: newStart, state: "scheduled" });
       setShowReschedule(false);
+      setOverride(false);
       toast({ tone: "success", title: "Session moved", description: "No message was sent — that happens once messaging is set up." });
     });
   };
@@ -145,12 +152,17 @@ export function AppointmentDetail({
                 <div className="space-y-2.5 rounded-control border border-border bg-surface-2/40 p-3">
                   <div className="text-[12px] font-semibold text-text">Move this session</div>
                   <div className="grid grid-cols-2 gap-2">
-                    <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="New date" />
-                    <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} aria-label="New time" />
+                    <Input type="date" value={date} onChange={(e) => { setDate(e.target.value); setOverride(false); }} aria-label="New date" />
+                    <Input type="time" value={time} onChange={(e) => { setTime(e.target.value); setOverride(false); }} aria-label="New time" />
                   </div>
+                  {conflict && (
+                    <div className="flex items-start gap-2 rounded-control border border-warn/30 bg-warn-soft px-2.5 py-2 text-[12px] text-warn">
+                      <AlertTriangle className="mt-0.5 size-3.5 shrink-0" strokeWidth={2} aria-hidden /> {conflict}
+                    </div>
+                  )}
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => setShowReschedule(false)} disabled={pending}>Cancel</Button>
-                    <Button size="sm" onClick={doReschedule} loading={pending}>Move session</Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setShowReschedule(false); setOverride(false); }} disabled={pending}>Cancel</Button>
+                    <Button size="sm" onClick={doReschedule} loading={pending}>{conflict ? (override ? "Move anyway" : "Check & move") : "Move session"}</Button>
                   </div>
                 </div>
               ) : (

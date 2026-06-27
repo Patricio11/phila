@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, Video } from "lucide-react";
+import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, Plus, Video } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
 import type { BusinessHours } from "@/lib/mock/types";
@@ -37,6 +37,21 @@ function minutesOf(iso: string): number { return Number(iso.slice(11, 13)) * 60 
 function hhmm(iso: string): string { return iso.slice(11, 16); }
 function fmt(date: string, opts: Intl.DateTimeFormatOptions): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "UTC", ...opts }).format(parse(date));
+}
+
+/** Room / counsellor double-booking check for a proposed new start (Phase 11 does this server-side). */
+function findConflict(events: AppointmentView[], appt: AppointmentView, newStartISO: string): string | null {
+  const start = new Date(newStartISO).getTime();
+  const end = start + appt.durationMin * 60000;
+  for (const e of events) {
+    if (e.id === appt.id || e.state === "cancelled") continue;
+    const es = new Date(e.startsAt).getTime();
+    const ee = es + e.durationMin * 60000;
+    if (start >= ee || end <= es) continue; // no overlap
+    if (appt.roomId && e.roomId === appt.roomId) return `${appt.roomName ?? "That room"} is already booked then — pick another time or room.`;
+    if (e.counsellorId === appt.counsellorId) return `${appt.counsellorName.split(" ")[0]} already has a session at that time.`;
+  }
+  return null;
 }
 
 export function CalendarView({
@@ -147,6 +162,7 @@ export function CalendarView({
         appt={detail}
         onClose={() => setDetail(null)}
         onUpdated={(u) => { setEvents((prev) => prev.map((e) => (e.id === u.id ? u : e))); setDetail(u); }}
+        conflictFor={(a, newStart) => findConflict(events, a, newStart)}
         openSessions={openSessions}
         clientBasePath={clientBasePath}
       />
@@ -160,9 +176,17 @@ export function CalendarView({
               <div className="text-text-3 line-through">{whenFull(confirm.appt.startsAt)}</div>
               <div className="mt-0.5 font-medium text-text">{whenFull(confirm.newStart)}</div>
             </div>
+            {(() => {
+              const clash = findConflict(events, confirm.appt, confirm.newStart);
+              return clash ? (
+                <div className="mt-3 flex items-start gap-2 rounded-control border border-warn/30 bg-warn-soft px-3 py-2 text-[12px] text-warn">
+                  <AlertTriangle className="mt-0.5 size-3.5 shrink-0" strokeWidth={2} aria-hidden /> {clash}
+                </div>
+              ) : null;
+            })()}
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="ghost" size="sm" onClick={() => setConfirm(null)} disabled={pending}>Cancel</Button>
-              <Button size="sm" onClick={doReschedule} loading={pending}>Move session</Button>
+              <Button size="sm" onClick={doReschedule} loading={pending}>{findConflict(events, confirm.appt, confirm.newStart) ? "Move anyway" : "Move session"}</Button>
             </div>
           </div>
         </div>

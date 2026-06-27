@@ -111,6 +111,86 @@ export interface SupervisionItem {
   submittedAt: string;
 }
 
+/* ---- Org-admin Hub ---------------------------------------------------- */
+
+export interface HubOverview {
+  clientsToday: number;
+  clientsWeek: number;
+  clientsMonth: number;
+  incomeMonthCents: number;
+  incomePredictionCents: number;
+  noShowRate: number;
+  openIntakes: number;
+  pendingCredentials: number;
+  outcomesCoverage: { captured: number; total: number };
+  attention: AttentionItem[];
+}
+
+export interface OrgClientRow {
+  client: Client;
+  counsellorName: string;
+  nextSession: AppointmentView | null;
+  lastSession: AppointmentView | null;
+  status: CaseloadStatus;
+}
+
+export interface TeamMemberView {
+  userId: string;
+  name: string;
+  email: string;
+  teamRole: import("@/lib/domain/enums").TeamRole;
+  isSupervisor: boolean;
+  active: boolean;
+  credential: { body: import("@/lib/domain/enums").CredentialBody; status: import("@/lib/domain/enums").CredentialStatus } | null;
+  joinedAt: string;
+}
+
+export interface RoomView {
+  room: Room;
+  siteName: string;
+  utilisation: { meetings: number; bookedHours: number; utilisationPct: number; busiestDay: string | null };
+  assignments: { counsellorName: string; days: number[]; start: string; end: string }[];
+  bookings: AppointmentView[];
+}
+
+export interface IntakeStatusRow {
+  client: Client;
+  counsellorName: string;
+  status: "completed" | "sent" | "not_sent";
+  sentAt: string | null;
+}
+
+export interface ReportingFilters {
+  province?: string;
+  gender?: string;
+  ageBand?: string;
+  employment?: string;
+}
+
+export interface Breakdown {
+  label: string;
+  count: number | null;
+  suppressed: boolean;
+}
+
+export interface ReportingResult {
+  totalClients: number;
+  withDemographics: number;
+  matched: number;
+  byProvince: Breakdown[];
+  byGender: Breakdown[];
+  byPopulationGroup: Breakdown[];
+  byAgeBand: Breakdown[];
+  byEmployment: Breakdown[];
+  outcome: { points: OutcomePoint[]; coverage: { captured: number; total: number } };
+}
+
+export interface OrgSettings {
+  org: Org;
+  paymentProvider: import("@/lib/domain/enums").PaymentProvider | null;
+  paymentStatus: "off" | "connected" | "test_passed";
+}
+
 /** The composed payload for the counsellor's Today dashboard. */
 export interface CounsellorDashboard {
   org: Org;
@@ -172,6 +252,16 @@ export interface DataProvider {
   listClientDocuments(clientId: string): Promise<ClientDocument[]>;
   listClientInvoices(clientId: string): Promise<Invoice[]>;
   getClientConsents(clientId: string): Promise<ConsentRecord[]>;
+
+  // Org-admin Hub
+  getHubOverview(orgId: string, now: string): Promise<HubOverview | null>;
+  listOrgClients(orgId: string, now: string): Promise<OrgClientRow[]>;
+  listTeam(orgId: string): Promise<TeamMemberView[]>;
+  getRoomsOverview(orgId: string, now: string): Promise<RoomView[]>;
+  listIntakeStatus(orgId: string, now: string): Promise<IntakeStatusRow[]>;
+  listOrgInvoices(orgId: string): Promise<Invoice[]>;
+  getReporting(orgId: string, now: string, filters: ReportingFilters): Promise<ReportingResult>;
+  getOrgSettings(orgId: string): Promise<OrgSettings | null>;
 }
 
 let provider: DataProvider | null = null;

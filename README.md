@@ -30,6 +30,10 @@ change**. See `ROADMAP.md`.
 - ✅ **Phase 4 — Counsellor workspace.** The daily loop: calendar (week + agenda, drag-to-reschedule),
   caseload `DataTable`, the client dossier (consent-gated demographics, outcome trend), the session +
   note editor (private note + mock AIDraft → sign, mark progress, care-plan composer), and supervision.
+- ✅ **Phase 5 — Org-admin Hub.** Nine surfaces: overview (income prediction), all-counsellor calendars,
+  team & roles (honest reach), rooms (weekly occupancy rhythm + insights), clients, intake, invoicing,
+  the consent-gated **k-anon reporting** + one-click funder report, and settings (dormant integrations +
+  BYO payment connection + public-page editor).
 
 ## Getting started
 

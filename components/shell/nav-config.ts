@@ -2,6 +2,8 @@ import type { LucideIcon } from "lucide-react";
 import {
   CalendarDays,
   CalendarHeart,
+  ClipboardList,
+  Contact,
   CreditCard,
   DoorOpen,
   FileText,
@@ -10,6 +12,8 @@ import {
   MessagesSquare,
   NotebookPen,
   PieChart,
+  ReceiptText,
+  Settings,
   ShieldCheck,
   UserCog,
   Users,
@@ -39,7 +43,7 @@ export interface NavSection {
  * the server→client boundary. So a Server Component never passes a config across
  * — it passes a `NavKey`, and the client shell resolves the config here.
  */
-export type NavKey = "counsellor" | "client";
+export type NavKey = "counsellor" | "client" | "hub";
 
 /** Counsellor workspace nav. Dashboard is the Phase-0 reference build. */
 export const counsellorNav: NavSection[] = [
@@ -78,7 +82,31 @@ export const clientNav: NavSection[] = [
   },
 ];
 
+/** Org-admin Hub nav (DESIGN.md §5.4). */
+export const hubNav: NavSection[] = [
+  {
+    label: "Oversight",
+    items: [
+      { label: "Overview", href: "/hub", icon: LayoutDashboard, ready: true },
+      { label: "Calendars", href: "/hub/calendars", icon: CalendarDays, ready: true },
+      { label: "Clients", href: "/hub/clients", icon: Contact, ready: true },
+      { label: "Reports & funders", href: "/hub/reporting", icon: PieChart, ready: true },
+    ],
+  },
+  {
+    label: "Run the practice",
+    items: [
+      { label: "Team", href: "/hub/team", icon: Users, ready: true },
+      { label: "Rooms", href: "/hub/rooms", icon: DoorOpen, ready: true },
+      { label: "Intake", href: "/hub/intake", icon: ClipboardList, ready: true },
+      { label: "Invoicing", href: "/hub/invoicing", icon: ReceiptText, ready: true },
+      { label: "Settings", href: "/hub/settings", icon: Settings, ready: true },
+    ],
+  },
+];
+
 export const NAVS: Record<NavKey, NavSection[]> = {
   counsellor: counsellorNav,
   client: clientNav,
+  hub: hubNav,
 };

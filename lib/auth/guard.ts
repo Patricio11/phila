@@ -5,6 +5,7 @@ import {
   activeMembership,
   getClientPrincipal,
   getCurrentPrincipal,
+  getOrgAdminPrincipal,
   type OrgMembership,
   type Principal,
 } from "@/lib/auth/session";
@@ -60,6 +61,18 @@ export async function requireClient(): Promise<{ principal: Principal; clientId:
   if (principal.platformRole !== "client" || !principal.clientId)
     throw new ForbiddenError("Requires a client account");
   return { principal, clientId: principal.clientId };
+}
+
+/**
+ * Resolve the org-admin (Hub) principal + membership. Part A returns the demo
+ * org-admin; Phase 9 resolves the real session and asserts the `org_admin` role.
+ */
+export async function requireHub(): Promise<{ principal: Principal; membership: OrgMembership }> {
+  const principal = await getOrgAdminPrincipal();
+  const membership = activeMembership(principal);
+  if (!membership || membership.teamRole !== "org_admin")
+    throw new ForbiddenError("Requires an org-admin account");
+  return { principal, membership };
 }
 
 /** Resolve the active org membership, optionally asserting a team role. */

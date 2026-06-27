@@ -102,7 +102,16 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
   enforced + audited), `/app/supervision` sign-off queue. New: `DataTable`, `components/workspace/*`,
   session/calendar server actions (Zod + audited). `build`/`typecheck`/`lint` clean. See
   `docs/completed/PHASE_4_COMPLETE.md`.
-- **Phase 5** (Org-admin Hub: oversight, calendars, team & roles, rooms, intake, invoicing, reporting) — ⏳ next.
+- **Phase 5** (Org-admin Hub) — ✅ **2026-06-27**. Nine surfaces behind `requireHub` (demo org-admin
+  Thandeka): `/hub` overview (org StatCards + **income prediction** + attention), `/hub/calendars`
+  (all-counsellor oversight, notes not openable here), `/hub/team` (roles + **honest reach** + credentials),
+  `/hub/rooms` (multi-site summary + **weekly occupancy rhythm** + insight badges + assignments),
+  `/hub/clients` (reassign + cancel-stats-preserved), `/hub/intake`, `/hub/invoicing` (board + create),
+  `/hub/reporting` (**consent-gated** demographic filters + **k-anon "too few to report"** + one-click
+  funder report, audited), `/hub/settings` (integrations **dormant by default** + **BYO PaymentConnectionCard**
+  + public-page editor). New: `FilterMenu`, `components/hub/*`, 8 seam methods + reporting actions.
+  `build`/`typecheck`/`lint` clean; 26 routes. See `docs/completed/PHASE_5_COMPLETE.md`.
+- **Phase 5.5** (funder & grant module + funder portal `/funder`) — ⏳ next.
 - *(Update this block as phases ship. Part A is mock-first: nothing below Phase 9 touches a real DB.)*
 
 ---

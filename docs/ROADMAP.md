@@ -179,38 +179,38 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 
 ---
 
-## 🏢 PHASE 5: ORG-ADMIN HUB
+## 🏢 PHASE 5: ORG-ADMIN HUB ✅ (2026-06-27)
 *Goal: programme-grade oversight + the funder/demographic reporting differentiator. Mock data.*
 > Screen detail: `DESIGN.md` §8.
 
 ### Task 5.1: Overview + calendars oversight
-- [ ] `/hub` overview: clients today/week/month, income + **income prediction**, no-show rate, open intakes, pending credential checks — all `<StatCard>` with honest coverage captions.
-- [ ] `/hub/calendars`: oversight of **every** counsellor's calendar (resource lanes); book on behalf; reschedule/cancel; allocate counsellor + **room**.
+- [x] `/hub` overview: clients today/week/month, income + **income prediction**, no-show rate, open intakes, pending credential checks — all `<StatCard>` with honest coverage captions.
+- [x] `/hub/calendars`: oversight of **every** counsellor's calendar (resource lanes); book on behalf; reschedule/cancel; allocate counsellor + **room**.
 
 ### Task 5.2: Team, roles & clients
-- [ ] `/hub/team`: invite / add / deactivate team members and **set each member's org role** — `org_admin`, `counsellor` (+`supervisor`), `front_desk` / `intake_coordinator`, `finance`, `programme_manager`. Permissions differ per role (clinical-note access = counsellor + supervisor only; front desk schedules; finance bills; programme manager sees aggregate/consented reporting).
-- [ ] Counsellor credential status (HPCSA / ASCHP) + supervisor edges; **per-counsellor room schedule** (see 5.6).
-- [ ] `/hub/clients`: full list; reassign counsellor; **cancel/delete client with stats preserved** (Outcome-Honesty Rule — deletion never distorts compiled stats).
+- [x] `/hub/team`: invite / add / deactivate team members and **set each member's org role** — `org_admin`, `counsellor` (+`supervisor`), `front_desk` / `intake_coordinator`, `finance`, `programme_manager`. Permissions differ per role (clinical-note access = counsellor + supervisor only; front desk schedules; finance bills; programme manager sees aggregate/consented reporting).
+- [x] Counsellor credential status (HPCSA / ASCHP) + supervisor edges; **per-counsellor room schedule** (see 5.6).
+- [x] `/hub/clients`: full list; reassign counsellor; **cancel/delete client with stats preserved** (Outcome-Honesty Rule — deletion never distorts compiled stats).
 
 ### Task 5.6: Rooms & resource management
-- [ ] `/hub/rooms`: room CRUD — name, **site/location**, capacity, equipment/features (e.g. play-therapy kit, wheelchair access), status (`active` / `maintenance`), and a colour for the calendar lane.
-- [ ] **Per-room schedule + utilisation:** each room shows *who is in it, when, and for what* — every booking (counsellor + client + type + time), plus utilisation stats (meetings this week, booked hours, % utilisation, busiest day). The honest "is this room over/under-used" view.
-- [ ] **Counsellor → room assignment (day/time):** assign a counsellor to a room on a recurring day/time pattern (e.g. "Nomsa — Room 2, Mon & Wed 09:00–13:00") *or* ad hoc per appointment. The scheduling engine (Phase 11) uses this to default + validate the room on every in-person booking and to **prevent double-booking** a room.
-- [ ] Multi-site aware: an org with more than one venue groups rooms by site; in-person booking respects the site.
+- [x] `/hub/rooms`: room CRUD — name, **site/location**, capacity, equipment/features (e.g. play-therapy kit, wheelchair access), status (`active` / `maintenance`), and a colour for the calendar lane.
+- [x] **Per-room schedule + utilisation:** each room shows *who is in it, when, and for what* — every booking (counsellor + client + type + time), plus utilisation stats (meetings this week, booked hours, % utilisation, busiest day). The honest "is this room over/under-used" view.
+- [x] **Counsellor → room assignment (day/time):** assign a counsellor to a room on a recurring day/time pattern (e.g. "Nomsa — Room 2, Mon & Wed 09:00–13:00") *or* ad hoc per appointment. The scheduling engine (Phase 11) uses this to default + validate the room on every in-person booking and to **prevent double-booking** a room.
+- [x] Multi-site aware: an org with more than one venue groups rooms by site; in-person booking respects the site.
 
 **Done when (mock):** the Hub can create rooms, see each room's full schedule + utilisation, assign counsellors to rooms by day/time, and every in-person appointment carries a conflict-free room.
 
 ### Task 5.3: Intake + invoicing
-- [ ] `/hub/intake`: send intake forms to a client / a programme cohort; track completion.
-- [ ] `/hub/invoicing`: create/send invoices (A4 builder); see paid / unpaid / cancelled (mock; PayShap in Phase 15).
+- [x] `/hub/intake`: send intake forms to a client / a programme cohort; track completion.
+- [x] `/hub/invoicing`: create/send invoices (A4 builder); see paid / unpaid / cancelled (mock; PayShap in Phase 15).
 
 ### Task 5.4: Reporting (the differentiator)
-- [ ] `/hub/reporting`: filter clients by province / gender / age band / employment status / service; outcome trends (`<OutcomeTrend>` aggregate); **consent-gated**; **k-anon floor** on any export (`applyKAnon`); one-click funder report (mock PDF/CSV). Coverage caption everywhere ("412 of 530 clients have demographics").
+- [x] `/hub/reporting`: filter clients by province / gender / age band / employment status / service; outcome trends (`<OutcomeTrend>` aggregate); **consent-gated**; **k-anon floor** on any export (`applyKAnon`); one-click funder report (mock PDF/CSV). Coverage caption everywhere ("412 of 530 clients have demographics").
 
 ### Task 5.5: Settings, payments & public page editor
-- [ ] `/hub/settings`: default duration, buffer, breaks; **business hours** (per-day enable + start/end); integration toggles (AI/video/WhatsApp) **dormant by default**.
-- [ ] **Org payment connection (BYO gateway):** the org connects its *own* gateway so **clients pay the org directly** — pick a provider from the catalogue the platform enables (Stitch / Ozow for PayShap + pay-by-bank, Yoco / Paystack for cards), **switch it on, enter the org's own credentials** (stored encrypted), Test connection, set as default. Switching providers is one toggle. (Wired in Phase 15B.)
-- [ ] Public-page editor: edit §2.2 content + `--brand-accent` + SEO fields (mock save).
+- [x] `/hub/settings`: default duration, buffer, breaks; **business hours** (per-day enable + start/end); integration toggles (AI/video/WhatsApp) **dormant by default**.
+- [x] **Org payment connection (BYO gateway):** the org connects its *own* gateway so **clients pay the org directly** — pick a provider from the catalogue the platform enables (Stitch / Ozow for PayShap + pay-by-bank, Yoco / Paystack for cards), **switch it on, enter the org's own credentials** (stored encrypted), Test connection, set as default. Switching providers is one toggle. (Wired in Phase 15B.)
+- [x] Public-page editor: edit §2.2 content + `--brand-accent` + SEO fields (mock save).
 
 **Done when (mock):** the Hub demonstrates oversight of all counsellors, a consent-gated demographic filter, and a one-click funder report — the things incumbents can't show.
 

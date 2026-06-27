@@ -7,15 +7,26 @@
  */
 import type {
   AppointmentView,
+  AttentionItem,
+  Breakdown,
   CaseloadRow,
   CaseloadStatus,
   CounsellorDashboard,
   DataProvider,
+  HubOverview,
+  IntakeStatusRow,
+  OrgClientRow,
+  OutcomePoint,
+  ReportingResult,
+  RoomView,
+  TeamMemberView,
 } from "@/lib/data-provider";
 import type {
   Appointment,
   Client,
   Counsellor,
+  Demographics,
+  Invoice,
   Org,
   OutcomeMeasure,
   Room,
@@ -34,18 +45,27 @@ import {
   demographics as allDemographics,
   intakeForms,
   invoices as allInvoices,
+  orgExtraInvoices,
   orgPublicContent,
   orgs,
   outcomeSeries,
+  roomAssignments,
   rooms as allRooms,
   services as allServices,
   sites as allSites,
   supervisionTemplates,
+  teamMembers,
 } from "@/lib/mock/fixtures";
 import { isConsentActive } from "@/lib/consent";
 import { liveOnly } from "@/lib/retention";
-import { SAST_OFFSET } from "@/lib/mock/helpers";
+import { applyKAnon, roomUtilisation, SAST_OFFSET } from "@/lib/mock/helpers";
 import type { ConsentPurpose } from "@/lib/domain/enums";
+import {
+  AGE_BAND_LABELS,
+  EMPLOYMENT_LABELS,
+  GENDER_LABELS,
+  POPULATION_GROUP_LABELS,
+} from "@/lib/domain/labels";
 
 /** Clients with at least one captured outcome measure (drives honest coverage). */
 const MEASURED_CLIENTS = new Set(["cl_lerato", "cl_johan", "cl_zanele", "cl_fatima"]);
@@ -203,6 +223,43 @@ function seedNote(appt: Appointment): SessionNote | null {
     };
   }
   return null;
+}
+
+function weekDatesOf(nowISO: string): string[] {
+  const { from } = isoWeekRange(sastDate(nowISO));
+  return Array.from({ length: 7 }, (_, i) => addDays(from, i));
+}
+
+function orgInvoicesFor(orgId: string): Invoice[] {
+  const fromClients = Object.values(allInvoices).flat().filter((i) => i.orgId === orgId);
+  const extra = orgExtraInvoices.filter((i) => i.orgId === orgId);
+  return [...fromClients, ...extra].sort((a, b) => b.issuedAt.localeCompare(a.issuedAt));
+}
+
+function caseloadStatusFor(client: Client, now: string): CaseloadStatus {
+  const nowMs = new Date(now).getTime();
+  const appts = clientAppointments(client.id, now);
+  const past = appts.filter((a) => new Date(a.startsAt).getTime() <= nowMs);
+  const held = past.filter((a) => ["completed", "no_show", "risk_flagged", "discharged"].includes(a.state));
+  const last = past.sort((a, b) => a.startsAt.localeCompare(b.startsAt))[past.length - 1];
+  if (client.riskFlag) return "at_risk";
+  if (held.length === 0) return "new";
+  if (last && nowMs - new Date(last.startsAt).getTime() > 60 * 86_400_000) return "inactive";
+  return "active";
+}
+
+/** Count by a key extractor, returning {label,count} rows for k-anon. */
+function countBy<T>(rows: readonly T[], key: (r: T) => string): { label: string; count: number }[] {
+  const map = new Map<string, number>();
+  for (const r of rows) {
+    const k = key(r);
+    map.set(k, (map.get(k) ?? 0) + 1);
+  }
+  return [...map.entries()].map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count);
+}
+
+function toBreakdown(rows: { label: string; count: number }[]): Breakdown[] {
+  return applyKAnon(rows);
 }
 
 async function ok<T>(value: T): Promise<T> {
@@ -424,6 +481,227 @@ export const mockProvider: DataProvider = {
         };
       });
     return ok(items);
+  },
+
+  // ---- Org-admin Hub --------------------------------------------------
+  getHubOverview: (orgId, now): Promise<HubOverview | null> => {
+    const org = orgs.find((o) => o.id === orgId);
+    if (!org) return ok(null);
+    const counsellors = allCounsellors.filter((c) => c.orgId === orgId);
+    const clients = liveOnly(allClients.filter((c) => c.orgId === orgId));
+    const appts = counsellors.flatMap((c) => materialise(c.id, now));
+    const nowMs = new Date(now).getTime();
+    const today = sastDate(now);
+    const week = isoWeekRange(today);
+    const month = today.slice(0, 7);
+
+    const live = appts.filter((a) => a.state !== "cancelled");
+    const clientsToday = new Set(live.filter((a) => a.startsAt.startsWith(today)).map((a) => a.clientId)).size;
+    const inWeek = live.filter((a) => {
+      const d = a.startsAt.slice(0, 10);
+      return d >= week.from && d <= week.to;
+    });
+    const clientsWeek = new Set(inWeek.map((a) => a.clientId)).size;
+    const clientsMonth = new Set(live.filter((a) => a.startsAt.startsWith(month)).map((a) => a.clientId)).size;
+
+    const invoices = orgInvoicesFor(orgId);
+    const incomeMonthCents = invoices
+      .filter((i) => i.status === "paid" && i.issuedAt.startsWith(month))
+      .reduce((s, i) => s + i.amountCents, 0);
+    const futureMonth = appts.filter(
+      (a) => a.startsAt.startsWith(month) && new Date(a.startsAt).getTime() > nowMs && a.state === "scheduled",
+    );
+    const incomePredictionCents =
+      incomeMonthCents +
+      futureMonth.reduce((s, a) => s + (allServices.find((x) => x.id === a.serviceId)?.priceCents ?? 0), 0);
+
+    const heldWeek = inWeek.filter((a) => ["completed", "no_show", "risk_flagged"].includes(a.state));
+    const noShows = inWeek.filter((a) => a.state === "no_show").length;
+    const noShowRate = heldWeek.length === 0 ? 0 : Math.round((noShows / heldWeek.length) * 100);
+
+    const pendingCredentials = counsellors.filter((c) => ["pending", "unverified"].includes(c.credential.status)).length;
+    const openIntakes = clients.filter(
+      (c) => clientAppointments(c.id, now).filter((a) => a.state === "completed" || a.state === "discharged").length === 0,
+    ).length;
+    const measured = clients.filter((c) => (clientOutcomes[c.id]?.length ?? 0) > 0).length;
+
+    const attention: AttentionItem[] = [];
+    for (const c of clients) {
+      if (c.riskFlag)
+        attention.push({
+          id: `risk_${c.id}`,
+          tone: "rose",
+          title: `Safeguarding — ${c.name}`,
+          detail: "A counsellor has flagged a safeguarding concern.",
+          href: "/hub/clients",
+        });
+    }
+    if (pendingCredentials > 0)
+      attention.push({
+        id: "creds",
+        tone: "amber",
+        title: `${pendingCredentials} credential ${pendingCredentials === 1 ? "check" : "checks"} pending`,
+        detail: "Verify HPCSA / ASCHP / SACSSP registration before clients are assigned.",
+        href: "/hub/team",
+      });
+
+    return ok({
+      clientsToday,
+      clientsWeek,
+      clientsMonth,
+      incomeMonthCents,
+      incomePredictionCents,
+      noShowRate,
+      openIntakes,
+      pendingCredentials,
+      outcomesCoverage: { captured: measured, total: clients.length },
+      attention,
+    });
+  },
+
+  listOrgClients: (orgId, now) => {
+    const counsellors = allCounsellors.filter((c) => c.orgId === orgId);
+    const clients = liveOnly(allClients.filter((c) => c.orgId === orgId));
+    const nowMs = new Date(now).getTime();
+    const rows: OrgClientRow[] = clients.map((client) => {
+      const appts = clientAppointments(client.id, now)
+        .map(toView)
+        .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+      const past = appts.filter((a) => new Date(a.startsAt).getTime() <= nowMs);
+      const future = appts.filter((a) => new Date(a.startsAt).getTime() > nowMs && a.state === "scheduled");
+      const counsellor = counsellors.find((c) => c.id === client.primaryCounsellorId);
+      return {
+        client,
+        counsellorName: counsellor?.name ?? "Unassigned",
+        nextSession: future[0] ?? null,
+        lastSession: past[past.length - 1] ?? null,
+        status: caseloadStatusFor(client, now),
+      };
+    });
+    return ok(rows);
+  },
+
+  listTeam: (orgId): Promise<TeamMemberView[]> => {
+    void orgId; // single-org demo; teamMembers are all Masizakhe
+    return ok(
+      teamMembers.map((m) => {
+        const counsellor = m.counsellorId ? allCounsellors.find((c) => c.id === m.counsellorId) : undefined;
+        return {
+          userId: m.userId,
+          name: m.name,
+          email: m.email,
+          teamRole: m.teamRole,
+          isSupervisor: m.isSupervisor,
+          active: m.active,
+          credential: counsellor ? { body: counsellor.credential.body, status: counsellor.credential.status } : null,
+          joinedAt: m.joinedAt,
+        };
+      }),
+    );
+  },
+
+  getRoomsOverview: (orgId, now): Promise<RoomView[]> => {
+    const org = orgs.find((o) => o.id === orgId);
+    if (!org) return ok([]);
+    const counsellors = allCounsellors.filter((c) => c.orgId === orgId);
+    const appts = counsellors.flatMap((c) => materialise(c.id, now)).map(toView);
+    const weekDates = weekDatesOf(now);
+    const rooms = allRooms.filter((r) => r.orgId === orgId);
+    return ok(
+      rooms.map((room) => {
+        const roomAppts = appts.filter((a) => a.roomId === room.id);
+        return {
+          room,
+          siteName: allSites.find((s) => s.id === room.siteId)?.name ?? "",
+          utilisation: roomUtilisation({
+            appointments: roomAppts,
+            businessHours: org.scheduling.businessHours,
+            weekDates,
+          }),
+          assignments: roomAssignments
+            .filter((ra) => ra.roomId === room.id)
+            .map((ra) => ({
+              counsellorName: counsellors.find((c) => c.id === ra.counsellorId)?.name ?? "",
+              days: ra.days,
+              start: ra.start,
+              end: ra.end,
+            })),
+          bookings: roomAppts
+            .filter((a) => weekDates.some((d) => a.startsAt.startsWith(d)))
+            .sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
+        };
+      }),
+    );
+  },
+
+  listIntakeStatus: (orgId, now): Promise<IntakeStatusRow[]> => {
+    const counsellors = allCounsellors.filter((c) => c.orgId === orgId);
+    const clients = liveOnly(allClients.filter((c) => c.orgId === orgId));
+    return ok(
+      clients.map((client) => {
+        const appts = clientAppointments(client.id, now);
+        const hasCompleted = appts.some((a) => a.state === "completed" || a.state === "discharged");
+        const status: IntakeStatusRow["status"] = hasCompleted ? "completed" : appts.length > 0 ? "sent" : "not_sent";
+        return {
+          client,
+          counsellorName: counsellors.find((c) => c.id === client.primaryCounsellorId)?.name ?? "Unassigned",
+          status,
+          sentAt: appts.length > 0 ? client.createdAt : null,
+        };
+      }),
+    );
+  },
+
+  listOrgInvoices: (orgId) => ok(orgInvoicesFor(orgId)),
+
+  getReporting: (orgId, now, filters): Promise<ReportingResult> => {
+    const clients = liveOnly(allClients.filter((c) => c.orgId === orgId));
+    const consented = clients.filter((c) => consentActiveFor(c.id, "demographics"));
+    let demos = consented
+      .map((c) => allDemographics.find((d) => d.clientId === c.id))
+      .filter((d): d is Demographics => Boolean(d));
+
+    if (filters.province) demos = demos.filter((d) => d.province === filters.province);
+    if (filters.gender) demos = demos.filter((d) => d.gender === filters.gender);
+    if (filters.ageBand) demos = demos.filter((d) => d.ageBand === filters.ageBand);
+    if (filters.employment) demos = demos.filter((d) => d.employmentStatus === filters.employment);
+
+    // Aggregate PHQ-9 trend across consented clients (org-wide outcome).
+    const buckets = new Map<number, number[]>();
+    for (const c of consented) {
+      for (const o of clientOutcomes[c.id] ?? []) {
+        if (o.tool !== "PHQ-9") continue;
+        const arr = buckets.get(o.weeksAgo) ?? [];
+        arr.push(o.score);
+        buckets.set(o.weeksAgo, arr);
+      }
+    }
+    const points: OutcomePoint[] = [...buckets.entries()]
+      .sort((a, b) => b[0] - a[0])
+      .map(([w, scores]) => ({
+        label: w === 0 ? "now" : `${w}w`,
+        value: Math.round(scores.reduce((s, x) => s + x, 0) / scores.length),
+      }));
+    const measured = consented.filter((c) => (clientOutcomes[c.id]?.length ?? 0) > 0).length;
+
+    return ok({
+      totalClients: clients.length,
+      withDemographics: consented.length,
+      matched: demos.length,
+      byProvince: toBreakdown(countBy(demos, (d) => d.province)),
+      byGender: toBreakdown(countBy(demos, (d) => GENDER_LABELS[d.gender])),
+      byPopulationGroup: toBreakdown(countBy(demos, (d) => POPULATION_GROUP_LABELS[d.populationGroup])),
+      byAgeBand: toBreakdown(countBy(demos, (d) => AGE_BAND_LABELS[d.ageBand])),
+      byEmployment: toBreakdown(countBy(demos, (d) => EMPLOYMENT_LABELS[d.employmentStatus])),
+      outcome: { points, coverage: { captured: measured, total: consented.length } },
+    });
+  },
+
+  getOrgSettings: (orgId) => {
+    const org = orgs.find((o) => o.id === orgId);
+    if (!org) return ok(null);
+    // Dormant by default — no gateway connected until an admin configures one.
+    return ok({ org, paymentProvider: null, paymentStatus: "off" as const });
   },
 };
 

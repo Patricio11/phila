@@ -75,6 +75,23 @@ export async function getClientPrincipal(): Promise<Principal> {
   return MOCK_CLIENT;
 }
 
+/** Part-A demo org-admin (the Hub): Thandeka Mbeki, practice manager at Masizakhe. */
+const MOCK_ORG_ADMIN: Principal = {
+  userId: "user_thandeka",
+  name: "Thandeka Mbeki",
+  email: "thandeka@masizakhe.org.za",
+  platformRole: null,
+  memberships: [
+    { orgId: "org_masizakhe", orgName: "Masizakhe Counselling", teamRole: "org_admin", isSupervisor: false },
+  ],
+  activeOrgId: "org_masizakhe",
+  twoFactorEnabled: true,
+};
+
+export async function getOrgAdminPrincipal(): Promise<Principal> {
+  return MOCK_ORG_ADMIN;
+}
+
 export function activeMembership(principal: Principal): OrgMembership | null {
   return (
     principal.memberships.find((m) => m.orgId === principal.activeOrgId) ?? null

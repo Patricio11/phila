@@ -42,10 +42,13 @@ export function CalendarWeek({
   days,
   businessHours,
   events: initialEvents,
+  openSessions = true,
 }: {
   days: DayMeta[];
   businessHours: BusinessHours;
   events: AppointmentView[];
+  /** When false (Hub oversight), events don't open the clinical note (counsellor-only). */
+  openSessions?: boolean;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -146,7 +149,11 @@ export function CalendarWeek({
                     )}
                   >
                     {cell.map((ev) => (
-                      <EventBlock key={ev.id} appt={ev} onOpen={() => router.push(`/app/sessions/${ev.id}`)} />
+                      <EventBlock
+                        key={ev.id}
+                        appt={ev}
+                        onOpen={openSessions ? () => router.push(`/app/sessions/${ev.id}`) : undefined}
+                      />
                     ))}
                   </div>
                 );
@@ -175,7 +182,12 @@ export function CalendarWeek({
               ) : (
                 <div className="space-y-1.5">
                   {dayEvents.map((ev) => (
-                    <EventBlock key={ev.id} appt={ev} onOpen={() => router.push(`/app/sessions/${ev.id}`)} mobile />
+                    <EventBlock
+                      key={ev.id}
+                      appt={ev}
+                      onOpen={openSessions ? () => router.push(`/app/sessions/${ev.id}`) : undefined}
+                      mobile
+                    />
                   ))}
                 </div>
               )}
@@ -212,7 +224,7 @@ export function CalendarWeek({
   );
 }
 
-function EventBlock({ appt, onOpen, mobile = false }: { appt: AppointmentView; onOpen: () => void; mobile?: boolean }) {
+function EventBlock({ appt, onOpen, mobile = false }: { appt: AppointmentView; onOpen?: () => void; mobile?: boolean }) {
   const movable = appt.state === "scheduled";
   return (
     <button

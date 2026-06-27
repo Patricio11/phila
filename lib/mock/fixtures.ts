@@ -334,6 +334,58 @@ export const clientOutcomes: Record<
   ],
 };
 
+/**
+ * The org team — every role, not just counsellors (ROADMAP: org has operational
+ * roles too). Drives /hub/team and the honest-permissions view.
+ */
+export interface TeamMember {
+  userId: string;
+  name: string;
+  email: string;
+  teamRole: import("@/lib/domain/enums").TeamRole;
+  isSupervisor: boolean;
+  active: boolean;
+  counsellorId?: string;
+  joinedAt: string;
+}
+
+export const teamMembers: TeamMember[] = [
+  { userId: "user_thandeka", name: "Thandeka Mbeki", email: "thandeka@masizakhe.org.za", teamRole: "org_admin", isSupervisor: false, active: true, joinedAt: "2024-02-01T08:00:00+02:00" },
+  { userId: "user_nomsa", name: "Nomsa Dlamini", email: "nomsa@masizakhe.org.za", teamRole: "counsellor", isSupervisor: true, active: true, counsellorId: "couns_nomsa", joinedAt: "2024-03-12T08:00:00+02:00" },
+  { userId: "user_thabo", name: "Thabo Mokoena", email: "thabo@masizakhe.org.za", teamRole: "counsellor", isSupervisor: false, active: true, counsellorId: "couns_thabo", joinedAt: "2025-01-20T08:00:00+02:00" },
+  { userId: "user_aisha", name: "Aisha Patel", email: "aisha@masizakhe.org.za", teamRole: "counsellor", isSupervisor: false, active: true, counsellorId: "couns_aisha", joinedAt: "2024-08-05T08:00:00+02:00" },
+  { userId: "user_pieter", name: "Pieter van der Merwe", email: "pieter@masizakhe.org.za", teamRole: "counsellor", isSupervisor: false, active: true, counsellorId: "couns_pieter", joinedAt: "2025-04-15T08:00:00+02:00" },
+  { userId: "user_lindiwe", name: "Lindiwe Khoza", email: "frontdesk@masizakhe.org.za", teamRole: "front_desk", isSupervisor: false, active: true, joinedAt: "2024-06-01T08:00:00+02:00" },
+  { userId: "user_riaan", name: "Riaan Steyn", email: "finance@masizakhe.org.za", teamRole: "finance", isSupervisor: false, active: true, joinedAt: "2024-04-22T08:00:00+02:00" },
+  { userId: "user_bongani", name: "Bongani Nkosi", email: "programmes@masizakhe.org.za", teamRole: "programme_manager", isSupervisor: false, active: false, joinedAt: "2024-09-30T08:00:00+02:00" },
+];
+
+/** Counsellor ↔ room recurring day/time assignments (the room schedule). */
+export interface RoomAssignment {
+  id: string;
+  counsellorId: string;
+  roomId: string;
+  /** ISO weekdays the pattern applies (1=Mon … 7=Sun). */
+  days: number[];
+  start: string;
+  end: string;
+}
+
+export const roomAssignments: RoomAssignment[] = [
+  { id: "ra1", counsellorId: "couns_nomsa", roomId: "room_s1", days: [1, 3], start: "08:00", end: "13:00" },
+  { id: "ra2", counsellorId: "couns_thabo", roomId: "room_s2", days: [2, 4], start: "09:00", end: "15:00" },
+  { id: "ra3", counsellorId: "couns_aisha", roomId: "room_j1", days: [1, 2, 3, 4, 5], start: "08:00", end: "12:00" },
+  { id: "ra4", counsellorId: "couns_pieter", roomId: "room_j1", days: [3], start: "13:00", end: "17:00" },
+];
+
+/** A few more invoices across clients so org invoicing has real spread. */
+export const orgExtraInvoices: import("@/lib/mock/types").Invoice[] = [
+  { id: "inv_s1", clientId: "cl_fatima", orgId: ORG_ID, number: "MZ-2026-0145", serviceName: "Initial assessment", amountCents: 50000, status: "unpaid", issuedAt: "2026-06-24T09:00:00+02:00", dueAt: "2026-07-08T09:00:00+02:00" },
+  { id: "inv_s2", clientId: "cl_johan", orgId: ORG_ID, number: "MZ-2026-0140", serviceName: "Individual counselling", amountCents: 45000, status: "paid", issuedAt: "2026-06-18T09:00:00+02:00", dueAt: "2026-07-02T09:00:00+02:00" },
+  { id: "inv_s3", clientId: "cl_zanele", orgId: ORG_ID, number: "MZ-2026-0138", serviceName: "Couples counselling", amountCents: 75000, status: "unpaid", issuedAt: "2026-06-16T09:00:00+02:00", dueAt: "2026-06-30T09:00:00+02:00" },
+  { id: "inv_s4", clientId: "cl_naledi", orgId: ORG_ID, number: "MZ-2026-0133", serviceName: "Individual counselling", amountCents: 45000, status: "cancelled", issuedAt: "2026-06-10T09:00:00+02:00", dueAt: "2026-06-24T09:00:00+02:00" },
+];
+
 /** Supervisee notes awaiting the supervisor's sign-off (materialised around now). */
 export const supervisionTemplates: {
   superviseeId: string;

@@ -1,4 +1,5 @@
-import { Video } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, Video } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
 import { Avatar } from "@/components/ui/avatar";
@@ -36,10 +37,13 @@ export function SessionTimeline({
   appointments,
   nowISO,
   limit,
+  hrefFor,
 }: {
   appointments: AppointmentView[];
   nowISO: string;
   limit?: number;
+  /** When set, each session links here (e.g. the Hub opening a note). */
+  hrefFor?: (appt: AppointmentView) => string | null;
 }) {
   const nowMs = new Date(nowISO).getTime();
   const sorted = [...appointments].sort(
@@ -52,11 +56,9 @@ export function SessionTimeline({
       {shown.map((appt) => {
         const isUpcoming = new Date(appt.startsAt).getTime() > nowMs && appt.state === "scheduled";
         const display = isUpcoming ? { tone: "blue" as DotTone, word: "Upcoming" } : STATE[appt.state];
-        return (
-          <li
-            key={appt.id}
-            className="flex items-center gap-3 rounded-control border border-border bg-surface p-3 transition-colors hover:bg-surface-hover"
-          >
+        const href = hrefFor?.(appt) ?? null;
+        const inner = (
+          <>
             <Avatar name={appt.counsellorName} size="md" />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -76,6 +78,13 @@ export function SessionTimeline({
             <span className="inline-flex items-center gap-1.5 text-[12px] text-text-2">
               <StatusDot tone={display.tone} /> {display.word}
             </span>
+            {href && <ChevronRight className="size-4 shrink-0 text-text-3" strokeWidth={2} aria-hidden />}
+          </>
+        );
+        const cls = "flex items-center gap-3 rounded-control border border-border bg-surface p-3 transition-colors hover:bg-surface-hover";
+        return (
+          <li key={appt.id}>
+            {href ? <Link href={href} className={cls}>{inner}</Link> : <div className={cls}>{inner}</div>}
           </li>
         );
       })}

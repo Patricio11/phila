@@ -35,8 +35,19 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
   const provider = await getDataProvider();
 
   const now = new Date().toISOString();
-  const dossier = await provider.getClientDossier(id, now);
-  if (!dossier || dossier.client.orgId !== membership.orgId) notFound();
+  const [dossier, counsellors] = await Promise.all([
+    provider.getClientDossier(id, now),
+    provider.listCounsellors(membership.orgId),
+  ]);
+  const me = counsellors.find((c) => c.userId === principal.userId);
+  if (!dossier || !me || dossier.client.orgId !== membership.orgId) notFound();
+
+  // A counsellor reaches only their own clients (and, if a supervisor, their
+  // supervisees') — never another counsellor's caseload. The Hub has full access.
+  const author = counsellors.find((c) => c.id === dossier.client.primaryCounsellorId);
+  const isMine = dossier.client.primaryCounsellorId === me.id;
+  const isSupervisee = me.isSupervisor && author?.supervisorId === me.id;
+  if (!isMine && !isSupervisee) notFound();
 
   // Opening a client record is a recorded PII access (Protected & Audited Rule).
   await logAccess({

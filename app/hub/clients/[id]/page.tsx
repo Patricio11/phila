@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarPlus, FileText, Lock, Mail, Phone, Target } from "lucide-react";
+import { ArrowLeft, CalendarPlus, FileText, Mail, Phone, ShieldCheck, Target } from "lucide-react";
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
@@ -113,7 +113,11 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
             <CardHead title="Session history" count={sessions.length} />
             <div className="px-[17px] pb-[17px]">
               {sessions.length > 0 ? (
-                <SessionTimeline appointments={sessions} nowISO={now} />
+                <SessionTimeline
+                  appointments={sessions}
+                  nowISO={now}
+                  hrefFor={(a) => (a.state === "scheduled" ? null : `/hub/sessions/${a.id}`)}
+                />
               ) : (
                 <EmptyState icon={CalendarPlus} title="No sessions yet" body="Sessions appear here once booked." />
               )}
@@ -122,11 +126,11 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
         </div>
 
         <div className="space-y-6">
-          <Card className="border-border bg-surface-2/40 p-4">
+          <Card className="border-accent/20 bg-accent-soft/30 p-4">
             <div className="flex items-center gap-2 text-[13px] font-[600] text-text">
-              <Lock className="size-4 text-text-3" strokeWidth={2} aria-hidden /> Clinical notes are private
+              <ShieldCheck className="size-4 text-accent" strokeWidth={2} aria-hidden /> Full clinic access
             </div>
-            <p className="mt-1 text-[12px] text-text-2">Session notes stay with {counsellor.name.split(" ")[0]} and their supervisor. This page is for caseload oversight only.</p>
+            <p className="mt-1 text-[12px] text-text-2">Open any past session to read {counsellor.name.split(" ")[0]}&apos;s clinical note. Every note you open is recorded in the audit trail.</p>
           </Card>
 
           {carePlan && (

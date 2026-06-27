@@ -181,6 +181,9 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 - [x] **Counsellor side trimmed (2026-06-28):** **Billing** and **Reports** removed from the counsellor workspace (they're Hub/admin concerns). Nav is Dashboard · Calendar · Clients · Sessions · Messages · Supervision · Rooms.
 - [x] **Supervision built out (2026-06-28):** `/app/supervision` is now a real workflow — a **stats strip** (supervisees · awaiting sign-off · avg turnaround · signed this month), a **"Your supervisees"** panel (credential, caseload, pending count), and a **review queue** where each note expands to show the full clinical note (AI/safeguarding flags, submitted-ago), and the supervisor either **Signs off** or **Requests changes with feedback** (`signOffNote`, audited; safeguarding sorts to the top). **The Hub assigns supervision:** a member's **"Reports to"** supervisor is set in the Manage-member modal (`/hub/team/[id]`), choosing from counsellors flagged as supervisors (`saveTeamMember` carries `supervisorCounsellorId`). Supervisors see only their own supervisees.
 
+### Task 4.7: Sessions list polish
+- [x] **Sessions list (2026-06-28):** `/app/sessions` gains a **stat strip** (upcoming · today · completed · no-shows), **segmented filters** (Upcoming / Recent / All) and **client search**, with status word + room/online on every row. Client component over the same `listCounsellorSessions`.
+
 ### Task 4.6: Counsellor account & settings
 - [x] **Account settings (2026-06-28):** `/app/settings` is a real account area — **edit your own profile** (name, phone, **date of birth**, **home address**, languages, bio; email + credential read-only, managed by the practice), a **Security** card (**two-factor** + **change password**), and **Preferences** (theme, notification channels). Personal actions (`changePassword` / `setTwoFactor` / `saveMyProfile`) moved to a shared `lib/account/actions` and reused by both the counsellor and the Hub.
 

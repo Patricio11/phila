@@ -142,7 +142,14 @@ export function CalendarView({
 
       <CreateAppointmentModal key={createKey} open={createOpen} onClose={() => setCreateOpen(false)} options={scheduling} initial={createInit ?? undefined} />
 
-      <AppointmentDetail appt={detail} onClose={() => setDetail(null)} openSessions={openSessions} clientBasePath={clientBasePath} />
+      <AppointmentDetail
+        key={detail?.id ?? "none"}
+        appt={detail}
+        onClose={() => setDetail(null)}
+        onUpdated={(u) => { setEvents((prev) => prev.map((e) => (e.id === u.id ? u : e))); setDetail(u); }}
+        openSessions={openSessions}
+        clientBasePath={clientBasePath}
+      />
 
       {confirm && (
         <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={() => !pending && setConfirm(null)}>

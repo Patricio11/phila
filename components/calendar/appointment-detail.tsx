@@ -1,13 +1,19 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import Link from "next/link";
-import { CalendarDays, Clock, Hourglass, MapPin, NotebookPen, Stethoscope, User, Video } from "lucide-react";
+import { CalendarDays, Check, Clock, Hourglass, MapPin, NotebookPen, Stethoscope, User, UserX, Video, X } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import { StatusDot, type DotTone } from "@/components/ui/status-dot";
+import { useToast } from "@/components/ui/toast";
+import { rescheduleAppointment } from "@/app/app/calendar/actions";
+import { markProgress } from "@/app/app/sessions/[id]/actions";
+import { cn } from "@/lib/utils";
 
 const STATE: Record<AppointmentState, { label: string; tone: DotTone }> = {
   scheduled: { label: "Scheduled", tone: "blue" },
@@ -32,20 +38,54 @@ function timeRange(iso: string, durationMin: number): string {
 
 /**
  * Appointment detail — the calm card a counsellor or admin sees when they click
- * a calendar event. Everything about the booking at a glance, then the actions.
+ * a calendar event. Everything about the booking, then the actions: reschedule,
+ * mark completed / no-show, or cancel. No notification fires (messaging dormant).
  */
 export function AppointmentDetail({
   appt,
   onClose,
+  onUpdated,
   openSessions = true,
+  canManage = true,
   clientBasePath = "/app/clients",
 }: {
   appt: AppointmentView | null;
   onClose: () => void;
+  onUpdated?: (appt: AppointmentView) => void;
   openSessions?: boolean;
+  canManage?: boolean;
   clientBasePath?: string;
 }) {
+  const { toast } = useToast();
+  const [pending, start] = useTransition();
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [date, setDate] = useState(appt?.startsAt.slice(0, 10) ?? "");
+  const [time, setTime] = useState(appt?.startsAt.slice(11, 16) ?? "");
+
   const state = appt ? STATE[appt.state] : null;
+
+  const mark = (next: AppointmentState) => {
+    if (!appt) return;
+    start(async () => {
+      const res = await markProgress({ appointmentId: appt.id, state: next });
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      onUpdated?.({ ...appt, state: next });
+      toast({ tone: "success", title: `Marked ${STATE[next].label.toLowerCase()}` });
+    });
+  };
+
+  const doReschedule = () => {
+    if (!appt || !date || !time) return;
+    const newStart = `${date}T${time}:00+02:00`;
+    start(async () => {
+      const res = await rescheduleAppointment({ appointmentId: appt.id, newStart });
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      onUpdated?.({ ...appt, startsAt: newStart, state: "scheduled" });
+      setShowReschedule(false);
+      toast({ tone: "success", title: "Session moved", description: "No message was sent — that happens once messaging is set up." });
+    });
+  };
+
   return (
     <Dialog
       open={Boolean(appt)}
@@ -97,9 +137,47 @@ export function AppointmentDetail({
               value={appt.type === "online" ? "Secure video room" : (appt.roomName ?? "In person")}
             />
           </dl>
+
+          {/* Manage */}
+          {canManage && (
+            <div className="space-y-3 border-t border-border pt-4">
+              {showReschedule ? (
+                <div className="space-y-2.5 rounded-control border border-border bg-surface-2/40 p-3">
+                  <div className="text-[12px] font-semibold text-text">Move this session</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="New date" />
+                    <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} aria-label="New time" />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => setShowReschedule(false)} disabled={pending}>Cancel</Button>
+                    <Button size="sm" onClick={doReschedule} loading={pending}>Move session</Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  <ActionChip icon={CalendarDays} label="Reschedule" onClick={() => setShowReschedule(true)} disabled={pending} />
+                  <ActionChip icon={Check} label="Completed" tone="accent" active={appt.state === "completed"} onClick={() => mark("completed")} disabled={pending} />
+                  <ActionChip icon={UserX} label="No-show" tone="warn" active={appt.state === "no_show"} onClick={() => mark("no_show")} disabled={pending} />
+                  <ActionChip icon={X} label="Cancel" tone="danger" active={appt.state === "cancelled"} onClick={() => mark("cancelled")} disabled={pending} />
+                </div>
+              )}
+              <p className="text-[11px] text-text-3">Marking a session never sends a message — the messaging rail is set up later.</p>
+            </div>
+          )}
         </div>
       )}
     </Dialog>
+  );
+}
+
+function ActionChip({ icon: Icon, label, onClick, disabled, tone, active }: { icon: typeof Check; label: string; onClick: () => void; disabled?: boolean; tone?: "accent" | "warn" | "danger"; active?: boolean }) {
+  const toneCls = active
+    ? tone === "danger" ? "border-danger/40 bg-danger-soft text-danger" : tone === "warn" ? "border-warn/40 bg-warn-soft text-warn" : "border-accent/40 bg-accent-soft text-accent"
+    : "border-border bg-surface text-text-2 hover:bg-surface-hover hover:text-text";
+  return (
+    <button type="button" onClick={onClick} disabled={disabled} className={cn("inline-flex items-center gap-1.5 rounded-control border px-3 py-1.5 text-[12.5px] font-medium transition-colors disabled:opacity-50", toneCls)}>
+      <Icon className="size-3.5" strokeWidth={2} aria-hidden /> {label}
+    </button>
   );
 }
 

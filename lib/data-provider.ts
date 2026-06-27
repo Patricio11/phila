@@ -190,6 +190,26 @@ export interface TeamMemberView {
   joinedAt: string;
 }
 
+export interface TeamMemberDetail {
+  member: TeamMemberView;
+  profile: {
+    phone: string;
+    dateOfBirth: string;
+    address: string;
+    languages: string[];
+    bio: string;
+    qualifications: { qualification: string; institution: string; year: number }[];
+    specialties: string[];
+  } | null;
+  registrationNo: string | null;
+  supervisorName: string | null;
+  roomSchedule: { roomName: string; days: number[]; start: string; end: string }[];
+  caseload: { id: string; name: string; riskFlag: boolean }[];
+  upcoming: AppointmentView[];
+  /** Counsellors only; null for non-clinical roles. */
+  stats: { caseload: number; sessionsWeek: number; seenWeek: number } | null;
+}
+
 export interface RoomView {
   room: Room;
   siteName: string;
@@ -414,6 +434,7 @@ export interface DataProvider {
   getHubOverview(orgId: string, now: string): Promise<HubOverview | null>;
   listOrgClients(orgId: string, now: string): Promise<OrgClientRow[]>;
   listTeam(orgId: string): Promise<TeamMemberView[]>;
+  getTeamMemberDetail(orgId: string, userId: string, now: string): Promise<TeamMemberDetail | null>;
   getRoomsOverview(orgId: string, now: string): Promise<RoomView[]>;
   getRoomDetail(roomId: string, now: string): Promise<RoomDetail | null>;
   listSites(orgId: string): Promise<Site[]>;

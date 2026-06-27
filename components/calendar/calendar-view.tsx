@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, Video } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
@@ -9,6 +8,7 @@ import type { BusinessHours } from "@/lib/mock/types";
 import { isoWeekday } from "@/lib/mock/helpers";
 import { rescheduleAppointment } from "@/app/app/calendar/actions";
 import { CreateAppointmentModal, type CreateInitial, type SchedulingOptions } from "@/components/scheduling/create-appointment-modal";
+import { AppointmentDetail } from "@/components/calendar/appointment-detail";
 import { Button } from "@/components/ui/button";
 import { StatusDot, type DotTone } from "@/components/ui/status-dot";
 import { useToast } from "@/components/ui/toast";
@@ -45,14 +45,15 @@ export function CalendarView({
   scheduling,
   nowISO,
   openSessions = true,
+  clientBasePath = "/app/clients",
 }: {
   events: AppointmentView[];
   businessHours: BusinessHours;
   scheduling: SchedulingOptions;
   nowISO: string;
   openSessions?: boolean;
+  clientBasePath?: string;
 }) {
-  const router = useRouter();
   const { toast } = useToast();
   const today = useMemo(() => new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(nowISO)), [nowISO]);
   const nowMin = useMemo(() => {
@@ -68,6 +69,7 @@ export function CalendarView({
   const [createInit, setCreateInit] = useState<CreateInitial | null>(null);
   const [createKey, setCreateKey] = useState(0);
   const [confirm, setConfirm] = useState<{ appt: AppointmentView; newStart: string } | null>(null);
+  const [detail, setDetail] = useState<AppointmentView | null>(null);
   const [pending, setPending] = useState(false);
 
   const openCreate = (date?: string, time?: string) => {
@@ -122,9 +124,9 @@ export function CalendarView({
       </div>
 
       {view === "month" ? (
-        <MonthView anchor={anchor} today={today} events={events} onDay={(d) => { setAnchor(d); setView("day"); }} onCreate={(d) => openCreate(d)} onEvent={(e) => openSessions && router.push(`/app/sessions/${e.id}`)} />
+        <MonthView anchor={anchor} today={today} events={events} onDay={(d) => { setAnchor(d); setView("day"); }} onCreate={(d) => openCreate(d)} onEvent={(e) => setDetail(e)} />
       ) : view === "agenda" ? (
-        <AgendaView anchor={anchor} today={today} events={events} onEvent={(e) => openSessions && router.push(`/app/sessions/${e.id}`)} />
+        <AgendaView anchor={anchor} today={today} events={events} onEvent={(e) => setDetail(e)} />
       ) : (
         <TimeGrid
           dates={view === "day" ? [anchor] : Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(anchor), i))}
@@ -133,12 +135,14 @@ export function CalendarView({
           businessHours={businessHours}
           events={events}
           onCreate={openCreate}
-          onEvent={(e) => openSessions && router.push(`/app/sessions/${e.id}`)}
+          onEvent={(e) => setDetail(e)}
           onDrop={(appt, newStart) => newStart !== appt.startsAt && setConfirm({ appt, newStart })}
         />
       )}
 
       <CreateAppointmentModal key={createKey} open={createOpen} onClose={() => setCreateOpen(false)} options={scheduling} initial={createInit ?? undefined} />
+
+      <AppointmentDetail appt={detail} onClose={() => setDetail(null)} openSessions={openSessions} clientBasePath={clientBasePath} />
 
       {confirm && (
         <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={() => !pending && setConfirm(null)}>

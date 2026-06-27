@@ -31,6 +31,7 @@ import type {
   ReportingResult,
   RoomDetail,
   RoomView,
+  TeamMemberDetail,
   TeamMemberView,
 } from "@/lib/data-provider";
 import type {
@@ -81,6 +82,7 @@ import {
   sites as allSites,
   supervisionTemplates,
   teamMembers,
+  teamProfiles,
 } from "@/lib/mock/fixtures";
 import { isConsentActive } from "@/lib/consent";
 import { liveOnly } from "@/lib/retention";
@@ -688,6 +690,60 @@ export const mockProvider: DataProvider = {
         };
       }),
     );
+  },
+
+  getTeamMemberDetail: (orgId, userId, now): Promise<TeamMemberDetail | null> => {
+    const m = teamMembers.find((t) => t.userId === userId);
+    if (!m) return ok(null);
+    const counsellor = m.counsellorId ? allCounsellors.find((c) => c.id === m.counsellorId) : undefined;
+    const member = {
+      userId: m.userId,
+      name: m.name,
+      email: m.email,
+      teamRole: m.teamRole,
+      isSupervisor: m.isSupervisor,
+      active: m.active,
+      credential: counsellor ? { body: counsellor.credential.body, status: counsellor.credential.status } : null,
+      joinedAt: m.joinedAt,
+    };
+
+    let caseload: { id: string; name: string; riskFlag: boolean }[] = [];
+    let upcoming: ReturnType<typeof toView>[] = [];
+    let stats: { caseload: number; sessionsWeek: number; seenWeek: number } | null = null;
+    let roomSchedule: { roomName: string; days: number[]; start: string; end: string }[] = [];
+    let supervisorName: string | null = null;
+
+    if (counsellor) {
+      const myClients = liveOnly(allClients.filter((c) => c.primaryCounsellorId === counsellor.id && c.orgId === orgId));
+      caseload = myClients.map((c) => ({ id: c.id, name: c.name, riskFlag: c.riskFlag }));
+      const appts = materialise(counsellor.id, now).map(toView);
+      const weekDates = weekDatesOf(now);
+      const wk = appts.filter((a) => weekDates.some((d) => a.startsAt.startsWith(d)));
+      upcoming = appts
+        .filter((a) => a.startsAt >= now && a.state === "scheduled")
+        .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+        .slice(0, 6);
+      stats = {
+        caseload: myClients.length,
+        sessionsWeek: wk.length,
+        seenWeek: wk.filter((a) => a.state === "completed" || a.state === "discharged").length,
+      };
+      roomSchedule = roomAssignments
+        .filter((ra) => ra.counsellorId === counsellor.id)
+        .map((ra) => ({ roomName: allRooms.find((r) => r.id === ra.roomId)?.name ?? "Room", days: ra.days, start: ra.start, end: ra.end }));
+      supervisorName = counsellor.supervisorId ? (allCounsellors.find((c) => c.id === counsellor.supervisorId)?.name ?? null) : null;
+    }
+
+    return ok({
+      member,
+      profile: teamProfiles[userId] ?? null,
+      registrationNo: counsellor?.credential.registrationNo ?? null,
+      supervisorName,
+      roomSchedule,
+      caseload,
+      upcoming,
+      stats,
+    });
   },
 
   getRoomsOverview: (orgId, now): Promise<RoomView[]> => {

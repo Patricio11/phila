@@ -43,6 +43,7 @@ export const dbProvider: DataProvider = {
   getHubOverview: notYet,
   listOrgClients: notYet,
   listTeam: notYet,
+  getTeamMemberDetail: notYet,
   getRoomsOverview: notYet,
   getRoomDetail: notYet,
   listSites: notYet,

@@ -500,6 +500,96 @@ export const teamMembers: TeamMember[] = [
   { userId: "user_bongani", name: "Bongani Nkosi", email: "programmes@masizakhe.org.za", teamRole: "programme_manager", isSupervisor: false, active: false, joinedAt: "2024-09-30T08:00:00+02:00" },
 ];
 
+/** Rich HR-style profile for a team member (the Hub member page). */
+export interface TeamProfile {
+  userId: string;
+  phone: string;
+  dateOfBirth: string;
+  address: string;
+  languages: string[];
+  bio: string;
+  qualifications: { qualification: string; institution: string; year: number }[];
+  specialties: string[];
+}
+
+export const teamProfiles: Record<string, TeamProfile> = {
+  user_thandeka: {
+    userId: "user_thandeka", phone: "+27 82 551 0193", dateOfBirth: "1980-05-14", address: "14 Stanley Avenue, Milpark, Johannesburg, 2092",
+    languages: ["English", "isiZulu", "Sesotho"],
+    bio: "Founded Masizakhe in 2018 to bring affordable, dignified counselling to the communities she grew up in. Leads operations, funder relationships, and governance.",
+    qualifications: [
+      { qualification: "BA Social Work", institution: "University of the Witwatersrand", year: 2002 },
+      { qualification: "MBA", institution: "GIBS Business School", year: 2014 },
+    ],
+    specialties: ["Practice leadership", "Funder reporting", "POPIA governance"],
+  },
+  user_nomsa: {
+    userId: "user_nomsa", phone: "+27 83 274 6650", dateOfBirth: "1985-09-22", address: "6 Acacia Road, Kensington, Johannesburg, 2094",
+    languages: ["English", "isiZulu", "isiXhosa"],
+    bio: "Clinical psychologist and clinical lead. Supervises the counselling team and carries a trauma-focused caseload. Passionate about culturally grounded care.",
+    qualifications: [
+      { qualification: "MA Clinical Psychology", institution: "University of Johannesburg", year: 2011 },
+      { qualification: "BA Psychology (Hons)", institution: "University of Pretoria", year: 2008 },
+    ],
+    specialties: ["Trauma & PTSD", "Anxiety", "Family systems", "Clinical supervision"],
+  },
+  user_thabo: {
+    userId: "user_thabo", phone: "+27 84 119 8023", dateOfBirth: "1990-11-03", address: "22 Vilakazi Street, Orlando West, Soweto, 1804",
+    languages: ["English", "Sesotho", "Setswana"],
+    bio: "Registered counsellor working with adolescents and young adults. Runs the school outreach programme on Thursdays.",
+    qualifications: [
+      { qualification: "BPsych (Hons) Counselling", institution: "University of Pretoria", year: 2015 },
+    ],
+    specialties: ["Adolescents", "Depression", "School outreach"],
+  },
+  user_aisha: {
+    userId: "user_aisha", phone: "+27 82 906 3317", dateOfBirth: "1988-02-18", address: "8 Sunningdale Drive, Reservoir Hills, Durban, 4091",
+    languages: ["English", "Afrikaans", "Hindi"],
+    bio: "Counsellor with a CBT focus, working across individual and couples work. Splits her week between the Johannesburg and satellite rooms.",
+    qualifications: [
+      { qualification: "BSocSci Counselling", institution: "University of KwaZulu-Natal", year: 2012 },
+      { qualification: "Postgrad Diploma in CBT", institution: "SACAP", year: 2016 },
+    ],
+    specialties: ["CBT", "Couples", "Burnout"],
+  },
+  user_pieter: {
+    userId: "user_pieter", phone: "+27 71 442 5589", dateOfBirth: "1992-07-29", address: "31 Dorp Street, Stellenbosch, 7600",
+    languages: ["Afrikaans", "English"],
+    bio: "Registered counsellor focused on substance use and men's mental health. Joined Masizakhe in 2025 from a community NPO in the Cape.",
+    qualifications: [
+      { qualification: "BPsych", institution: "Stellenbosch University", year: 2016 },
+    ],
+    specialties: ["Substance use", "Men's mental health", "Motivational interviewing"],
+  },
+  user_lindiwe: {
+    userId: "user_lindiwe", phone: "+27 60 318 7742", dateOfBirth: "1995-12-08", address: "104 Bree Street, Newtown, Johannesburg, 2113",
+    languages: ["English", "isiZulu"],
+    bio: "Front-of-house and scheduling. The first warm voice every client hears; keeps the diary and rooms running.",
+    qualifications: [
+      { qualification: "National Certificate: Office Administration", institution: "Boston City Campus", year: 2015 },
+    ],
+    specialties: ["Scheduling", "Client reception", "Intake coordination"],
+  },
+  user_riaan: {
+    userId: "user_riaan", phone: "+27 82 663 2204", dateOfBirth: "1983-03-26", address: "18 Long Street, Bloemfontein, 9301",
+    languages: ["Afrikaans", "English"],
+    bio: "Handles billing, PayShap reconciliation, and funder financial reporting.",
+    qualifications: [
+      { qualification: "BCom Accounting", institution: "University of the Free State", year: 2005 },
+    ],
+    specialties: ["Billing", "Reconciliation", "Financial reporting"],
+  },
+  user_bongani: {
+    userId: "user_bongani", phone: "+27 73 550 9981", dateOfBirth: "1987-08-11", address: "27 Church Street, Pietermaritzburg, 3201",
+    languages: ["English", "isiZulu"],
+    bio: "Programme manager for funded work. Currently on extended leave.",
+    qualifications: [
+      { qualification: "BA Development Studies", institution: "University of South Africa", year: 2010 },
+    ],
+    specialties: ["Programme management", "M&E", "Grant delivery"],
+  },
+};
+
 /** Counsellor ↔ room recurring day/time assignments (the room schedule). */
 export interface RoomAssignment {
   id: string;

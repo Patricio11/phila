@@ -20,6 +20,7 @@ import {
   ScrollText,
   ShieldCheck,
   Target,
+  UserCog,
   Users,
 } from "lucide-react";
 
@@ -59,6 +60,7 @@ export const counsellorNav: NavSection[] = [
       { label: "Clients", href: "/app/clients", icon: Users, ready: true },
       { label: "Sessions", href: "/app/sessions", icon: NotebookPen, ready: true },
       { label: "Messages", href: "/app/messages", icon: MessagesSquare, ready: true },
+      { label: "Supervision", href: "/app/supervision", icon: UserCog, ready: true },
       { label: "Rooms", href: "/app/rooms", icon: DoorOpen, ready: true },
     ],
   },

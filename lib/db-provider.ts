@@ -37,6 +37,7 @@ export const dbProvider: DataProvider = {
   listCounsellorSessions: notYet,
   getSession: notYet,
   getSupervisionQueue: notYet,
+  getSupervisionOverview: notYet,
   listConversations: notYet,
   listTeamThreads: notYet,
   getCounsellorRooms: notYet,

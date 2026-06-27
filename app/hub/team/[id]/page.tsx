@@ -40,8 +40,16 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
   const provider = await getDataProvider();
   const now = new Date().toISOString();
 
-  const detail = await provider.getTeamMemberDetail(membership.orgId, id, now);
+  const [detail, counsellors] = await Promise.all([
+    provider.getTeamMemberDetail(membership.orgId, id, now),
+    provider.listCounsellors(membership.orgId),
+  ]);
   if (!detail) notFound();
+
+  // Candidate supervisors: counsellors who are supervisors, excluding this member.
+  const supervisorOptions = counsellors
+    .filter((c) => c.isSupervisor && c.id !== detail.counsellorId)
+    .map((c) => ({ id: c.id, name: c.name }));
 
   await logAccess({
     action: "admin.action",
@@ -69,7 +77,7 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
         actions={
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-[12.5px] text-text-2"><StatusDot tone={member.active ? "green" : "grey"} /> {member.active ? "Active" : "Deactivated"}</span>
-            <ManageMemberButton member={member} label="Manage" />
+            <ManageMemberButton member={member} counsellorId={detail.counsellorId} currentSupervisorId={detail.supervisorId} supervisorOptions={supervisorOptions} label="Manage" />
           </div>
         }
       />

@@ -677,10 +677,25 @@ export const supervisionTemplates: {
   serviceId: string;
   sessionDayOffset: number;
   submittedDayOffset: number;
+  note: string;
+  aiGenerated: boolean;
+  risk: boolean;
 }[] = [
-  { superviseeId: "couns_thabo", clientId: "cl_naledi", clientName: "Naledi Tshabalala", serviceId: "svc_individual", sessionDayOffset: -1, submittedDayOffset: -1 },
-  { superviseeId: "couns_aisha", clientId: "cl_kabelo", clientName: "Kabelo Moeketsi", serviceId: "svc_individual", sessionDayOffset: -2, submittedDayOffset: -1 },
-  { superviseeId: "couns_thabo", clientId: "cl_naledi", clientName: "Naledi Tshabalala", serviceId: "svc_assessment", sessionDayOffset: -8, submittedDayOffset: -7 },
+  {
+    superviseeId: "couns_thabo", clientId: "cl_naledi", clientName: "Naledi Tshabalala", serviceId: "svc_individual",
+    sessionDayOffset: -1, submittedDayOffset: -1, aiGenerated: true, risk: false,
+    note: "Session focused on exam stress and sleep. Naledi reports the breathing exercises are helping but mornings remain hard. We set two small between-session tasks and agreed to review the school support plan. Mood gradually lifting; engagement good.",
+  },
+  {
+    superviseeId: "couns_aisha", clientId: "cl_kabelo", clientName: "Kabelo Moeketsi", serviceId: "svc_individual",
+    sessionDayOffset: -2, submittedDayOffset: -1, aiGenerated: false, risk: true,
+    note: "Kabelo presented low and withdrawn, spoke about feeling overwhelmed at home. A safeguarding concern came up — I stayed with it, agreed a follow-up within the week, and shared current support options. Requesting supervisor input on the safety plan before next session.",
+  },
+  {
+    superviseeId: "couns_thabo", clientId: "cl_naledi", clientName: "Naledi Tshabalala", serviceId: "svc_assessment",
+    sessionDayOffset: -8, submittedDayOffset: -7, aiGenerated: true, risk: false,
+    note: "Initial assessment. Presenting concern: anxiety around academic performance, some family pressure. No risk indicators. Agreed goals and a six-session plan. PHQ-9 and GAD-7 captured as a baseline.",
+  },
 ];
 
 /** The org's intake form, rendered during booking (Phase 2). */

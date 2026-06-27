@@ -23,11 +23,17 @@ function Toggle({ on, onClick, disabled }: { on: boolean; onClick: () => void; d
 
 export function ManageMemberButton({
   member,
+  counsellorId = null,
+  currentSupervisorId = null,
+  supervisorOptions = [],
   variant = "ghost",
   size = "sm",
   label = "Manage",
 }: {
   member: TeamMemberView;
+  counsellorId?: string | null;
+  currentSupervisorId?: string | null;
+  supervisorOptions?: { id: string; name: string }[];
   variant?: "ghost" | "primary" | "mini";
   size?: "sm" | "md";
   label?: string;
@@ -38,12 +44,22 @@ export function ManageMemberButton({
   const [teamRole, setTeamRole] = useState<TeamRole>(member.teamRole);
   const [isSupervisor, setIsSupervisor] = useState(member.isSupervisor);
   const [active, setActive] = useState(member.active);
+  const [supervisorId, setSupervisorId] = useState<string | null>(currentSupervisorId);
 
   const canSupervise = teamRole === "counsellor";
+  // A counsellor who isn't themselves a supervisor can be assigned one.
+  const canBeSupervised = teamRole === "counsellor" && !(canSupervise && isSupervisor) && supervisorOptions.length > 0;
 
   const submit = () => {
     start(async () => {
-      const res = await saveTeamMember({ userId: member.userId, teamRole, isSupervisor: canSupervise && isSupervisor, active });
+      const res = await saveTeamMember({
+        userId: member.userId,
+        teamRole,
+        isSupervisor: canSupervise && isSupervisor,
+        active,
+        counsellorId,
+        supervisorCounsellorId: canBeSupervised ? supervisorId : null,
+      });
       if (!res.ok) return toast({ tone: "error", title: res.error });
       toast({ tone: "success", title: `${member.name.split(" ")[0]} updated`, description: "Access changes take effect immediately." });
       setOpen(false);
@@ -82,6 +98,19 @@ export function ManageMemberButton({
             </div>
             <Toggle on={canSupervise && isSupervisor} onClick={() => setIsSupervisor((v) => !v)} disabled={!canSupervise} />
           </div>
+
+          {canBeSupervised && (
+            <div className="space-y-1.5">
+              <label className="text-[12.5px] font-medium text-text-2">Reports to (clinical supervision)</label>
+              <Select
+                value={supervisorId ?? ""}
+                onChange={(v) => setSupervisorId(v || null)}
+                placeholder="No supervisor"
+                options={[{ value: "", label: "No supervisor" }, ...supervisorOptions.map((s) => ({ value: s.id, label: s.name }))]}
+              />
+              <p className="text-[11.5px] text-text-3">Their notes go to this supervisor for sign-off. Supervisors see only their supervisees.</p>
+            </div>
+          )}
 
           <div className="flex items-start gap-2.5 rounded-control border border-border p-3">
             <div className="min-w-0 flex-1">

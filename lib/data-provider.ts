@@ -172,6 +172,25 @@ export interface SupervisionItem {
   serviceName: string;
   sessionAt: string;
   submittedAt: string;
+  noteExcerpt: string;
+  aiGenerated: boolean;
+  riskFlagged: boolean;
+}
+
+export interface SuperviseeSummary {
+  id: string;
+  name: string;
+  credential: { body: import("@/lib/domain/enums").CredentialBody; status: import("@/lib/domain/enums").CredentialStatus };
+  caseload: number;
+  pending: number;
+}
+
+export interface SupervisionOverview {
+  supervisees: SuperviseeSummary[];
+  pendingCount: number;
+  signedThisMonth: number;
+  /** Median-ish hours from submission to sign-off (mock). */
+  avgTurnaroundHours: number;
 }
 
 /* ---- Org-admin Hub ---------------------------------------------------- */
@@ -230,6 +249,8 @@ export interface TeamMemberDetail {
     specialties: string[];
   } | null;
   registrationNo: string | null;
+  counsellorId: string | null;
+  supervisorId: string | null;
   supervisorName: string | null;
   roomSchedule: { roomName: string; days: number[]; start: string; end: string }[];
   caseload: { id: string; name: string; riskFlag: boolean }[];
@@ -462,6 +483,7 @@ export interface DataProvider {
   listCounsellorSessions(counsellorId: string, now: string): Promise<AppointmentView[]>;
   getSession(appointmentId: string, now: string): Promise<SessionEditorData | null>;
   getSupervisionQueue(supervisorId: string, now: string): Promise<SupervisionItem[]>;
+  getSupervisionOverview(supervisorId: string, now: string): Promise<SupervisionOverview>;
   listConversations(counsellorId: string): Promise<Conversation[]>;
   listTeamThreads(userId: string): Promise<TeamThread[]>;
   getCounsellorRooms(counsellorId: string, now: string): Promise<CounsellorRoomsView>;

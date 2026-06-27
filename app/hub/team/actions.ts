@@ -15,6 +15,9 @@ const manageInput = z.object({
   teamRole: z.enum(TEAM_ROLES),
   isSupervisor: z.boolean(),
   active: z.boolean(),
+  /** The counsellor this member reports to for clinical supervision (or null). */
+  supervisorCounsellorId: z.string().nullable().optional(),
+  counsellorId: z.string().nullable().optional(),
 });
 
 export async function saveTeamMember(
@@ -26,13 +29,16 @@ export async function saveTeamMember(
   if (parsed.data.isSupervisor && parsed.data.teamRole !== "counsellor") {
     return { ok: false, error: "Only a counsellor can also be a supervisor." };
   }
+  if (parsed.data.supervisorCounsellorId && parsed.data.supervisorCounsellorId === parsed.data.counsellorId) {
+    return { ok: false, error: "A counsellor can't supervise themselves." };
+  }
 
   await logAccess({
     action: "admin.action",
     actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
     orgId: membership.orgId,
     target: `member:${parsed.data.userId}`,
-    reason: "update_member",
+    reason: parsed.data.supervisorCounsellorId !== undefined ? "update_member_supervision" : "update_member",
   });
   return { ok: true };
 }

@@ -32,6 +32,7 @@ import type {
   DuplicateGroup,
   RoomDetail,
   RoomView,
+  SupervisionOverview,
   TeamMemberDetail,
   TeamMemberView,
   TeamThread,
@@ -593,9 +594,34 @@ export const mockProvider: DataProvider = {
           serviceName: service?.name ?? "Session",
           sessionAt: shiftISO(now, t.sessionDayOffset),
           submittedAt: shiftISO(now, t.submittedDayOffset),
+          noteExcerpt: t.note,
+          aiGenerated: t.aiGenerated,
+          riskFlagged: t.risk,
         };
-      });
+      })
+      .sort((a, b) => Number(b.riskFlagged) - Number(a.riskFlagged) || a.submittedAt.localeCompare(b.submittedAt));
     return ok(items);
+  },
+
+  getSupervisionOverview: (supervisorId, now): Promise<SupervisionOverview> => {
+    void now;
+    const supervisees = allCounsellors.filter((c) => c.supervisorId === supervisorId);
+    const pendingBy = (cid: string) => supervisionTemplates.filter((t) => t.superviseeId === cid).length;
+    const summaries = supervisees.map((c) => ({
+      id: c.id,
+      name: c.name,
+      credential: { body: c.credential.body, status: c.credential.status },
+      caseload: liveOnly(allClients.filter((cl) => cl.primaryCounsellorId === c.id)).length,
+      pending: pendingBy(c.id),
+    }));
+    const pendingCount = summaries.reduce((s, x) => s + x.pending, 0);
+    return ok({
+      supervisees: summaries,
+      pendingCount,
+      // Honest mock figures for the demo; Part B computes from real sign-off logs.
+      signedThisMonth: 14,
+      avgTurnaroundHours: 19,
+    });
   },
 
   // ---- Org-admin Hub --------------------------------------------------
@@ -838,6 +864,8 @@ export const mockProvider: DataProvider = {
       member,
       profile: teamProfiles[userId] ?? null,
       registrationNo: counsellor?.credential.registrationNo ?? null,
+      counsellorId: counsellor?.id ?? null,
+      supervisorId: counsellor?.supervisorId ?? null,
       supervisorName,
       roomSchedule,
       caseload,

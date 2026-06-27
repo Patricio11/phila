@@ -214,6 +214,7 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 
 ### Task 5.4: Reporting (the differentiator)
 - [x] `/hub/reporting`: filter clients by province / gender / age band / employment status / service; outcome trends (`<OutcomeTrend>` aggregate); **consent-gated**; **k-anon floor** on any export (`applyKAnon`); one-click funder report (mock PDF/CSV). Coverage caption everywhere ("412 of 530 clients have demographics").
+- [x] **Funder narrative + real export (2026-06-27):** a **reporting-period** selector (this month / quarter / YTD / last 12 months) and an **auto-generated funder narrative** — a plain-English paragraph built from the live figures (reach by province, largest cohort, PHQ-9 direction with "lower is better"), with **Copy**. The **CSV downloads for real** (client-side Blob) carrying every breakdown with the **k-anon floor written through** (small cells render `suppressed (<k)`); the export stays audited. Nothing identifiable leaves the building.
 
 ### Task 5.5: Settings, payments & public page editor
 - [x] `/hub/settings`: default duration, buffer, breaks; **business hours** (per-day enable + start/end); integration toggles (AI/video/WhatsApp) **dormant by default**.

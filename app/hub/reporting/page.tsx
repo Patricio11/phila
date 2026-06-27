@@ -28,7 +28,7 @@ export default async function HubReportingPage() {
         title="Reports & funders"
         summary="The reporting that falls out of the clinical work — consent-gated, k-anonymised, and one click from a funder report."
       />
-      <ReportingView initial={initial} />
+      <ReportingView initial={initial} orgName={membership.orgName} />
     </div>
   );
 }

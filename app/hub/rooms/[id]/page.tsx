@@ -5,13 +5,13 @@ import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { PageHead } from "@/components/shell/page-head";
 import { Card, CardHead } from "@/components/ui/card";
+import { StatCard } from "@/components/ui/stat-card";
 import { Tag } from "@/components/ui/tag";
 import { Avatar } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { EditRoomButton } from "@/components/rooms/room-buttons";
 import { AssignCounsellorButton } from "@/components/rooms/assign-counsellor";
 import { RoomScheduleGrid } from "@/components/rooms/room-schedule-grid";
-import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -158,13 +158,5 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
 }
 
 function Stat({ icon: Icon, value, label }: { icon: typeof Gauge; value: string; label: string }) {
-  return (
-    <Card className="p-4">
-      <span className={cn("inline-flex size-9 items-center justify-center rounded-chip bg-accent-soft text-accent")}>
-        <Icon className="size-[18px]" strokeWidth={1.9} aria-hidden />
-      </span>
-      <div className="mt-3 text-[22px] font-bold tabular-nums text-text">{value}</div>
-      <div className="text-[12px] text-text-2">{label}</div>
-    </Card>
-  );
+  return <StatCard icon={Icon} value={value} label={label} />;
 }

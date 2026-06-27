@@ -8,6 +8,7 @@ import { isoWeekday } from "@/lib/mock/helpers";
 import { PageHead } from "@/components/shell/page-head";
 import { Avatar } from "@/components/ui/avatar";
 import { Tag } from "@/components/ui/tag";
+import { StatCard } from "@/components/ui/stat-card";
 import { CreateRoomButton } from "@/components/rooms/room-buttons";
 import { cn } from "@/lib/utils";
 
@@ -239,13 +240,5 @@ function Summary({
   label: string;
   tone?: "default" | "warn";
 }) {
-  return (
-    <div className="rounded-card border border-border bg-surface p-4 shadow-sm">
-      <span className={cn("inline-flex size-9 items-center justify-center rounded-chip", tone === "warn" ? "bg-warn-soft text-warn" : "bg-accent-soft text-accent")}>
-        <Icon className="size-[18px]" strokeWidth={1.9} aria-hidden />
-      </span>
-      <div className="mt-3 text-[22px] font-bold tabular-nums text-text">{value}</div>
-      <div className="text-[12px] text-text-2">{label}</div>
-    </div>
-  );
+  return <StatCard icon={Icon} value={value} label={label} tone={tone} />;
 }

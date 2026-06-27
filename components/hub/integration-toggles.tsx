@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, Check, MessageCircle, Smartphone, Video } from "lucide-react";
+import { Bot, Check, Video } from "lucide-react";
 import type { OrgFeature } from "@/lib/domain/enums";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
@@ -9,8 +9,6 @@ import { cn } from "@/lib/utils";
 const FEATURES: { key: OrgFeature; label: string; description: string; icon: typeof Bot }[] = [
   { key: "ai", label: "AI note assistant", description: "Drafts notes for counsellors to edit and sign. Turning this on is also the POPIA cross-border consent gate.", icon: Bot },
   { key: "video", label: "In-app video", description: "Owned, in-region video rooms for online sessions. Off means counsellors paste their own meeting link.", icon: Video },
-  { key: "whatsapp", label: "WhatsApp reminders", description: "Booking, reminder, and follow-up messages on WhatsApp.", icon: MessageCircle },
-  { key: "sms", label: "SMS fallback", description: "SMS for clients without WhatsApp.", icon: Smartphone },
 ];
 
 /**

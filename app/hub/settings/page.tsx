@@ -8,6 +8,9 @@ import { IntegrationToggles } from "@/components/hub/integration-toggles";
 import { PaymentConnectionCard } from "@/components/hub/payment-connection-card";
 import { PublicPageEditor } from "@/components/hub/public-page-editor";
 import { BusinessHoursEditor } from "@/components/hub/business-hours-editor";
+import { OrgProfileForm, type OrgProfile } from "@/components/hub/org-profile-form";
+import { MessagingChannels } from "@/components/hub/messaging-channels";
+import { SecuritySettings } from "@/components/hub/security-settings";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Settings" };
@@ -15,17 +18,37 @@ export const metadata = { title: "Settings" };
 export default async function HubSettingsPage() {
   const { membership } = await requireHub();
   const provider = await getDataProvider();
-  const [settings, page] = await Promise.all([
+  const [settings, org] = await Promise.all([
     provider.getOrgSettings(membership.orgId),
-    provider.getOrgPublicPage((await provider.getOrg(membership.orgId))?.slug ?? ""),
+    provider.getOrg(membership.orgId),
   ]);
-  if (!settings) notFound();
-  const { org } = settings;
+  if (!settings || !org) notFound();
+  const page = await provider.getOrgPublicPage(org.slug);
   const bh: BusinessHours = org.scheduling.businessHours;
+
+  // Seeded org profile (Phase 10 reads these from the org row).
+  const profile: OrgProfile = {
+    name: org.name,
+    tradingName: "",
+    registrationNo: "2018/445566/08 · 230-988 NPO",
+    practiceNo: "BHF 0556789",
+    email: `admin@${org.slug}.org.za`,
+    phone: "+27 11 482 7700",
+    website: `www.${org.slug}.org.za`,
+    address: "44 Frost Avenue, Auckland Park, Johannesburg, 2092",
+  };
 
   return (
     <div className="rise space-y-6">
-      <PageHead title="Settings" summary="Scheduling, integrations, payments, and your public page." />
+      <PageHead title="Settings" summary="Your organisation, team security, scheduling, channels, payments, and public page." />
+
+      {/* Organisation profile */}
+      <Card>
+        <CardHead title="Organisation" />
+        <div className="px-[17px] pb-[17px]">
+          <OrgProfileForm initial={profile} />
+        </div>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Scheduling */}
@@ -36,9 +59,41 @@ export default async function HubSettingsPage() {
               <Stat label="Default duration" value={`${org.scheduling.defaultDurationMin} min`} />
               <Stat label="Buffer between sessions" value={`${org.scheduling.bufferMin} min`} />
             </div>
-            <div>
-              <BusinessHoursEditor initial={bh} />
-            </div>
+            <BusinessHoursEditor initial={bh} />
+          </div>
+        </Card>
+
+        {/* Security */}
+        <Card>
+          <CardHead title="Security" />
+          <div className="px-[17px] pb-[17px]">
+            <SecuritySettings initialTwoFactor={false} />
+          </div>
+        </Card>
+
+        {/* Messaging channels (BYO) */}
+        <Card>
+          <CardHead title="Messaging channels" />
+          <div className="px-[17px] pb-[17px]">
+            <MessagingChannels />
+          </div>
+        </Card>
+
+        {/* Payments */}
+        <Card>
+          <CardHead title="Payments — your own gateway" />
+          <div className="px-[17px] pb-[17px]">
+            <p className="mb-3 text-[12.5px] text-text-2">Connect your gateway so clients pay your org directly. Funds settle to you; Phila just orchestrates.</p>
+            <PaymentConnectionCard />
+          </div>
+        </Card>
+
+        {/* Platform features */}
+        <Card>
+          <CardHead title="Platform features" />
+          <div className="px-[17px] pb-[17px]">
+            <p className="mb-3 text-[12.5px] text-text-2">Everything starts off. Turn on only what you need — nothing sends or leaves until you do.</p>
+            <IntegrationToggles initial={org.features} />
           </div>
         </Card>
 
@@ -47,24 +102,6 @@ export default async function HubSettingsPage() {
           <CardHead title="Public page" />
           <div className="px-[17px] pb-[17px]">
             <PublicPageEditor slug={org.slug} initialAccent={org.brandAccent} initialIntro={page?.intro ?? ""} />
-          </div>
-        </Card>
-
-        {/* Integrations */}
-        <Card>
-          <CardHead title="Integrations" />
-          <div className="px-[17px] pb-[17px]">
-            <p className="mb-3 text-[12.5px] text-text-2">Everything starts off. Turn on only what you need  nothing sends or leaves until you do.</p>
-            <IntegrationToggles initial={org.features} />
-          </div>
-        </Card>
-
-        {/* Payments */}
-        <Card>
-          <CardHead title="Payments  your own gateway" />
-          <div className="px-[17px] pb-[17px]">
-            <p className="mb-3 text-[12.5px] text-text-2">Connect your gateway so clients pay your org directly. Funds settle to you; Phila just orchestrates.</p>
-            <PaymentConnectionCard />
           </div>
         </Card>
       </div>

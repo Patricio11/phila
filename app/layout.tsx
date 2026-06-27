@@ -18,11 +18,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL("https://philasa.com"),
   title: {
-    default: "Phila — run the practice, hold the whole journey",
+    default: "Phila  run the practice, hold the whole journey",
     template: "%s · Phila",
   },
   description:
-    "A calm, POPIA-grade operations platform for South African counselling organisations — the daily clinical loop, programme oversight, and funder reporting that falls out of the work.",
+    "A calm, POPIA-grade operations platform for South African counselling organisations  the daily clinical loop, programme oversight, and funder reporting that falls out of the work.",
   applicationName: "Phila",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: "Phila", statusBarStyle: "default" },

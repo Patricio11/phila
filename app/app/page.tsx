@@ -17,7 +17,7 @@ import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";
 // auth/session read makes it inherently dynamic.
 export const dynamic = "force-dynamic";
 
-/** The counsellor's Today — the approved dashboard, the living reference build. */
+/** The counsellor's Today  the approved dashboard, the living reference build. */
 export default async function DashboardPage() {
   const { principal, membership } = await requireOrg(["counsellor"]);
   const provider = await getDataProvider();
@@ -44,7 +44,7 @@ export default async function DashboardPage() {
     rooms: rooms.map((r) => ({ id: r.id, name: r.name })),
   };
 
-  // Reading one's own caseload is permitted — and still recorded (Protected & Audited Rule).
+  // Reading one's own caseload is permitted  and still recorded (Protected & Audited Rule).
   await logAccess({
     action: "pii.read",
     actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
@@ -73,7 +73,7 @@ export default async function DashboardPage() {
         actions={<CreateAppointmentButton options={scheduling} />}
       />
 
-      {/* Stat cards — honest coverage, no vanity numbers, no fabricated trends. */}
+      {/* Stat cards  honest coverage, no vanity numbers, no fabricated trends. */}
       <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
         <StatCard
           icon={Users}

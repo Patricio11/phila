@@ -35,7 +35,7 @@ export function DedupeBanner({ groups: initial }: { groups: DuplicateGroup[] }) 
       if (!res.ok) return toast({ tone: "error", title: res.error });
       const keptName = group.clients.find((c) => c.id === keepId)?.name ?? "record";
       setGroups((prev) => prev.filter((g) => g !== group));
-      toast({ tone: "success", title: "Records merged", description: `${mergeIds.length + 1} records combined into one — ${keptName.split(" ")[0]}'s history is intact.` });
+      toast({ tone: "success", title: "Records merged", description: `${mergeIds.length + 1} records combined into one  ${keptName.split(" ")[0]}'s history is intact.` });
     });
   };
 
@@ -51,17 +51,17 @@ export function DedupeBanner({ groups: initial }: { groups: DuplicateGroup[] }) 
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-[13.5px] font-[600] text-text">{groups.length} possible duplicate{groups.length === 1 ? "" : "s"} to review</div>
-          <div className="text-[12px] text-text-2">Same person captured more than once — review and merge so reporting stays accurate.</div>
+          <div className="text-[12px] text-text-2">Same person captured more than once  review and merge so reporting stays accurate.</div>
         </div>
         <span className="shrink-0 text-[12.5px] font-medium text-accent">Review</span>
       </button>
 
-      <Dialog open={open} onClose={() => setOpen(false)} title="Review duplicates" description="Choose the record to keep — its history is preserved and the others fold into it.">
+      <Dialog open={open} onClose={() => setOpen(false)} title="Review duplicates" description="Choose the record to keep  its history is preserved and the others fold into it.">
         <div className="space-y-4">
           {groups.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-6 text-center">
               <Check className="size-8 text-accent" strokeWidth={2} aria-hidden />
-              <p className="text-[13px] text-text-2">All tidy — no duplicates left.</p>
+              <p className="text-[13px] text-text-2">All tidy  no duplicates left.</p>
             </div>
           ) : (
             groups.map((group, idx) => {

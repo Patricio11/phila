@@ -22,7 +22,7 @@ function rands(cents: number): string {
 }
 
 /**
- * The platform AI rail — a single platform-held key every org uses (no BYO). The
+ * The platform AI rail  a single platform-held key every org uses (no BYO). The
  * **s.72 cross-border acknowledgement gates "live"**: AI cannot go live until the
  * operator confirms de-identification, a zero-retention provider, and no audio
  * storage (Data-Residency Rule). Mock here; Phase 14 wires the real provider.
@@ -37,7 +37,7 @@ export function AiRail({ initial }: { initial: AiRailConfig }) {
       return;
     }
     setCfg((c) => ({ ...c, status }));
-    toast({ tone: "default", title: `AI rail set to ${status}`, description: status === "off" ? "Nothing leaves." : status === "mock" ? "Drafts are simulated." : "Live — de-identified, zero-retention." });
+    toast({ tone: "default", title: `AI rail set to ${status}`, description: status === "off" ? "Nothing leaves." : status === "mock" ? "Drafts are simulated." : "Live  de-identified, zero-retention." });
   };
 
   return (
@@ -68,7 +68,7 @@ export function AiRail({ initial }: { initial: AiRailConfig }) {
               <Input id="ai-key" type="password" defaultValue="sk-************************" className="pl-9" />
             </div>
             <p className="flex items-center gap-1.5 text-[11.5px] text-text-3">
-              <Lock className="size-3.5" strokeWidth={2} aria-hidden /> Stored encrypted, used server-side only. Every org uses this key — no BYO.
+              <Lock className="size-3.5" strokeWidth={2} aria-hidden /> Stored encrypted, used server-side only. Every org uses this key  no BYO.
             </p>
           </div>
 

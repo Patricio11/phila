@@ -79,7 +79,7 @@ export function BookingWizard({
     try {
       localStorage.setItem(storageKey(slug), JSON.stringify({ state, step }));
     } catch {
-      /* storage disabled — the draft simply won't survive a refresh */
+      /* storage disabled  the draft simply won't survive a refresh */
     }
   }, [slug, state, step, confirmation]);
 

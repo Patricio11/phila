@@ -105,7 +105,7 @@ export function CreateAppointmentModal({
       open={open}
       onClose={onClose}
       title="New appointment"
-      description="Book a session — it appears on the calendar straight away."
+      description="Book a session  it appears on the calendar straight away."
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose} disabled={pending}>Cancel</Button>

@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * A clean browser frame for showing the real product on the landing (DESIGN.md
- * §9 — "shows the product", not a separate marketing illustration). Calm chrome:
+ * §9  "shows the product", not a separate marketing illustration). Calm chrome:
  * three dots and an honest URL pill, then the app itself underneath.
  */
 export function ProductFrame({

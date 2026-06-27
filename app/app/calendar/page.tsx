@@ -36,7 +36,7 @@ export default async function CalendarPage() {
 
   return (
     <div className="rise space-y-5">
-      <PageHead title="Calendar" summary="Your week, day, month, or agenda — click a slot to book." />
+      <PageHead title="Calendar" summary="Your week, day, month, or agenda  click a slot to book." />
       <CalendarView events={events} businessHours={org.scheduling.businessHours} scheduling={scheduling} nowISO={now} />
     </div>
   );

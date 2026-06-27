@@ -1,10 +1,10 @@
 import type { PlatformRole, TeamRole } from "@/lib/domain/enums";
 
 /**
- * Capabilities — the redaction matrix (ROADMAP.md Appendix) expressed as code.
+ * Capabilities  the redaction matrix (ROADMAP.md Appendix) expressed as code.
  * This is the *authorisation vocabulary*; the real gate is the DAL + Postgres
  * RLS in Part B (docs/SECURITY.md). Route guards and these helpers are the UX
- * layer + defence in depth — never the sole boundary.
+ * layer + defence in depth  never the sole boundary.
  *
  * Clinical-note access is special: only the authoring counsellor and their
  * supervisor may read a private note freely. The Hub (org_admin) *can* reach a
@@ -99,7 +99,7 @@ export function resolveNoteAccess(opts: {
     return {
       allowed: true,
       audited: true,
-      reason: "hub_override", // recorded access — never silent
+      reason: "hub_override", // recorded access  never silent
     };
 
   return { allowed: false, audited: false, reason: "not_permitted" };

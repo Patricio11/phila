@@ -41,7 +41,7 @@ export default async function CounsellorReportsPage() {
 
   return (
     <div className="rise space-y-6">
-      <PageHead title="Your reports" summary="A view of your caseload and outcomes — your own clients only." />
+      <PageHead title="Your reports" summary="A view of your caseload and outcomes  your own clients only." />
 
       <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
         <StatCard icon={Users} label="Clients in care" value={caseload.length} coverage="assigned to you" />

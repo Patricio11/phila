@@ -3,7 +3,7 @@ import type { CredentialBody, CredentialStatus } from "@/lib/domain/enums";
 import { cn } from "@/lib/utils";
 
 /**
- * CredentialChip (DESIGN.md §6) — an honest registration signal: verified (with
+ * CredentialChip (DESIGN.md §6)  an honest registration signal: verified (with
  * the body, e.g. HPCSA · ASCHP · SACSSP), pending, or unverified. Never
  * default-verified; trust signals must be truthful (Honest Trust Signals).
  */
@@ -42,7 +42,7 @@ export function CredentialChip({
       </span>
     );
   }
-  // unverified / rejected — never imply a credential we don't have.
+  // unverified / rejected  never imply a credential we don't have.
   return (
     <span
       className={cn(

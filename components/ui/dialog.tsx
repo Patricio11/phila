@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 const noopSubscribe = () => () => {};
 
 /**
- * Dialog (DESIGN.md §6 Modal/Sheet) — a floating modal on desktop, a bottom
+ * Dialog (DESIGN.md §6 Modal/Sheet)  a floating modal on desktop, a bottom
  * sheet on phones, over a scrim. Esc and scrim-click close; body scroll locks
  * while open; focus moves into the dialog. Motion is GPU-only and reduced-motion
  * aware (the entrance uses the `.rise` keyframe, which is stripped under

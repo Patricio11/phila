@@ -26,7 +26,7 @@ export default async function HubReportingPage() {
     <div className="rise space-y-6">
       <PageHead
         title="Reports & funders"
-        summary="The reporting that falls out of the clinical work — consent-gated, k-anonymised, and one click from a funder report."
+        summary="The reporting that falls out of the clinical work  consent-gated, k-anonymised, and one click from a funder report."
       />
       <ReportingView initial={initial} orgName={membership.orgName} />
     </div>

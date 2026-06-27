@@ -38,7 +38,7 @@ export function NotificationsMenu() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label={unread > 0 ? `Notifications — ${unread} unread` : "Notifications"}
+        aria-label={unread > 0 ? `Notifications  ${unread} unread` : "Notifications"}
         aria-expanded={open}
         className="relative inline-flex size-9 items-center justify-center rounded-control text-text-2 transition-colors hover:bg-surface-hover hover:text-text"
       >

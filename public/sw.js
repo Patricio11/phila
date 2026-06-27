@@ -1,5 +1,5 @@
 /*
- * Phila service worker — the installable PWA shell + an offline fallback
+ * Phila service worker  the installable PWA shell + an offline fallback
  * (ROADMAP Task 0.3). Low-data-first: static assets are served stale-while-
  * revalidate; navigations are network-first with an offline page fallback so a
  * counsellor on metered data still gets a calm, honest screen when the network

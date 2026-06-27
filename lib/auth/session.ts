@@ -4,10 +4,10 @@ import type { PlatformRole, TeamRole } from "@/lib/domain/enums";
 /**
  * The authenticated principal. In Part A this is a fixed mock identity so every
  * role's surface is demoable; Phase 9 replaces `getCurrentPrincipal()` with
- * Better Auth session resolution — the *shape* here is the contract the rest of
+ * Better Auth session resolution  the *shape* here is the contract the rest of
  * the app codes against, so that swap changes no call sites.
  *
- * Org staff (counsellor, org_admin, …) carry no platform role — their authority
+ * Org staff (counsellor, org_admin, …) carry no platform role  their authority
  * comes from an org membership. `client`, `funder`, and `super_admin` are
  * platform roles. A user may belong to several orgs with a different role in each.
  */
@@ -31,7 +31,7 @@ export interface Principal {
 }
 
 /**
- * Part-A mock principal: Nomsa Dlamini — a supervising counsellor at Masizakhe.
+ * Part-A mock principal: Nomsa Dlamini  a supervising counsellor at Masizakhe.
  * Switching the demo identity is a one-line change here until real auth lands.
  */
 const MOCK_PRINCIPAL: Principal = {
@@ -93,7 +93,7 @@ export async function getOrgAdminPrincipal(): Promise<Principal> {
 }
 
 /**
- * Part-A demo funder: Palesa Mokoena (DSD), scoped to one grant — external,
+ * Part-A demo funder: Palesa Mokoena (DSD), scoped to one grant  external,
  * read-only, sees only aggregate k-anon figures. Phase 9 resolves the real
  * funder session + grant scope from the invite.
  */

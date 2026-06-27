@@ -1,7 +1,7 @@
-# Phila — Security & POPIA model
+# Phila  Security & POPIA model
 
 Read this before touching `lib/auth/*`, `db/schema.ts`, `db/rls/*` (Part B), or adding any
-protected page. Phila holds the most sensitive class of personal data there is — mental-health
+protected page. Phila holds the most sensitive class of personal data there is  mental-health
 notes, race, employment status, sometimes GBV survivors. Under POPIA all of it is **special personal
 information**. Consent, field-level encryption, audit logging, and right-to-erasure are built in from
 commit one and never retrofitted.
@@ -10,15 +10,15 @@ commit one and never retrofitted.
 
 Authorisation is defence in depth. No single layer is trusted alone.
 
-1. **Route guard — the UX layer.** `lib/auth/guard.ts` (`requireAuth`, `requireOrg`,
+1. **Route guard  the UX layer.** `lib/auth/guard.ts` (`requireAuth`, `requireOrg`,
    `requireCapability`, `requireOrgFeature`, `requireFunderGrant`). It decides what a user is *shown*
-   and renders honest blocked states. It is **not** the security boundary — it runs where the request
+   and renders honest blocked states. It is **not** the security boundary  it runs where the request
    is shaped and can be bypassed by a forged request.
-2. **The Data Access Layer — the real gate.** All reads/writes go through typed query functions
+2. **The Data Access Layer  the real gate.** All reads/writes go through typed query functions
    (`db/queries/*`, Part B). No raw queries in components. Every mutation is a Server Action validated
    with Zod. Every PII path calls `logAccess()`. Select-list redaction keeps `session_notes.body`,
    contact details, `national_id_enc`, and demographics off any shared/cross-role payload.
-3. **Postgres Row-Level Security — the isolation boundary.** This is the layer that actually stops a
+3. **Postgres Row-Level Security  the isolation boundary.** This is the layer that actually stops a
    tenant from reading another tenant's rows. Every `org_id` table has an RLS policy keyed off the
    authenticated org + role. Even a bug in layers 1–2 cannot leak across orgs, because the database
    itself refuses the row. Enforced in Phase 10; the policy model is fixed now.
@@ -30,7 +30,7 @@ Authorisation is defence in depth. No single layer is trusted alone.
 
 - Shared database, `org_id` on every tenant-scoped row.
 - A request carries an authenticated org context; RLS policies compare `org_id` to that context.
-- `super_admin` cross-org access and impersonation go through an **explicit, audited** path — never
+- `super_admin` cross-org access and impersonation go through an **explicit, audited** path  never
   an implicit policy hole. Each crossing writes an `audit_log` row (`impersonate.start` / `.end`).
 - Tests (Phase 19) assert no query crosses orgs, that notes never appear in a cross-role payload, and
   that a funder can reach only their own grant's aggregates.
@@ -39,7 +39,7 @@ Authorisation is defence in depth. No single layer is trusted alone.
 
 - The **private clinical note** (`session_notes`) is readable freely only by the **authoring
   counsellor and their supervisor**. `lib/auth/roles.ts#resolveNoteAccess` encodes this.
-- The **Hub (org_admin)** *can* reach a note, but that access is **audited** — a recorded event,
+- The **Hub (org_admin)** *can* reach a note, but that access is **audited**  a recorded event,
   never silent (`note.read_hub_override`). Front desk, finance, and programme managers can never read
   a note at all.
 - The note is **never** the same artifact as the **shared care plan** (`care_plans`). Sharing with a
@@ -57,7 +57,7 @@ Authorisation is defence in depth. No single layer is trusted alone.
 ## Cryptography & residency
 
 - Field-level encryption (AES-256-GCM, `lib/crypto`) for SA ID numbers and other special fields. Key
-  from `PHILA_FIELD_KEY` (env/KMS). In production a missing key is fatal — we never store plaintext.
+  from `PHILA_FIELD_KEY` (env/KMS). In production a missing key is fatal  we never store plaintext.
 - Client PII rests in an **SA region** (AWS `af-south-1` / Azure SA North) before public launch. The
   swap is `db/client.ts` only (driver-agnostic Drizzle).
 
@@ -72,4 +72,4 @@ Authorisation is defence in depth. No single layer is trusted alone.
 - Any aggregate or funder export applies a **k-anonymity floor** (default 5) with small-cell
   suppression (`applyKAnon`). Suppressed cells are labelled "too few to report", never dropped
   silently. A funder is external, read-only, scoped to their grant(s), sees only k-anon aggregates,
-  and every view is audited — a funder can never re-identify a client.
+  and every view is audited  a funder can never re-identify a client.

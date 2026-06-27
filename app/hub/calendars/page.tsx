@@ -37,7 +37,7 @@ export default async function HubCalendarsPage() {
     <div className="rise space-y-5">
       <PageHead
         title="Calendars"
-        summary={`Every counsellor's sessions in one view — ${counsellors.length} counsellors. Click a slot to book on behalf.`}
+        summary={`Every counsellor's sessions in one view  ${counsellors.length} counsellors. Click a slot to book on behalf.`}
       />
       <CalendarView events={events} businessHours={org.scheduling.businessHours} scheduling={scheduling} nowISO={now} openSessions={false} clientBasePath="/hub/clients" />
     </div>

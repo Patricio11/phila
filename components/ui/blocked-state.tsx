@@ -3,7 +3,7 @@ import { Lock, PowerOff, WalletMinimal } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Blocked state (DESIGN.md §6) — names *why* something can't be shown (consent
+ * Blocked state (DESIGN.md §6)  names *why* something can't be shown (consent
  * missing / feature dormant / over the cost cap) and the next step, never a dead
  * end or a silent failure (Cost Rule, Dormant-by-Default Rule).
  */

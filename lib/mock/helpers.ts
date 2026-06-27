@@ -1,5 +1,5 @@
 /**
- * Seam helpers — these mirror the Part-B engine logic exactly (DESIGN.md §11) so
+ * Seam helpers  these mirror the Part-B engine logic exactly (DESIGN.md §11) so
  * the mock demo behaves like production and Phase 11/16 is a swap, not a rewrite.
  * South Africa runs on a single timezone with no DST, so wall-clock times are
  * anchored to a fixed +02:00 (SAST) offset.
@@ -24,7 +24,7 @@ function fromMinutes(min: number): string {
 
 /**
  * ISO weekday for a YYYY-MM-DD date, Monday = 1 … Sunday = 7. A calendar date's
- * weekday is timezone-independent, so we anchor at **UTC midnight** — anchoring
+ * weekday is timezone-independent, so we anchor at **UTC midnight**  anchoring
  * at SAST midnight would land on the previous UTC day and return the wrong day.
  */
 export function isoWeekday(date: string): 1 | 2 | 3 | 4 | 5 | 6 | 7 {
@@ -167,7 +167,7 @@ export interface CountRow {
 /**
  * Suppress any cell below the k-anonymity floor so a funder/aggregate export can
  * never re-identify a small cohort. Suppressed cells are *labelled*, not dropped
- * silently ("too few to report") — honesty over a prettier chart.
+ * silently ("too few to report")  honesty over a prettier chart.
  */
 export function applyKAnon(rows: readonly CountRow[], floor: number = K_ANON_FLOOR) {
   return rows.map((r) => ({
@@ -177,7 +177,7 @@ export function applyKAnon(rows: readonly CountRow[], floor: number = K_ANON_FLO
   }));
 }
 
-/** "412 of 530 measured" — distinguishes captured from missing data. */
+/** "412 of 530 measured"  distinguishes captured from missing data. */
 export function coverageNote(captured: number, total: number, noun = "measured"): string {
   if (total === 0) return `none yet ${noun}`;
   return `${captured.toLocaleString("en-ZA")} of ${total.toLocaleString("en-ZA")} ${noun}`;

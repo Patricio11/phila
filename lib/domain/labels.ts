@@ -1,5 +1,5 @@
 /**
- * Human labels for enum values — South African English. Kept separate from the
+ * Human labels for enum values  South African English. Kept separate from the
  * enums so copy can change without touching the value sets. Reused by the
  * dossier, reporting, and funder surfaces.
  */

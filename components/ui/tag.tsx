@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Tag — small contextual label (DESIGN.md §6): neutral by default, with quiet
+ * Tag  small contextual label (DESIGN.md §6): neutral by default, with quiet
  * tones for online / room / intake / risk. Calm, never a rainbow.
  */
 export type TagTone = "neutral" | "online" | "info" | "accent" | "warn" | "danger";

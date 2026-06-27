@@ -2,7 +2,7 @@ import type { IndicatorActual, IndicatorStatus } from "@/lib/data-provider";
 import { cn } from "@/lib/utils";
 
 /**
- * IndicatorMeter (DESIGN.md §6) — an indicator's actual vs target with an honest
+ * IndicatorMeter (DESIGN.md §6)  an indicator's actual vs target with an honest
  * on-track / at-risk / behind classification. For count indicators the actual is
  * paced against the period (a marker shows what's expected by now); the actual is
  * always **computed from the clinical work**, never typed.

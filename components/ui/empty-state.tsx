@@ -2,7 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * EmptyState (DESIGN.md §6) — an invitation to act, never a dead end. A quiet
+ * EmptyState (DESIGN.md §6)  an invitation to act, never a dead end. A quiet
  * icon, a plain title, one line of guidance, and an optional action.
  */
 export function EmptyState({

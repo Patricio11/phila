@@ -97,10 +97,10 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
             <CardHead title="Personal & contact" />
             <dl className="grid gap-x-6 gap-y-3.5 px-[17px] pb-[17px] sm:grid-cols-2">
               <Info icon={Mail} label="Email" value={member.email} />
-              <Info icon={Phone} label="Phone" value={profile?.phone ?? "—"} />
-              <Info icon={Cake} label="Date of birth" value={profile ? `${longDate(profile.dateOfBirth)} · ${age(profile.dateOfBirth, now)}` : "—"} />
-              <Info icon={Languages} label="Languages" value={profile?.languages.join(", ") ?? "—"} />
-              <Info icon={MapPin} label="Address" value={profile?.address ?? "—"} className="sm:col-span-2" />
+              <Info icon={Phone} label="Phone" value={profile?.phone ?? ""} />
+              <Info icon={Cake} label="Date of birth" value={profile ? `${longDate(profile.dateOfBirth)} · ${age(profile.dateOfBirth, now)}` : ""} />
+              <Info icon={Languages} label="Languages" value={profile?.languages.join(", ") ?? ""} />
+              <Info icon={MapPin} label="Address" value={profile?.address ?? ""} className="sm:col-span-2" />
               <Info icon={CalendarClock} label="Joined" value={longDate(member.joinedAt)} />
             </dl>
             {profile?.bio && <p className="border-t border-border px-[17px] py-4 text-[13px] leading-relaxed text-text-2">{profile.bio}</p>}

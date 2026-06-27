@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 
 /**
- * StatCard — DESIGN.md §6. A calm KPI card: the value leads, with a small tinted
+ * StatCard  DESIGN.md §6. A calm KPI card: the value leads, with a small tinted
  * icon set **beside** it (never stacked on top), an optional trend chip, and an
  * **honest coverage line** ("412 of 530 measured"). Never a vanity number: the
  * coverage caption distinguishes captured from missing data (Outcome-Honesty

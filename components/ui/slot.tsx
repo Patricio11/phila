@@ -49,7 +49,7 @@ export const Slot = React.forwardRef<HTMLElement, { children?: React.ReactNode }
       }
     }
 
-    // Only attach a ref when one actually exists — creating a ref callback with
+    // Only attach a ref when one actually exists  creating a ref callback with
     // nothing to forward is rejected inside Server Components.
     const refs = [ref, childRef].filter(Boolean) as Array<React.Ref<unknown>>;
     if (refs.length > 0) merged.ref = refs.length === 1 ? refs[0] : mergeRefs(...refs);

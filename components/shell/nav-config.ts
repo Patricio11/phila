@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 
 /**
- * Navigation is data, not markup — the same shell (DESIGN.md §5.4) renders every
+ * Navigation is data, not markup  the same shell (DESIGN.md §5.4) renders every
  * role; only the nav contents change. `ready: false` items are part of the
  * design but land in a later phase: the shell shows them honestly as "Soon"
  * rather than as a dead-end link.
@@ -46,7 +46,7 @@ export interface NavSection {
 /**
  * Nav configs hold icon *components* (forwardRef objects), which cannot cross
  * the server→client boundary. So a Server Component never passes a config across
- * — it passes a `NavKey`, and the client shell resolves the config here.
+ *  it passes a `NavKey`, and the client shell resolves the config here.
  */
 export type NavKey = "counsellor" | "client" | "hub" | "funder" | "admin";
 
@@ -73,7 +73,7 @@ export const counsellorNav: NavSection[] = [
   },
 ];
 
-/** Client portal nav — the lightest shell (DESIGN.md §5.4). */
+/** Client portal nav  the lightest shell (DESIGN.md §5.4). */
 export const clientNav: NavSection[] = [
   {
     label: "Your space",
@@ -110,7 +110,7 @@ export const hubNav: NavSection[] = [
   },
 ];
 
-/** Funder portal nav — pared back; only their grant(s), read-only (DESIGN.md §5.4). */
+/** Funder portal nav  pared back; only their grant(s), read-only (DESIGN.md §5.4). */
 export const funderNav: NavSection[] = [
   {
     label: "Your grants",

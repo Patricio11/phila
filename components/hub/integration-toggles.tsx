@@ -14,7 +14,7 @@ const FEATURES: { key: OrgFeature; label: string; description: string; icon: typ
 ];
 
 /**
- * Integration toggles — **dormant by default** (Dormant-by-Default Rule). "Off"
+ * Integration toggles  **dormant by default** (Dormant-by-Default Rule). "Off"
  * is a real off state. Turning one on doesn't pretend it's live; it says what's
  * still needed. In Part A this is local + honest; Phase 6/12/13/14 wire each rail.
  */
@@ -27,8 +27,8 @@ export function IntegrationToggles({ initial }: { initial: Record<OrgFeature, bo
       const on = !prev[key];
       toast(
         on
-          ? { tone: "default", title: `${label} switched on`, description: "Finish configuring it before it goes live — nothing sends until then." }
-          : { tone: "default", title: `${label} switched off`, description: "Off is a real off state — nothing leaves." },
+          ? { tone: "default", title: `${label} switched on`, description: "Finish configuring it before it goes live  nothing sends until then." }
+          : { tone: "default", title: `${label} switched off`, description: "Off is a real off state  nothing leaves." },
       );
       return { ...prev, [key]: on };
     });

@@ -24,7 +24,7 @@ const FILTERS: { key: "all" | CaseloadStatus; label: string }[] = [
 ];
 
 function shortDate(iso: string | null | undefined): string {
-  if (!iso) return "—";
+  if (!iso) return "";
   return new Intl.DateTimeFormat("en-ZA", {
     timeZone: "Africa/Johannesburg",
     day: "numeric",
@@ -76,7 +76,7 @@ export function CaseloadTable({ rows }: { rows: CaseloadRow[] }) {
         r.nextSession ? (
           <span className="text-text-2">{shortDate(r.nextSession.startsAt)}</span>
         ) : (
-          <span className="text-text-3">—</span>
+          <span className="text-text-3"></span>
         ),
     },
     {

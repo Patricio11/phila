@@ -6,7 +6,7 @@ import * as schema from "@/db/schema";
 /**
  * Drizzle client over Neon Postgres. Driver-agnostic by design: the EU→SA
  * residency migration before public launch is a change to this file only
- * (Data-Residency Rule). In Part A there is **no live connection** — the client
+ * (Data-Residency Rule). In Part A there is **no live connection**  the client
  * is created lazily and only when `DATABASE_URL` is set, so importing it never
  * forces a connection. The real isolation boundary is Postgres RLS (Phase 10).
  */

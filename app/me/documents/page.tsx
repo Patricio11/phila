@@ -26,7 +26,7 @@ export default async function MeDocumentsPage() {
 
   return (
     <div className="rise space-y-6">
-      <PageHead title="Documents" summary="Reports and resources shared with you — and anything you upload." />
+      <PageHead title="Documents" summary="Reports and resources shared with you  and anything you upload." />
       <DocumentList documents={documents} />
     </div>
   );

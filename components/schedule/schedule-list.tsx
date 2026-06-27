@@ -4,7 +4,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { CalendarCheck } from "lucide-react";
 
 /**
- * Today's schedule with the **"now" line** — an amber label + a fading rule that
+ * Today's schedule with the **"now" line**  an amber label + a fading rule that
  * marks the current time between the last finished and the next upcoming session
  * (DESIGN.md §6). A row whose window contains "now" reads as in session.
  */

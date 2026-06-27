@@ -1,7 +1,7 @@
 import { cn, hashString, initials } from "@/lib/utils";
 
 /**
- * Avatar — deterministic coloured initials by name (DESIGN.md §6). A credential
+ * Avatar  deterministic coloured initials by name (DESIGN.md §6). A credential
  * ring marks a verified counsellor; honesty matters, so it is opt-in, never the
  * default. Palette stays within the calm system (no rainbow).
  */

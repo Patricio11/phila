@@ -5,12 +5,12 @@ import { Card, CardHead } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
 
 const GUARANTEES = [
-  { icon: Eye, title: "Read-only & scoped", body: "A funder sees only their own grant — never another, never the org's inner workings." },
+  { icon: Eye, title: "Read-only & scoped", body: "A funder sees only their own grant  never another, never the org's inner workings." },
   { icon: Lock, title: "Nothing identifiable", body: "Aggregate, k-anonymised, consent-gated. Small cells are suppressed, not shown." },
   { icon: ShieldCheck, title: "Every view audited", body: "The org controls exactly what each funder sees, and every view is recorded." },
 ];
 
-/** The growth-loop differentiator — a scoped, k-anon, read-only funder portal. */
+/** The growth-loop differentiator  a scoped, k-anon, read-only funder portal. */
 export function FunderStory() {
   return (
     <section id="funders" className="scroll-mt-20 py-16 sm:py-24">
@@ -20,11 +20,11 @@ export function FunderStory() {
             For funders
           </span>
           <h2 className="mt-3 text-[clamp(1.6rem,3.2vw,2.3rem)] font-[680] leading-[1.14] tracking-[-0.03em] text-text">
-            Give funders live proof — without giving away a single client.
+            Give funders live proof  without giving away a single client.
           </h2>
           <p className="mt-4 text-[15.5px] leading-relaxed text-text-2">
             Invite a funder to a portal scoped to their grant. They watch indicators move against
-            targets in real time — the same numbers that fall out of your counsellors&apos; daily work. No
+            targets in real time  the same numbers that fall out of your counsellors&apos; daily work. No
             spreadsheets, no quarter-end scramble, no identifiable client ever in view.
           </p>
 

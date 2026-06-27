@@ -11,7 +11,7 @@ export interface SelectOption {
 }
 
 /**
- * A custom select (portaled-less dropdown, never a native <select> — DESIGN §6).
+ * A custom select (portaled-less dropdown, never a native <select>  DESIGN §6).
  * Closes on select or outside click; keyboard-focusable trigger.
  */
 export function Select({

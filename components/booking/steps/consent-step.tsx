@@ -8,7 +8,7 @@ import { StepHeader } from "@/components/booking/step-header";
 import { hasRequiredConsents } from "@/components/booking/validation";
 
 /**
- * Consent specs for booking — affirmative, never pre-ticked (POPIA). The AI
+ * Consent specs for booking  affirmative, never pre-ticked (POPIA). The AI
  * purpose only appears when the org has the AI feature on (Dormant-by-Default:
  * the toggle is also the cross-border consent gate).
  */
@@ -42,7 +42,7 @@ function specsFor(org: Org): ConsentSpec[] {
       purpose: "funder_reporting",
       title: "Anonymous funder reporting",
       description:
-        "Let your de-identified progress count toward the programme's funded targets — aggregate figures only, never a record of you.",
+        "Let your de-identified progress count toward the programme's funded targets  aggregate figures only, never a record of you.",
     },
   ];
 

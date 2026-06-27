@@ -29,7 +29,7 @@ export default async function MeConsentPage() {
     <div className="rise space-y-6">
       <PageHead
         title="Your consent"
-        summary="You're in control. Turn any of these on or off — changes take effect right away."
+        summary="You're in control. Turn any of these on or off  changes take effect right away."
       />
       <div className="flex items-start gap-2.5 rounded-control border border-accent/25 bg-accent-soft/40 p-4">
         <ShieldCheck className="mt-0.5 size-5 shrink-0 text-accent" strokeWidth={2} aria-hidden />

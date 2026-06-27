@@ -97,7 +97,7 @@ export default async function HubRoomsPage() {
     <div className="rise space-y-7">
       <PageHead
         title="Rooms & resources"
-        summary="Every room's weekly rhythm and how well it's used — across all your sites."
+        summary="Every room's weekly rhythm and how well it's used  across all your sites."
         actions={<CreateRoomButton sites={sites.map((s) => ({ id: s.id, name: s.name }))} />}
       />
 
@@ -160,7 +160,7 @@ function RoomCard({ rv, days }: { rv: RoomView; days: DayCell[] }) {
           </div>
         )}
 
-        {/* Weekly rhythm — per-day occupancy bars */}
+        {/* Weekly rhythm  per-day occupancy bars */}
         <div>
           <div className="mb-2 flex items-end justify-between">
             <h3 className="text-[11.5px] font-semibold uppercase tracking-wide text-text-3">This week</h3>

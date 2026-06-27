@@ -10,7 +10,7 @@ import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 /**
- * Account menu — name/email, switch theme, settings, and sign out. Sign out is
+ * Account menu  name/email, switch theme, settings, and sign out. Sign out is
  * mock in Part A (returns to the landing); Phase 9 calls Better Auth signOut.
  */
 export function AccountMenu({

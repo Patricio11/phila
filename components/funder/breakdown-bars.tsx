@@ -3,7 +3,7 @@ import { Card, CardHead } from "@/components/ui/card";
 
 /**
  * A k-anon demographic breakdown. Cells below the floor read "too few to report"
- * — never an identifiable count (Outcome-Honesty Rule). Used by the grant
+ *  never an identifiable count (Outcome-Honesty Rule). Used by the grant
  * dashboard and the funder portal alike.
  */
 export function BreakdownBars({ title, rows }: { title: string; rows: Breakdown[] }) {

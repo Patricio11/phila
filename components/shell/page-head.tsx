@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Page head (DESIGN.md §5.3) — a greeting/title + one-line summary on the left,
+ * Page head (DESIGN.md §5.3)  a greeting/title + one-line summary on the left,
  * primary actions on the right. Plain, warm, certain (§7).
  */
 export function PageHead({

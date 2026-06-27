@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/marketing/reveal";
 
 /**
- * A consistent section header — small accent eyebrow, a tight title, a calm lead.
+ * A consistent section header  small accent eyebrow, a tight title, a calm lead.
  * Plain and specific copy (DESIGN.md §7); centred or left per section.
  */
 export function SectionHeading({

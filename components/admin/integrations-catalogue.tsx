@@ -25,7 +25,7 @@ export function IntegrationsCatalogue({ initial }: { initial: IntegrationCatalog
 
   const setStatus = (key: string, status: Status, name: string) => {
     setItems((prev) => prev.map((i) => (i.key === key ? { ...i, status } : i)));
-    toast({ tone: "default", title: `${name} set to ${status}`, description: status === "off" ? "Hidden from orgs." : status === "mock" ? "Available in simulation." : "Live — orgs can connect it." });
+    toast({ tone: "default", title: `${name} set to ${status}`, description: status === "off" ? "Hidden from orgs." : status === "mock" ? "Available in simulation." : "Live  orgs can connect it." });
   };
 
   return (

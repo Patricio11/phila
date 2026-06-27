@@ -4,7 +4,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { requireSuperAdmin } from "@/lib/auth/guard";
 
 /**
- * The platform operator console (DESIGN.md §5.4) — cross-org by design, with a
+ * The platform operator console (DESIGN.md §5.4)  cross-org by design, with a
  * 2FA eyebrow on every page (enforced in Phase 9). Every cross-org access and
  * impersonation is audited (Tenant-Isolation Rule).
  */

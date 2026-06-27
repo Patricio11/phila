@@ -1,5 +1,5 @@
 /**
- * Theme is **light + dark only**, light default, no "system" option — locked to
+ * Theme is **light + dark only**, light default, no "system" option  locked to
  * DESIGN.md §10. (The ROADMAP appendix's `theme` enum still lists `system`; the
  * design spec is the more recent, locked authority, so we ship two themes and
  * keep `system` trivial to add later if that decision is revisited.)

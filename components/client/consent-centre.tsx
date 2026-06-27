@@ -14,14 +14,14 @@ import { cn } from "@/lib/utils";
 const DESCRIPTIONS: Record<ConsentPurpose, string> = {
   booking: "Lets us schedule and manage your sessions.",
   notes: "Lets your counsellor keep confidential notes to support your care.",
-  demographics: "Anonymous stats used only for reporting — never identifies you.",
+  demographics: "Anonymous stats used only for reporting  never identifies you.",
   ai_processing: "Lets AI help draft your counsellor's notes (always reviewed and signed by them).",
   comms: "Appointment reminders and updates by WhatsApp, SMS, or email.",
   care_plan_share: "Lets your counsellor share a care plan and tasks with you.",
   funder_reporting: "Lets your de-identified progress count toward funded programme targets.",
 };
 
-/** Order shown — the foundational purposes first. */
+/** Order shown  the foundational purposes first. */
 const ORDER: ConsentPurpose[] = [
   "booking",
   "notes",
@@ -54,7 +54,7 @@ export function ConsentCentre({ records }: { records: ConsentRecord[] }) {
         title: on ? `Turned off: ${CONSENT_PURPOSE_LABELS[purpose]}` : `Turned on: ${CONSENT_PURPOSE_LABELS[purpose]}`,
         description: on
           ? "This takes effect right away. You can turn it back on any time."
-          : "Thank you — this takes effect right away.",
+          : "Thank you  this takes effect right away.",
       });
       return next;
     });

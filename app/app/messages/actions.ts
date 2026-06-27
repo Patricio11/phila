@@ -6,7 +6,7 @@ import { logAccess } from "@/lib/audit";
 
 /**
  * Send a message (mock). The composer keeps an optimistic copy; this validates
- * and audits the intent. **Nothing is delivered** in Part A — the WhatsApp /
+ * and audits the intent. **Nothing is delivered** in Part A  the WhatsApp /
  * channel rail turns on in Phase 12, behind this same shape. Honest by default.
  */
 const input = z.object({

@@ -1,7 +1,7 @@
 import { Phone, ShieldAlert } from "lucide-react";
 
 /**
- * SafeguardingPanel (DESIGN.md §6 / Safeguarding Rule) — rose, always paired with
+ * SafeguardingPanel (DESIGN.md §6 / Safeguarding Rule)  rose, always paired with
  * a human + current South African support. Never auto-actioned, and it never
  * names a method. Resources verified at build; review at each release.
  */
@@ -15,7 +15,7 @@ export function SafeguardingPanel({ clientName }: { clientName?: string }) {
       <p className="mt-2 text-[13px] leading-relaxed text-text-2">
         {clientName ? `${clientName.split(" ")[0]} has` : "This client has"} a safeguarding concern on
         record. Stay with them, involve your supervisor, and share current support. This flag is never
-        auto-actioned — you decide the next step.
+        auto-actioned  you decide the next step.
       </p>
       <ul className="mt-3 space-y-1.5 text-[12.5px] text-text-2">
         <li className="flex items-center gap-2">

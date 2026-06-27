@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Skeleton (DESIGN.md §6) — matches the final dimensions of what's loading. The
+ * Skeleton (DESIGN.md §6)  matches the final dimensions of what's loading. The
  * shimmer is motion-safe (stripped under prefers-reduced-motion via the global
  * reduced-motion rule).
  */

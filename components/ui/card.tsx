@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Card / CardHead — DESIGN.md §6. A raised surface with a hairline border that
+ * Card / CardHead  DESIGN.md §6. A raised surface with a hairline border that
  * lifts a shadow step on hover. The head carries a title (+ optional muted count
  * pill) on the left and a single action on the right.
  */

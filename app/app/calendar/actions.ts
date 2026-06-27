@@ -4,7 +4,7 @@ import { z } from "zod";
 import { logAccess } from "@/lib/audit";
 
 /**
- * Reschedule (mock). In Part A this validates + audits and returns success — **no
+ * Reschedule (mock). In Part A this validates + audits and returns success  **no
  * notification fires** (the messaging rail is dormant; honest). Phase 11 wires
  * the real scheduling engine (conflict re-check, room validation) and Phase 12
  * the notification, behind this same shape.

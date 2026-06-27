@@ -40,7 +40,7 @@ export default async function HubOverviewPage() {
   const overview = await provider.getHubOverview(membership.orgId, now);
   if (!overview) notFound();
 
-  // Staffing load — who's stretched, who has capacity (this week, Mon–Sun).
+  // Staffing load  who's stretched, who has capacity (this week, Mon–Sun).
   const counsellors = await provider.listCounsellors(membership.orgId);
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(now));
   const monday = addDays(today, -(isoWeekday(today) - 1));
@@ -69,7 +69,7 @@ export default async function HubOverviewPage() {
     <div className="rise-stagger space-y-6">
       <PageHead
         title={`${greeting()}, ${firstName}`}
-        summary={`${membership.orgName} at a glance — ${overview.clientsWeek} clients seen this week.`}
+        summary={`${membership.orgName} at a glance  ${overview.clientsWeek} clients seen this week.`}
       />
 
       <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-3">

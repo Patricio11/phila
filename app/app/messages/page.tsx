@@ -24,7 +24,7 @@ export default async function MessagesPage() {
 
   return (
     <div className="rise space-y-5">
-      <PageHead title="Messages" summary="Your conversations with clients — WhatsApp-first when it's live." />
+      <PageHead title="Messages" summary="Your conversations with clients  WhatsApp-first when it's live." />
       <MessagesView conversations={conversations} clients={clients} />
     </div>
   );

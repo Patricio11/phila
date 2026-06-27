@@ -22,7 +22,7 @@ export default async function HubFundersPage() {
     <div className="rise space-y-6">
       <PageHead
         title="Funders & grants"
-        summary="Define a grant's targets once — the actuals roll up live from the clinical work."
+        summary="Define a grant's targets once  the actuals roll up live from the clinical work."
         actions={<InviteFunderButton />}
       />
 

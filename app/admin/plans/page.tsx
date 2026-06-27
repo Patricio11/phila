@@ -22,7 +22,7 @@ export default async function AdminPlansPage() {
     <div className="rise space-y-6">
       <PageHead
         title="Plans & billing"
-        summary="Orgs subscribe to a Phila plan and pay Phila through Phila's own PSP. Entitlements come from this table — no drift."
+        summary="Orgs subscribe to a Phila plan and pay Phila through Phila's own PSP. Entitlements come from this table  no drift."
       />
 
       <div className="grid grid-cols-2 gap-3.5 sm:max-w-md">

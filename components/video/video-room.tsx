@@ -19,9 +19,9 @@ import { cn } from "@/lib/utils";
 const noopSubscribe = () => () => {};
 
 /**
- * VideoRoom shell (DESIGN.md §6/§8) — a full-screen pre-join + in-session room
+ * VideoRoom shell (DESIGN.md §6/§8)  a full-screen pre-join + in-session room
  * for online sessions, or the **paste-link fallback** when the org's in-app video
- * is off (Dormant-by-Default). All mock — no WebRTC; LiveKit is wired in Phase 13.
+ * is off (Dormant-by-Default). All mock  no WebRTC; LiveKit is wired in Phase 13.
  * On end, control returns to the note.
  */
 export function VideoRoom({

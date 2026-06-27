@@ -43,20 +43,20 @@ function buildNarrative(result: ReportingResult, period: string, orgName: string
       : delta < 0
         ? ` On the PHQ-9 depression measure, average scores improved by ${Math.abs(delta)} points across ${result.outcome.coverage.captured} clients with repeat measures (a lower score is better).`
         : delta > 0
-          ? ` On the PHQ-9 measure, average scores rose by ${delta} points across ${result.outcome.coverage.captured} clients — a trend the team is monitoring.`
+          ? ` On the PHQ-9 measure, average scores rose by ${delta} points across ${result.outcome.coverage.captured} clients  a trend the team is monitoring.`
           : " PHQ-9 scores held steady across the measured cohort.";
 
   return (
     `During ${period.toLowerCase()}, ${orgName} provided counselling to ${result.matched} client${result.matched === 1 ? "" : "s"} who consented to demographic reporting ` +
     `(${coverageNote(result.withDemographics, result.totalClients, "of all clients")}). ${reach}${genderLine}${outcomeLine} ` +
-    `All figures are aggregate and k-anonymised — cohorts too small to identify a person are suppressed.`
+    `All figures are aggregate and k-anonymised  cohorts too small to identify a person are suppressed.`
   );
 }
 
 function buildCsv(result: ReportingResult, period: string, orgName: string): string {
   const q = (s: string) => `"${s.replace(/"/g, '""')}"`;
   const lines: string[] = [];
-  lines.push(q(`${orgName} — funder report`) + "," + q(period));
+  lines.push(q(`${orgName}  funder report`) + "," + q(period));
   lines.push(q("Clients matched") + "," + result.matched);
   lines.push(q("With demographic consent") + "," + q(`${result.withDemographics} of ${result.totalClients}`));
   lines.push("");
@@ -113,7 +113,7 @@ export function ReportingView({ initial, orgName }: { initial: ReportingResult; 
     URL.revokeObjectURL(url);
     startExport(async () => {
       await exportFunderReport("csv");
-      toast({ tone: "success", title: "CSV exported", description: "k-anonymised — small cells suppressed, nothing identifiable." });
+      toast({ tone: "success", title: "CSV exported", description: "k-anonymised  small cells suppressed, nothing identifiable." });
     });
   };
 
@@ -129,7 +129,7 @@ export function ReportingView({ initial, orgName }: { initial: ReportingResult; 
       <div className="flex items-start gap-2.5 rounded-control border border-accent/25 bg-accent-soft/40 p-3.5">
         <Lock className="mt-0.5 size-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
         <p className="text-[12.5px] leading-relaxed text-text-2">
-          Consent-gated: only clients who agreed to demographic reporting are counted —{" "}
+          Consent-gated: only clients who agreed to demographic reporting are counted {" "}
           <span className="font-semibold text-text">{coverageNote(result.withDemographics, result.totalClients, "clients")}</span>.
           Every figure applies a k-anonymity floor; cells below it read &ldquo;too few to report&rdquo;.
         </p>
@@ -159,7 +159,7 @@ export function ReportingView({ initial, orgName }: { initial: ReportingResult; 
         />
         <div className="px-[17px] pb-[17px]">
           <p className="text-[13.5px] leading-relaxed text-text-2">{narrative}</p>
-          <p className="mt-2 text-[11px] text-text-3">Generated from the figures below — edit freely before sending. Nothing identifiable is included.</p>
+          <p className="mt-2 text-[11px] text-text-3">Generated from the figures below  edit freely before sending. Nothing identifiable is included.</p>
         </div>
       </Card>
 
@@ -182,7 +182,7 @@ export function ReportingView({ initial, orgName }: { initial: ReportingResult; 
       <Card className="p-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-0 flex-1">
-            <div className="text-[13.5px] font-[600] text-text">Export — {period}</div>
+            <div className="text-[13.5px] font-[600] text-text">Export  {period}</div>
             <p className="text-[12px] text-text-2">Aggregate, k-anonymised, audited. The CSV downloads now; the narrative above is included with your figures.</p>
           </div>
           <Button variant="ghost" onClick={downloadCsv} loading={exporting}>

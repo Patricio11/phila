@@ -13,7 +13,7 @@ const TRUST = [
 export function Hero() {
   return (
     <section className="relative overflow-hidden">
-      {/* On-brand glow — opacity/transform only, drifts slowly. */}
+      {/* On-brand glow  opacity/transform only, drifts slowly. */}
       <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
         <div className="drift absolute left-1/2 top-[-12%] h-[520px] w-[820px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,var(--accent-soft),transparent)] opacity-80 blur-2xl" />
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,var(--bg))]" />
@@ -34,7 +34,7 @@ export function Hero() {
           </h1>
 
           <p className="mt-5 max-w-md text-[15.5px] leading-relaxed text-text-2">
-            Phila is the calm operating system for counselling teams — the daily clinical loop,
+            Phila is the calm operating system for counselling teams  the daily clinical loop,
             programme-grade oversight, and funder reporting that falls out of the work instead of
             being a second job.
           </p>

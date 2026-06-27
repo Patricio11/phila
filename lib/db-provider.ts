@@ -1,5 +1,5 @@
 /**
- * dbProvider — the Part-B (Phase 10) implementation of the `dataProvider` seam,
+ * dbProvider  the Part-B (Phase 10) implementation of the `dataProvider` seam,
  * backed by Neon Postgres with Row-Level Security as the real tenant boundary.
  * It is intentionally inert in Part A: selecting `DATA_PROVIDER=db` before
  * Phase 10 fails loudly rather than silently serving nothing.

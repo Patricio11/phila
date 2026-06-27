@@ -1,5 +1,5 @@
 /**
- * mockProvider — the Part-A implementation of the `dataProvider` seam. It reads
+ * mockProvider  the Part-A implementation of the `dataProvider` seam. It reads
  * typed fixtures and materialises a live week of appointments around "now", so
  * the demo is always populated and behaves like production. It is consent- and
  * redaction-aware: it never returns demographics without an active consent, and
@@ -186,7 +186,7 @@ function shiftISO(nowISO: string, days: number): string {
   return new Date(new Date(nowISO).getTime() + days * 86_400_000).toISOString();
 }
 
-/** A client's sessions — their own template if present, else derived from the counsellors'. */
+/** A client's sessions  their own template if present, else derived from the counsellors'. */
 function clientAppointments(clientId: string, now: string): Appointment[] {
   if (clientApptTemplates[clientId]) return materialiseClient(clientId, now);
   const out: Appointment[] = [];
@@ -236,7 +236,7 @@ function seedNote(appt: Appointment): SessionNote | null {
       id: `note_${appt.id}`,
       appointmentId: appt.id,
       authorCounsellorId: appt.counsellorId,
-      body: "Client presented low and withdrawn; spoke about feeling overwhelmed at home. A safeguarding concern came up — stayed with it, agreed a follow-up within the week, and shared current support. To review with supervisor.",
+      body: "Client presented low and withdrawn; spoke about feeling overwhelmed at home. A safeguarding concern came up  stayed with it, agreed a follow-up within the week, and shared current support. To review with supervisor.",
       aiGenerated: false,
       signedAt: null,
     };
@@ -482,7 +482,7 @@ export const mockProvider: DataProvider = {
     const client = allClients.find((c) => c.id === appt.clientId);
     if (!client) return ok(null);
 
-    // Continuity of care — where this session sits in the client's journey.
+    // Continuity of care  where this session sits in the client's journey.
     const journey = clientAppointments(appt.clientId, now).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
     const idx = journey.findIndex((a) => a.id === appt.id);
     const prior = [...journey]
@@ -624,7 +624,7 @@ export const mockProvider: DataProvider = {
         attention.push({
           id: `risk_${c.id}`,
           tone: "rose",
-          title: `Safeguarding — ${c.name}`,
+          title: `Safeguarding  ${c.name}`,
           detail: "A counsellor has flagged a safeguarding concern.",
           href: "/hub/clients",
         });
@@ -720,7 +720,7 @@ export const mockProvider: DataProvider = {
             name: c.name,
             phone: c.phone ?? null,
             email: c.email ?? null,
-            counsellorName: allCounsellors.find((cc) => cc.id === c.primaryCounsellorId)?.name ?? "—",
+            counsellorName: allCounsellors.find((cc) => cc.id === c.primaryCounsellorId)?.name ?? "",
             sessions: clientAppointments(c.id, now).length,
             createdAt: c.createdAt,
           }))
@@ -962,7 +962,7 @@ export const mockProvider: DataProvider = {
   getOrgSettings: (orgId) => {
     const org = orgs.find((o) => o.id === orgId);
     if (!org) return ok(null);
-    // Dormant by default — no gateway connected until an admin configures one.
+    // Dormant by default  no gateway connected until an admin configures one.
     return ok({ org, paymentProvider: null, paymentStatus: "off" as const });
   },
 
@@ -1016,7 +1016,7 @@ export const mockProvider: DataProvider = {
   },
 
   getFunderGrantView: (funderUserId, grantId, now): Promise<FunderGrantView | null> => {
-    // Scope check — a funder reaches ONLY their grant(s) (requireFunderGrant).
+    // Scope check  a funder reaches ONLY their grant(s) (requireFunderGrant).
     const scoped = funderContacts.some((fc) => fc.userId === funderUserId && fc.grantIds.includes(grantId));
     if (!scoped) return ok(null);
     const grant = grants.find((g) => g.id === grantId);
@@ -1058,7 +1058,7 @@ export const mockProvider: DataProvider = {
     ok(
       platformOrgs.map((org) => {
         const plan = plans.find((p) => p.id === org.planId);
-        return { org, planName: plan?.name ?? "—", planPriceCents: plan?.priceCents ?? 0 };
+        return { org, planName: plan?.name ?? "", planPriceCents: plan?.priceCents ?? 0 };
       }),
     ),
 
@@ -1084,7 +1084,7 @@ export const mockProvider: DataProvider = {
         })
       : [];
     const clientCount = fullyModeled ? liveOnly(allClients.filter((c) => c.orgId === orgId)).length : 0;
-    return ok({ org, planName: plan?.name ?? "—", planPriceCents: plan?.priceCents ?? 0, team, clientCount, fullyModeled });
+    return ok({ org, planName: plan?.name ?? "", planPriceCents: plan?.priceCents ?? 0, team, clientCount, fullyModeled });
   },
 
   listPlans: (): Promise<PlanWithUsage[]> =>
@@ -1239,7 +1239,7 @@ function buildAttention(
       items.push({
         id: `risk_${a.id}`,
         tone: "rose",
-        title: `Safeguarding flag — ${a.clientName}`,
+        title: `Safeguarding flag  ${a.clientName}`,
         // Points to a human + a current SA resource; never names a method (Rule #8).
         detail: "Review with your supervisor. SADAG crisis line: 0800 567 567 (or SMS 31393).",
         href: `/app/sessions/${a.id}`,
@@ -1253,7 +1253,7 @@ function buildAttention(
       id: `missed_${missed.id}`,
       tone: "amber",
       title: "Missed session to follow up",
-      detail: "A client did not attend this week — reach out to rebook.",
+      detail: "A client did not attend this week  reach out to rebook.",
     });
   }
 

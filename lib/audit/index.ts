@@ -1,11 +1,11 @@
 /**
- * Audit log — `logAccess()` is invoked on every PII read/export and every
+ * Audit log  `logAccess()` is invoked on every PII read/export and every
  * privileged action (Protected & Audited Rule). In Part A it writes to a
  * console/in-memory sink so the *call sites* exist from commit one; Phase 10
  * swaps the sink for the persistent `audit_log` table with no call-site change.
  *
  * The rule that matters: the Hub reading a private note, a super-admin crossing
- * orgs, a funder opening a grant view — each is a recorded access, never silent.
+ * orgs, a funder opening a grant view  each is a recorded access, never silent.
  */
 import type { PlatformRole, TeamRole } from "@/lib/domain/enums";
 
@@ -34,7 +34,7 @@ export interface AuditEvent {
   orgId: string | null;
   /** What was touched: `client:abc`, `note:123`, `grant:g1`, … */
   target: string;
-  /** Why — purpose/justification, kept honest. */
+  /** Why  purpose/justification, kept honest. */
   reason?: string;
   meta?: Record<string, string | number | boolean>;
   at: string;

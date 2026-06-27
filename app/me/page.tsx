@@ -57,7 +57,7 @@ export default async function MeHomePage() {
         summary={
           upcoming
             ? "Here's your next session and what your counsellor shared with you."
-            : "Here's your space — your sessions, care plan, and records."
+            : "Here's your space  your sessions, care plan, and records."
         }
       />
 
@@ -91,7 +91,7 @@ export default async function MeHomePage() {
                 <EmptyState
                   icon={ShieldCheck}
                   title="Nothing shared yet"
-                  body="After a session, anything your counsellor chooses to share — advice, tasks, resources — will appear here."
+                  body="After a session, anything your counsellor chooses to share  advice, tasks, resources  will appear here."
                 />
               </div>
             </Card>
@@ -143,7 +143,7 @@ export default async function MeHomePage() {
             </Card>
           )}
 
-          {/* Always reachable — calm, never alarming (Safeguarding Rule). */}
+          {/* Always reachable  calm, never alarming (Safeguarding Rule). */}
           <Card className="border-accent/20 bg-accent-soft/40 p-4">
             <div className="flex items-center gap-2 text-[13.5px] font-[640] text-text">
               <Heart className="size-4 text-accent" strokeWidth={2} aria-hidden /> If you need to talk now

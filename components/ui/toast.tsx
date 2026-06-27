@@ -6,7 +6,7 @@ import { Check, Info, TriangleAlert, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Toast (DESIGN.md §6) — calm, honest, brief feedback. Quiet by default; success
+ * Toast (DESIGN.md §6)  calm, honest, brief feedback. Quiet by default; success
  * leans on the accent, error on the measured rose. Auto-dismisses; the timer is
  * a no-op under reduced motion is unnecessary (it's just opacity), but entrance
  * motion is GPU-only and capped. Stacks bottom-centre on phones, bottom-right up.
@@ -57,7 +57,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 const noopSubscribe = () => () => {};
 
 function Toaster({ items, onDismiss }: { items: ToastItem[]; onDismiss: (id: number) => void }) {
-  // Portals need document.body — only present on the client. This returns false
+  // Portals need document.body  only present on the client. This returns false
   // on the server and true after hydration, with no effect-driven setState.
   const mounted = React.useSyncExternalStore(
     noopSubscribe,

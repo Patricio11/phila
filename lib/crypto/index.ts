@@ -2,14 +2,14 @@ import "server-only";
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 
 /**
- * Field-level encryption (AES-256-GCM) for special-category fields — SA ID
+ * Field-level encryption (AES-256-GCM) for special-category fields  SA ID
  * numbers, and anything else we must store but never expose in the clear
  * (Care-Confidentiality Rule). Encryption exists from commit one; it is *wired*
  * for real fields in Phase 10. The envelope is `v1.<iv>.<tag>.<ciphertext>`,
  * all base64url, so the version and parameters travel with the data.
  *
  * The key comes from `PHILA_FIELD_KEY` (base64, 32 bytes), supplied by env/KMS.
- * In production a missing key is fatal — we never silently store plaintext.
+ * In production a missing key is fatal  we never silently store plaintext.
  */
 const ALGO = "aes-256-gcm";
 const VERSION = "v1";
@@ -27,7 +27,7 @@ function getKey(): Buffer {
     return key;
   }
   if (process.env.NODE_ENV === "production")
-    throw new Error("PHILA_FIELD_KEY is required in production — refusing to store plaintext.");
+    throw new Error("PHILA_FIELD_KEY is required in production  refusing to store plaintext.");
 
   // Dev-only ephemeral key: encryption is exercised, but nothing sensitive is
   // persisted in Part A. Regenerated per process, so it never leaks a stable key.

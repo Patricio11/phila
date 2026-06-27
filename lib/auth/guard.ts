@@ -16,7 +16,7 @@ import { getDataProvider } from "@/lib/data-provider";
 /**
  * Route/RBAC guard scaffold (ROADMAP Task 0.2). Three layers protect every
  * surface (docs/SECURITY.md): the route guard (UX), the DAL (the real gate), and
- * Server Actions (defence in depth). These helpers are the *UX layer* — they
+ * Server Actions (defence in depth). These helpers are the *UX layer*  they
  * resolve the principal and fail closed. In Phase 9 they redirect to sign-in;
  * here they throw typed errors so the demo surfaces the blocked state honestly.
  */
@@ -32,7 +32,7 @@ export class ForbiddenError extends Error {
     this.name = "ForbiddenError";
   }
 }
-/** A feature is off, not broken (Dormant-by-Default Rule) — names the next step. */
+/** A feature is off, not broken (Dormant-by-Default Rule)  names the next step. */
 export class FeatureDormantError extends Error {
   constructor(public feature: OrgFeature) {
     super(`Feature "${feature}" is not enabled for this organisation.`);
@@ -111,7 +111,7 @@ export async function requireOrgFeature(feature: OrgFeature): Promise<void> {
 }
 
 /**
- * Resolve the external **funder** principal — read-only, scoped to their
+ * Resolve the external **funder** principal  read-only, scoped to their
  * grant(s), every view audited. Part A returns the demo funder; the actual
  * grant-scope check lives in the provider's funder methods (they return null for
  * any grant the funder isn't scoped to), so a funder can never reach another
@@ -124,7 +124,7 @@ export async function requireFunder(): Promise<Principal> {
 }
 
 /**
- * The platform operator (super-admin) — cross-org by design, but every crossing
+ * The platform operator (super-admin)  cross-org by design, but every crossing
  * and impersonation is audited (Tenant-Isolation Rule). 2FA enforced in Phase 9.
  */
 export async function requireSuperAdmin(): Promise<Principal> {

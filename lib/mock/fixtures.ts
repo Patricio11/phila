@@ -1,5 +1,5 @@
 /**
- * Typed fixtures — a believable South African community-counselling org, not
+ * Typed fixtures  a believable South African community-counselling org, not
  * filler. Real-shaped isiZulu / isiXhosa / Afrikaans / English / Gujarati names
  * across communities, ZAR pricing, +27 numbers, HPCSA / ASCHP / SACSSP
  * registration, Gauteng sites. The demo should read like a real practice's
@@ -47,7 +47,7 @@ export const orgs: Org[] = [
 ];
 
 export const sites: Site[] = [
-  { id: "site_soweto", orgId: ORG_ID, name: "Soweto — Vilakazi branch", province: "Gauteng" },
+  { id: "site_soweto", orgId: ORG_ID, name: "Soweto  Vilakazi branch", province: "Gauteng" },
   { id: "site_jhb", orgId: ORG_ID, name: "Johannesburg CBD branch", province: "Gauteng" },
 ];
 
@@ -149,7 +149,7 @@ export const clients: Client[] = [
   client("cl_naledi", "Naledi Tshabalala", "+27 79 145 6620", "naledi.t@example.co.za", "Gauteng", "couns_thabo"),
   client("cl_kabelo", "Kabelo Moeketsi", "+27 60 778 3344", undefined, "Gauteng", "couns_aisha"),
   client("cl_megan", "Megan Pillay", "+27 83 661 9027", "megan.pillay@example.co.za", "KwaZulu-Natal", "couns_pieter"),
-  // A realistic double-entry: same person captured twice (same name + phone) — the dedupe surfaces it.
+  // A realistic double-entry: same person captured twice (same name + phone)  the dedupe surfaces it.
   client("cl_lerato_2", "Lerato Mahlangu", "+27 82 451 7720", undefined, "Gauteng", "couns_nomsa"),
 ];
 
@@ -186,7 +186,7 @@ export const demographics: Demographics[] = [
   { clientId: "cl_naledi", gender: "female", populationGroup: "black_african", employmentStatus: "employed", ageBand: "25_34", province: "Gauteng" },
 ];
 
-/** Consents — not everyone has granted everything; the demo shows honest gaps. */
+/** Consents  not everyone has granted everything; the demo shows honest gaps. */
 export const consents: ConsentRecord[] = [
   ...consentSet("cl_lerato", ["booking", "notes", "demographics", "comms", "care_plan_share", "funder_reporting"]),
   ...consentSet("cl_sipho", ["booking", "notes", "comms"]),
@@ -263,14 +263,14 @@ export const clientApptTemplates: Record<string, ClientApptTemplate[]> = {
   ],
 };
 
-/** The client-shared care plan (NOT the private note) — shared by the counsellor. */
+/** The client-shared care plan (NOT the private note)  shared by the counsellor. */
 export const carePlans: Record<string, import("@/lib/mock/types").CarePlan> = {
   cl_lerato: {
     id: "care_lerato",
     clientId: "cl_lerato",
     authorCounsellorId: "couns_nomsa",
     summary:
-      "You've been carrying a lot at work and at home, and we're working on small, steady ways to protect your energy. You named that mornings are hardest — let's keep building the wind-down routine that's already helping you sleep.",
+      "You've been carrying a lot at work and at home, and we're working on small, steady ways to protect your energy. You named that mornings are hardest  let's keep building the wind-down routine that's already helping you sleep.",
     tasks: [
       { id: "t1", text: "Try the 4-7-8 breathing for a few minutes before bed", done: true },
       { id: "t2", text: "Write down one thing that went okay each day", done: false },
@@ -278,7 +278,7 @@ export const carePlans: Record<string, import("@/lib/mock/types").CarePlan> = {
     ],
     resources: [
       { label: "A gentle wind-down routine", note: "The one-page guide we went through" },
-      { label: "SADAG support line: 0800 567 567", note: "Free, any time — a real person to talk to" },
+      { label: "SADAG support line: 0800 567 567", note: "Free, any time  a real person to talk to" },
     ],
     nextStep: "We'll check in on the morning routine at your next session and adjust together.",
     sharedAt: "2026-06-20T16:00:00+02:00",
@@ -287,7 +287,7 @@ export const carePlans: Record<string, import("@/lib/mock/types").CarePlan> = {
 
 export const clientDocuments: Record<string, import("@/lib/mock/types").ClientDocument[]> = {
   cl_lerato: [
-    { id: "doc1", clientId: "cl_lerato", orgId: ORG_ID, name: "Your care plan — June", kind: "report", sizeLabel: "1 page", sharedBy: "counsellor", createdAt: "2026-06-20T16:01:00+02:00" },
+    { id: "doc1", clientId: "cl_lerato", orgId: ORG_ID, name: "Your care plan  June", kind: "report", sizeLabel: "1 page", sharedBy: "counsellor", createdAt: "2026-06-20T16:01:00+02:00" },
     { id: "doc2", clientId: "cl_lerato", orgId: ORG_ID, name: "Wind-down routine guide", kind: "resource", sizeLabel: "PDF · 320 KB", sharedBy: "counsellor", createdAt: "2026-06-13T15:30:00+02:00" },
     { id: "doc3", clientId: "cl_lerato", orgId: ORG_ID, name: "Intake form (completed)", kind: "form", sizeLabel: "2 pages", sharedBy: "org", createdAt: "2026-05-09T09:10:00+02:00" },
   ],
@@ -322,9 +322,9 @@ export const conversations: Record<string, ConversationSeed[]> = {
       clientName: "Lerato Mahlangu",
       unread: 1,
       messages: [
-        { id: "m1", from: "counsellor", text: "Hi Lerato — looking forward to our session on Monday. The wind-down routine we spoke about is on your care plan.", at: "2026-06-26T14:10:00+02:00" },
+        { id: "m1", from: "counsellor", text: "Hi Lerato  looking forward to our session on Monday. The wind-down routine we spoke about is on your care plan.", at: "2026-06-26T14:10:00+02:00" },
         { id: "m2", from: "client", text: "Thank you Nomsa. The breathing has really been helping at night 🙏", at: "2026-06-26T18:32:00+02:00" },
-        { id: "m3", from: "client", text: "Quick question — should I keep the journal even on the good days?", at: "2026-06-27T07:15:00+02:00" },
+        { id: "m3", from: "client", text: "Quick question  should I keep the journal even on the good days?", at: "2026-06-27T07:15:00+02:00" },
       ],
     },
     {
@@ -341,8 +341,8 @@ export const conversations: Record<string, ConversationSeed[]> = {
       clientName: "Johan Botha",
       unread: 0,
       messages: [
-        { id: "m6", from: "client", text: "Had to move some things around this week — are we still on for Thursday?", at: "2026-06-25T16:40:00+02:00" },
-        { id: "m7", from: "counsellor", text: "We are, Johan — 14:00 in Consulting room 1. See you then.", at: "2026-06-25T17:05:00+02:00" },
+        { id: "m6", from: "client", text: "Had to move some things around this week  are we still on for Thursday?", at: "2026-06-25T16:40:00+02:00" },
+        { id: "m7", from: "counsellor", text: "We are, Johan  14:00 in Consulting room 1. See you then.", at: "2026-06-25T17:05:00+02:00" },
       ],
     },
   ],
@@ -376,14 +376,14 @@ export const aiRailConfig: import("@/lib/mock/types").AiRailConfig = {
 };
 
 export const integrationsCatalogue: import("@/lib/mock/types").IntegrationCatalogItem[] = [
-  { key: "whatsapp", name: "WhatsApp (Meta Cloud API)", category: "messaging", status: "mock", description: "Booking, reminder, and follow-up messages — WhatsApp-first." },
+  { key: "whatsapp", name: "WhatsApp (Meta Cloud API)", category: "messaging", status: "mock", description: "Booking, reminder, and follow-up messages  WhatsApp-first." },
   { key: "sms", name: "SMS (Clickatell)", category: "messaging", status: "off", description: "SMS fallback for clients without WhatsApp." },
   { key: "livekit", name: "LiveKit video", category: "video", status: "mock", description: "Self-hosted, in-region video rooms for online sessions." },
-  { key: "stitch", name: "Stitch", category: "payments", status: "mock", description: "PayShap & pay-by-bank — orgs connect their own account." },
+  { key: "stitch", name: "Stitch", category: "payments", status: "mock", description: "PayShap & pay-by-bank  orgs connect their own account." },
   { key: "ozow", name: "Ozow", category: "payments", status: "off", description: "PayShap & instant EFT." },
   { key: "yoco", name: "Yoco", category: "payments", status: "mock", description: "Card payments." },
   { key: "paystack", name: "Paystack", category: "payments", status: "off", description: "Card payments." },
-  { key: "platform_psp", name: "Phila platform billing", category: "platform", status: "live", description: "Phila's own PSP — how orgs pay their subscription." },
+  { key: "platform_psp", name: "Phila platform billing", category: "platform", status: "live", description: "Phila's own PSP  how orgs pay their subscription." },
 ];
 
 export const platformAuditEvents: import("@/lib/mock/types").PlatformAuditEvent[] = [
@@ -436,7 +436,7 @@ export const grantNarratives: import("@/lib/mock/types").GrantNarrative[] = [
   { id: "n1", grantId: "g_dsd", author: "Thandeka Mbeki", body: "Q1 is off to a steady start. We've onboarded six clients into the programme and held the first round of assessments. Early PHQ-9 movement is encouraging, especially for clients balancing work and caregiving. We're focusing outreach on reaching more participants in the coming weeks.", postedAt: "2026-06-20T14:00:00+02:00" },
 ];
 
-/** Funder users scoped to their grant(s) — read-only (Phase 9 real invite flow). */
+/** Funder users scoped to their grant(s)  read-only (Phase 9 real invite flow). */
 export const funderContacts: import("@/lib/mock/types").FunderContact[] = [
   { userId: "user_funder", funderId: "f_dsd", grantIds: ["g_dsd"] },
 ];
@@ -477,7 +477,7 @@ export const clientOutcomes: Record<
 };
 
 /**
- * The org team — every role, not just counsellors (ROADMAP: org has operational
+ * The org team  every role, not just counsellors (ROADMAP: org has operational
  * roles too). Drives /hub/team and the honest-permissions view.
  */
 export interface TeamMember {
@@ -644,23 +644,23 @@ export const intakeForms: Record<string, import("@/lib/mock/types").IntakeForm> 
       { id: "full_name", label: "Your full name", type: "text", required: true, sensitive: true, placeholder: "e.g. Lerato Mahlangu" },
       { id: "phone", label: "Mobile number", type: "tel", required: true, sensitive: true, placeholder: "+27 …", help: "We'll use this to confirm your session." },
       { id: "email", label: "Email (optional)", type: "email", required: false, sensitive: true, placeholder: "you@example.co.za" },
-      { id: "reason", label: "What would you like support with?", type: "textarea", required: true, placeholder: "A sentence or two is plenty — only your counsellor will read this.", help: "There's no right answer. Share as much or as little as you like." },
+      { id: "reason", label: "What would you like support with?", type: "textarea", required: true, placeholder: "A sentence or two is plenty  only your counsellor will read this.", help: "There's no right answer. Share as much or as little as you like." },
       { id: "preferred_contact", label: "How should we reach you?", type: "radio", required: true, options: ["WhatsApp", "Phone call", "Email"] },
       { id: "first_time", label: "Have you had counselling before?", type: "radio", required: false, options: ["This is my first time", "Yes, before", "I'd rather not say"] },
     ],
   },
 };
 
-/** Public micro-site copy per org — no PII, safe to render unauthenticated. */
+/** Public micro-site copy per org  no PII, safe to render unauthenticated. */
 export const orgPublicContent: Record<
   string,
   { intro: string; about: string; offersOnline: boolean }
 > = {
   [ORG_ID]: {
     intro:
-      "Warm, confidential counselling for individuals, couples, and families across Gauteng — in person in Soweto and the Johannesburg CBD, or online from anywhere.",
+      "Warm, confidential counselling for individuals, couples, and families across Gauteng  in person in Soweto and the Johannesburg CBD, or online from anywhere.",
     about:
-      "Masizakhe Counselling is a community-rooted practice. Our registered counsellors and psychologists work with depression, anxiety, trauma, grief, and relationship difficulties — at a pace that suits you, in a space that feels safe. We see clients privately and through funded community programmes, and we keep your information confidential and protected under POPIA.",
+      "Masizakhe Counselling is a community-rooted practice. Our registered counsellors and psychologists work with depression, anxiety, trauma, grief, and relationship difficulties  at a pace that suits you, in a space that feels safe. We see clients privately and through funded community programmes, and we keep your information confidential and protected under POPIA.",
     offersOnline: true,
   },
 };

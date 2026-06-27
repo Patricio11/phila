@@ -16,7 +16,7 @@ function ago(iso: string): string {
 }
 
 /**
- * The supervisor's sign-off queue. Provenance is honest — each item shows whose
+ * The supervisor's sign-off queue. Provenance is honest  each item shows whose
  * note it is and when it was submitted. Signing off is the supervisor's explicit
  * action (mock here; Phase 14/B persists the sign-off + audit).
  */

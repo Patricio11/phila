@@ -52,7 +52,7 @@ class MemoryOfflineQueue implements OfflineQueue {
   }
 
   async sync() {
-    // Inert until Phase 11 — honest no-op.
+    // Inert until Phase 11  honest no-op.
     return { sent: 0, conflicts: 0, failed: 0 };
   }
 

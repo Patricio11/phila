@@ -2,7 +2,7 @@
  * The `dataProvider` seam (DESIGN.md §11 / Mock-First Rule). Every surface reads
  * through this interface. `DATA_PROVIDER=mock` (default in Part A) serves typed
  * fixtures; `DATA_PROVIDER=db` (Part B, Phase 10) serves the real RLS-bounded
- * queries — with **no UI change**. The interface is the contract both sides honour.
+ * queries  with **no UI change**. The interface is the contract both sides honour.
  *
  * It grows phase by phase; Phase 0 ships the spine plus exactly what the
  * counsellor dashboard reference build needs.
@@ -109,7 +109,7 @@ export interface SessionEditorData {
   note: SessionNote | null;
   carePlan: CarePlan | null;
   outcomes: OutcomeMeasure[];
-  /** "Since last time" — continuity of care across the client's sessions. */
+  /** "Since last time"  continuity of care across the client's sessions. */
   continuity: {
     sessionNumber: number;
     totalSessions: number;
@@ -258,7 +258,7 @@ export interface DuplicateClient {
 }
 
 export interface DuplicateGroup {
-  /** Why these were grouped — matched name / phone / email. */
+  /** Why these were grouped  matched name / phone / email. */
   reason: string;
   clients: DuplicateClient[];
 }
@@ -369,7 +369,7 @@ export interface PlatformOrgDetail {
   fullyModeled: boolean;
 }
 
-/** Funder-portal view — read-only, k-anon, no client list, nothing identifiable. */
+/** Funder-portal view  read-only, k-anon, no client list, nothing identifiable. */
 export interface FunderGrantView {
   grant: Grant;
   funderName: string;
@@ -402,7 +402,7 @@ export interface DataProvider {
   // Tenancy
   getOrg(orgId: string): Promise<Org | null>;
   getOrgBySlug(slug: string): Promise<Org | null>;
-  /** Public, SEO-facing micro-site payload — no PII, safe to render unauthenticated. */
+  /** Public, SEO-facing micro-site payload  no PII, safe to render unauthenticated. */
   getOrgPublicPage(slug: string): Promise<OrgPublicPage | null>;
   listOrgSlugs(): Promise<string[]>;
   /** Booking flow config (service/counsellor/intake) for a public org. */

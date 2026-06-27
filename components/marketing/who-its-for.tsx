@@ -9,14 +9,14 @@ const AUDIENCES = [
   { icon: HeartHandshake, title: "Faith-based & community services", body: "Mission-driven services that bill clients directly and scale down to a single practice." },
 ];
 
-/** Who Phila is for — multi-counsellor orgs that bill clients directly. */
+/** Who Phila is for  multi-counsellor orgs that bill clients directly. */
 export function WhoItsFor() {
   return (
     <section id="who" className="mx-auto w-full max-w-[1120px] scroll-mt-20 px-4 py-16 sm:px-6 sm:py-24">
       <SectionHeading
         eyebrow="Who it's for"
         title="Built for organisations the billing incumbents serve badly"
-        lead="Not a medical-aid claims tool, and not a solo-therapist scheduler. Phila is for multi-counsellor organisations that bill clients directly — and it scales down to a single practice as the entry tier."
+        lead="Not a medical-aid claims tool, and not a solo-therapist scheduler. Phila is for multi-counsellor organisations that bill clients directly  and it scales down to a single practice as the entry tier."
       />
 
       <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

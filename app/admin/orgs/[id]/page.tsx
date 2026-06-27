@@ -61,7 +61,7 @@ export default async function AdminOrgDetailPage({ params }: { params: Promise<{
       <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-5">
         <Stat value={detail.planName} label={`${rands(detail.planPriceCents)}/mo`} />
         <Stat value={String(org.members)} label="Team members" />
-        <Stat value={detail.fullyModeled ? String(clientCount) : "—"} label="Clients" />
+        <Stat value={detail.fullyModeled ? String(clientCount) : ""} label="Clients" />
         <Stat value={String(org.sessions7d)} label="Sessions · 7d" />
         <Stat value={rands(org.aiSpendCents)} label="AI spend" />
       </div>

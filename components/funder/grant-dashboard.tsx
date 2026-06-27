@@ -13,7 +13,7 @@ function postedOn(iso: string): string {
 }
 
 /**
- * The shared grant dashboard — indicators vs target, k-anon demographic
+ * The shared grant dashboard  indicators vs target, k-anon demographic
  * breakdowns, the outcome trend, and the org's narrative updates. Rendered the
  * same way for the Hub and the funder portal; the funder version is read-only.
  */

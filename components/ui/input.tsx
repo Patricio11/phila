@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Form inputs (DESIGN.md §6) — labelled fields, accent focus ring, inline
+ * Form inputs (DESIGN.md §6)  labelled fields, accent focus ring, inline
  * validation. Quiet by default; the only "loud" affordance is the focus ring.
  */
 const fieldBase =
@@ -77,7 +77,7 @@ export function FieldError({ children }: { children?: React.ReactNode }) {
 }
 
 /**
- * A radio group rendered as selectable cards — accessible, touch-friendly, and
+ * A radio group rendered as selectable cards  accessible, touch-friendly, and
  * avoids a native select (DESIGN.md §6: never native). ≥ 44px targets.
  */
 export function RadioGroup({

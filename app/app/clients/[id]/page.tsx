@@ -62,7 +62,7 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
       value: o.score,
     }));
 
-  // At-a-glance clinical metrics — attendance never counts soft-deleted records.
+  // At-a-glance clinical metrics  attendance never counts soft-deleted records.
   const attended = sessions.filter((s) => s.state === "completed" || s.state === "discharged").length;
   const noShow = sessions.filter((s) => s.state === "no_show").length;
   const attendanceRate = attended + noShow > 0 ? Math.round((attended / (attended + noShow)) * 100) : null;
@@ -124,10 +124,10 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
       {/* At a glance */}
       <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
         <Stat value={String(attended)} label={`Session${attended === 1 ? "" : "s"} attended`} />
-        <Stat value={attendanceRate === null ? "—" : `${attendanceRate}%`} label={noShow > 0 ? `Attendance · ${noShow} no-show${noShow === 1 ? "" : "s"}` : "Attendance"} />
+        <Stat value={attendanceRate === null ? "" : `${attendanceRate}%`} label={noShow > 0 ? `Attendance · ${noShow} no-show${noShow === 1 ? "" : "s"}` : "Attendance"} />
         <Stat value={timeInCare(client.createdAt, now)} label="In care" />
         <Stat
-          value={lastScore === null ? "—" : String(lastScore)}
+          value={lastScore === null ? "" : String(lastScore)}
           label={outcomes[0]?.tool ?? "Outcome"}
           trend={
             delta === null || delta === 0 ? null : delta < 0
@@ -170,7 +170,7 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
                   )}
                 </div>
               ) : (
-                <EmptyState icon={Target} title="No care plan yet" body="Set a few shared goals and a next step — the client can see this in their portal once shared." />
+                <EmptyState icon={Target} title="No care plan yet" body="Set a few shared goals and a next step  the client can see this in their portal once shared." />
               )}
             </div>
           </Card>
@@ -182,7 +182,7 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
                 <OutcomeSparkline points={points} tool={outcomes[0]?.tool ?? "PHQ-9"} coverage={`${outcomes.length} measures captured`} />
               ) : (
                 <p className="py-6 text-center text-[12.5px] text-text-3">
-                  Not yet measured — capture a PHQ-9 or GAD-7 in a session to start a trend.
+                  Not yet measured  capture a PHQ-9 or GAD-7 in a session to start a trend.
                 </p>
               )}
             </div>

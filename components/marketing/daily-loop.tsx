@@ -6,28 +6,28 @@ const STEPS = [
   {
     icon: CalendarDays,
     title: "Open the day",
-    body: "The calendar, the caseload, and what needs you — one glance, one tap. The session you're in is right there.",
+    body: "The calendar, the caseload, and what needs you  one glance, one tap. The session you're in is right there.",
   },
   {
     icon: NotebookPen,
     title: "Hold the session",
-    body: "Type alongside the room — live notes that autosave and never block. In person or online, it's the same calm surface.",
+    body: "Type alongside the room  live notes that autosave and never block. In person or online, it's the same calm surface.",
   },
   {
     icon: Sparkles,
     title: "Sign the note",
-    body: "An AI draft you read, edit, and sign — you're the author of record. The structured fields feed reporting with zero double entry.",
+    body: "An AI draft you read, edit, and sign  you're the author of record. The structured fields feed reporting with zero double entry.",
   },
 ];
 
-/** The daily loop — the heart of the product, shown as three honest steps. */
+/** The daily loop  the heart of the product, shown as three honest steps. */
 export function DailyLoop() {
   return (
     <section id="how" className="mx-auto w-full max-w-[1200px] scroll-mt-20 px-4 py-16 sm:px-6 sm:py-24">
       <SectionHeading
         eyebrow="The daily loop"
         title="The clinical work is the product. Reporting is its by-product."
-        lead="A counsellor opens Phila ten times a day because the loop — calendar to session to note — is faster than anything else they could reach for. Everything else is built around that."
+        lead="A counsellor opens Phila ten times a day because the loop  calendar to session to note  is faster than anything else they could reach for. Everything else is built around that."
       />
 
       <div className="mt-12 grid gap-4 md:grid-cols-3">

@@ -37,7 +37,7 @@ function timeRange(iso: string, durationMin: number): string {
 }
 
 /**
- * Appointment detail — the calm card a counsellor or admin sees when they click
+ * Appointment detail  the calm card a counsellor or admin sees when they click
  * a calendar event. Everything about the booking, then the actions: reschedule,
  * mark completed / no-show, or cancel. No notification fires (messaging dormant).
  */
@@ -89,7 +89,7 @@ export function AppointmentDetail({
       onUpdated?.({ ...appt, startsAt: newStart, state: "scheduled" });
       setShowReschedule(false);
       setOverride(false);
-      toast({ tone: "success", title: "Session moved", description: "No message was sent — that happens once messaging is set up." });
+      toast({ tone: "success", title: "Session moved", description: "No message was sent  that happens once messaging is set up." });
     });
   };
 
@@ -173,7 +173,7 @@ export function AppointmentDetail({
                   <ActionChip icon={X} label="Cancel" tone="danger" active={appt.state === "cancelled"} onClick={() => mark("cancelled")} disabled={pending} />
                 </div>
               )}
-              <p className="text-[11px] text-text-3">Marking a session never sends a message — the messaging rail is set up later.</p>
+              <p className="text-[11px] text-text-3">Marking a session never sends a message  the messaging rail is set up later.</p>
             </div>
           )}
         </div>

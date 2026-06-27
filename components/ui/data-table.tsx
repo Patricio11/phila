@@ -33,7 +33,7 @@ const HIDE: Record<NonNullable<Column<unknown>["hideBelow"]>, string> = {
 };
 
 /**
- * DataTable (DESIGN.md §6) — quiet header, hover rows, sticky header, tabular
+ * DataTable (DESIGN.md §6)  quiet header, hover rows, sticky header, tabular
  * numerals, sortable, optional search + toolbar filters. Rows can be links. On
  * phones, secondary columns drop out (hideBelow) and the table scrolls.
  */

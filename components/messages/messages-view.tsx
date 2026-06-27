@@ -22,8 +22,8 @@ function dayOf(iso: string): string {
 // Counselling-appropriate quick replies. {name} → the client's first name.
 const QUICK_REPLIES = [
   { label: "Confirm session", text: "Hi {name}, just confirming our session. Reply YES to confirm or let me know if you need to move it." },
-  { label: "Check-in", text: "Hi {name}, checking in — how have things been since we last spoke? No pressure to reply, I'm here when you're ready." },
-  { label: "Running late", text: "Hi {name}, I'm running a few minutes behind — thank you for your patience, I'll be with you shortly." },
+  { label: "Check-in", text: "Hi {name}, checking in  how have things been since we last spoke? No pressure to reply, I'm here when you're ready." },
+  { label: "Running late", text: "Hi {name}, I'm running a few minutes behind  thank you for your patience, I'll be with you shortly." },
 ];
 
 export function MessagesView({ conversations, clients = [] }: { conversations: Conversation[]; clients?: { id: string; name: string }[] }) {
@@ -168,7 +168,7 @@ export function MessagesView({ conversations, clients = [] }: { conversations: C
                   ))}
                 </div>
                 <div className="mb-2 flex items-center gap-1.5 text-[11.5px] text-text-3">
-                  <Info className="size-3.5 shrink-0" strokeWidth={2} aria-hidden /> WhatsApp delivery turns on once your org configures messaging — drafts are kept until then.
+                  <Info className="size-3.5 shrink-0" strokeWidth={2} aria-hidden /> WhatsApp delivery turns on once your org configures messaging  drafts are kept until then.
                 </div>
                 <div className="flex items-end gap-2">
                   <textarea

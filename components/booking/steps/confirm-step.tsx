@@ -40,8 +40,8 @@ export function ConfirmStep({
       <StepHeader title="Confirm your session" subtitle="A last look before we book it." />
 
       <dl className="divide-y divide-border rounded-control border border-border">
-        <Row icon={<CalendarDays className="size-[18px]" />} label="When" value={state.slotStart ? formatWhen(state.slotStart) : "—"} />
-        <Row icon={<Clock className="size-[18px]" />} label="Service" value={service ? `${service.name} · ${service.durationMin} min` : "—"} />
+        <Row icon={<CalendarDays className="size-[18px]" />} label="When" value={state.slotStart ? formatWhen(state.slotStart) : ""} />
+        <Row icon={<Clock className="size-[18px]" />} label="Service" value={service ? `${service.name} · ${service.durationMin} min` : ""} />
         <Row icon={<User className="size-[18px]" />} label="Counsellor" value={counsellor?.name ?? "Any available"} />
         <Row icon={<MessageCircle className="size-[18px]" />} label="We'll reach you via" value={contact} />
       </dl>

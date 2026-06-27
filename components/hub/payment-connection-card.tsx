@@ -16,7 +16,7 @@ const PROVIDERS: { key: PaymentProvider; name: string; blurb: string; icon: type
 ];
 
 /**
- * PaymentConnectionCard (DESIGN.md §6) — the org connects its **own** gateway so
+ * PaymentConnectionCard (DESIGN.md §6)  the org connects its **own** gateway so
  * clients pay the org directly. Pick a provider, enter credentials (stored
  * encrypted), Test, and set as default. Mock here; Phase 15B wires the PSP
  * orchestrator. Switching providers is one choice.

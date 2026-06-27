@@ -106,7 +106,7 @@ export function InvoiceBoard({ rows, nowISO, orgName, province }: { rows: Invoic
             </Button>
           </div>
         ) : (
-          <span className="text-[12px] text-text-3">—</span>
+          <span className="text-[12px] text-text-3"></span>
         ),
     },
   ];

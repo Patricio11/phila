@@ -11,7 +11,7 @@ import type { NavSection } from "@/components/shell/nav-config";
 /**
  * The top bar (DESIGN.md §5.2). 64px, sticky, translucent. The search opens the
  * ⌘K command palette; the bell opens notifications; the account chip opens the
- * account menu — all real and keyboard-reachable.
+ * account menu  all real and keyboard-reachable.
  */
 export function TopBar({
   title,

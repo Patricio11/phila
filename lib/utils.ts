@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Deterministic small integer from a string — used for avatar colours, etc. */
+/** Deterministic small integer from a string  used for avatar colours, etc. */
 export function hashString(value: string): number {
   let hash = 0;
   for (let i = 0; i < value.length; i++) {

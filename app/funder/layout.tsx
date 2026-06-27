@@ -4,7 +4,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { requireFunder } from "@/lib/auth/guard";
 
 /**
- * The funder portal shell (DESIGN.md §5.4) — external, read-only, scoped to the
+ * The funder portal shell (DESIGN.md §5.4)  external, read-only, scoped to the
  * funder's grant(s). An always-on banner makes the posture explicit: aggregate,
  * anonymised, nothing identifiable. Every view is audited in the pages.
  */

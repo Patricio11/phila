@@ -15,7 +15,7 @@ export default async function HubTeamPage() {
     <div className="rise space-y-6">
       <PageHead
         title="Team & roles"
-        summary="Each member's role sets exactly what they can reach — clinical notes stay with the counsellor and their supervisor."
+        summary="Each member's role sets exactly what they can reach  clinical notes stay with the counsellor and their supervisor."
       />
       <TeamTable members={members} />
     </div>

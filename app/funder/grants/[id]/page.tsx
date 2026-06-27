@@ -25,7 +25,7 @@ export default async function FunderGrantPage({ params }: { params: Promise<{ id
   const provider = await getDataProvider();
   const now = new Date().toISOString();
 
-  // The provider returns null for any grant this funder isn't scoped to —
+  // The provider returns null for any grant this funder isn't scoped to 
   // a funder can never reach another grant (Rule #10).
   const view = await provider.getFunderGrantView(principal.userId, id, now);
   if (!view) notFound();

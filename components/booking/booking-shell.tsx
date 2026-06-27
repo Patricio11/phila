@@ -8,7 +8,7 @@ export interface BookingStepMeta {
 }
 
 /**
- * BookingShell (DESIGN.md §8) — the calm stepped frame: the org's brand, a
+ * BookingShell (DESIGN.md §8)  the calm stepped frame: the org's brand, a
  * progress thread, and the current step in a card. 360-first: the thread becomes
  * a compact bar + "Step X of N" on small screens.
  */
@@ -48,7 +48,7 @@ export function BookingShell({
       </header>
 
       <div className="mx-auto w-full max-w-[760px] px-4 py-6 sm:px-6 sm:py-10">
-        {/* Progress thread — desktop */}
+        {/* Progress thread  desktop */}
         <ol className="mb-7 hidden items-center sm:flex" aria-label="Booking progress">
           {steps.map((step, i) => {
             const done = i < current;
@@ -84,7 +84,7 @@ export function BookingShell({
           })}
         </ol>
 
-        {/* Progress thread — mobile */}
+        {/* Progress thread  mobile */}
         <div className="mb-6 sm:hidden">
           <div className="flex items-center justify-between text-[12.5px]">
             <span className="font-semibold text-text">{steps[current]?.label}</span>

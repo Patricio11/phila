@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Scroll-reveal — the marketing motion island (DESIGN.md §4: CSS-first + a tiny
+ * Scroll-reveal  the marketing motion island (DESIGN.md §4: CSS-first + a tiny
  * JS island, GPU-only, capped, reduced-motion aware). It only toggles a class;
  * the easing lives in CSS. Reveals once, then disconnects. `delay` staggers
  * siblings; `soft` is a gentler rise for dense areas.
@@ -29,7 +29,7 @@ export function Reveal({
     const el = ref.current;
     if (!el) return;
     // No observer support (very old browser): reveal on the next frame so content
-    // is never left hidden — deferred, so it's not a synchronous effect setState.
+    // is never left hidden  deferred, so it's not a synchronous effect setState.
     if (typeof IntersectionObserver === "undefined") {
       const raf = requestAnimationFrame(() => setVisible(true));
       return () => cancelAnimationFrame(raf);

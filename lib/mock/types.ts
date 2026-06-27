@@ -1,5 +1,5 @@
 /**
- * Mock domain types — mirror the Part-B Postgres schema (ROADMAP.md Phase 10 /
+ * Mock domain types  mirror the Part-B Postgres schema (ROADMAP.md Phase 10 /
  * Appendix) so flipping `DATA_PROVIDER=mock|db` swaps implementations with no UI
  * change. Types are redaction- and consent-aware by construction: the private
  * clinical note (`SessionNote`) is a different type from the client-shared
@@ -75,7 +75,7 @@ export interface Counsellor {
   userId: string;
   orgId: string;
   name: string;
-  /** HPCSA / ASCHP / SACSSP registration — honest, never default-verified. */
+  /** HPCSA / ASCHP / SACSSP registration  honest, never default-verified. */
   credential: {
     body: CredentialBody;
     registrationNo?: string;
@@ -124,11 +124,11 @@ export interface Client {
   /** First-class but never auto-actioned (Safeguarding Rule). */
   riskFlag: boolean;
   createdAt: ISODateTime;
-  /** Soft-delete — deletion never distorts compiled stats (Outcome-Honesty). */
+  /** Soft-delete  deletion never distorts compiled stats (Outcome-Honesty). */
   deletedAt: ISODateTime | null;
 }
 
-/** SPECIAL personal information — only present when `demographics` is consented. */
+/** SPECIAL personal information  only present when `demographics` is consented. */
 export interface Demographics {
   clientId: string;
   gender: Gender;
@@ -152,7 +152,7 @@ export interface Appointment {
   tags?: string[];
 }
 
-/** The **private** clinical note — author + supervisor only; Hub access audited. */
+/** The **private** clinical note  author + supervisor only; Hub access audited. */
 export interface SessionNote {
   id: string;
   appointmentId: string;
@@ -162,7 +162,7 @@ export interface SessionNote {
   signedAt: ISODateTime | null;
 }
 
-/** The **client-shared** artifact — explicitly, consentedly shared; not the note. */
+/** The **client-shared** artifact  explicitly, consentedly shared; not the note. */
 export interface CarePlan {
   id: string;
   clientId: string;
@@ -207,7 +207,7 @@ export interface OutcomeMeasure {
   takenAt: ISODateTime;
 }
 
-/** An org's intake form — rendered during booking, captured with consent. */
+/** An org's intake form  rendered during booking, captured with consent. */
 export interface IntakeField {
   id: string;
   label: string;
@@ -256,7 +256,7 @@ export interface Grant {
 
 /**
  * An indicator's `metric` is the computation key the engine knows how to derive
- * from the clinical work — the actual is never typed by hand (the logframe).
+ * from the clinical work  the actual is never typed by hand (the logframe).
  */
 export type IndicatorMetric =
   | "unique_clients"
@@ -291,7 +291,7 @@ export interface GrantNarrative {
   postedAt: ISODateTime;
 }
 
-/** Scopes a funder user to specific grant(s) — read-only (Phase 9 real flow). */
+/** Scopes a funder user to specific grant(s)  read-only (Phase 9 real flow). */
 export interface FunderContact {
   userId: string;
   funderId: string;

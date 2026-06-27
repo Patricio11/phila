@@ -7,7 +7,7 @@ import { logAccess } from "@/lib/audit";
 /**
  * Invoice actions (mock). Validated + audited; Phase 15 settles real payments
  * via the org's own PayShap/gateway and reconciles. Marking paid here is a
- * manual reconciliation entry — honest, and never invents a settlement.
+ * manual reconciliation entry  honest, and never invents a settlement.
  */
 const markInput = z.object({ invoiceId: z.string().min(1) });
 

@@ -17,7 +17,7 @@ export function Pillars() {
           eyebrow="The day, held"
           title="Every counsellor's day, calm and in one place"
           points={[
-            "Calendar, caseload, and the session you're in — no hunting.",
+            "Calendar, caseload, and the session you're in  no hunting.",
             "Live in-session notes that autosave and never block.",
             "Mark done, no-show, or postponed; the thread just updates.",
           ]}
@@ -38,8 +38,8 @@ export function Pillars() {
           eyebrow="Proof, without the second job"
           title="Funder and demographic reporting that writes itself"
           points={[
-            "Indicators roll up live from the clinical work — no double entry.",
-            "Consent-gated, k-anonymised, audited — nothing identifiable.",
+            "Indicators roll up live from the clinical work  no double entry.",
+            "Consent-gated, k-anonymised, audited  nothing identifiable.",
             "One click to the funder's template; the report is just there.",
           ]}
           visual={<ProofVisual />}
@@ -190,7 +190,7 @@ function ProofVisual() {
             </div>
           );
         })}
-        <p className="text-[11px] text-text-3">Small cells suppressed — a funder can never re-identify a client.</p>
+        <p className="text-[11px] text-text-3">Small cells suppressed  a funder can never re-identify a client.</p>
       </div>
     </Card>
   );

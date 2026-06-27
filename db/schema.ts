@@ -1,12 +1,12 @@
 /**
- * Drizzle schema — the **POPIA + tenancy spine** that must exist from commit one
+ * Drizzle schema  the **POPIA + tenancy spine** that must exist from commit one
  * (ROADMAP Task 0.2), even while Part A runs on mock data. The full care /
  * scheduling / funder / payments schema lands in Phase 10; this file deliberately
  * starts with tenancy + consent + audit so the compliance seams are never
  * retrofitted.
  *
  * Every tenant-scoped table carries `org_id` and will be bounded by Row-Level
- * Security (the real isolation boundary — docs/SECURITY.md), enforced in Phase 10.
+ * Security (the real isolation boundary  docs/SECURITY.md), enforced in Phase 10.
  */
 import {
   boolean,
@@ -63,7 +63,7 @@ export const orgMembers = pgTable(
   (t) => [uniqueIndex("org_members_org_user_uq").on(t.orgId, t.userId)],
 );
 
-/** Versioned, purpose-bound consent — the lawful basis for purpose-bound reads. */
+/** Versioned, purpose-bound consent  the lawful basis for purpose-bound reads. */
 export const consents = pgTable(
   "consents",
   {

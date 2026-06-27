@@ -4,7 +4,7 @@ import { BrandMark } from "@/components/brand/aloe-mark";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/marketing/reveal";
 
-/** Calm close — one CTA, no pressure. */
+/** Calm close  one CTA, no pressure. */
 export function ClosingCta() {
   return (
     <section id="contact" className="scroll-mt-20 px-4 pb-20 pt-8 sm:px-6">
@@ -19,7 +19,7 @@ export function ClosingCta() {
               Bring calm to your counselling practice.
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-[15.5px] leading-relaxed text-text-2">
-              We&apos;ll walk you through Phila with your own services, intake, and reporting in mind —
+              We&apos;ll walk you through Phila with your own services, intake, and reporting in mind 
               and set it up with you. No obligation, no pressure.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">

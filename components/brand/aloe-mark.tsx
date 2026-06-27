@@ -1,10 +1,10 @@
 import { cn } from "@/lib/utils";
 
 /**
- * The Phila mark — a fine-line **aloe** (the indigenous SA healing plant:
+ * The Phila mark  a fine-line **aloe** (the indigenous SA healing plant:
  * resilient, medicinal), drawn in `currentColor` so it sits on the green
  * gradient tile in the sidebar, the app icon, and the auth art (DESIGN.md §7).
- * Line-art only — no fills — so it stays crisp at favicon size.
+ * Line-art only  no fills  so it stays crisp at favicon size.
  */
 export function AloeGlyph({ className }: { className?: string }) {
   return (

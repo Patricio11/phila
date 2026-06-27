@@ -1,5 +1,5 @@
 /**
- * Domain enums — the single source of truth for the value sets used across the
+ * Domain enums  the single source of truth for the value sets used across the
  * product (ROADMAP.md Appendix). These mirror the Part-B Postgres enums exactly,
  * so the mock seam and the real schema never drift. South-African context is
  * baked in (provinces, credential bodies, payment rails).
@@ -58,7 +58,7 @@ export type CredentialBody = (typeof CREDENTIAL_BODIES)[number];
 export const ROOM_STATUSES = ["active", "maintenance"] as const;
 export type RoomStatus = (typeof ROOM_STATUSES)[number];
 
-/** Consent purposes — each independently granted/revoked, purpose-bound. */
+/** Consent purposes  each independently granted/revoked, purpose-bound. */
 export const CONSENT_PURPOSES = [
   "booking",
   "notes",
@@ -104,7 +104,7 @@ export type IndicatorType = (typeof INDICATOR_TYPES)[number];
 export const GRANT_STATUSES = ["pending", "active", "closed"] as const;
 export type GrantStatus = (typeof GRANT_STATUSES)[number];
 
-/** Payments — SA rails (PayShap / pay-by-bank / cards) + statuses. */
+/** Payments  SA rails (PayShap / pay-by-bank / cards) + statuses. */
 export const PAYMENT_PROVIDERS = ["stitch", "ozow", "yoco", "paystack"] as const;
 export type PaymentProvider = (typeof PAYMENT_PROVIDERS)[number];
 
@@ -136,7 +136,7 @@ export const AI_FEATURES = [
 ] as const;
 export type AiFeature = (typeof AI_FEATURES)[number];
 
-/** Per-org feature toggles — dormant by default (Dormant-by-Default Rule). */
+/** Per-org feature toggles  dormant by default (Dormant-by-Default Rule). */
 export const ORG_FEATURES = ["ai", "video", "whatsapp", "sms", "payments"] as const;
 export type OrgFeature = (typeof ORG_FEATURES)[number];
 

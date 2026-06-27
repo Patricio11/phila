@@ -92,7 +92,7 @@ function RowAction({ appt, phase }: { appt: AppointmentView; phase: Phase }) {
   return (
     <button
       type="button"
-      aria-label={`${label} — ${appt.clientName}`}
+      aria-label={`${label}  ${appt.clientName}`}
       className={cn(
         "hidden h-8 shrink-0 items-center rounded-chip px-2.5 text-[12.5px] font-medium transition-colors sm:inline-flex",
         solid

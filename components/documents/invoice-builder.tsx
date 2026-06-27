@@ -21,7 +21,7 @@ function rands(cents: number): string {
 }
 
 /**
- * The A4 invoice builder (DESIGN.md §6 DocumentSheet / Task 7.4) — type directly
+ * The A4 invoice builder (DESIGN.md §6 DocumentSheet / Task 7.4)  type directly
  * on a real document: borderless fields, live totals, a thin toolbar, and a clean
  * print stylesheet (`.print-area`). Fully responsive: fills a phone, scrolls.
  */
@@ -45,7 +45,7 @@ export function InvoiceBuilder({
   const [items, setItems] = useState<LineItem[]>([{ id: 1, description: "Individual counselling", qty: 1, unitCents: 45000 }]);
   const [seq, setSeq] = useState(2);
 
-  const clientName = clients.find((c) => c.id === clientId)?.name ?? "—";
+  const clientName = clients.find((c) => c.id === clientId)?.name ?? "";
   const subtotal = items.reduce((s, i) => s + i.qty * i.unitCents, 0);
   const vat = Math.round(subtotal * VAT_RATE);
   const total = subtotal + vat;

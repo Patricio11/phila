@@ -8,7 +8,7 @@ import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 /**
- * "From your counsellor" (Task 3.3) — the **shared** care plan, never the private
+ * "From your counsellor" (Task 3.3)  the **shared** care plan, never the private
  * note (Care-Confidentiality Rule). Tasks the client can tick off: gentle, never
  * gamified, never pressuring. In Part A the tick is local + a toast; Phase 14/B
  * persists it back for the counsellor.
@@ -31,7 +31,7 @@ export function CarePlanCard({
         toast({
           tone: done ? "success" : "default",
           title: done ? "Marked done" : "Marked as not done",
-          description: done ? "No pressure — every small step counts." : undefined,
+          description: done ? "No pressure  every small step counts." : undefined,
         });
         return { ...t, done };
       }),

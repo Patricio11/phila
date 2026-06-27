@@ -8,7 +8,7 @@ import type { NavSection } from "@/components/shell/nav-config";
 import { cn } from "@/lib/utils";
 
 /**
- * Command palette (⌘K) — searches the current role's destinations and navigates.
+ * Command palette (⌘K)  searches the current role's destinations and navigates.
  * Real, keyboard-driven: type to filter, ↑/↓ to move, Enter to go. Part B can
  * fold in client/record search behind the same surface.
  */

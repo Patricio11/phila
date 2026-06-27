@@ -55,7 +55,7 @@ export function AddClientButton({ counsellors }: { counsellors: { id: string; na
         open={open}
         onClose={() => setOpen(false)}
         title="Add a client"
-        description="Capture the essentials — consent is requested at first contact."
+        description="Capture the essentials  consent is requested at first contact."
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>Cancel</Button>
@@ -103,7 +103,7 @@ export function AddClientButton({ counsellors }: { counsellors: { id: string; na
             <AlertTriangle className={cn("mt-0.5 size-4 shrink-0", riskFlag ? "text-danger" : "text-text-3")} strokeWidth={2} aria-hidden />
             <span>
               <span className="block text-[13px] font-medium text-text">Open with a safeguarding flag</span>
-              <span className="block text-[11.5px] text-text-2">Only if there&apos;s a known concern. It&apos;s never auto-actioned — it just keeps the counsellor close.</span>
+              <span className="block text-[11.5px] text-text-2">Only if there&apos;s a known concern. It&apos;s never auto-actioned  it just keeps the counsellor close.</span>
             </span>
             <span className={cn("ml-auto mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors", riskFlag ? "bg-danger" : "bg-surface-2")}>
               <span className={cn("size-4 rounded-full bg-surface shadow-sm transition-transform", riskFlag && "translate-x-4")} />

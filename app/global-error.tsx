@@ -2,7 +2,7 @@
 
 /**
  * Root error fallback (replaces the whole document if the root layout itself
- * fails). Minimal and self-contained — it can't rely on the app shell.
+ * fails). Minimal and self-contained  it can't rely on the app shell.
  */
 export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (

@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Button — DESIGN.md §6. `primary` (accent fill), `ghost` (surface + border),
+ * Button  DESIGN.md §6. `primary` (accent fill), `ghost` (surface + border),
  * and the small in-row `mini` / `mini-solid`. Buttons depress 1px on press;
  * primary is ≥ 44px tall (WCAG 2.2 AA target size). Status never relies on
  * colour alone, so loading shows a spinner and disabled is visibly muted.

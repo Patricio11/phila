@@ -40,7 +40,7 @@ const PROGRESS: { state: AppointmentState; label: string }[] = [
   { state: "postponed", label: "Postponed" },
 ];
 
-// Note frameworks counsellors actually use — inserted as a scaffold, never forced.
+// Note frameworks counsellors actually use  inserted as a scaffold, never forced.
 const TEMPLATES: { key: string; label: string; body: string }[] = [
   { key: "soap", label: "SOAP", body: "Subjective:\n\nObjective:\n\nAssessment:\n\nPlan:\n" },
   { key: "dap", label: "DAP", body: "Data:\n\nAssessment:\n\nPlan:\n" },
@@ -96,7 +96,7 @@ export function SessionEditor({
     e.target.value = "";
   };
 
-  // Local "autosave" indicator — never blocks typing. Phase 10 wires real autosave.
+  // Local "autosave" indicator  never blocks typing. Phase 10 wires real autosave.
   const onBodyChange = (value: string) => {
     setBody(value);
     if (signedAt) setSignedAt(null); // editing after signing re-opens the draft
@@ -116,7 +116,7 @@ export function SessionEditor({
       setAiGenerated(true);
       setSignedAt(null);
       setSaveState("saved");
-      toast({ tone: "success", title: "AI draft ready", description: "Review and edit it — you're the author. Sign when it's right." });
+      toast({ tone: "success", title: "AI draft ready", description: "Review and edit it  you're the author. Sign when it's right." });
     });
 
   const onSign = () =>
@@ -139,7 +139,7 @@ export function SessionEditor({
     startShare(async () => {
       const res = await shareCarePlan({ clientId: client.id, summary: careSummary });
       if (!res.ok) return toast({ tone: "error", title: res.error });
-      toast({ tone: "success", title: `Shared with ${client.name.split(" ")[0]}`, description: "They'll see it in their portal — your private note stays private." });
+      toast({ tone: "success", title: `Shared with ${client.name.split(" ")[0]}`, description: "They'll see it in their portal  your private note stays private." });
     });
 
   return (
@@ -184,7 +184,7 @@ export function SessionEditor({
                   {continuity.previousSummary && <p className="mt-1 text-[12.5px] leading-relaxed text-text-2">{continuity.previousSummary}</p>}
                 </>
               ) : (
-                <p className="text-[12.5px] text-text-2">First session with {client.name.split(" ")[0]} — a clean start.</p>
+                <p className="text-[12.5px] text-text-2">First session with {client.name.split(" ")[0]}  a clean start.</p>
               )}
             </div>
             <div>
@@ -208,7 +208,7 @@ export function SessionEditor({
       )}
 
       <div className="grid gap-5 lg:grid-cols-3">
-        {/* Note — the private clinical note */}
+        {/* Note  the private clinical note */}
         <Card className="lg:col-span-2">
           <CardHead
             title={
@@ -225,7 +225,7 @@ export function SessionEditor({
 
             {aiGenerated && !signedAt && (
               <div className="inline-flex items-center gap-1.5 rounded-chip bg-warn-soft px-2 py-1 text-[11.5px] font-semibold text-warn">
-                <Sparkles className="size-3.5" strokeWidth={2} aria-hidden /> AI-generated draft — edit before signing
+                <Sparkles className="size-3.5" strokeWidth={2} aria-hidden /> AI-generated draft  edit before signing
               </div>
             )}
 
@@ -241,7 +241,7 @@ export function SessionEditor({
             <Textarea
               value={body}
               onChange={(e) => onBodyChange(e.target.value)}
-              placeholder="Type your note as you talk — it autosaves and never blocks."
+              placeholder="Type your note as you talk  it autosaves and never blocks."
               className="min-h-[260px] text-[14px] leading-relaxed"
               aria-label="Private clinical note"
             />
@@ -282,7 +282,7 @@ export function SessionEditor({
             {extraction && (
               <div className="rounded-control border border-border bg-surface-2/60 p-3.5">
                 <div className="flex items-center gap-1.5 text-[11.5px] font-semibold text-text-2">
-                  <Sparkles className="size-3.5 text-accent" strokeWidth={2} aria-hidden /> AI-extracted fields — feed reporting, zero double entry
+                  <Sparkles className="size-3.5 text-accent" strokeWidth={2} aria-hidden /> AI-extracted fields  feed reporting, zero double entry
                 </div>
                 <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[12px]">
                   <Extracted label="Presenting issue" value={extraction.presentingIssue} />
@@ -330,7 +330,7 @@ export function SessionEditor({
                 </button>
               ))}
             </div>
-            <p className="mt-2 text-[11px] text-text-3">AI never marks a session — only you do.</p>
+            <p className="mt-2 text-[11px] text-text-3">AI never marks a session  only you do.</p>
           </Card>
 
           <Card className="p-4">
@@ -345,7 +345,7 @@ export function SessionEditor({
             <CardHead title="Share with the client" />
             <div className="space-y-3 px-[17px] pb-[17px]">
               <p className="text-[12px] leading-relaxed text-text-3">
-                A separate care plan the client sees — advice, tasks, next steps. Your private note above
+                A separate care plan the client sees  advice, tasks, next steps. Your private note above
                 is never included.
               </p>
               <Textarea

@@ -58,7 +58,7 @@ export function IntakeTracker({ rows }: { rows: IntakeStatusRow[] }) {
       align: "right",
       render: (r) =>
         statusOf(r) === "completed" ? (
-          <span className="text-[12px] text-text-3">—</span>
+          <span className="text-[12px] text-text-3"></span>
         ) : (
           <Button variant="mini" onClick={() => send(r)}>
             <Send className="size-3.5" strokeWidth={2} aria-hidden /> {statusOf(r) === "sent" ? "Resend" : "Send"}

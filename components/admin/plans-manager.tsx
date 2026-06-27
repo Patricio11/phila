@@ -23,7 +23,7 @@ export function PlansManager({ initial }: { initial: PlanWithUsage[] }) {
 
   const save = (plan: Plan) => {
     setPlans((prev) => prev.map((p) => (p.plan.id === plan.id ? { ...p, plan } : p)));
-    toast({ tone: "success", title: `${plan.name} updated`, description: "Entitlements apply to every org on this plan — no drift." });
+    toast({ tone: "success", title: `${plan.name} updated`, description: "Entitlements apply to every org on this plan  no drift." });
   };
 
   return (
@@ -96,7 +96,7 @@ function PlanCard({ item, onSave }: { item: PlanWithUsage; onSave: (plan: Plan) 
             <Entitlement label="Seats" value={plan.seats === null ? "Unlimited" : String(plan.seats)} />
             <Entitlement label="AI" value={tokens(plan.aiTokens)} />
             <Entitlement label="Video" value={plan.videoMinutes === 0 ? "Paste-link" : `${plan.videoMinutes} min`} />
-            <Entitlement label="Messaging" value={plan.messaging ? "WhatsApp + SMS" : "—"} />
+            <Entitlement label="Messaging" value={plan.messaging ? "WhatsApp + SMS" : ""} />
             <Entitlement label="Rooms" value={plan.rooms === null ? "Unlimited" : String(plan.rooms)} />
           </ul>
 

@@ -61,7 +61,7 @@ export function InvoiceList({ invoices, payEnabled }: { invoices: Invoice[]; pay
                         : {
                             tone: "default",
                             title: "Online payment isn't set up yet",
-                            description: "Please pay your practice directly — they'll confirm receipt.",
+                            description: "Please pay your practice directly  they'll confirm receipt.",
                           },
                     )
                   }

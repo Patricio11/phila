@@ -49,7 +49,7 @@ export function useTheme() {
     try {
       localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {
-      // private mode / storage disabled — the DOM still reflects the change.
+      // private mode / storage disabled  the DOM still reflects the change.
     }
     window.dispatchEvent(new Event(THEME_EVENT));
   }, []);

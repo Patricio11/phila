@@ -48,7 +48,7 @@ function findConflict(events: AppointmentView[], appt: AppointmentView, newStart
     const es = new Date(e.startsAt).getTime();
     const ee = es + e.durationMin * 60000;
     if (start >= ee || end <= es) continue; // no overlap
-    if (appt.roomId && e.roomId === appt.roomId) return `${appt.roomName ?? "That room"} is already booked then — pick another time or room.`;
+    if (appt.roomId && e.roomId === appt.roomId) return `${appt.roomName ?? "That room"} is already booked then  pick another time or room.`;
     if (e.counsellorId === appt.counsellorId) return `${appt.counsellorName.split(" ")[0]} already has a session at that time.`;
   }
   return null;
@@ -114,7 +114,7 @@ export function CalendarView({
       if (!res.ok) return toast({ tone: "error", title: res.error });
       setEvents((prev) => prev.map((e) => (e.id === confirm.appt.id ? { ...e, startsAt: confirm.newStart, state: "scheduled" } : e)));
       setConfirm(null);
-      toast({ tone: "success", title: "Session moved", description: "No message was sent — that happens once messaging is set up." });
+      toast({ tone: "success", title: "Session moved", description: "No message was sent  that happens once messaging is set up." });
     });
   };
 
@@ -171,7 +171,7 @@ export function CalendarView({
         <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={() => !pending && setConfirm(null)}>
           <div className="w-full max-w-sm rounded-card border border-border bg-surface p-5 shadow-[var(--shadow-card)]" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-[15px] font-[660] text-text">Move this session?</h3>
-            <p className="mt-1.5 text-[13px] text-text-2">{confirm.appt.clientName} — {confirm.appt.serviceName}</p>
+            <p className="mt-1.5 text-[13px] text-text-2">{confirm.appt.clientName}  {confirm.appt.serviceName}</p>
             <div className="mt-3 rounded-control bg-surface-2 p-3 text-[13px]">
               <div className="text-text-3 line-through">{whenFull(confirm.appt.startsAt)}</div>
               <div className="mt-0.5 font-medium text-text">{whenFull(confirm.newStart)}</div>

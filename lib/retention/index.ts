@@ -2,7 +2,7 @@
  * Soft-delete + right-to-erasure convention (POPIA data-subject rights). Records
  * carry `deletedAt`; nothing is hard-deleted on the request path, so compiled
  * statistics never distort when a client is removed (Outcome-Honesty Rule). A
- * scheduled pruner performs lawful hard-erasure after the retention window — that
+ * scheduled pruner performs lawful hard-erasure after the retention window  that
  * cron is wired in Phase 18; the convention and stubs exist now.
  */
 export interface SoftDeletable {
@@ -23,7 +23,7 @@ export function softDelete<T extends SoftDeletable>(record: T, now: string): T {
 }
 
 /**
- * Erasure job stub — Phase 18 makes this a cron that hard-deletes records past
+ * Erasure job stub  Phase 18 makes this a cron that hard-deletes records past
  * their retention window while preserving the de-identified aggregates funders
  * and the org already relied on. Defined now so the seam exists.
  */
@@ -34,7 +34,7 @@ export interface ErasureJob {
 
 export const erasureJobStub: ErasureJob = {
   async run() {
-    // Intentionally inert in Part A — see Phase 18.
+    // Intentionally inert in Part A  see Phase 18.
     return { erased: 0 };
   },
 };

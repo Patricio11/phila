@@ -13,7 +13,7 @@ export function RegisterSW() {
     if (!("serviceWorker" in navigator)) return;
     const onLoad = () => {
       navigator.serviceWorker.register("/sw.js").catch(() => {
-        // Registration failure is non-fatal — the app works online regardless.
+        // Registration failure is non-fatal  the app works online regardless.
       });
     };
     window.addEventListener("load", onLoad);

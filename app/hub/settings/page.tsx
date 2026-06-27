@@ -81,14 +81,14 @@ export default async function HubSettingsPage() {
         <Card>
           <CardHead title="Integrations" />
           <div className="px-[17px] pb-[17px]">
-            <p className="mb-3 text-[12.5px] text-text-2">Everything starts off. Turn on only what you need — nothing sends or leaves until you do.</p>
+            <p className="mb-3 text-[12.5px] text-text-2">Everything starts off. Turn on only what you need  nothing sends or leaves until you do.</p>
             <IntegrationToggles initial={org.features} />
           </div>
         </Card>
 
         {/* Payments */}
         <Card>
-          <CardHead title="Payments — your own gateway" />
+          <CardHead title="Payments  your own gateway" />
           <div className="px-[17px] pb-[17px]">
             <p className="mb-3 text-[12.5px] text-text-2">Connect your gateway so clients pay your org directly. Funds settle to you; Phila just orchestrates.</p>
             <PaymentConnectionCard />

@@ -10,10 +10,10 @@ import { Reveal } from "@/components/marketing/reveal";
 import { initials } from "@/lib/utils";
 
 /**
- * OrgPublicShell — an org's editable, SEO-built micro-site (DESIGN.md §9). The
+ * OrgPublicShell  an org's editable, SEO-built micro-site (DESIGN.md §9). The
  * org's `--brand-accent` recolours only this page's primary actions + brand tile
  * (auto-darkened to stay AA via lib/contrast); everything else stays Phila's
- * system. No PII — services, team (with honest credentials), and location only.
+ * system. No PII  services, team (with honest credentials), and location only.
  */
 export function OrgPublicShell({ page }: { page: OrgPublicPage }) {
   const { org } = page;

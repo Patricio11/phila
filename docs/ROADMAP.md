@@ -1,16 +1,16 @@
-# PHILA — COUNSELLING PRACTICE PLATFORM ROADMAP (v1.0)
+# PHILA  COUNSELLING PRACTICE PLATFORM ROADMAP (v1.0)
 
-> **Name:** **Phila** — isiZulu / isiXhosa for *to heal / be well* — used everywhere in the system. The
+> **Name:** **Phila**  isiZulu / isiXhosa for *to heal / be well*  used everywhere in the system. The
 > **domain is `philasa.com`** (web address only). Read with
 > `TO_START_EVERY_SESSION.md` (rules + stack),
 > `DESIGN.md` (design + UX/screens + the mock-data seam, all merged).
 >
 > **The shape of this plan (read this first):**
-> **PART A (Phases 0–8)** builds the **entire product on mock data** — all roles, every surface,
+> **PART A (Phases 0–8)** builds the **entire product on mock data**  all roles, every surface,
 > fully clickable and beautiful, demoable to an NGO or EAP. Nothing in Part A touches a real database.
 > **PART B (Phases 9–20)** swaps mock → real **behind the `dataProvider` seam** (auth, the RLS data
 > engine, scheduling, WhatsApp, LiveKit, the AI scribe, PayShap, funder analytics, SEO, hardening,
-> tests, launch) — **with no UI change.** This is the Mock-First Rule made into a delivery plan.
+> tests, launch)  **with no UI change.** This is the Mock-First Rule made into a delivery plan.
 
 ---
 
@@ -18,18 +18,18 @@
 
 Phila is a multi-tenant operations platform for **counselling organisations** in South Africa. We do
 not bill medical aid (GoodX/Healthbridge own that) and we are not a solo-therapist scheduler
-(Bookem/Cliniko own that). We serve **multi-counsellor orgs that bill clients directly** — community /
-NGO counselling, EAP & corporate-wellness providers, university and faith-based services — and scale
+(Bookem/Cliniko own that). We serve **multi-counsellor orgs that bill clients directly**  community /
+NGO counselling, EAP & corporate-wellness providers, university and faith-based services  and scale
 down to a single practice as the entry tier. The wedge is three things: a **daily clinical loop** good
 enough to open ten times a day, **programme-grade Hub oversight**, and **funder/demographic reporting
 that falls out of the clinical work** instead of being a second job. The AI scribe is the engine that
 fuses the daily loop to the reporting.
 
 Four roles, each a full workspace:
-- **Client** — finds an org, books, intakes, joins sessions, sees their own journey.
-- **Counsellor** — runs a daily caseload: calendar, sessions, notes, progress, uploads; may supervise.
-- **Org admin (the Hub)** — oversight of every counsellor, staffing, rooms, intake, invoicing, reporting.
-- **Super admin (platform)** — orgs, plans, the platform AI key, integrations, platform audit.
+- **Client**  finds an org, books, intakes, joins sessions, sees their own journey.
+- **Counsellor**  runs a daily caseload: calendar, sessions, notes, progress, uploads; may supervise.
+- **Org admin (the Hub)**  oversight of every counsellor, staffing, rooms, intake, invoicing, reporting.
+- **Super admin (platform)**  orgs, plans, the platform AI key, integrations, platform audit.
 
 ### Core Domain Rules
 | Rule | Description |
@@ -43,12 +43,12 @@ Four roles, each a full workspace:
 | **Data-Residency** | PII rests in SA region before launch. AI inference de-identified before any cross-border call; ZDR; audio never stored. |
 | **Safeguarding** | Risk flags first-class, never auto-actioned, always surface a human + current resources; never name a method. |
 | **Responsive & Considered-Motion** | 360px-first on every surface; motion rich but GPU-cheap, capped, reduced-motion aware. |
-| **Outcome-Honesty** | Analytics distinguish captured vs missing; demographic dashboards consent-gated; k-anon floor + small-cell suppression on any export. **Funders are read-only, scoped to their grant(s), see only aggregate/k-anon data, and every view is audited** — never an identifiable client. |
+| **Outcome-Honesty** | Analytics distinguish captured vs missing; demographic dashboards consent-gated; k-anon floor + small-cell suppression on any export. **Funders are read-only, scoped to their grant(s), see only aggregate/k-anon data, and every view is audited**  never an identifiable client. |
 | **Cost** | AI/WhatsApp/SMS/video are metered platform-fronted costs; per-org caps; honest limit, never silent failure. |
 
 ### Roles
 **Platform:** `super_admin` · `client` · **`funder`** *(external, read-only, scoped to specific grants
-— see Phase 5.5; only ever sees aggregate, k-anonymised, consented data, every view audited)*.
+ see Phase 5.5; only ever sees aggregate, k-anonymised, consented data, every view audited)*.
 **Org team** (a user's role *within* an org; a user can belong to several orgs): `org_admin` ·
 `counsellor` (+`supervisor` flag, +room schedule) · `front_desk` / `intake_coordinator` · `finance` ·
 `programme_manager`. Clinical-note access = authoring counsellor + supervisor only; all other note
@@ -57,7 +57,7 @@ access is audited (Rules #1/#3).
 ---
 ---
 
-# 🟦 PART A — THE WHOLE PRODUCT ON MOCK DATA (Phases 0–8)
+# 🟦 PART A  THE WHOLE PRODUCT ON MOCK DATA (Phases 0–8)
 
 *Goal of Part A: a beautiful, fully clickable, mock-driven product covering all roles, that you
 could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a rewrite.*
@@ -69,7 +69,7 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 
 ### Task 0.1: Project skeleton
 - [x] Next.js (latest stable, App Router, **no `src`**), TypeScript strict (`noUncheckedIndexedAccess`), ESLint/Prettier, Turbopack.
-- [x] Tailwind v4 + shadcn/ui base; Lucide icons; design tokens (the neutral + green-accent palette, light/dark, motion tokens) in `app/globals.css` via `@theme` — exactly the approved system (`DESIGN.md` §2).
+- [x] Tailwind v4 + shadcn/ui base; Lucide icons; design tokens (the neutral + green-accent palette, light/dark, motion tokens) in `app/globals.css` via `@theme`  exactly the approved system (`DESIGN.md` §2).
 - [x] Folder layout:
   ```
   app/                 # route groups: (marketing) (public) (booking) (me) (app) (hub) (admin) (funder) (auth)
@@ -80,21 +80,21 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
   emails/              # react-email templates (Part B)
   ```
 - [x] Neon project + Drizzle client + drizzle-kit scaffolded (**no live connection in Part A**; document EU→SA residency note for Part B).
-- [x] **English only** — no i18n framework, no locale routing, no catalogs. Copy lives close to its component (`DESIGN.md` §7).
+- [x] **English only**  no i18n framework, no locale routing, no catalogs. Copy lives close to its component (`DESIGN.md` §7).
 
 ### Task 0.2: POPIA + tenancy infrastructure (build NOW, even for mock)
 - [x] `consents` shape + a versioned, purpose-bound consent util (state machine `none → granted(v) → revoked`). UI in Phase 2/3; persistence in Phase 9.
 - [x] `audit_log` shape + `logAccess()` helper invoked on every (mock) PII read/export. Persistent table in Phase 10.
 - [x] Field-level encryption util (`lib/crypto`, AES-GCM) for ID numbers / sensitive fields; key via env/KMS. Wired for real in Phase 10.
 - [x] Soft-delete convention (`deletedAt`) + erasure-job stub.
-- [x] **Tenant + RBAC guard scaffold** (`lib/auth/guard.ts`): `requireRole` / `requireOrg` / `requireOrgFeature` — mock-backed now, Better-Auth-backed in Phase 9. The **RLS** model is documented in `docs/SECURITY.md` now, enforced in Phase 10.
+- [x] **Tenant + RBAC guard scaffold** (`lib/auth/guard.ts`): `requireRole` / `requireOrg` / `requireOrgFeature`  mock-backed now, Better-Auth-backed in Phase 9. The **RLS** model is documented in `docs/SECURITY.md` now, enforced in Phase 10.
 
 ### Task 0.3: Design system + the `dataProvider` seam
 - [x] Tokens + **Inter** (self-hosted via `next/font`, 400–700, tabular numerals; no serif, no monospace). The 8px/radius/shadow scale + motion + reduced-motion utilities (`DESIGN.md` §3, §4).
 - [x] **Theme system:** light + dark from one set of CSS variables; a `system | light | dark` toggle persisted per user; no flash-of-wrong-theme (set before paint). The whole UI is theme-tokenised from commit one.
 - [x] **PWA shell:** web app manifest + icons + a service worker registered; installable; an offline shell. The real **offline send-queue** lands with scheduling/notifications (Phase 11/12); scaffold the queue interface now.
 - [x] The **`dataProvider`** interface + `mockProvider` (default in Part A) + typed fixtures + helpers (`DESIGN.md` §11). `DATA_PROVIDER=mock|db` env flag.
-- [x] Performance budget documented (JS budget on key routes; no blocking media) — enforced in Phase 8/18.
+- [x] Performance budget documented (JS budget on key routes; no blocking media)  enforced in Phase 8/18.
 
 **Done when (mock):** the app boots, tokens + fonts render in **both themes**, it is **installable as a PWA**, an example screen reads from `mockProvider`, and `npm run build` is clean across all routes.
 
@@ -104,10 +104,10 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 *Goal: the marketing face + each org's findable, editable front door. Mock data, production-grade UI.*
 > Screen detail: `DESIGN.md` §9. The org page is the SEO surface (wired in Phase 17).
 
-### Task 1.1: Phila landing — `/`
-- [x] The full, sequenced landing page per `DESIGN.md` §9 — product-led: a hero that **shows the real dashboard** beside a sharp headline + one CTA, the daily-loop demo, three pillars (asymmetric, each shown in product), the funder story, a specific POPIA/data-in-SA trust band, who-it's-for, one real voice, close. In the tool's own visual language. Built to completion — it sets the quality bar. No stat-hero, no competitor names, no medical-aid claims.
+### Task 1.1: Phila landing  `/`
+- [x] The full, sequenced landing page per `DESIGN.md` §9  product-led: a hero that **shows the real dashboard** beside a sharp headline + one CTA, the daily-loop demo, three pillars (asymmetric, each shown in product), the funder story, a specific POPIA/data-in-SA trust band, who-it's-for, one real voice, close. In the tool's own visual language. Built to completion  it sets the quality bar. No stat-hero, no competitor names, no medical-aid claims.
 
-### Task 1.2: Org public page — `/o/[orgSlug]`
+### Task 1.2: Org public page  `/o/[orgSlug]`
 - [x] `<OrgPublicShell>`: hero (logo, `--brand-accent`, intro), About, **Services** (duration + price/enquire), **Team** (`<CredentialChip>`), location/online, prominent **Book** CTA.
 - [x] SEO scaffolding: per-org `<title>`/meta/OG, JSON-LD (`LocalBusiness`/`MedicalBusiness`, honest non-diagnostic copy), `generateMetadata` from mock org data. SSR.
 - [x] Contrast-safe `--brand-accent` via `lib/contrast.ts` (auto-darken on AA fail).
@@ -117,15 +117,15 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 ---
 
 ## 📅 PHASE 2: BOOKING & INTAKE FLOW ✅ (2026-06-27)
-*Goal: a client can book end-to-end from an org page — pick, time, intake, consent, confirm.*
+*Goal: a client can book end-to-end from an org page  pick, time, intake, consent, confirm.*
 > Screen detail: `DESIGN.md` §8. The slot logic mirrors the Phase-11 engine via `availableSlots()`.
 
-### Task 2.1: Pick + time — `/o/[orgSlug]/book`
+### Task 2.1: Pick + time  `/o/[orgSlug]/book`
 - [x] `<BookingShell>` progress thread; pick service + counsellor (or "any available"); calm slot picker honouring mock business hours / buffers / breaks / availability.
 
 ### Task 2.2: Intake + consent
 - [x] Render the org's mock intake form; capture answers (resumable).
-- [x] **Consent capture** — `<ConsentField>` per purpose (booking / notes / demographics / comms; **AI only if org `aiEnabled`**), versioned. Plain-language English.
+- [x] **Consent capture**  `<ConsentField>` per purpose (booking / notes / demographics / comms; **AI only if org `aiEnabled`**), versioned. Plain-language English.
 
 ### Task 2.3: Confirm
 - [x] Summary + "we'll send a WhatsApp + email" (mock); lightweight account creation at confirm; success state with the new appointment on the client's thread.
@@ -135,20 +135,20 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 ---
 
 ## 🧍 PHASE 3: CLIENT PORTAL ✅ (2026-06-27)
-*Goal: the client's calm home — their journey, sessions, documents, invoices, consent control.*
+*Goal: the client's calm home  their journey, sessions, documents, invoices, consent control.*
 > Screen detail: `DESIGN.md` §8.
 
 ### Task 3.1: `/me` overview
 - [x] Upcoming session card (with **Join** when online + link-ready, mock); today/next nudge.
 - [x] The client's own **session history** (a clean timeline); previous sessions; recurring series.
-- [x] **Always-reachable crisis support (2026-06-27):** a calm, never-alarming "If you need to talk now" card — **SADAG 0800 567 567** (free, any time, `tel:` link) plus the 10111 / nearest-hospital line. A counselling portal should never make a person in distress hunt for help.
+- [x] **Always-reachable crisis support (2026-06-27):** a calm, never-alarming "If you need to talk now" card  **SADAG 0800 567 567** (free, any time, `tel:` link) plus the 10111 / nearest-hospital line. A counselling portal should never make a person in distress hunt for help.
 
 ### Task 3.2: Records + control
 - [x] Documents (mock uploads), invoices (mock, "pay" stub), profile editor.
-- [x] **Consent centre** — view/revoke each purpose; honest state; revoke reflects immediately.
+- [x] **Consent centre**  view/revoke each purpose; honest state; revoke reflects immediately.
 
-### Task 3.3: "From your counsellor" — care plan + updates
-- [x] A calm **care-plan / session-updates** surface: what the counsellor chose to share after a session — advice, **between-session tasks** (with done/not-done), recommended resources, and the next step. This is the *shared* artifact only (never the private clinical note — Rule #1).
+### Task 3.3: "From your counsellor"  care plan + updates
+- [x] A calm **care-plan / session-updates** surface: what the counsellor chose to share after a session  advice, **between-session tasks** (with done/not-done), recommended resources, and the next step. This is the *shared* artifact only (never the private clinical note  Rule #1).
 - [x] Tasks the client can tick off; gentle, never gamified, never pressuring. New shares arrive as a soft "update from your counsellor" notification (Part B wires the push/WhatsApp).
 
 **Done when (mock):** a client sees only their own data, their thread, their care plan + tasks, and can walk their consents.
@@ -156,33 +156,33 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 ---
 
 ## 🩺 PHASE 4: COUNSELLOR WORKSPACE ✅ (2026-06-27)
-*Goal: the daily clinical loop — the heart of the product — fully built on mock data.*
+*Goal: the daily clinical loop  the heart of the product  fully built on mock data.*
 > Screen detail: `DESIGN.md` §8. AI scribe here is **mock** (real in Phase 14).
 
 ### Task 4.1: Today + calendar
 - [x] `/app` today: `<AppointmentRow>` list, "starting soon" nudge, today’s counts, the create-appointment **FAB**.
 - [x] `/app/calendar`: week resource view (desktop) / agenda (mobile); business-hours/buffer/break shading; drag-to-reschedule with a confirm step (no notification fires in mock).
-- [x] **Multi-view calendar (2026-06-27):** rebuilt as a real `<CalendarView>` — **Day / Week / Month / Agenda** with ‹ Prev · Today · Next › navigation; a proportional time-grid (events sized/positioned by the minute, overlaps laid out side-by-side); a live "now" line; **click an empty slot → create-appointment, pre-filled** with that date/time. Replaces the old flat week grid (Hub `/hub/calendars` shares it, view-only on notes).
-- [x] **Appointment detail (2026-06-27):** clicking a calendar event opens a calm `<AppointmentDetail>` card — client (linked), status, full date + time range, duration, counsellor, room/online — with **View client**, **Open session**, and **inline actions**: reschedule (date + time), mark Completed / No-show / Cancel (the event updates live). **Reschedule runs a room/counsellor double-booking check** and warns before you confirm (a soft "move anyway" — Phase 11 enforces server-side).
+- [x] **Multi-view calendar (2026-06-27):** rebuilt as a real `<CalendarView>`  **Day / Week / Month / Agenda** with ‹ Prev · Today · Next › navigation; a proportional time-grid (events sized/positioned by the minute, overlaps laid out side-by-side); a live "now" line; **click an empty slot → create-appointment, pre-filled** with that date/time. Replaces the old flat week grid (Hub `/hub/calendars` shares it, view-only on notes).
+- [x] **Appointment detail (2026-06-27):** clicking a calendar event opens a calm `<AppointmentDetail>` card  client (linked), status, full date + time range, duration, counsellor, room/online  with **View client**, **Open session**, and **inline actions**: reschedule (date + time), mark Completed / No-show / Cancel (the event updates live). **Reschedule runs a room/counsellor double-booking check** and warns before you confirm (a soft "move anyway"  Phase 11 enforces server-side).
 
 ### Task 4.2: Caseload + dossier
 - [x] `/app/clients`: a clients **DataTable** (next/last session, status, risk flag); filter + search.
 - [x] `/app/clients/[id]`: a details panel (contact, consent, demographics **only if consented**), the **session history** timeline, the **outcome trend** chart, documents.
 
 ### Task 4.3: Session + note editor (the loop's core)
-- [x] `/app/sessions/[id]`: session details; **live in-session note-taking** — a calm split view that works *alongside* the video room or an in-person session, so the counsellor types as they talk (autosave, never blocks). This is the **private clinical note**.
+- [x] `/app/sessions/[id]`: session details; **live in-session note-taking**  a calm split view that works *alongside* the video room or an in-person session, so the counsellor types as they talk (autosave, never blocks). This is the **private clinical note**.
 - [x] **`<AIDraft>`** states off/mock/draft-ready ("AI-generated") → edit → **sign**; mark progress (completed / no-show / postponed); upload; online → **VideoRoom** entry (shell).
-- [x] **Compose the client-facing care plan / summary** — a *separate* artifact the counsellor explicitly chooses to share with the client (advice, between-session tasks, resources, next step). The private note stays private; sharing is a deliberate action (Rule #1). The AI can draft the client summary too (labelled, edited, then shared).
+- [x] **Compose the client-facing care plan / summary**  a *separate* artifact the counsellor explicitly chooses to share with the client (advice, between-session tasks, resources, next step). The private note stays private; sharing is a deliberate action (Rule #1). The AI can draft the client summary too (labelled, edited, then shared).
 - [x] Marking a session updates its row in the schedule + the client's session history + its quiet status dot (a calm cross-fade, honest count).
-- [x] **Continuity of care (2026-06-27):** every session opens with a **"Since last time"** panel — session number in the journey, when the client was last seen, a recap of the previous note, and the **open care-plan goals** — so the counsellor picks up exactly where they left off. Plus **note-framework scaffolds** (SOAP · DAP · Brief) the counsellor can insert, never forced.
+- [x] **Continuity of care (2026-06-27):** every session opens with a **"Since last time"** panel  session number in the journey, when the client was last seen, a recap of the previous note, and the **open care-plan goals**  so the counsellor picks up exactly where they left off. Plus **note-framework scaffolds** (SOAP · DAP · Brief) the counsellor can insert, never forced.
 
 ### Task 4.4: Supervision (if `supervisor`)
 - [x] `/app/supervision`: queue of supervisee notes to review + sign-off; provenance is honest.
 
 ### Task 4.5: Messages (counsellor)
-- [x] **Two-pane messaging (2026-06-27):** `/app/messages` — a WhatsApp-style thread list + conversation view with optimistic send wired to an audited `sendMessage` action (nothing is delivered until the Phase 12 channel rail turns on — said plainly in the composer). **Thread search**, **start a new conversation** with any caseload client, and **quick-reply templates** (confirm session · check-in · running late) that personalise with the client's name. Day separators, unread badges, mobile back-stack.
+- [x] **Two-pane messaging (2026-06-27):** `/app/messages`  a WhatsApp-style thread list + conversation view with optimistic send wired to an audited `sendMessage` action (nothing is delivered until the Phase 12 channel rail turns on  said plainly in the composer). **Thread search**, **start a new conversation** with any caseload client, and **quick-reply templates** (confirm session · check-in · running late) that personalise with the client's name. Day separators, unread badges, mobile back-stack.
 
-**Done when (mock):** a counsellor walks a full day — see calendar → open session → AI-draft a note → sign → mark completed → the thread updates.
+**Done when (mock):** a counsellor walks a full day  see calendar → open session → AI-draft a note → sign → mark completed → the thread updates.
 
 ---
 
@@ -191,96 +191,96 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 > Screen detail: `DESIGN.md` §8.
 
 ### Task 5.1: Overview + calendars oversight
-- [x] `/hub` overview: clients today/week/month, income + **income prediction**, no-show rate, open intakes, pending credential checks — all `<StatCard>` with honest coverage captions.
+- [x] `/hub` overview: clients today/week/month, income + **income prediction**, no-show rate, open intakes, pending credential checks  all `<StatCard>` with honest coverage captions.
 - [x] `/hub/calendars`: oversight of **every** counsellor's calendar (resource lanes); book on behalf; reschedule/cancel; allocate counsellor + **room**.
 
 ### Task 5.2: Team, roles & clients
-- [x] `/hub/team`: invite / add / deactivate team members and **set each member's org role** — `org_admin`, `counsellor` (+`supervisor`), `front_desk` / `intake_coordinator`, `finance`, `programme_manager`. Permissions differ per role (clinical-note access = counsellor + supervisor only; front desk schedules; finance bills; programme manager sees aggregate/consented reporting).
+- [x] `/hub/team`: invite / add / deactivate team members and **set each member's org role**  `org_admin`, `counsellor` (+`supervisor`), `front_desk` / `intake_coordinator`, `finance`, `programme_manager`. Permissions differ per role (clinical-note access = counsellor + supervisor only; front desk schedules; finance bills; programme manager sees aggregate/consented reporting).
 - [x] Counsellor credential status (HPCSA / ASCHP) + supervisor edges; **per-counsellor room schedule** (see 5.6).
-- [x] `/hub/clients`: full list; reassign counsellor; **cancel/delete client with stats preserved** (Outcome-Honesty Rule — deletion never distorts compiled stats).
-- [x] **Clients + team built out (2026-06-27):** `/hub/clients` gains a caseload summary strip (active · new · seen-this-week · safeguarding), a real **Add client** modal (name, SA phone, email, province, primary counsellor, optional safeguarding flag — validated + audited), and a working **Reassign** modal. Each client links to a new **Hub client page** (`/hub/clients/[id]`) — oversight overview (attendance, time-in-care, outcome trend, session history, care plan, consent, demographics, documents) that **explicitly excludes private clinical notes** (Care-Confidentiality Rule), with Reassign + Book. `/hub/team` clicking a member opens a real **Manage** modal (org role · supervisor toggle, counsellor-only · activate/deactivate, with a link to set their room schedule) and a working **Invite member** modal. **Bulk import (2026-06-27):** an **Import** action parses a pasted list or uploaded CSV (name, phone, email, province), shows a live preview, assigns all to a chosen counsellor, and imports (validated + audited, up to 500 at a time).
-- [x] **Merge / dedupe (2026-06-27):** `/hub/clients` surfaces likely **duplicate** records (union-find over normalised name / phone / email — e.g. a double data-entry) in a banner; a review modal lets the admin pick which record to keep (session count + since-date shown) and **merge** the rest into it (`mergeClients`, audited). History is preserved, never duplicated — keeps reporting honest.
-- [x] **Member page (2026-06-27):** each team member now opens a full profile at `/hub/team/[id]` — personal & contact (email, phone, **date of birth + age, address, languages, joined**), bio, **education & qualifications** (degree · institution · year) and specialties, role & access reach, and for counsellors: caseload stats, their **room schedule**, the linked **caseload**, and **upcoming sessions** — with **Manage** in place. Backed by `getTeamMemberDetail` + a `teamProfiles` fixture.
+- [x] `/hub/clients`: full list; reassign counsellor; **cancel/delete client with stats preserved** (Outcome-Honesty Rule  deletion never distorts compiled stats).
+- [x] **Clients + team built out (2026-06-27):** `/hub/clients` gains a caseload summary strip (active · new · seen-this-week · safeguarding), a real **Add client** modal (name, SA phone, email, province, primary counsellor, optional safeguarding flag  validated + audited), and a working **Reassign** modal. Each client links to a new **Hub client page** (`/hub/clients/[id]`)  oversight overview (attendance, time-in-care, outcome trend, session history, care plan, consent, demographics, documents) that **explicitly excludes private clinical notes** (Care-Confidentiality Rule), with Reassign + Book. `/hub/team` clicking a member opens a real **Manage** modal (org role · supervisor toggle, counsellor-only · activate/deactivate, with a link to set their room schedule) and a working **Invite member** modal. **Bulk import (2026-06-27):** an **Import** action parses a pasted list or uploaded CSV (name, phone, email, province), shows a live preview, assigns all to a chosen counsellor, and imports (validated + audited, up to 500 at a time).
+- [x] **Merge / dedupe (2026-06-27):** `/hub/clients` surfaces likely **duplicate** records (union-find over normalised name / phone / email  e.g. a double data-entry) in a banner; a review modal lets the admin pick which record to keep (session count + since-date shown) and **merge** the rest into it (`mergeClients`, audited). History is preserved, never duplicated  keeps reporting honest.
+- [x] **Member page (2026-06-27):** each team member now opens a full profile at `/hub/team/[id]`  personal & contact (email, phone, **date of birth + age, address, languages, joined**), bio, **education & qualifications** (degree · institution · year) and specialties, role & access reach, and for counsellors: caseload stats, their **room schedule**, the linked **caseload**, and **upcoming sessions**  with **Manage** in place. Backed by `getTeamMemberDetail` + a `teamProfiles` fixture.
 
 ### Task 5.6: Rooms & resource management
-- [x] `/hub/rooms`: room CRUD — name, **site/location**, capacity, equipment/features (e.g. play-therapy kit, wheelchair access), status (`active` / `maintenance`), and a colour for the calendar lane.
-- [x] **Per-room schedule + utilisation:** each room shows *who is in it, when, and for what* — every booking (counsellor + client + type + time), plus utilisation stats (meetings this week, booked hours, % utilisation, busiest day). The honest "is this room over/under-used" view.
-- [x] **Counsellor → room assignment (day/time):** assign a counsellor to a room on a recurring day/time pattern (e.g. "Nomsa — Room 2, Mon & Wed 09:00–13:00") *or* ad hoc per appointment. The scheduling engine (Phase 11) uses this to default + validate the room on every in-person booking and to **prevent double-booking** a room.
+- [x] `/hub/rooms`: room CRUD  name, **site/location**, capacity, equipment/features (e.g. play-therapy kit, wheelchair access), status (`active` / `maintenance`), and a colour for the calendar lane.
+- [x] **Per-room schedule + utilisation:** each room shows *who is in it, when, and for what*  every booking (counsellor + client + type + time), plus utilisation stats (meetings this week, booked hours, % utilisation, busiest day). The honest "is this room over/under-used" view.
+- [x] **Counsellor → room assignment (day/time):** assign a counsellor to a room on a recurring day/time pattern (e.g. "Nomsa  Room 2, Mon & Wed 09:00–13:00") *or* ad hoc per appointment. The scheduling engine (Phase 11) uses this to default + validate the room on every in-person booking and to **prevent double-booking** a room.
 - [x] Multi-site aware: an org with more than one venue groups rooms by site; in-person booking respects the site.
-- [x] **Rooms built out (2026-06-27):** `/hub/rooms` cards now link through to a full **room detail page** (`/hub/rooms/[id]`): live stats (utilisation %, booked hours, **free-to-book hours**, sessions, busiest day), a per-day **availability** breakdown (booked vs free), and a visual **week schedule grid** where every booking sits in place and **open slots are clickable to book straight into the room**. A working **Create / Edit room** modal (name, site, capacity, counselling equipment toggles, status, calendar colour) and an **Assign-counsellor editor** (pick counsellor + days + available time window) — both validated + audited (mock persistence lands Phase 11).
+- [x] **Rooms built out (2026-06-27):** `/hub/rooms` cards now link through to a full **room detail page** (`/hub/rooms/[id]`): live stats (utilisation %, booked hours, **free-to-book hours**, sessions, busiest day), a per-day **availability** breakdown (booked vs free), and a visual **week schedule grid** where every booking sits in place and **open slots are clickable to book straight into the room**. A working **Create / Edit room** modal (name, site, capacity, counselling equipment toggles, status, calendar colour) and an **Assign-counsellor editor** (pick counsellor + days + available time window)  both validated + audited (mock persistence lands Phase 11).
 
 **Done when (mock):** the Hub can create rooms, see each room's full schedule + utilisation, assign counsellors to rooms by day/time, and every in-person appointment carries a conflict-free room.
 
 ### Task 5.3: Intake + invoicing
 - [x] `/hub/intake`: send intake forms to a client / a programme cohort; track completion.
 - [x] `/hub/invoicing`: create/send invoices (A4 builder); see paid / unpaid / cancelled (mock; PayShap in Phase 15).
-- [x] **Intake + invoicing actions (2026-06-27):** intake gains a status summary (completed · awaiting · not-sent) and the **Send/Resend** action flips the row live. Invoicing gains an **overdue** total (unpaid past due, shown in red on the due date) alongside outstanding/paid, plus per-row **Mark paid** (live reconcile) and **Remind** — both validated + audited (`markInvoicePaid` / `sendInvoiceReminder`); honest that no message fires until messaging is connected. Clicking an invoice number opens a **read-only A4 preview** (org letterhead, bill-to, line item, VAT split, status stamp) with **Print / Download**.
+- [x] **Intake + invoicing actions (2026-06-27):** intake gains a status summary (completed · awaiting · not-sent) and the **Send/Resend** action flips the row live. Invoicing gains an **overdue** total (unpaid past due, shown in red on the due date) alongside outstanding/paid, plus per-row **Mark paid** (live reconcile) and **Remind**  both validated + audited (`markInvoicePaid` / `sendInvoiceReminder`); honest that no message fires until messaging is connected. Clicking an invoice number opens a **read-only A4 preview** (org letterhead, bill-to, line item, VAT split, status stamp) with **Print / Download**.
 
 ### Task 5.4: Reporting (the differentiator)
 - [x] `/hub/reporting`: filter clients by province / gender / age band / employment status / service; outcome trends (`<OutcomeTrend>` aggregate); **consent-gated**; **k-anon floor** on any export (`applyKAnon`); one-click funder report (mock PDF/CSV). Coverage caption everywhere ("412 of 530 clients have demographics").
-- [x] **Funder narrative + real export (2026-06-27):** a **reporting-period** selector (this month / quarter / YTD / last 12 months) and an **auto-generated funder narrative** — a plain-English paragraph built from the live figures (reach by province, largest cohort, PHQ-9 direction with "lower is better"), with **Copy**. The **CSV downloads for real** (client-side Blob) carrying every breakdown with the **k-anon floor written through** (small cells render `suppressed (<k)`); the export stays audited. Nothing identifiable leaves the building.
+- [x] **Funder narrative + real export (2026-06-27):** a **reporting-period** selector (this month / quarter / YTD / last 12 months) and an **auto-generated funder narrative**  a plain-English paragraph built from the live figures (reach by province, largest cohort, PHQ-9 direction with "lower is better"), with **Copy**. The **CSV downloads for real** (client-side Blob) carrying every breakdown with the **k-anon floor written through** (small cells render `suppressed (<k)`); the export stays audited. Nothing identifiable leaves the building.
 
 ### Task 5.5: Settings, payments & public page editor
 - [x] `/hub/settings`: default duration, buffer, breaks; **business hours** (per-day enable + start/end); integration toggles (AI/video/WhatsApp) **dormant by default**.
-- [x] **Org payment connection (BYO gateway):** the org connects its *own* gateway so **clients pay the org directly** — pick a provider from the catalogue the platform enables (Stitch / Ozow for PayShap + pay-by-bank, Yoco / Paystack for cards), **switch it on, enter the org's own credentials** (stored encrypted), Test connection, set as default. Switching providers is one toggle. (Wired in Phase 15B.)
+- [x] **Org payment connection (BYO gateway):** the org connects its *own* gateway so **clients pay the org directly**  pick a provider from the catalogue the platform enables (Stitch / Ozow for PayShap + pay-by-bank, Yoco / Paystack for cards), **switch it on, enter the org's own credentials** (stored encrypted), Test connection, set as default. Switching providers is one toggle. (Wired in Phase 15B.)
 - [x] Public-page editor: edit §2.2 content + `--brand-accent` + SEO fields (mock save).
 
-**Done when (mock):** the Hub demonstrates oversight of all counsellors, a consent-gated demographic filter, and a one-click funder report — the things incumbents can't show.
+**Done when (mock):** the Hub demonstrates oversight of all counsellors, a consent-gated demographic filter, and a one-click funder report  the things incumbents can't show.
 
 ---
 
 ## 🤝 PHASE 5.5: THE FUNDER & GRANT MODULE + FUNDER PORTAL ✅ (2026-06-27)
-*Goal: turn "the report writes itself" into a real surface — grants with targets, clinical work that
+*Goal: turn "the report writes itself" into a real surface  grants with targets, clinical work that
 auto-rolls up to them, and a scoped, k-anon, read-only **funder portal**. The growth-loop differentiator.*
 > This is the feature no incumbent in the niche has. Every funder-facing figure is **aggregate,
-> k-anonymised, consent-gated (`funder_reporting` purpose), and audited** — a funder never sees an
+> k-anonymised, consent-gated (`funder_reporting` purpose), and audited**  a funder never sees an
 > identifiable client (Rules #1, #10). The funder is an **external, read-only role scoped to its
 > grant(s) only.** Mock data here; wired in Phase 16.
 
-### Task 5.5.1: Funders & grants (Hub) — `/hub/funders`, `/hub/grants`
+### Task 5.5.1: Funders & grants (Hub)  `/hub/funders`, `/hub/grants`
 - [x] Funder CRUD (name, type: `government` / `lottery` / `corporate_csi` / `foundation` / `international`, contacts).
 - [x] Grant CRUD: funder, title, **period** (start/end), amount + currency, restricted/unrestricted, **reporting schedule** (e.g. quarterly), status.
 
 ### Task 5.5.2: Indicators & targets (the logframe)
-- [x] Per grant, define **indicators with targets** — `count` (e.g. "300 unique clients"), `percentage` (e.g. "60% female"), `outcome_delta` (e.g. "70% improve ≥5 on PHQ-9"), `demographic_proportion`. Each indicator carries a **computation rule** so its actual is derived from the clinical work, not typed.
+- [x] Per grant, define **indicators with targets**  `count` (e.g. "300 unique clients"), `percentage` (e.g. "60% female"), `outcome_delta` (e.g. "70% improve ≥5 on PHQ-9"), `demographic_proportion`. Each indicator carries a **computation rule** so its actual is derived from the clinical work, not typed.
 
 ### Task 5.5.3: Allocate clinical work to grants
-- [x] Tag clients / programmes / services to a grant (`grant_allocations`) — "served under Grant X." This is what makes actuals auto-compute. A client can map to more than one grant (with honest de-duplication on counts).
+- [x] Tag clients / programmes / services to a grant (`grant_allocations`)  "served under Grant X." This is what makes actuals auto-compute. A client can map to more than one grant (with honest de-duplication on counts).
 
 ### Task 5.5.4: Live indicators-vs-targets dashboard + narrative + report builder
-- [x] Per-grant dashboard: each indicator as `<IndicatorMeter>` (actual vs target, **on-track / at-risk / behind**), demographic breakdowns, outcome trends, session counts — all **k-anon** with honest coverage captions.
+- [x] Per-grant dashboard: each indicator as `<IndicatorMeter>` (actual vs target, **on-track / at-risk / behind**), demographic breakdowns, outcome trends, session counts  all **k-anon** with honest coverage captions.
 - [x] Post **narrative updates** the funder will see; a **report builder** that maps indicators → the funder's required template; one-click period export (PDF/CSV/template). **Report-due reminders** against the schedule.
 
-### Task 5.5.5: The Funder portal — `/funder` (role `funder`)
-- [x] `<FunderPortalShell>`: a funder logs in and sees **only their grant(s)** — live progress vs target, k-anon breakdowns, outcome trends, session counts, the org's narrative updates, and downloadable period reports. Read-only. Nothing identifiable. Every view audited. The org controls exactly what each funder sees.
-- [x] **Portfolio summary (2026-06-27):** the funder home now opens with an at-a-glance strip — total **committed**, number of grants, **active** count, and **organisations** funded — computed only from the funder's own scoped grants, before the per-grant cards.
+### Task 5.5.5: The Funder portal  `/funder` (role `funder`)
+- [x] `<FunderPortalShell>`: a funder logs in and sees **only their grant(s)**  live progress vs target, k-anon breakdowns, outcome trends, session counts, the org's narrative updates, and downloadable period reports. Read-only. Nothing identifiable. Every view audited. The org controls exactly what each funder sees.
+- [x] **Portfolio summary (2026-06-27):** the funder home now opens with an at-a-glance strip  total **committed**, number of grants, **active** count, and **organisations** funded  computed only from the funder's own scoped grants, before the per-grant cards.
 
 ### Task 5.5.6: Invite a funder (mock)
 - [x] Org invites a funder contact (email); scoped to specific grant(s); the invite + scope is mock here (real flow in Phase 9).
 
-**Done when (mock):** an org defines a grant with targets, tags clients to it, watches actuals roll up live, posts a narrative update, exports a funder report, and a funder logs into `/funder` to see only their grant — all k-anon, nothing identifiable.
+**Done when (mock):** an org defines a grant with targets, tags clients to it, watches actuals roll up live, posts a narrative update, exports a funder report, and a funder logs into `/funder` to see only their grant  all k-anon, nothing identifiable.
 
 ### Honest constraints
-- **Highest-risk surface for a privacy leak** — k-anon floor + small-cell suppression are mandatory; tiny programmes may legitimately show "too few to report."
-- **Funder is read-only + scoped + audited** — never org staff, never a client, never cross-grant.
-- **Aggregate only, consent-gated** — the `funder_reporting` consent purpose governs whether a client's (de-identified) data may roll into a funder figure at all.
+- **Highest-risk surface for a privacy leak**  k-anon floor + small-cell suppression are mandatory; tiny programmes may legitimately show "too few to report."
+- **Funder is read-only + scoped + audited**  never org staff, never a client, never cross-grant.
+- **Aggregate only, consent-gated**  the `funder_reporting` consent purpose governs whether a client's (de-identified) data may roll into a funder figure at all.
 
 ---
 
 ## 🛰️ PHASE 6: SUPER-ADMIN CONSOLE ✅ (2026-06-27)
-*Goal: the platform operator's console — orgs, plans, the AI rail, integrations, audit. Mock data.*
+*Goal: the platform operator's console  orgs, plans, the AI rail, integrations, audit. Mock data.*
 > Screen detail: `DESIGN.md` §8. 2FA eyebrow on every page (enforced in Phase 9).
 
 ### Task 6.1: Orgs, plans & platform billing
 - [x] `/admin` overview (orgs, active team members, sessions 7d, AI spend, integration health, **subscription/MRR**).
 - [x] `/admin/orgs`: create / suspend / configure; per-org plan + entitlements; **impersonate (audit-logged)**.
-- [x] **Org detail / people directory (2026-06-27):** every row in `/admin/orgs` links to `/admin/orgs/[id]` — plan + billing + usage strip, plus the org's **people grouped by role** (Administrators · Counsellors · Operations) with credentials and reach, and the client count. Viewing is audit-logged; the seeded org shows its full directory, summary-only orgs show counts with an honest "loads on impersonation" note.
+- [x] **Org detail / people directory (2026-06-27):** every row in `/admin/orgs` links to `/admin/orgs/[id]`  plan + billing + usage strip, plus the org's **people grouped by role** (Administrators · Counsellors · Operations) with credentials and reach, and the client count. Viewing is audit-logged; the seeded org shows its full directory, summary-only orgs show counts with an honest "loads on impersonation" note.
 - [x] `/admin/plans`: tiers + per-feature AI/video/messaging/room entitlements, sourced from a `plans` table (no drift).
-- [x] **Platform subscription billing:** orgs subscribe to a Phila plan and **pay Phila** through Phila's own PSP — invoices, trial, upgrade/downgrade, dunning. (This is distinct from an org's *own* gateway in 5.5, which is how the org's clients pay the org.)
+- [x] **Platform subscription billing:** orgs subscribe to a Phila plan and **pay Phila** through Phila's own PSP  invoices, trial, upgrade/downgrade, dunning. (This is distinct from an org's *own* gateway in 5.5, which is how the org's clients pay the org.)
 
 ### Task 6.2: AI rail, integrations catalogue & audit
 - [x] `/admin/ai`: **platform-only** AI provider + key; off / mock / live + Test connection; model + max-tokens; **POPIA s.72 cross-border acknowledgement**; per-org spend caps; AI audit. Every org uses the platform key automatically (no BYO).
-- [x] `/admin/integrations`: the catalogue of providers and what's available to orgs — WhatsApp · LiveKit video · **the payment providers an org may connect** (Stitch / Ozow / Yoco / Paystack) + Phila's own platform PSP. Enable/disable a provider platform-wide; off/mock/live + Test.
+- [x] `/admin/integrations`: the catalogue of providers and what's available to orgs  WhatsApp · LiveKit video · **the payment providers an org may connect** (Stitch / Ozow / Yoco / Paystack) + Phila's own platform PSP. Enable/disable a provider platform-wide; off/mock/live + Test.
 - [x] `/admin/audit`: platform-wide PII-access + admin-action ledger; CSV export (audit-logged).
 - [x] `/admin/settings`: feature flags + platform settings.
 
@@ -288,7 +288,7 @@ auto-rolls up to them, and a scoped, k-anon, read-only **funder portal**. The gr
 
 ---
 
-## 🎬 PHASE 7: SIGNATURE SURFACES — CALENDAR, MODAL, VIDEO, AI, BUILDER ✅ (2026-06-27)
+## 🎬 PHASE 7: SIGNATURE SURFACES  CALENDAR, MODAL, VIDEO, AI, BUILDER ✅ (2026-06-27)
 *Goal: the cross-role surfaces that make Phila feel like a finished, alive product. Mock data.*
 
 ### Task 7.1: The calendar
@@ -311,17 +311,17 @@ auto-rolls up to them, and a scoped, k-anon, read-only **funder portal**. The gr
 
 ---
 
-## ✨ PHASE 8: STATES + RESPONSIVE + MOTION + A11Y — THE DEMO-READY GATE ✅ (2026-06-27)
+## ✨ PHASE 8: STATES + RESPONSIVE + MOTION + A11Y  THE DEMO-READY GATE ✅ (2026-06-27)
 *Goal: the entire product is a beautiful, clickable, mock-driven demo of all roles.*
 
 ### Task 8.1: Cross-cutting states
-- [x] Every loading (`<RosterSkeleton>`), empty (instructional), error (calm/actionable), **blocked** (consent missing / feature dormant / over cost-cap — states the reason + next step), and offline/queued state, on every surface.
+- [x] Every loading (`<RosterSkeleton>`), empty (instructional), error (calm/actionable), **blocked** (consent missing / feature dormant / over cost-cap  states the reason + next step), and offline/queued state, on every surface.
 
 ### Task 8.2: Responsive pass (360px-first)
 - [x] Every surface verified at 360px incl. calendar (agenda), video room (fills screen), A4 builder (scrolls), org public page, all modals/sheets.
 
 ### Task 8.3: Motion + accessibility
-- [x] The one page-load reveal + count settle + calm sheet/route transitions choreographed (`DESIGN.md` §4); **reduced-motion** strips movement, keeps clarity. (Sparse on purpose — over-animation is an AI-design tell.)
+- [x] The one page-load reveal + count settle + calm sheet/route transitions choreographed (`DESIGN.md` §4); **reduced-motion** strips movement, keeps clarity. (Sparse on purpose  over-animation is an AI-design tell.)
 - [x] WCAG 2.2 AA sweep: keyboard-operate the calendar, focus rings, `aria-live` on counts/states, labelled controls, 200% text.
 
 ### Task 8.4: Theme + PWA pass
@@ -333,10 +333,10 @@ auto-rolls up to them, and a scoped, k-anon, read-only **funder portal**. The gr
 ---
 ---
 
-# 🟩 PART B — WIRE IT REAL (Phases 9–20)
+# 🟩 PART B  WIRE IT REAL (Phases 9–20)
 
 *Goal of Part B: swap mock → real behind the `dataProvider` seam, light up integrations, harden for
-POPIA, test, and launch — **without changing the Part-A UI.***
+POPIA, test, and launch  **without changing the Part-A UI.***
 
 ---
 
@@ -345,7 +345,7 @@ POPIA, test, and launch — **without changing the Part-A UI.***
 
 ### Task 9.1: Better Auth setup
 - [ ] Better Auth + Drizzle adapter; email+password + verification + forgot/reset; sessions in Postgres.
-- [ ] Role model — **platform** (`super_admin | client | funder`) + **org team_role** (`org_admin | counsellor | front_desk | finance | programme_manager`, +`supervisor`); Server-Action sign-in routes by role; multi-org membership resolution + org switcher.
+- [ ] Role model  **platform** (`super_admin | client | funder`) + **org team_role** (`org_admin | counsellor | front_desk | finance | programme_manager`, +`supervisor`); Server-Action sign-in routes by role; multi-org membership resolution + org switcher.
 - [ ] Route-group guards via proxy: `requireRole` / `requireOrg` / `requireOrgFeature` / **`requireFunderGrant`** (scopes a funder to their grant(s) only, read-only) on `(app)` / `(hub)` / `(admin)` / `(me)` / `(funder)`.
 - [ ] 2FA (TOTP) for `super_admin` + `org_admin` + supervising counsellors.
 
@@ -358,16 +358,16 @@ POPIA, test, and launch — **without changing the Part-A UI.***
 
 ---
 
-## ⚙️ PHASE 10: THE DATA ENGINE — SCHEMA + RLS + QUERIES + STORAGE
+## ⚙️ PHASE 10: THE DATA ENGINE  SCHEMA + RLS + QUERIES + STORAGE
 *Goal: the schema, tenant isolation, and integrity everything stands on. The mock→db swap.*
 
 ### Task 10.1: Drizzle schema
 - [ ] Tenancy: `orgs`, `org_members` (**+ `team_role`**: org_admin / counsellor / front_desk / finance / programme_manager, + `is_supervisor`), `app_users`. Care: `counsellors` (credential, supervisor edge), `clients`, `appointments`, `sessions`, `session_notes`, `recurring_series`, `services`, `intake_forms`, `intake_responses`.
-- [ ] **Rooms:** `sites` (venues), `rooms` (name, site, capacity, equipment, status, colour), `room_assignments` (counsellor ↔ room ↔ day-of-week/date ↔ start/end — the schedule), and `appointments.room_id` (in-person). Utilisation is derived.
+- [ ] **Rooms:** `sites` (venues), `rooms` (name, site, capacity, equipment, status, colour), `room_assignments` (counsellor ↔ room ↔ day-of-week/date ↔ start/end  the schedule), and `appointments.room_id` (in-person). Utilisation is derived.
 - [ ] **Client-shared care:** `care_plans` / `session_summaries` (the shared artifact, distinct from `session_notes`) + `care_plan_tasks` (between-session tasks with done state). Sharing is an explicit, consented action; the private note is never exposed.
 - [ ] **Funders & grants (M&E):** `funders` (name, type, contacts), `funder_contacts` (user ↔ funder, scoped to grants), `grants` (funder, org, period, amount, restricted, reporting schedule, status), `grant_indicators` (name, type `count|percentage|outcome_delta|demographic_proportion`, target, computation rule), `grant_allocations` (client/programme ↔ grant), `grant_narratives`, `grant_reports`.
 - [ ] Sensitive: `demographics` (special personal info), `outcome_measures`, `risk_flags`. POPIA: `consents`, `audit_log`.
-- [ ] **Payments (two layers):** `subscriptions` (org ↔ Phila plan — platform billing) and `payment_connections` (org's BYO gateway: provider + **encrypted credentials** + status) + `invoices` + `payments`. Comms: `notifications`, `message_templates`. AI: `ai_jobs`, `usage_events`, `ai_providers`. Public: `org_public_pages`.
+- [ ] **Payments (two layers):** `subscriptions` (org ↔ Phila plan  platform billing) and `payment_connections` (org's BYO gateway: provider + **encrypted credentials** + status) + `invoices` + `payments`. Comms: `notifications`, `message_templates`. AI: `ai_jobs`, `usage_events`, `ai_providers`. Public: `org_public_pages`.
 - [ ] Enums per Appendix. Indices: btree on `org_id` + FKs + `room_assignments(room_id, day)`; GIN where searched.
 
 ### Task 10.2: Row-Level Security (the real isolation boundary)
@@ -395,7 +395,7 @@ POPIA, test, and launch — **without changing the Part-A UI.***
 ---
 
 ## 💬 PHASE 12: NOTIFICATIONS (WHATSAPP + EMAIL + SMS)
-*Goal: instant, honest booking/cancel/reschedule/reminder notifications — WhatsApp-first.*
+*Goal: instant, honest booking/cancel/reschedule/reminder notifications  WhatsApp-first.*
 - [ ] Env-driven transport adapter: WhatsApp (Meta Cloud API / 360dialog / Clickatell) + Resend email + optional SMS. Dormant until configured.
 - [ ] Triggers: booked / rescheduled / cancelled / reminder (T-24h, T-1h) / no-show follow-up. 24h-window awareness for WhatsApp; approved templates outside it.
 - [ ] **Opt-out + quiet hours** always win; honest delivery states (no fake "sent"); **metered + capped** (Cost Rule); audited.
@@ -410,24 +410,24 @@ POPIA, test, and launch — **without changing the Part-A UI.***
 
 ---
 
-## 🤖 PHASE 14: AI SCRIBE (POPIA-AWARE) — THE DIFFERENTIATOR ENGINE
-*Goal: the scribe that drafts the note AND extracts the funder fields — the fusion. Dormant by default.*
+## 🤖 PHASE 14: AI SCRIBE (POPIA-AWARE)  THE DIFFERENTIATOR ENGINE
+*Goal: the scribe that drafts the note AND extracts the funder fields  the fusion. Dormant by default.*
 - [ ] Platform-keyed provider rail (Phase 6) goes live; per-org **toggle = POPIA cross-border consent gate**; per-org entitlement + spend cap + metering.
 - [ ] Pipeline: session audio → STT (**self-hosted Whisper in-region**, or a ZDR provider) → note **draft** + **structured M&E extraction** (presenting issue, risk flags, demographics-if-consented, outcome, referral).
 - [ ] **De-identify before any cross-border call**; **ZDR** provider; **audio + raw transcript discarded** after the note; only the signed note + structured fields persist.
 - [ ] Every draft labelled "AI-generated"; the counsellor **signs** (author of record); the structured fields feed Phase 16 reporting (zero double entry).
-- [ ] The AI can also draft the **client-facing care plan / summary** (Task 4.3) — separate from the private note, plain-language, labelled, **edited and shared by the counsellor**, never auto-sent.
+- [ ] The AI can also draft the **client-facing care plan / summary** (Task 4.3)  separate from the private note, plain-language, labelled, **edited and shared by the counsellor**, never auto-sent.
 - [ ] Audit every AI action; honest cost nudge at the cap.
 
 ---
 
-## 💳 PHASE 15: PAYMENTS — PLATFORM BILLING + ORG GATEWAYS
+## 💳 PHASE 15: PAYMENTS  PLATFORM BILLING + ORG GATEWAYS
 *Goal: two distinct money flows, real. (A) orgs pay Phila; (B) clients pay their org.*
 
 ### Task 15A: Platform subscription billing (orgs → Phila)
 - [ ] Orgs subscribe to a plan and pay Phila via Phila's own PSP; trials, upgrade/downgrade, proration, dunning, receipts; entitlements enforced from the `plans` table; super-admin billing views.
 
-### Task 15B: Org payments — BYO gateway (clients → org)
+### Task 15B: Org payments  BYO gateway (clients → org)
 - [ ] Each org connects its **own** gateway (the provider it switched on + credentials it entered in Task 5.5), stored encrypted; a **PSP orchestrator** abstracts Stitch / Ozow (PayShap + pay-by-bank) + Yoco / Paystack (cards) behind one interface so switching providers is a toggle.
 - [ ] Invoices (from the A4 builder) charge through the **org's** connected gateway → funds settle to the org; webhooks + idempotency keys (load-shedding-safe); paid / unpaid / cancelled / refunded tracking; income + **income prediction** from real data; metered where Phila fronts a cost.
 
@@ -436,7 +436,7 @@ POPIA, test, and launch — **without changing the Part-A UI.***
 ---
 
 ## 📊 PHASE 16: ANALYTICS & FUNDER / M&E REPORTING + FUNDER PORTAL
-*Goal: the reporting differentiator, real — built from the clinical work, honest, k-anon-safe — and the live funder portal.*
+*Goal: the reporting differentiator, real  built from the clinical work, honest, k-anon-safe  and the live funder portal.*
 - [ ] Aggregation layer / scheduled rollups (PII-free) for the Hub `<StatCard>`s + charts.
 - [ ] Consent-gated demographic dashboards (province / gender / age / status / service); **k-anonymity floor + small-cell suppression** on any aggregate/funder export; coverage shown on every figure.
 - [ ] **Grant-indicator engine:** compute each indicator's **actual vs target** from `grant_allocations` + the clinical data per its computation rule (honest de-dup across grants); on-track/at-risk/behind classification.
@@ -450,7 +450,7 @@ POPIA, test, and launch — **without changing the Part-A UI.***
 *Goal: org-editable, SEO-ranking public micro-sites, wired.*
 - [ ] Public page + editor wired to `org_public_pages`; SSR/ISR; per-org `generateMetadata` + OG + JSON-LD; per-org sitemap entries; robots; honest non-diagnostic copy.
 - [ ] Booking wired through from the public page; analytics on page → booking conversion (PII-free).
-- [ ] Custom domains per org — **deferred** (documented extension).
+- [ ] Custom domains per org  **deferred** (documented extension).
 
 ---
 
@@ -460,12 +460,12 @@ POPIA, test, and launch — **without changing the Part-A UI.***
 - [ ] Field-level encryption live; security headers; rate limiting (Upstash) on auth/booking/AI/messaging; observability skeleton.
 - [ ] **DPIA**; data-subject tools (export / erasure) wired to real soft-delete + pruner cron; retention policy + breach log.
 - [ ] **Opt-out / DMA registry** screen before any marketing send (per the SA direct-marketing registry; manual suppression-list import until the API is published); block + audit if registered.
-- [ ] One-click **POPIA pack** per org (consent records + lawful-basis evidence + audit + retention + breach log) — "compliance you can show the Information Regulator."
+- [ ] One-click **POPIA pack** per org (consent records + lawful-basis evidence + audit + retention + breach log)  "compliance you can show the Information Regulator."
 
 ---
 
 ## 🧪 PHASE 19: TESTING & QA
-*Goal: prove the invariants that matter — isolation, redaction, consent, safeguarding.*
+*Goal: prove the invariants that matter  isolation, redaction, consent, safeguarding.*
 - [ ] Unit (scheduling, freshness, k-anon, contrast, consent state machine).
 - [ ] Integration (Server Actions + Zod + RLS on a real-Postgres harness).
 - [ ] E2E (Playwright) across all roles at 1280px + 360px.
@@ -483,15 +483,15 @@ POPIA, test, and launch — **without changing the Part-A UI.***
 ---
 ---
 
-## 🌱 ADVISED ENHANCEMENTS (backlog — tag `[new]` / `[phase N]`)
-- [ ] **Group / couple / family sessions** `[new]` — multi-client appointments + notes.
-- [ ] **Waitlist auto-fill** `[phase 11]` — a cancelled slot offers itself to a waitlisted client via WhatsApp.
-- [ ] **Sliding-scale / subsidised fees** `[phase 15]` — per-client fee rules (NGO reality).
-- [ ] *(Promoted to core — PWA + offline send-queue now ship in Phases 0/8/11.)* Remaining backlog: **low-data media-defer toggle** refinements for field counsellors on metered data.
-- [ ] **Low-data media-defer toggle** `[phase 8]` — finer control for field counsellors on metered data (English-only; no translation work — SA, one language).
-- [ ] **Supervision analytics** `[phase 16]` — supervisor caseload quality + sign-off turnaround.
-- [ ] **Referral network** `[new]` — refer a client to another org/service with consented handover.
-- [ ] **Client-facing self-help / between-session check-ins** `[new]` — gentle, opt-in, never a bot pretending to be a counsellor.
+## 🌱 ADVISED ENHANCEMENTS (backlog  tag `[new]` / `[phase N]`)
+- [ ] **Group / couple / family sessions** `[new]`  multi-client appointments + notes.
+- [ ] **Waitlist auto-fill** `[phase 11]`  a cancelled slot offers itself to a waitlisted client via WhatsApp.
+- [ ] **Sliding-scale / subsidised fees** `[phase 15]`  per-client fee rules (NGO reality).
+- [ ] *(Promoted to core  PWA + offline send-queue now ship in Phases 0/8/11.)* Remaining backlog: **low-data media-defer toggle** refinements for field counsellors on metered data.
+- [ ] **Low-data media-defer toggle** `[phase 8]`  finer control for field counsellors on metered data (English-only; no translation work  SA, one language).
+- [ ] **Supervision analytics** `[phase 16]`  supervisor caseload quality + sign-off turnaround.
+- [ ] **Referral network** `[new]`  refer a client to another org/service with consented handover.
+- [ ] **Client-facing self-help / between-session check-ins** `[new]`  gentle, opt-in, never a bot pretending to be a counsellor.
 - [ ] **Custom domains per org** `[phase 17]`.
 
 ---
@@ -506,7 +506,7 @@ POPIA, test, and launch — **without changing the Part-A UI.***
 - [ ] AI rail: platform key set; per-org caps; s.72 acknowledgement; de-identify + ZDR verified; audio discard verified.
 - [ ] PSP webhooks + idempotency; **platform subscription billing live**; **org BYO-gateway connect + Test passes**; DPIA signed; Information Officer designated; POPIA pack generates.
 - [ ] Light + dark verified; PWA installable + offline send-queue syncs; rooms + utilisation correct; team-role permissions enforced (front_desk/finance can't reach notes).
-- [ ] Funder portal scoping verified — a funder reaches only its grant(s), only k-anon aggregates, small cells suppressed, every view audited; report builder exports the funder's template.
+- [ ] Funder portal scoping verified  a funder reaches only its grant(s), only k-anon aggregates, small cells suppressed, every view audited; report builder exports the funder's template.
 - [ ] `test:all` green incl. compliance + RLS isolation; 360px + 1280px E2E.
 ### Launch
 - [ ] Onboard the warm org; seed services/intake/consent; train the Hub admin + counsellors.
@@ -545,7 +545,7 @@ clinical work; everything funder-facing is k-anon + consent-gated (`funder_repor
 ### Care artifacts (the confidentiality distinction)
 `session_notes` = **private** clinical note (author + supervisor; Hub access audited). `care_plans` /
 `session_summaries` + `care_plan_tasks` = the **client-shared** artifact (advice, tasks, next steps),
-shared by an explicit, consented counsellor action — never the private note.
+shared by an explicit, consented counsellor action  never the private note.
 
 ### Enums
 `teamRole` (`org_admin|counsellor|front_desk|finance|programme_manager`), `funderType`
@@ -559,8 +559,8 @@ shared by an explicit, consented counsellor action — never the private note.
 (`trialing|active|past_due|cancelled`), `outcomeTool` (`PHQ-9|GAD-7|…`), `aiFeature`
 (`note_draft|care_plan_draft|extraction|summary`), `theme` (`system|light|dark`).
 
-### Demographic fields (SPECIAL personal information — consent-gated, purpose-bound, k-anon on export)
-`gender` · `race` · `employmentStatus` · `ageBand` · `province`. Captured only with `demographics` consent; never on a public/cross-role payload; excluded from any export cell below the k-anonymity floor (default 5). *These exist for funder/M&E reporting and SA statutory context — never as a clinical judgement.*
+### Demographic fields (SPECIAL personal information  consent-gated, purpose-bound, k-anon on export)
+`gender` · `race` · `employmentStatus` · `ageBand` · `province`. Captured only with `demographics` consent; never on a public/cross-role payload; excluded from any export cell below the k-anonymity floor (default 5). *These exist for funder/M&E reporting and SA statutory context  never as a clinical judgement.*
 
 ### Outcome measures (seed)
 `PHQ-9` (depression) · `GAD-7` (anxiety). Extend per org (e.g. WHO-5, K10). Tracked across sessions; honest "not yet measured" state.
@@ -584,7 +584,7 @@ shared by an explicit, consented counsellor action — never the private note.
 > + supervisor is audited.
 >
 > **Funder (external):** sees **only** aggregate, k-anonymised, consented (`funder_reporting`) figures
-> for **its own grant(s)** — indicators vs targets, demographic breakdowns above the k-floor, outcome
+> for **its own grant(s)**  indicators vs targets, demographic breakdowns above the k-floor, outcome
 > trends, session counts, and org-posted narrative. **Never** an individual client, note, care plan,
 > contact, demographic row, or any other grant. Read-only; every view audited.
 

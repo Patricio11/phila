@@ -8,12 +8,12 @@ import { APPOINTMENT_STATES } from "@/lib/domain/enums";
  * Session-editor actions. In Part A they validate + audit and return success
  * without persisting (Mock-First); Phase 10/14 wire real persistence + the real
  * AI scribe behind the same shapes. The AI never signs, never sends, never
- * advances clinical state — it only returns a labelled draft (AI-Honesty Rule).
+ * advances clinical state  it only returns a labelled draft (AI-Honesty Rule).
  */
 
 const idInput = z.object({ appointmentId: z.string().min(1) });
 
-/** The structured fields the scribe extracts — these feed funder reporting (zero double entry). */
+/** The structured fields the scribe extracts  these feed funder reporting (zero double entry). */
 export interface AiExtraction {
   presentingIssue: string;
   risk: string;
@@ -35,7 +35,7 @@ export async function generateAiDraft(
     reason: "ai_note_draft",
   });
 
-  // Mock draft — non-diagnostic, never names a method. The counsellor edits + signs.
+  // Mock draft  non-diagnostic, never names a method. The counsellor edits + signs.
   const draft = [
     "Presenting concern: client described feeling stretched between work and home, with low energy in the mornings.",
     "Session: explored what's been hardest this week; reflected on small routines that already help. Client engaged and open.",
@@ -105,7 +105,7 @@ export async function shareCarePlan(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const parsed = careInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Cannot share" };
-  // Sharing is an explicit, consented action — the private note is never exposed.
+  // Sharing is an explicit, consented action  the private note is never exposed.
   await logAccess({
     action: "admin.action",
     actor: { userId: "counsellor", platformRole: null, teamRole: "counsellor" },

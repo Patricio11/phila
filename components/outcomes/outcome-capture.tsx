@@ -15,7 +15,7 @@ const PHQ9 = [
   "Trouble falling or staying asleep, or sleeping too much",
   "Feeling tired or having little energy",
   "Poor appetite or overeating",
-  "Feeling bad about yourself — or that you've let yourself or your family down",
+  "Feeling bad about yourself  or that you've let yourself or your family down",
   "Trouble concentrating on things",
   "Moving or speaking slowly, or being restless and fidgety",
   "Thoughts that you'd be better off not here, or of hurting yourself",
@@ -125,7 +125,7 @@ export function OutcomeCaptureButton({ clientName }: { clientName: string }) {
           <div className="mt-5 flex items-start gap-2.5 rounded-control border border-danger/25 bg-danger-soft/50 p-3.5">
             <ShieldAlert className="mt-0.5 size-4 shrink-0 text-danger" strokeWidth={2} aria-hidden />
             <p className="text-[12.5px] leading-relaxed text-text-2">
-              This response needs a human follow-up. Stay with the client, involve your supervisor, and share current support — SADAG 0800 567 567. Never auto-actioned.
+              This response needs a human follow-up. Stay with the client, involve your supervisor, and share current support  SADAG 0800 567 567. Never auto-actioned.
             </p>
           </div>
         )}

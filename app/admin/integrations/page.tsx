@@ -15,7 +15,7 @@ export default async function AdminIntegrationsPage() {
     <div className="rise space-y-6">
       <PageHead
         title="Integrations catalogue"
-        summary="Curate what orgs can connect — messaging, video, and the payment providers an org may use for its own gateway."
+        summary="Curate what orgs can connect  messaging, video, and the payment providers an org may use for its own gateway."
       />
       <IntegrationsCatalogue initial={items} />
     </div>

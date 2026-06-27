@@ -6,7 +6,7 @@ import { CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * The needs-attention panel (DESIGN.md §6) — the triage list. Rose for
+ * The needs-attention panel (DESIGN.md §6)  the triage list. Rose for
  * safeguarding, amber for missed/pending. Safeguarding items always point to a
  * human + current help and never name a method (Safeguarding Rule).
  */

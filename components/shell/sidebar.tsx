@@ -8,7 +8,7 @@ import type { NavSection } from "@/components/shell/nav-config";
 import { cn } from "@/lib/utils";
 
 /**
- * The sidebar — the signature structure (DESIGN.md §5.1). 248px ↔ 72px, smooth
+ * The sidebar  the signature structure (DESIGN.md §5.1). 248px ↔ 72px, smooth
  * collapse. Active item gets `--accent-soft`, accent text, and a 3px accent bar
  * on the left edge. On collapse, labels and badges fade and the icon centres,
  * with the full label as a native tooltip.
@@ -125,7 +125,7 @@ export function Sidebar({
                       </Link>
                     ) : (
                       <span
-                        title={collapsed ? `${item.label} — coming soon` : undefined}
+                        title={collapsed ? `${item.label}  coming soon` : undefined}
                         aria-disabled
                         className={cn(
                           base,

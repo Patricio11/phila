@@ -1,9 +1,9 @@
 /**
- * Consent — versioned, purpose-bound, with a strict state machine
+ * Consent  versioned, purpose-bound, with a strict state machine
  * (`none → granted(v) → revoked`, re-grantable to a new version). This is the
  * Consent-Before-Capture Rule made into code: no purpose-bound data is read or
  * captured unless an *active* grant exists. The UI lands in Phase 2/3; the table
- * persists in Phase 9 — the rules live here from commit one.
+ * persists in Phase 9  the rules live here from commit one.
  */
 import type { ConsentPurpose, ConsentState } from "@/lib/domain/enums";
 
@@ -29,7 +29,7 @@ export function isConsentActive(consent: Consent | undefined): boolean {
 
 /**
  * Grant (or re-grant) a purpose at a given consent-text version. A revoked
- * consent can be granted again — at the *current* version, never silently
+ * consent can be granted again  at the *current* version, never silently
  * reusing the old one.
  */
 export function grant(
@@ -52,7 +52,7 @@ export function revoke(current: Consent | undefined, purpose: ConsentPurpose, no
 }
 
 /**
- * Assert an active consent or throw — call at the boundary of any purpose-bound
+ * Assert an active consent or throw  call at the boundary of any purpose-bound
  * read (demographics, AI processing, funder reporting, comms, …).
  */
 export function assertConsent(consent: Consent | undefined, purpose: ConsentPurpose): void {

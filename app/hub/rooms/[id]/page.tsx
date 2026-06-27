@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 const DOW = ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 function weekdayName(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "";
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", weekday: "short" }).format(new Date(iso));
 }
 
@@ -96,7 +96,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
         {/* Schedule */}
         <div>
-          <h2 className="mb-2.5 text-[13px] font-semibold uppercase tracking-wide text-text-3">This week — click an open slot to book</h2>
+          <h2 className="mb-2.5 text-[13px] font-semibold uppercase tracking-wide text-text-3">This week  click an open slot to book</h2>
           <RoomScheduleGrid
             roomId={room.id}
             roomName={room.name}

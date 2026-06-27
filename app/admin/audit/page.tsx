@@ -24,7 +24,7 @@ export default async function AdminAuditPage() {
     <div className="rise space-y-6">
       <PageHead
         title="Audit"
-        summary="Every PII access and privileged action across the platform — the ledger you can show the Information Regulator."
+        summary="Every PII access and privileged action across the platform  the ledger you can show the Information Regulator."
       />
       <AuditTable events={events} />
     </div>

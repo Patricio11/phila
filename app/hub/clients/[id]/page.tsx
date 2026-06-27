@@ -41,7 +41,7 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
   ]);
   if (!dossier || dossier.client.orgId !== membership.orgId) notFound();
 
-  // Hub oversight is a recorded PII access — but private clinical notes are never on this page.
+  // Hub oversight is a recorded PII access  but private clinical notes are never on this page.
   await logAccess({
     action: "pii.read",
     actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
@@ -91,9 +91,9 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
       {/* At a glance */}
       <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
         <Stat value={String(attended)} label={`Session${attended === 1 ? "" : "s"} attended`} />
-        <Stat value={attendanceRate === null ? "—" : `${attendanceRate}%`} label={noShow > 0 ? `Attendance · ${noShow} no-show${noShow === 1 ? "" : "s"}` : "Attendance"} />
+        <Stat value={attendanceRate === null ? "" : `${attendanceRate}%`} label={noShow > 0 ? `Attendance · ${noShow} no-show${noShow === 1 ? "" : "s"}` : "Attendance"} />
         <Stat value={timeInCare(client.createdAt, now)} label="In care" />
-        <Stat value={points[points.length - 1] ? String(points[points.length - 1]!.value) : "—"} label={outcomes[0]?.tool ?? "Outcome"} />
+        <Stat value={points[points.length - 1] ? String(points[points.length - 1]!.value) : ""} label={outcomes[0]?.tool ?? "Outcome"} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">

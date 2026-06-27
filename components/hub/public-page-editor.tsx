@@ -54,7 +54,7 @@ export function PublicPageEditor({
 
       <div className="space-y-1.5">
         <Label htmlFor="pp-seo">SEO title</Label>
-        <Input id="pp-seo" defaultValue="Masizakhe Counselling — counselling in Gauteng" />
+        <Input id="pp-seo" defaultValue="Masizakhe Counselling  counselling in Gauteng" />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

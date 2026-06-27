@@ -40,7 +40,7 @@ const importInput = z.object({
   counsellorId: z.string().min(1, "Choose a counsellor for the imported clients."),
   clients: z
     .array(z.object({ name: z.string().min(2), phone: z.string().optional(), email: z.string().optional(), province: z.string().optional() }))
-    .min(1, "Nothing to import — add at least one row.")
+    .min(1, "Nothing to import  add at least one row.")
     .max(500, "Import up to 500 clients at a time."),
 });
 
@@ -69,7 +69,7 @@ const mergeInput = z.object({
 /**
  * Merge duplicate client records (mock). Keeps one record; the others are
  * soft-merged into it. Phase 10 re-points sessions/notes/invoices/consents to
- * the kept id and soft-deletes the rest — history is never lost or duplicated
+ * the kept id and soft-deletes the rest  history is never lost or duplicated
  * (Outcome-Honesty Rule).
  */
 export async function mergeClients(

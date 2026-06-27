@@ -2,7 +2,7 @@
  * Contrast utilities (WCAG 2.2). Each org's public page may set its own
  * `--brand-accent`; we must keep white-on-accent buttons readable (AA), so an
  * accent that fails is auto-darkened until it passes (DESIGN.md §9). This is the
- * only per-tenant colour, scoped to that page — the rest stays Phila's system.
+ * only per-tenant colour, scoped to that page  the rest stays Phila's system.
  */
 export interface RGB {
   r: number;

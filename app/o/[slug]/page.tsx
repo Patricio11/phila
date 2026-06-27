@@ -22,7 +22,7 @@ export async function generateMetadata({
   const page = await provider.getOrgPublicPage(slug);
   if (!page) return { title: "Not found", robots: { index: false } };
 
-  const title = `${page.org.name} — counselling in ${page.org.province}`;
+  const title = `${page.org.name}  counselling in ${page.org.province}`;
   const description = page.intro;
   return {
     title,

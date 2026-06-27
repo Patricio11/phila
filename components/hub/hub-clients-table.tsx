@@ -22,7 +22,7 @@ const STATUS: Record<CaseloadStatus, { label: string; tone: DotTone }> = {
 };
 
 function shortDate(iso: string | null | undefined): string {
-  if (!iso) return "—";
+  if (!iso) return "";
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "short" }).format(new Date(iso));
 }
 
@@ -93,7 +93,7 @@ export function HubClientsTable({ rows, counsellors }: { rows: OrgClientRow[]; c
             variant="mini"
             onClick={() => {
               setRemoved((prev) => new Set(prev).add(r.client.id));
-              toast({ tone: "default", title: `${r.client.name.split(" ")[0]} removed from the active list`, description: "Their stats are preserved — reporting stays accurate." });
+              toast({ tone: "default", title: `${r.client.name.split(" ")[0]} removed from the active list`, description: "Their stats are preserved  reporting stays accurate." });
             }}
           >
             <UserMinus className="size-3.5" strokeWidth={2} aria-hidden /> Remove

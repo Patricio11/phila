@@ -5,7 +5,7 @@ import type { ConsentPurpose } from "@/lib/domain/enums";
 import { cn } from "@/lib/utils";
 
 /**
- * ConsentField (DESIGN.md §6 / Consent-Before-Capture Rule) — one purpose, a
+ * ConsentField (DESIGN.md §6 / Consent-Before-Capture Rule)  one purpose, a
  * plain-English description, and an explicit grant. Versioned (the version the
  * person agreed to travels with the record). Required purposes are needed to
  * book; optional ones default to the conservative (declined) state.

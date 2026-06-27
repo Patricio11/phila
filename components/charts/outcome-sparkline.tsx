@@ -18,7 +18,7 @@ export function OutcomeSparkline({
   if (points.length < 2) {
     return (
       <p className="px-1 py-6 text-center text-[12.5px] text-text-3">
-        Not yet measured — outcome trends appear once two or more {tool} scores are captured.
+        Not yet measured  outcome trends appear once two or more {tool} scores are captured.
       </p>
     );
   }

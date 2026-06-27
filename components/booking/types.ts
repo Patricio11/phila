@@ -1,6 +1,6 @@
 import type { ConsentPurpose } from "@/lib/domain/enums";
 
-/** The wizard's working state — resumable, persisted to localStorage per org. */
+/** The wizard's working state  resumable, persisted to localStorage per org. */
 export interface BookingState {
   serviceId: string | null;
   /** null = "any available" counsellor. */

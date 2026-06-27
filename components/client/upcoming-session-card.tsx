@@ -75,7 +75,7 @@ export function UpcomingSessionCard({
           <Row icon={<Clock className="size-4" />} text={`${appt.durationMin} minutes`} />
           <Row
             icon={appt.type === "online" ? <Video className="size-4" /> : <MapPin className="size-4" />}
-            text={appt.type === "online" ? "Secure video — join from here" : (appt.roomName ?? "In person")}
+            text={appt.type === "online" ? "Secure video  join from here" : (appt.roomName ?? "In person")}
           />
         </div>
 
@@ -88,7 +88,7 @@ export function UpcomingSessionCard({
                 toast({
                   tone: "default",
                   title: "The session room opens here",
-                  description: "Your counsellor will start it — you'll join right from this page.",
+                  description: "Your counsellor will start it  you'll join right from this page.",
                 })
               }
             >

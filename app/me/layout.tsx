@@ -3,7 +3,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { requireClient } from "@/lib/auth/guard";
 
 /**
- * The client portal shell (DESIGN.md §5.4) — the lightest shell. A client only
+ * The client portal shell (DESIGN.md §5.4)  the lightest shell. A client only
  * ever sees their own data (Redaction matrix); the guard resolves the client
  * identity (Part A demo; Phase 9 the real session).
  */

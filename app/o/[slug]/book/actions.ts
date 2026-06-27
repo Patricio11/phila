@@ -7,7 +7,7 @@ import { logAccess } from "@/lib/audit";
 import { CONSENT_PURPOSES } from "@/lib/domain/enums";
 
 /**
- * Booking server actions — the same shape Part B keeps. In Part A they run the
+ * Booking server actions  the same shape Part B keeps. In Part A they run the
  * real `availableSlots` engine over mock data and validate every input with Zod;
  * Phase 11 swaps the data source behind the seam with no caller change. Required
  * consents are enforced server-side, not just in the UI (defence in depth).
@@ -81,7 +81,7 @@ export async function submitBooking(
   raw: z.infer<typeof submitInput>,
 ): Promise<{ ok: true; confirmation: BookingConfirmation } | { ok: false; error: string }> {
   const parsed = submitInput.safeParse(raw);
-  if (!parsed.success) return { ok: false, error: "Some details are missing — please review." };
+  if (!parsed.success) return { ok: false, error: "Some details are missing  please review." };
   const input = parsed.data;
 
   // Consent is the lawful basis: booking + notes must be granted (Consent-Before-Capture).
@@ -103,7 +103,7 @@ export async function submitBooking(
   const counsellor = config.counsellors.find((c) => c.id === input.counsellorId);
   if (!service || !counsellor) return { ok: false, error: "That service is no longer available." };
 
-  // Record the consent grants and the (mock) booking — every PII capture audited.
+  // Record the consent grants and the (mock) booking  every PII capture audited.
   for (const purpose of CONSENT_PURPOSES) {
     if (input.consents[purpose]) {
       await logAccess({
@@ -123,7 +123,7 @@ export async function submitBooking(
     reason: "intake_capture",
   });
 
-  // Part A: no persistence — return an honest confirmation. Phase 9/10 persists
+  // Part A: no persistence  return an honest confirmation. Phase 9/10 persists
   // the client account, appointment, intake, and consent records.
   const reference = `PH-${shortRef()}`;
   return {

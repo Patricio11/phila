@@ -117,7 +117,7 @@ export function TimeStep({
           <div className="flex flex-col items-center py-8 text-center">
             <CalendarX2 className="size-7 text-text-3" strokeWidth={1.8} aria-hidden />
             <p className="mt-2 text-[13.5px] font-medium text-text">No open times on this day</p>
-            <p className="mt-1 text-[12.5px] text-text-2">Try another day — the calendar fills up fast.</p>
+            <p className="mt-1 text-[12.5px] text-text-2">Try another day  the calendar fills up fast.</p>
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">

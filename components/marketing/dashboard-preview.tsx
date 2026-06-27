@@ -18,7 +18,7 @@ import { Tag } from "@/components/ui/tag";
 
 /**
  * A faithful, self-contained snapshot of the counsellor dashboard, built from
- * the same primitives the real app uses — so the landing genuinely shows the
+ * the same primitives the real app uses  so the landing genuinely shows the
  * product. Static data; no providers. Pointer events off so it reads as a
  * still of the app, not an interactive surface.
  */

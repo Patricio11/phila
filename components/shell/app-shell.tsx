@@ -35,7 +35,7 @@ function subscribeCollapse(onChange: () => void) {
 }
 
 /**
- * The app shell — the same structure for every role (DESIGN.md §5). A smooth
+ * The app shell  the same structure for every role (DESIGN.md §5). A smooth
  * collapsible sidebar on desktop, an overlay drawer on phones, a sticky top bar,
  * and a content area that breathes. The page title is derived from the active
  * nav item so pages don't have to thread it through.
@@ -63,7 +63,7 @@ export function AppShell({
     try {
       localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
     } catch {
-      /* storage disabled — preference simply won't persist */
+      /* storage disabled  preference simply won't persist */
     }
     window.dispatchEvent(new Event(COLLAPSE_EVENT));
   };
@@ -79,7 +79,7 @@ export function AppShell({
       >
         Skip to content
       </a>
-      {/* Desktop sidebar — width animates smoothly on collapse. */}
+      {/* Desktop sidebar  width animates smoothly on collapse. */}
       <aside
         className="hidden shrink-0 border-r border-border transition-[width] duration-300 ease-[cubic-bezier(.2,0,0,1)] lg:block"
         style={{ width: collapsed ? COLLAPSED_W : EXPANDED_W }}

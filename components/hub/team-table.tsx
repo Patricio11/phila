@@ -55,7 +55,7 @@ export function TeamTable({ members }: { members: TeamMemberView[] }) {
       key: "credential",
       header: "Credential",
       hideBelow: "md",
-      render: (m) => (m.credential ? <CredentialChip body={m.credential.body} status={m.credential.status} /> : <span className="text-text-3">—</span>),
+      render: (m) => (m.credential ? <CredentialChip body={m.credential.body} status={m.credential.status} /> : <span className="text-text-3"></span>),
     },
     {
       key: "status",

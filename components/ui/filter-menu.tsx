@@ -10,7 +10,7 @@ export interface FilterOption {
 }
 
 /**
- * A small custom filter dropdown (not a native select — DESIGN.md §6). Shows the
+ * A small custom filter dropdown (not a native select  DESIGN.md §6). Shows the
  * current value, opens a list, and supports an "Any" clear. Closes on select or
  * outside click.
  */

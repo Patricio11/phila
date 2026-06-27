@@ -14,7 +14,7 @@ function minutesOf(iso: string): number { return Number(iso.slice(11, 13)) * 60 
 function hhmm(iso: string): string { return iso.slice(11, 16); }
 
 /**
- * RoomScheduleGrid (DESIGN.md §6) — one room's week: who's in it, when, and for
+ * RoomScheduleGrid (DESIGN.md §6)  one room's week: who's in it, when, and for
  * what, with the **gaps visible** as bookable availability. Click an open slot to
  * book straight into this room.
  */

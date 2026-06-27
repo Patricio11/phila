@@ -29,7 +29,7 @@ export function AuditTable({ events }: { events: PlatformAuditEvent[] }) {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      /* download blocked — the export itself is still recorded */
+      /* download blocked  the export itself is still recorded */
     }
     // Exporting the audit ledger is itself an audited action.
     toast({ tone: "success", title: "Audit log exported", description: "The export is recorded in the ledger." });
@@ -41,7 +41,7 @@ export function AuditTable({ events }: { events: PlatformAuditEvent[] }) {
     { key: "actor", header: "Actor", hideBelow: "sm", sortValue: (e) => e.actor, render: (e) => <span className="text-text-2">{e.actor}</span> },
     { key: "org", header: "Organisation", hideBelow: "md", sortValue: (e) => e.orgName ?? "", render: (e) => <span className="text-text-2">{e.orgName ?? "platform"}</span> },
     { key: "target", header: "Target", hideBelow: "lg", render: (e) => <span className="text-text-3">{e.target}</span> },
-    { key: "reason", header: "Reason", hideBelow: "lg", render: (e) => <span className="text-text-3">{e.reason ?? "—"}</span> },
+    { key: "reason", header: "Reason", hideBelow: "lg", render: (e) => <span className="text-text-3">{e.reason ?? ""}</span> },
   ];
 
   return (

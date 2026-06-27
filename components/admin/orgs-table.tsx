@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Ban, Play, Plus, UserCheck } from "lucide-react";
 import type { PlatformOrgRow } from "@/lib/data-provider";
@@ -33,13 +34,13 @@ export function OrgsTable({ rows }: { rows: PlatformOrgRow[] }) {
       header: "Organisation",
       sortValue: (r) => r.org.name,
       render: (r) => (
-        <div className="flex items-center gap-2.5">
+        <Link href={`/admin/orgs/${r.org.id}`} className="group flex items-center gap-2.5">
           <Avatar name={r.org.name} size="sm" />
           <div className="min-w-0">
-            <div className="font-medium text-text">{r.org.name}</div>
+            <div className="font-medium text-text group-hover:text-accent group-hover:underline">{r.org.name}</div>
             <div className="text-[11.5px] text-text-3">{r.org.province}</div>
           </div>
-        </div>
+        </Link>
       ),
     },
     { key: "plan", header: "Plan", sortValue: (r) => r.planName, render: (r) => <span className="text-text-2">{r.planName}</span> },

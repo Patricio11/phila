@@ -29,6 +29,7 @@ import type {
   PlatformOrgRow,
   PlatformOverview,
   ReportingResult,
+  RoomDetail,
   RoomView,
   TeamMemberView,
 } from "@/lib/data-provider";
@@ -83,7 +84,7 @@ import {
 } from "@/lib/mock/fixtures";
 import { isConsentActive } from "@/lib/consent";
 import { liveOnly } from "@/lib/retention";
-import { applyKAnon, roomUtilisation, SAST_OFFSET } from "@/lib/mock/helpers";
+import { applyKAnon, isoWeekday, roomUtilisation, SAST_OFFSET } from "@/lib/mock/helpers";
 import type { ConsentPurpose } from "@/lib/domain/enums";
 import {
   AGE_BAND_LABELS,
@@ -703,6 +704,65 @@ export const mockProvider: DataProvider = {
     );
   },
 
+  listSites: (orgId) => ok(allSites.filter((s) => s.orgId === orgId)),
+
+  getRoomDetail: (roomId, now): Promise<RoomDetail | null> => {
+    const room = allRooms.find((r) => r.id === roomId);
+    if (!room) return ok(null);
+    const org = orgs.find((o) => o.id === room.orgId);
+    if (!org) return ok(null);
+    const bh = org.scheduling.businessHours;
+    const counsellors = allCounsellors.filter((c) => c.orgId === room.orgId);
+    const appts = counsellors.flatMap((c) => materialise(c.id, now)).map(toView);
+    const weekDates = weekDatesOf(now);
+    const today = sastDate(now);
+    const roomAppts = appts.filter((a) => a.roomId === room.id);
+
+    const toMin = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
+    const openMinutes = (date: string) => {
+      const h = bh[isoWeekday(date)];
+      if (!h) return 0;
+      const breaks = (h.breaks ?? []).reduce((s, b) => s + (toMin(b.end) - toMin(b.start)), 0);
+      return Math.max(0, toMin(h.end) - toMin(h.start) - breaks);
+    };
+
+    const perDay = weekDates.map((date) => {
+      const openMin = openMinutes(date);
+      const bookedMin = roomAppts.filter((a) => a.startsAt.startsWith(date)).reduce((s, a) => s + a.durationMin, 0);
+      const freeMin = Math.max(0, openMin - bookedMin);
+      return {
+        date,
+        dow: isoWeekday(date),
+        openMin,
+        bookedMin,
+        freeMin,
+        pct: openMin === 0 ? 0 : Math.min(100, Math.round((bookedMin / openMin) * 100)),
+        isToday: date === today,
+      };
+    });
+
+    return ok({
+      room,
+      siteName: allSites.find((s) => s.id === room.siteId)?.name ?? "",
+      businessHours: bh,
+      utilisation: roomUtilisation({ appointments: roomAppts, businessHours: bh, weekDates }),
+      perDay,
+      freeHours: Math.round((perDay.reduce((s, d) => s + d.freeMin, 0) / 60) * 10) / 10,
+      capacityNote: `Seats ${room.capacity}${room.equipment.length ? ` · ${room.equipment.join(", ")}` : ""}`,
+      assignments: roomAssignments
+        .filter((ra) => ra.roomId === room.id)
+        .map((ra) => ({
+          counsellorName: counsellors.find((c) => c.id === ra.counsellorId)?.name ?? "",
+          days: ra.days,
+          start: ra.start,
+          end: ra.end,
+        })),
+      bookings: roomAppts
+        .filter((a) => weekDates.some((d) => a.startsAt.startsWith(d)))
+        .sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
+    });
+  },
+
   listIntakeStatus: (orgId, now): Promise<IntakeStatusRow[]> => {
     const counsellors = allCounsellors.filter((c) => c.orgId === orgId);
     const clients = liveOnly(allClients.filter((c) => c.orgId === orgId));
@@ -868,6 +928,31 @@ export const mockProvider: DataProvider = {
         return { org, planName: plan?.name ?? "—", planPriceCents: plan?.priceCents ?? 0 };
       }),
     ),
+
+  getPlatformOrgDetail: (orgId) => {
+    const org = platformOrgs.find((o) => o.id === orgId);
+    if (!org) return ok(null);
+    const plan = plans.find((p) => p.id === org.planId);
+    // Only the seeded org (Masizakhe) has a full member + client directory.
+    const fullyModeled = orgId === "org_masizakhe";
+    const team = fullyModeled
+      ? teamMembers.map((m) => {
+          const counsellor = m.counsellorId ? allCounsellors.find((c) => c.id === m.counsellorId) : undefined;
+          return {
+            userId: m.userId,
+            name: m.name,
+            email: m.email,
+            teamRole: m.teamRole,
+            isSupervisor: m.isSupervisor,
+            active: m.active,
+            credential: counsellor ? { body: counsellor.credential.body, status: counsellor.credential.status } : null,
+            joinedAt: m.joinedAt,
+          };
+        })
+      : [];
+    const clientCount = fullyModeled ? liveOnly(allClients.filter((c) => c.orgId === orgId)).length : 0;
+    return ok({ org, planName: plan?.name ?? "—", planPriceCents: plan?.priceCents ?? 0, team, clientCount, fullyModeled });
+  },
 
   listPlans: (): Promise<PlanWithUsage[]> =>
     ok(

@@ -161,6 +161,7 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 ### Task 4.1: Today + calendar
 - [x] `/app` today: `<AppointmentRow>` list, "starting soon" nudge, today’s counts, the create-appointment **FAB**.
 - [x] `/app/calendar`: week resource view (desktop) / agenda (mobile); business-hours/buffer/break shading; drag-to-reschedule with a confirm step (no notification fires in mock).
+- [x] **Multi-view calendar (2026-06-27):** rebuilt as a real `<CalendarView>` — **Day / Week / Month / Agenda** with ‹ Prev · Today · Next › navigation; a proportional time-grid (events sized/positioned by the minute, overlaps laid out side-by-side); a live "now" line; **click an empty slot → create-appointment, pre-filled** with that date/time; click an event → open the session. Replaces the old flat week grid (Hub `/hub/calendars` shares it, view-only on notes).
 
 ### Task 4.2: Caseload + dossier
 - [x] `/app/clients`: a clients **DataTable** (next/last session, status, risk flag); filter + search.
@@ -197,6 +198,7 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 - [x] **Per-room schedule + utilisation:** each room shows *who is in it, when, and for what* — every booking (counsellor + client + type + time), plus utilisation stats (meetings this week, booked hours, % utilisation, busiest day). The honest "is this room over/under-used" view.
 - [x] **Counsellor → room assignment (day/time):** assign a counsellor to a room on a recurring day/time pattern (e.g. "Nomsa — Room 2, Mon & Wed 09:00–13:00") *or* ad hoc per appointment. The scheduling engine (Phase 11) uses this to default + validate the room on every in-person booking and to **prevent double-booking** a room.
 - [x] Multi-site aware: an org with more than one venue groups rooms by site; in-person booking respects the site.
+- [x] **Rooms built out (2026-06-27):** `/hub/rooms` cards now link through to a full **room detail page** (`/hub/rooms/[id]`): live stats (utilisation %, booked hours, **free-to-book hours**, sessions, busiest day), a per-day **availability** breakdown (booked vs free), and a visual **week schedule grid** where every booking sits in place and **open slots are clickable to book straight into the room**. A working **Create / Edit room** modal (name, site, capacity, counselling equipment toggles, status, calendar colour) and an **Assign-counsellor editor** (pick counsellor + days + available time window) — both validated + audited (mock persistence lands Phase 11).
 
 **Done when (mock):** the Hub can create rooms, see each room's full schedule + utilisation, assign counsellors to rooms by day/time, and every in-person appointment carries a conflict-free room.
 
@@ -260,6 +262,7 @@ auto-rolls up to them, and a scoped, k-anon, read-only **funder portal**. The gr
 ### Task 6.1: Orgs, plans & platform billing
 - [x] `/admin` overview (orgs, active team members, sessions 7d, AI spend, integration health, **subscription/MRR**).
 - [x] `/admin/orgs`: create / suspend / configure; per-org plan + entitlements; **impersonate (audit-logged)**.
+- [x] **Org detail / people directory (2026-06-27):** every row in `/admin/orgs` links to `/admin/orgs/[id]` — plan + billing + usage strip, plus the org's **people grouped by role** (Administrators · Counsellors · Operations) with credentials and reach, and the client count. Viewing is audit-logged; the seeded org shows its full directory, summary-only orgs show counts with an honest "loads on impersonation" note.
 - [x] `/admin/plans`: tiers + per-feature AI/video/messaging/room entitlements, sourced from a `plans` table (no drift).
 - [x] **Platform subscription billing:** orgs subscribe to a Phila plan and **pay Phila** through Phila's own PSP — invoices, trial, upgrade/downgrade, dunning. (This is distinct from an org's *own* gateway in 5.5, which is how the org's clients pay the org.)
 

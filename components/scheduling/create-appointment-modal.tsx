@@ -25,6 +25,8 @@ export interface CreateInitial {
   date?: string;
   time?: string;
   counsellorId?: string;
+  roomId?: string;
+  type?: "In person" | "Online";
 }
 
 export function CreateAppointmentModal({
@@ -45,8 +47,8 @@ export function CreateAppointmentModal({
   const [clientId, setClientId] = useState<string | null>(null);
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [counsellorId, setCounsellorId] = useState<string | null>(initial?.counsellorId ?? options.defaultCounsellorId ?? null);
-  const [type, setType] = useState("In person");
-  const [roomId, setRoomId] = useState<string | null>(null);
+  const [type, setType] = useState(initial?.type ?? "In person");
+  const [roomId, setRoomId] = useState<string | null>(initial?.roomId ?? null);
   const [date, setDate] = useState(initial?.date ?? "");
   const [time, setTime] = useState(initial?.time ?? "");
   const [durationMin, setDurationMin] = useState(60);
@@ -123,7 +125,7 @@ export function CreateAppointmentModal({
         </Row>
 
         <Row label="Where">
-          <RadioGroup options={["In person", "Online"]} value={type} onChange={(v) => { setType(v); if (v === "Online") setRoomId(null); }} />
+          <RadioGroup options={["In person", "Online"]} value={type} onChange={(v) => { setType(v as "In person" | "Online"); if (v === "Online") setRoomId(null); }} />
         </Row>
         {!isOnline && (
           <Row label="Room" error={attempted ? errors.room : undefined}>

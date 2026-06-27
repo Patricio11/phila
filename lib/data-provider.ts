@@ -189,6 +189,28 @@ export interface RoomView {
   bookings: AppointmentView[];
 }
 
+export interface RoomDayOccupancy {
+  date: string;
+  dow: number;
+  openMin: number;
+  bookedMin: number;
+  freeMin: number;
+  pct: number;
+  isToday: boolean;
+}
+
+export interface RoomDetail {
+  room: Room;
+  siteName: string;
+  businessHours: import("@/lib/mock/types").BusinessHours;
+  utilisation: { meetings: number; bookedHours: number; utilisationPct: number; busiestDay: string | null };
+  perDay: RoomDayOccupancy[];
+  freeHours: number;
+  capacityNote: string;
+  assignments: { counsellorName: string; days: number[]; start: string; end: string }[];
+  bookings: AppointmentView[];
+}
+
 export interface IntakeStatusRow {
   client: Client;
   counsellorName: string;
@@ -291,6 +313,17 @@ export interface PlanWithUsage {
   mrrCents: number;
 }
 
+export interface PlatformOrgDetail {
+  org: PlatformOrg;
+  planName: string;
+  planPriceCents: number;
+  /** The org's people (admins, counsellors, operational roles). */
+  team: TeamMemberView[];
+  clientCount: number;
+  /** Only the seeded org has a full member directory in Part A. */
+  fullyModeled: boolean;
+}
+
 /** Funder-portal view — read-only, k-anon, no client list, nothing identifiable. */
 export interface FunderGrantView {
   grant: Grant;
@@ -373,6 +406,8 @@ export interface DataProvider {
   listOrgClients(orgId: string, now: string): Promise<OrgClientRow[]>;
   listTeam(orgId: string): Promise<TeamMemberView[]>;
   getRoomsOverview(orgId: string, now: string): Promise<RoomView[]>;
+  getRoomDetail(roomId: string, now: string): Promise<RoomDetail | null>;
+  listSites(orgId: string): Promise<Site[]>;
   listIntakeStatus(orgId: string, now: string): Promise<IntakeStatusRow[]>;
   listOrgInvoices(orgId: string): Promise<Invoice[]>;
   getReporting(orgId: string, now: string, filters: ReportingFilters): Promise<ReportingResult>;
@@ -389,6 +424,7 @@ export interface DataProvider {
   // Platform (super-admin)
   getPlatformOverview(): Promise<PlatformOverview>;
   listPlatformOrgs(): Promise<PlatformOrgRow[]>;
+  getPlatformOrgDetail(orgId: string): Promise<PlatformOrgDetail | null>;
   listPlans(): Promise<PlanWithUsage[]>;
   getAiRail(): Promise<AiRailConfig>;
   listIntegrations(): Promise<IntegrationCatalogItem[]>;

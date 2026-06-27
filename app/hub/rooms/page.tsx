@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Accessibility, Building2, CircleDot, DoorOpen, Gauge, Plus, Video, Wrench } from "lucide-react";
+import { Accessibility, ArrowRight, Building2, CircleDot, DoorOpen, Gauge, Video, Wrench } from "lucide-react";
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider, type RoomView } from "@/lib/data-provider";
 import type { BusinessHours } from "@/lib/mock/types";
@@ -7,7 +8,7 @@ import { isoWeekday } from "@/lib/mock/helpers";
 import { PageHead } from "@/components/shell/page-head";
 import { Avatar } from "@/components/ui/avatar";
 import { Tag } from "@/components/ui/tag";
-import { Button } from "@/components/ui/button";
+import { CreateRoomButton } from "@/components/rooms/room-buttons";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -51,9 +52,10 @@ export default async function HubRoomsPage() {
   const provider = await getDataProvider();
   const now = new Date().toISOString();
 
-  const [rooms, org] = await Promise.all([
+  const [rooms, org, sites] = await Promise.all([
     provider.getRoomsOverview(membership.orgId, now),
     provider.getOrg(membership.orgId),
+    provider.listSites(membership.orgId),
   ]);
   if (rooms.length === 0 || !org) notFound();
 
@@ -95,13 +97,7 @@ export default async function HubRoomsPage() {
       <PageHead
         title="Rooms & resources"
         summary="Every room's weekly rhythm and how well it's used — across all your sites."
-        actions={
-          <Button asChild variant="ghost">
-            <a href="#" aria-disabled className="pointer-events-none opacity-60">
-              <Plus className="size-4" strokeWidth={2} aria-hidden /> Add room
-            </a>
-          </Button>
-        }
+        actions={<CreateRoomButton sites={sites.map((s) => ({ id: s.id, name: s.name }))} />}
       />
 
       {/* Summary band */}
@@ -142,14 +138,14 @@ function RoomCard({ rv, days }: { rv: RoomView; days: DayCell[] }) {
   const tip = insight(rv);
   return (
     <div className="overflow-hidden rounded-card border border-border bg-surface shadow-sm">
-      <div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
+      <Link href={`/hub/rooms/${room.id}`} className="flex items-center gap-2.5 border-b border-border px-4 py-3 transition-colors hover:bg-surface-hover">
         <span className="size-3 shrink-0 rounded-full" style={{ backgroundColor: room.colour }} aria-hidden />
         <div className="min-w-0 flex-1">
           <div className="text-[14.5px] font-[640] text-text">{room.name}</div>
           <div className="text-[11.5px] text-text-3">Capacity {room.capacity}</div>
         </div>
         <Tag tone={tip.tone}>{tip.label}</Tag>
-      </div>
+      </Link>
 
       <div className="space-y-4 p-4">
         {room.equipment.length > 0 && (
@@ -223,6 +219,10 @@ function RoomCard({ rv, days }: { rv: RoomView; days: DayCell[] }) {
             </ul>
           </div>
         )}
+
+        <Link href={`/hub/rooms/${room.id}`} className="inline-flex items-center gap-1 text-[12.5px] font-medium text-accent hover:underline">
+          Open room & schedule <ArrowRight className="size-3.5" strokeWidth={2.2} aria-hidden />
+        </Link>
       </div>
     </div>
   );

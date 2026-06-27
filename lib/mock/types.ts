@@ -228,6 +228,76 @@ export interface IntakeForm {
   fields: IntakeField[];
 }
 
+/* ---- Funders & grants (M&E) ------------------------------------------ */
+
+export interface Funder {
+  id: string;
+  orgId: string;
+  name: string;
+  type: import("@/lib/domain/enums").FunderType;
+  contactName: string;
+  contactEmail: string;
+}
+
+export type ReportingSchedule = "monthly" | "quarterly" | "biannual" | "annual";
+
+export interface Grant {
+  id: string;
+  funderId: string;
+  orgId: string;
+  title: string;
+  periodStart: ISODate;
+  periodEnd: ISODate;
+  amountCents: number;
+  restricted: boolean;
+  reportingSchedule: ReportingSchedule;
+  status: import("@/lib/domain/enums").GrantStatus;
+}
+
+/**
+ * An indicator's `metric` is the computation key the engine knows how to derive
+ * from the clinical work — the actual is never typed by hand (the logframe).
+ */
+export type IndicatorMetric =
+  | "unique_clients"
+  | "sessions_delivered"
+  | "pct_female"
+  | "pct_employed"
+  | "pct_youth"
+  | "phq9_improved_5";
+
+export interface GrantIndicator {
+  id: string;
+  grantId: string;
+  name: string;
+  type: import("@/lib/domain/enums").IndicatorType;
+  metric: IndicatorMetric;
+  target: number;
+  unit: string; // "clients", "%", "sessions"
+  rule: string; // human-readable computation rule
+}
+
+/** Clients tagged as served under a grant (a client may map to several). */
+export interface GrantAllocation {
+  grantId: string;
+  clientId: string;
+}
+
+export interface GrantNarrative {
+  id: string;
+  grantId: string;
+  author: string;
+  body: string;
+  postedAt: ISODateTime;
+}
+
+/** Scopes a funder user to specific grant(s) — read-only (Phase 9 real flow). */
+export interface FunderContact {
+  userId: string;
+  funderId: string;
+  grantIds: string[];
+}
+
 /** Versioned, purpose-bound consent (Consent-Before-Capture Rule). */
 export interface ConsentRecord {
   clientId: string;

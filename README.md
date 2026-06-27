@@ -34,6 +34,9 @@ change**. See `ROADMAP.md`.
   team & roles (honest reach), rooms (weekly occupancy rhythm + insights), clients, intake, invoicing,
   the consent-gated **k-anon reporting** + one-click funder report, and settings (dormant integrations +
   BYO payment connection + public-page editor).
+- ✅ **Phase 5.5 — Funder & grant module + funder portal.** The grant-indicator engine (actuals
+  auto-computed from the clinical work, paced vs the period, on-track/at-risk/behind), narrative updates,
+  and a scoped, k-anon, read-only **funder portal** (`/funder`) — a funder reaches only their own grant.
 
 ## Getting started
 

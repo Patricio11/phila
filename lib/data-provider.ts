@@ -15,6 +15,10 @@ import type {
   ConsentRecord,
   Counsellor,
   Demographics,
+  Funder,
+  Grant,
+  GrantIndicator,
+  GrantNarrative,
   IntakeForm,
   Invoice,
   Org,
@@ -191,6 +195,56 @@ export interface OrgSettings {
   paymentStatus: "off" | "connected" | "test_passed";
 }
 
+/* ---- Funders & grants (M&E) ------------------------------------------ */
+
+export type IndicatorStatus = "on_track" | "at_risk" | "behind";
+
+export interface IndicatorActual {
+  indicator: GrantIndicator;
+  actual: number;
+  /** For count metrics: the target value expected by now, given period pacing. */
+  expected: number | null;
+  status: IndicatorStatus;
+}
+
+export interface GrantBreakdowns {
+  byGender: Breakdown[];
+  byAgeBand: Breakdown[];
+  byProvince: Breakdown[];
+}
+
+/** Hub view of a grant (the org sees aggregate figures + can manage). */
+export interface GrantView {
+  grant: Grant;
+  funder: Funder;
+  indicators: IndicatorActual[];
+  allocatedCount: number;
+  withDemographics: number;
+  periodElapsedPct: number;
+  breakdowns: GrantBreakdowns;
+  outcome: { points: OutcomePoint[]; coverage: { captured: number; total: number } };
+  narratives: GrantNarrative[];
+}
+
+export interface GrantSummary {
+  grant: Grant;
+  funder: Funder;
+  indicatorCount: number;
+  allocatedCount: number;
+}
+
+/** Funder-portal view — read-only, k-anon, no client list, nothing identifiable. */
+export interface FunderGrantView {
+  grant: Grant;
+  funderName: string;
+  orgName: string;
+  indicators: IndicatorActual[];
+  periodElapsedPct: number;
+  breakdowns: GrantBreakdowns;
+  outcome: { points: OutcomePoint[]; coverage: { captured: number; total: number } };
+  narratives: GrantNarrative[];
+}
+
 /** The composed payload for the counsellor's Today dashboard. */
 export interface CounsellorDashboard {
   org: Org;
@@ -262,6 +316,14 @@ export interface DataProvider {
   listOrgInvoices(orgId: string): Promise<Invoice[]>;
   getReporting(orgId: string, now: string, filters: ReportingFilters): Promise<ReportingResult>;
   getOrgSettings(orgId: string): Promise<OrgSettings | null>;
+
+  // Funders & grants (M&E)
+  listFunders(orgId: string): Promise<Funder[]>;
+  listGrants(orgId: string): Promise<GrantSummary[]>;
+  getGrantView(grantId: string, now: string): Promise<GrantView | null>;
+  /** Funder portal: the grants a funder user is scoped to (read-only). */
+  listFunderGrants(funderUserId: string): Promise<{ grant: Grant; funderName: string; orgName: string }[]>;
+  getFunderGrantView(funderUserId: string, grantId: string, now: string): Promise<FunderGrantView | null>;
 }
 
 let provider: DataProvider | null = null;

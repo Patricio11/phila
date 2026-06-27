@@ -92,6 +92,25 @@ export async function getOrgAdminPrincipal(): Promise<Principal> {
   return MOCK_ORG_ADMIN;
 }
 
+/**
+ * Part-A demo funder: Palesa Mokoena (DSD), scoped to one grant — external,
+ * read-only, sees only aggregate k-anon figures. Phase 9 resolves the real
+ * funder session + grant scope from the invite.
+ */
+const MOCK_FUNDER: Principal = {
+  userId: "user_funder",
+  name: "Palesa Mokoena",
+  email: "palesa.mokoena@dsd.example.gov.za",
+  platformRole: "funder",
+  memberships: [],
+  activeOrgId: null,
+  twoFactorEnabled: false,
+};
+
+export async function getFunderPrincipal(): Promise<Principal> {
+  return MOCK_FUNDER;
+}
+
 export function activeMembership(principal: Principal): OrgMembership | null {
   return (
     principal.memberships.find((m) => m.orgId === principal.activeOrgId) ?? null

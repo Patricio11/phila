@@ -13,7 +13,13 @@ import type {
   CaseloadStatus,
   CounsellorDashboard,
   DataProvider,
+  FunderGrantView,
+  GrantBreakdowns,
+  GrantSummary,
+  GrantView,
   HubOverview,
+  IndicatorActual,
+  IndicatorStatus,
   IntakeStatusRow,
   OrgClientRow,
   OutcomePoint,
@@ -26,6 +32,8 @@ import type {
   Client,
   Counsellor,
   Demographics,
+  Grant,
+  GrantIndicator,
   Invoice,
   Org,
   OutcomeMeasure,
@@ -43,6 +51,12 @@ import {
   counsellorDayTemplates,
   counsellors as allCounsellors,
   demographics as allDemographics,
+  funderContacts,
+  funders,
+  grantAllocations,
+  grantIndicators,
+  grantNarratives,
+  grants,
   intakeForms,
   invoices as allInvoices,
   orgExtraInvoices,
@@ -703,7 +717,193 @@ export const mockProvider: DataProvider = {
     // Dormant by default — no gateway connected until an admin configures one.
     return ok({ org, paymentProvider: null, paymentStatus: "off" as const });
   },
+
+  // ---- Funders & grants (M&E) -----------------------------------------
+  listFunders: (orgId) => ok(funders.filter((f) => f.orgId === orgId)),
+
+  listGrants: (orgId): Promise<GrantSummary[]> =>
+    ok(
+      grants
+        .filter((g) => g.orgId === orgId)
+        .map((grant) => ({
+          grant,
+          funder: funders.find((f) => f.id === grant.funderId)!,
+          indicatorCount: grantIndicators.filter((i) => i.grantId === grant.id).length,
+          allocatedCount: allocatedClientsFor(grant.id).length,
+        })),
+    ),
+
+  getGrantView: (grantId, now): Promise<GrantView | null> => {
+    const grant = grants.find((g) => g.id === grantId);
+    if (!grant) return ok(null);
+    const funder = funders.find((f) => f.id === grant.funderId);
+    if (!funder) return ok(null);
+    const clients = allocatedClientsFor(grant.id);
+    const consented = clients.filter((c) => consentActiveFor(c.id, "demographics"));
+    return ok({
+      grant,
+      funder,
+      indicators: grantIndicators.filter((i) => i.grantId === grant.id).map((i) => computeIndicator(i, grant, now)),
+      allocatedCount: clients.length,
+      withDemographics: consented.length,
+      periodElapsedPct: Math.round(periodElapsed(grant, now) * 100),
+      breakdowns: grantBreakdowns(grant.id),
+      outcome: grantOutcome(grant.id, now),
+      narratives: grantNarratives.filter((n) => n.grantId === grant.id).sort((a, b) => b.postedAt.localeCompare(a.postedAt)),
+    });
+  },
+
+  listFunderGrants: (funderUserId) => {
+    const scoped = funderContacts.filter((fc) => fc.userId === funderUserId);
+    const grantIds = new Set(scoped.flatMap((fc) => fc.grantIds));
+    return ok(
+      grants
+        .filter((g) => grantIds.has(g.id))
+        .map((grant) => ({
+          grant,
+          funderName: funders.find((f) => f.id === grant.funderId)?.name ?? "",
+          orgName: orgs.find((o) => o.id === grant.orgId)?.name ?? "",
+        })),
+    );
+  },
+
+  getFunderGrantView: (funderUserId, grantId, now): Promise<FunderGrantView | null> => {
+    // Scope check — a funder reaches ONLY their grant(s) (requireFunderGrant).
+    const scoped = funderContacts.some((fc) => fc.userId === funderUserId && fc.grantIds.includes(grantId));
+    if (!scoped) return ok(null);
+    const grant = grants.find((g) => g.id === grantId);
+    if (!grant) return ok(null);
+    const funder = funders.find((f) => f.id === grant.funderId);
+    return ok({
+      grant,
+      funderName: funder?.name ?? "",
+      orgName: orgs.find((o) => o.id === grant.orgId)?.name ?? "",
+      indicators: grantIndicators.filter((i) => i.grantId === grant.id).map((i) => computeIndicator(i, grant, now)),
+      periodElapsedPct: Math.round(periodElapsed(grant, now) * 100),
+      breakdowns: grantBreakdowns(grant.id),
+      outcome: grantOutcome(grant.id, now),
+      narratives: grantNarratives.filter((n) => n.grantId === grant.id).sort((a, b) => b.postedAt.localeCompare(a.postedAt)),
+    });
+  },
 };
+
+/* ---- The grant-indicator engine (actuals auto-computed, never typed) -- */
+
+function allocatedClientsFor(grantId: string): Client[] {
+  const ids = new Set(grantAllocations.filter((a) => a.grantId === grantId).map((a) => a.clientId));
+  return liveOnly(allClients.filter((c) => ids.has(c.id)));
+}
+
+function periodElapsed(grant: Grant, nowISO: string): number {
+  const start = new Date(`${grant.periodStart}T00:00:00Z`).getTime();
+  const end = new Date(`${grant.periodEnd}T23:59:59Z`).getTime();
+  const t = new Date(nowISO).getTime();
+  if (t <= start || end <= start) return 0;
+  if (t >= end) return 1;
+  return (t - start) / (end - start);
+}
+
+function pct(n: number, d: number): number {
+  return d === 0 ? 0 : Math.round((n / d) * 100);
+}
+
+function consentedDemosFor(clients: Client[]): Demographics[] {
+  return clients
+    .filter((c) => consentActiveFor(c.id, "demographics"))
+    .map((c) => allDemographics.find((d) => d.clientId === c.id))
+    .filter((d): d is Demographics => Boolean(d));
+}
+
+function computeIndicator(ind: GrantIndicator, grant: Grant, now: string): IndicatorActual {
+  const clients = allocatedClientsFor(grant.id);
+  const demos = consentedDemosFor(clients);
+  let actual = 0;
+
+  switch (ind.metric) {
+    case "unique_clients":
+      actual = clients.length;
+      break;
+    case "sessions_delivered":
+      actual = clients.reduce(
+        (s, c) =>
+          s +
+          clientAppointments(c.id, now).filter((a) => {
+            const d = a.startsAt.slice(0, 10);
+            return (
+              ["completed", "discharged"].includes(a.state) && d >= grant.periodStart && d <= grant.periodEnd
+            );
+          }).length,
+        0,
+      );
+      break;
+    case "pct_female":
+      actual = pct(demos.filter((d) => d.gender === "female").length, demos.length);
+      break;
+    case "pct_employed":
+      actual = pct(demos.filter((d) => d.employmentStatus === "employed").length, demos.length);
+      break;
+    case "pct_youth":
+      actual = pct(demos.filter((d) => ["under_18", "18_24"].includes(d.ageBand)).length, demos.length);
+      break;
+    case "phq9_improved_5": {
+      const series = clients
+        .map((c) => (clientOutcomes[c.id] ?? []).filter((o) => o.tool === "PHQ-9"))
+        .filter((arr) => arr.length >= 2);
+      const improved = series.filter((arr) => {
+        const byOldest = [...arr].sort((a, b) => b.weeksAgo - a.weeksAgo);
+        const first = byOldest[0]!.score;
+        const last = byOldest[byOldest.length - 1]!.score;
+        return first - last >= 5;
+      });
+      actual = pct(improved.length, series.length);
+      break;
+    }
+  }
+
+  const isCount = ind.type === "count";
+  const elapsed = periodElapsed(grant, now);
+  const expected = isCount ? Math.round(ind.target * elapsed) : null;
+  const ratio = isCount
+    ? expected && expected > 0
+      ? actual / expected
+      : actual >= ind.target
+        ? 1
+        : 0
+    : ind.target > 0
+      ? actual / ind.target
+      : 1;
+  const status: IndicatorStatus = ratio >= 0.9 ? "on_track" : ratio >= 0.7 ? "at_risk" : "behind";
+  return { indicator: ind, actual, expected, status };
+}
+
+function grantBreakdowns(grantId: string): GrantBreakdowns {
+  const demos = consentedDemosFor(allocatedClientsFor(grantId));
+  return {
+    byGender: toBreakdown(countBy(demos, (d) => GENDER_LABELS[d.gender])),
+    byAgeBand: toBreakdown(countBy(demos, (d) => AGE_BAND_LABELS[d.ageBand])),
+    byProvince: toBreakdown(countBy(demos, (d) => d.province)),
+  };
+}
+
+function grantOutcome(grantId: string, now: string): { points: OutcomePoint[]; coverage: { captured: number; total: number } } {
+  const clients = allocatedClientsFor(grantId);
+  const buckets = new Map<number, number[]>();
+  for (const c of clients) {
+    if (!consentActiveFor(c.id, "demographics")) continue;
+    for (const o of clientOutcomes[c.id] ?? []) {
+      if (o.tool !== "PHQ-9") continue;
+      const arr = buckets.get(o.weeksAgo) ?? [];
+      arr.push(o.score);
+      buckets.set(o.weeksAgo, arr);
+    }
+  }
+  void now;
+  const points: OutcomePoint[] = [...buckets.entries()]
+    .sort((a, b) => b[0] - a[0])
+    .map(([w, scores]) => ({ label: w === 0 ? "now" : `${w}w`, value: Math.round(scores.reduce((s, x) => s + x, 0) / scores.length) }));
+  const measured = clients.filter((c) => (clientOutcomes[c.id]?.length ?? 0) > 0).length;
+  return { points, coverage: { captured: measured, total: clients.length } };
+}
 
 function filterRange(appts: Appointment[], opts?: { from?: string; to?: string }): Appointment[] {
   if (!opts?.from && !opts?.to) return appts;

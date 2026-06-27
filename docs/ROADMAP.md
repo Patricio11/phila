@@ -216,7 +216,7 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 
 ---
 
-## 🤝 PHASE 5.5: THE FUNDER & GRANT MODULE + FUNDER PORTAL
+## 🤝 PHASE 5.5: THE FUNDER & GRANT MODULE + FUNDER PORTAL ✅ (2026-06-27)
 *Goal: turn "the report writes itself" into a real surface — grants with targets, clinical work that
 auto-rolls up to them, and a scoped, k-anon, read-only **funder portal**. The growth-loop differentiator.*
 > This is the feature no incumbent in the niche has. Every funder-facing figure is **aggregate,
@@ -225,24 +225,24 @@ auto-rolls up to them, and a scoped, k-anon, read-only **funder portal**. The gr
 > grant(s) only.** Mock data here; wired in Phase 16.
 
 ### Task 5.5.1: Funders & grants (Hub) — `/hub/funders`, `/hub/grants`
-- [ ] Funder CRUD (name, type: `government` / `lottery` / `corporate_csi` / `foundation` / `international`, contacts).
-- [ ] Grant CRUD: funder, title, **period** (start/end), amount + currency, restricted/unrestricted, **reporting schedule** (e.g. quarterly), status.
+- [x] Funder CRUD (name, type: `government` / `lottery` / `corporate_csi` / `foundation` / `international`, contacts).
+- [x] Grant CRUD: funder, title, **period** (start/end), amount + currency, restricted/unrestricted, **reporting schedule** (e.g. quarterly), status.
 
 ### Task 5.5.2: Indicators & targets (the logframe)
-- [ ] Per grant, define **indicators with targets** — `count` (e.g. "300 unique clients"), `percentage` (e.g. "60% female"), `outcome_delta` (e.g. "70% improve ≥5 on PHQ-9"), `demographic_proportion`. Each indicator carries a **computation rule** so its actual is derived from the clinical work, not typed.
+- [x] Per grant, define **indicators with targets** — `count` (e.g. "300 unique clients"), `percentage` (e.g. "60% female"), `outcome_delta` (e.g. "70% improve ≥5 on PHQ-9"), `demographic_proportion`. Each indicator carries a **computation rule** so its actual is derived from the clinical work, not typed.
 
 ### Task 5.5.3: Allocate clinical work to grants
-- [ ] Tag clients / programmes / services to a grant (`grant_allocations`) — "served under Grant X." This is what makes actuals auto-compute. A client can map to more than one grant (with honest de-duplication on counts).
+- [x] Tag clients / programmes / services to a grant (`grant_allocations`) — "served under Grant X." This is what makes actuals auto-compute. A client can map to more than one grant (with honest de-duplication on counts).
 
 ### Task 5.5.4: Live indicators-vs-targets dashboard + narrative + report builder
-- [ ] Per-grant dashboard: each indicator as `<IndicatorMeter>` (actual vs target, **on-track / at-risk / behind**), demographic breakdowns, outcome trends, session counts — all **k-anon** with honest coverage captions.
-- [ ] Post **narrative updates** the funder will see; a **report builder** that maps indicators → the funder's required template; one-click period export (PDF/CSV/template). **Report-due reminders** against the schedule.
+- [x] Per-grant dashboard: each indicator as `<IndicatorMeter>` (actual vs target, **on-track / at-risk / behind**), demographic breakdowns, outcome trends, session counts — all **k-anon** with honest coverage captions.
+- [x] Post **narrative updates** the funder will see; a **report builder** that maps indicators → the funder's required template; one-click period export (PDF/CSV/template). **Report-due reminders** against the schedule.
 
 ### Task 5.5.5: The Funder portal — `/funder` (role `funder`)
-- [ ] `<FunderPortalShell>`: a funder logs in and sees **only their grant(s)** — live progress vs target, k-anon breakdowns, outcome trends, session counts, the org's narrative updates, and downloadable period reports. Read-only. Nothing identifiable. Every view audited. The org controls exactly what each funder sees.
+- [x] `<FunderPortalShell>`: a funder logs in and sees **only their grant(s)** — live progress vs target, k-anon breakdowns, outcome trends, session counts, the org's narrative updates, and downloadable period reports. Read-only. Nothing identifiable. Every view audited. The org controls exactly what each funder sees.
 
 ### Task 5.5.6: Invite a funder (mock)
-- [ ] Org invites a funder contact (email); scoped to specific grant(s); the invite + scope is mock here (real flow in Phase 9).
+- [x] Org invites a funder contact (email); scoped to specific grant(s); the invite + scope is mock here (real flow in Phase 9).
 
 **Done when (mock):** an org defines a grant with targets, tags clients to it, watches actuals roll up live, posts a narrative update, exports a funder report, and a funder logs into `/funder` to see only their grant — all k-anon, nothing identifiable.
 

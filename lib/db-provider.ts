@@ -45,4 +45,9 @@ export const dbProvider: DataProvider = {
   listOrgInvoices: notYet,
   getReporting: notYet,
   getOrgSettings: notYet,
+  listFunders: notYet,
+  listGrants: notYet,
+  getGrantView: notYet,
+  listFunderGrants: notYet,
+  getFunderGrantView: notYet,
 };

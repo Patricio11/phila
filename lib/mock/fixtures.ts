@@ -299,6 +299,50 @@ export const invoices: Record<string, import("@/lib/mock/types").Invoice[]> = {
   ],
 };
 
+/* ---- Funders & grants (M&E) ------------------------------------------ */
+
+export const funders: import("@/lib/mock/types").Funder[] = [
+  { id: "f_dsd", orgId: ORG_ID, name: "Department of Social Development", type: "government", contactName: "Palesa Mokoena", contactEmail: "palesa.mokoena@dsd.example.gov.za" },
+  { id: "f_lotto", orgId: ORG_ID, name: "National Lotteries Commission", type: "lottery", contactName: "Sibusiso Dube", contactEmail: "grants@nlc.example.org.za" },
+  { id: "f_csi", orgId: ORG_ID, name: "Standard Bank CSI", type: "corporate_csi", contactName: "Megan Reddy", contactEmail: "csi@standardbank.example.co.za" },
+];
+
+export const grants: import("@/lib/mock/types").Grant[] = [
+  { id: "g_dsd", funderId: "f_dsd", orgId: ORG_ID, title: "Community Wellness Programme", periodStart: "2026-04-01", periodEnd: "2027-03-31", amountCents: 85000000, restricted: true, reportingSchedule: "quarterly", status: "active" },
+  { id: "g_lotto", funderId: "f_lotto", orgId: ORG_ID, title: "Youth Mental Health", periodStart: "2026-01-01", periodEnd: "2026-12-31", amountCents: 120000000, restricted: true, reportingSchedule: "biannual", status: "active" },
+];
+
+export const grantIndicators: import("@/lib/mock/types").GrantIndicator[] = [
+  { id: "i_dsd_1", grantId: "g_dsd", name: "Unique clients reached", type: "count", metric: "unique_clients", target: 30, unit: "clients", rule: "Distinct clients tagged to this grant." },
+  { id: "i_dsd_2", grantId: "g_dsd", name: "Female participants", type: "percentage", metric: "pct_female", target: 60, unit: "%", rule: "Share of consented participants who are female." },
+  { id: "i_dsd_3", grantId: "g_dsd", name: "Improved ≥5 on PHQ-9", type: "outcome_delta", metric: "phq9_improved_5", target: 70, unit: "%", rule: "Share with a ≥5-point PHQ-9 drop, first to latest." },
+  { id: "i_dsd_4", grantId: "g_dsd", name: "Sessions delivered", type: "count", metric: "sessions_delivered", target: 200, unit: "sessions", rule: "Completed sessions for tagged clients in the period." },
+  { id: "i_lotto_1", grantId: "g_lotto", name: "Young people reached", type: "count", metric: "unique_clients", target: 20, unit: "clients", rule: "Distinct clients tagged to this grant." },
+  { id: "i_lotto_2", grantId: "g_lotto", name: "Under-25 participants", type: "demographic_proportion", metric: "pct_youth", target: 50, unit: "%", rule: "Share of consented participants aged under 25." },
+  { id: "i_lotto_3", grantId: "g_lotto", name: "Sessions delivered", type: "count", metric: "sessions_delivered", target: 120, unit: "sessions", rule: "Completed sessions for tagged clients in the period." },
+];
+
+export const grantAllocations: import("@/lib/mock/types").GrantAllocation[] = [
+  { grantId: "g_dsd", clientId: "cl_lerato" },
+  { grantId: "g_dsd", clientId: "cl_sipho" },
+  { grantId: "g_dsd", clientId: "cl_fatima" },
+  { grantId: "g_dsd", clientId: "cl_johan" },
+  { grantId: "g_dsd", clientId: "cl_zanele" },
+  { grantId: "g_dsd", clientId: "cl_naledi" },
+  { grantId: "g_lotto", clientId: "cl_zanele" },
+  { grantId: "g_lotto", clientId: "cl_naledi" },
+  { grantId: "g_lotto", clientId: "cl_kabelo" },
+];
+
+export const grantNarratives: import("@/lib/mock/types").GrantNarrative[] = [
+  { id: "n1", grantId: "g_dsd", author: "Thandeka Mbeki", body: "Q1 is off to a steady start. We've onboarded six clients into the programme and held the first round of assessments. Early PHQ-9 movement is encouraging, especially for clients balancing work and caregiving. We're focusing outreach on reaching more participants in the coming weeks.", postedAt: "2026-06-20T14:00:00+02:00" },
+];
+
+/** Funder users scoped to their grant(s) — read-only (Phase 9 real invite flow). */
+export const funderContacts: import("@/lib/mock/types").FunderContact[] = [
+  { userId: "user_funder", funderId: "f_dsd", grantIds: ["g_dsd"] },
+];
+
 /** A counsellor's aggregate PHQ-9 trajectory (lower is better). */
 export const outcomeSeries: Record<string, { label: string; value: number }[]> = {
   couns_nomsa: [

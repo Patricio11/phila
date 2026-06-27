@@ -7,6 +7,7 @@ import {
   CreditCard,
   DoorOpen,
   FileText,
+  HandCoins,
   House,
   LayoutDashboard,
   MessagesSquare,
@@ -15,6 +16,7 @@ import {
   ReceiptText,
   Settings,
   ShieldCheck,
+  Target,
   UserCog,
   Users,
 } from "lucide-react";
@@ -43,7 +45,7 @@ export interface NavSection {
  * the server→client boundary. So a Server Component never passes a config across
  * — it passes a `NavKey`, and the client shell resolves the config here.
  */
-export type NavKey = "counsellor" | "client" | "hub";
+export type NavKey = "counsellor" | "client" | "hub" | "funder";
 
 /** Counsellor workspace nav. Dashboard is the Phase-0 reference build. */
 export const counsellorNav: NavSection[] = [
@@ -90,7 +92,8 @@ export const hubNav: NavSection[] = [
       { label: "Overview", href: "/hub", icon: LayoutDashboard, ready: true },
       { label: "Calendars", href: "/hub/calendars", icon: CalendarDays, ready: true },
       { label: "Clients", href: "/hub/clients", icon: Contact, ready: true },
-      { label: "Reports & funders", href: "/hub/reporting", icon: PieChart, ready: true },
+      { label: "Reporting", href: "/hub/reporting", icon: PieChart, ready: true },
+      { label: "Funders & grants", href: "/hub/funders", icon: HandCoins, ready: true },
     ],
   },
   {
@@ -105,8 +108,17 @@ export const hubNav: NavSection[] = [
   },
 ];
 
+/** Funder portal nav — pared back; only their grant(s), read-only (DESIGN.md §5.4). */
+export const funderNav: NavSection[] = [
+  {
+    label: "Your grants",
+    items: [{ label: "My grants", href: "/funder", icon: Target, ready: true }],
+  },
+];
+
 export const NAVS: Record<NavKey, NavSection[]> = {
   counsellor: counsellorNav,
   client: clientNav,
   hub: hubNav,
+  funder: funderNav,
 };

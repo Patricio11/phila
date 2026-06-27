@@ -111,7 +111,15 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
   funder report, audited), `/hub/settings` (integrations **dormant by default** + **BYO PaymentConnectionCard**
   + public-page editor). New: `FilterMenu`, `components/hub/*`, 8 seam methods + reporting actions.
   `build`/`typecheck`/`lint` clean; 26 routes. See `docs/completed/PHASE_5_COMPLETE.md`.
-- **Phase 5.5** (funder & grant module + funder portal `/funder`) — ⏳ next.
+- **Phase 5.5** (funder & grant module + funder portal) — ✅ **2026-06-27**. `/hub/funders` (grant cards),
+  `/hub/grants/[id]` (the **grant-indicator engine** live: `IndicatorMeter` actual-vs-target, **paced**
+  count indicators, on-track/at-risk/behind, k-anon breakdowns, outcome trend, `NarrativeComposer`,
+  one-click PDF/CSV export — audited). Funder portal `/funder` + `/funder/grants/[id]` (read-only,
+  "aggregate, anonymised" banner, **scoped at the seam** — a funder 404s on any grant they're not scoped
+  to; verified). New: `requireFunder` + demo funder principal, `components/funder/*`, 5 seam methods.
+  All five Part-A roles now demoable. `build`/`typecheck`/`lint` clean; 30 routes. See
+  `docs/completed/PHASE_5.5_COMPLETE.md`.
+- **Phase 6** (super-admin console `/admin`: orgs, plans & billing, AI rail, integrations, audit) — ⏳ next.
 - *(Update this block as phases ship. Part A is mock-first: nothing below Phase 9 touches a real DB.)*
 
 ---

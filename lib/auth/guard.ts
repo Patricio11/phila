@@ -5,6 +5,7 @@ import {
   activeMembership,
   getClientPrincipal,
   getCurrentPrincipal,
+  getFunderPrincipal,
   getOrgAdminPrincipal,
   type OrgMembership,
   type Principal,
@@ -109,13 +110,14 @@ export async function requireOrgFeature(feature: OrgFeature): Promise<void> {
 }
 
 /**
- * Scope a funder to their grant(s) only — read-only, aggregate, audited
- * (Phase 9 wires the real grant edges). Present now so funder surfaces can be
- * coded against it.
+ * Resolve the external **funder** principal — read-only, scoped to their
+ * grant(s), every view audited. Part A returns the demo funder; the actual
+ * grant-scope check lives in the provider's funder methods (they return null for
+ * any grant the funder isn't scoped to), so a funder can never reach another
+ * grant or anything identifiable (Rule #10).
  */
-export async function requireFunderGrant(grantId: string): Promise<Principal> {
-  const principal = await requirePlatformRole("funder");
-  // Part A: scope resolution is mocked; Phase 9 checks funder_contacts ↔ grant.
-  void grantId;
+export async function requireFunder(): Promise<Principal> {
+  const principal = await getFunderPrincipal();
+  if (principal.platformRole !== "funder") throw new ForbiddenError("Requires a funder account");
   return principal;
 }

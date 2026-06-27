@@ -178,6 +178,10 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 
 ### Task 4.4: Supervision (if `supervisor`)
 - [x] `/app/supervision`: queue of supervisee notes to review + sign-off; provenance is honest.
+- [x] **Counsellor side trimmed (2026-06-28):** **Billing** and **Reports** removed from the counsellor workspace (they're Hub/admin concerns), and **Supervision** removed from the counsellor nav at the product owner's direction — the supervisor's clinical sign-off lives in note access + the Hub's full oversight. Nav is now Dashboard · Calendar · Clients · Sessions · Messages · Rooms. The clinical-supervision *capability* (a supervisor reading a supervisee's note) is unchanged in the access model.
+
+### Task 4.6: Counsellor account & settings
+- [x] **Account settings (2026-06-28):** `/app/settings` is a real account area — **edit your own profile** (name, phone, **date of birth**, **home address**, languages, bio; email + credential read-only, managed by the practice), a **Security** card (**two-factor** + **change password**), and **Preferences** (theme, notification channels). Personal actions (`changePassword` / `setTwoFactor` / `saveMyProfile`) moved to a shared `lib/account/actions` and reused by both the counsellor and the Hub.
 
 ### Task 4.5: Messages — internal team communication
 - [x] **Internal team messaging (2026-06-28):** `/app/messages` (counsellor) and `/hub/messages` (hub) are a two-pane chat for **staff-to-staff** communication — hub ↔ counsellor and counsellor ↔ counsellor (supervision, handovers, scheduling). Optimistic send wired to an audited `sendTeamMessage`; thread search; start a new conversation with any active colleague; day separators, unread badges, mobile back-stack. **This is internal/private to the practice** — client notices (booking, reminder, reschedule/cancel) go out over **SMS/WhatsApp**, configured BYO in Settings → Messaging channels and fired on booking events (Phase 12). Provider: `listTeamThreads(userId)` over a `teamThreads` fixture; the old client-chat view was replaced.

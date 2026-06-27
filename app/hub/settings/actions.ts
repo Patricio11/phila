@@ -65,46 +65,6 @@ export async function saveOrgProfile(
   return { ok: true };
 }
 
-const passwordInput = z.object({
-  current: z.string().min(1, "Enter your current password."),
-  next: z.string().min(8, "Use at least 8 characters.").max(200),
-  confirm: z.string().min(1),
-});
-
-/** Change password (mock). Never logs the password itself — only that it changed. */
-export async function changePassword(
-  raw: z.infer<typeof passwordInput>,
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { principal, membership } = await requireHub();
-  const parsed = passwordInput.safeParse(raw);
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the form." };
-  if (parsed.data.next !== parsed.data.confirm) return { ok: false, error: "The new passwords don't match." };
-  if (parsed.data.next === parsed.data.current) return { ok: false, error: "Choose a password different from your current one." };
-  await logAccess({
-    action: "admin.action",
-    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
-    orgId: membership.orgId,
-    target: `user:${principal.userId}/password`,
-    reason: "change_password",
-  });
-  return { ok: true };
-}
-
-/** Enable / disable two-factor authentication (mock; Phase 9 wires TOTP). */
-export async function setTwoFactor(
-  raw: { enabled: boolean },
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { principal, membership } = await requireHub();
-  await logAccess({
-    action: "admin.action",
-    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
-    orgId: membership.orgId,
-    target: `user:${principal.userId}/2fa`,
-    reason: raw.enabled ? "enable_2fa" : "disable_2fa",
-  });
-  return { ok: true };
-}
-
 const channelInput = z.object({
   channel: z.enum(["whatsapp", "sms", "email"]),
   provider: z.string().min(1, "Pick a provider."),

@@ -17,7 +17,7 @@ const INITIAL: Pref[] = [
   { key: "email", label: "Email notifications", description: "New bookings, cancellations, and reminders by email.", on: true },
   { key: "whatsapp", label: "WhatsApp notifications", description: "The same, on WhatsApp (when your org has it on).", on: true },
   { key: "daily", label: "Daily summary", description: "A morning email with your day's schedule.", on: false },
-  { key: "supervision", label: "Supervision alerts", description: "When a supervisee submits a note for sign-off.", on: true },
+  { key: "team", label: "Team message alerts", description: "When a colleague or the hub messages you.", on: true },
 ];
 
 export function Preferences() {

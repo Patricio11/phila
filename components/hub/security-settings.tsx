@@ -5,7 +5,7 @@ import { KeyRound, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
-import { changePassword, setTwoFactor } from "@/app/hub/settings/actions";
+import { changePassword, setTwoFactor } from "@/lib/account/actions";
 import { cn } from "@/lib/utils";
 
 function Toggle({ on, onClick, disabled }: { on: boolean; onClick: () => void; disabled?: boolean }) {

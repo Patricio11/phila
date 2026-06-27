@@ -3,8 +3,8 @@ import { requireOrg } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { PageHead } from "@/components/shell/page-head";
 import { Card, CardHead } from "@/components/ui/card";
-import { Avatar } from "@/components/ui/avatar";
-import { CredentialChip } from "@/components/ui/credential-chip";
+import { MyProfileForm, type MyProfile } from "@/components/settings/my-profile-form";
+import { SecuritySettings } from "@/components/hub/security-settings";
 import { Preferences } from "@/components/settings/preferences";
 
 export const dynamic = "force-dynamic";
@@ -13,32 +13,46 @@ export const metadata = { title: "Settings" };
 export default async function CounsellorSettingsPage() {
   const { principal, membership } = await requireOrg(["counsellor"]);
   const provider = await getDataProvider();
-  const counsellors = await provider.listCounsellors(membership.orgId);
-  const me = counsellors.find((c) => c.userId === principal.userId);
-  if (!me) notFound();
+  const now = new Date().toISOString();
+  const detail = await provider.getTeamMemberDetail(membership.orgId, principal.userId, now);
+  if (!detail) notFound();
+
+  const p = detail.profile;
+  const profile: MyProfile = {
+    name: detail.member.name,
+    email: detail.member.email,
+    phone: p?.phone ?? "",
+    dateOfBirth: p?.dateOfBirth ?? "",
+    address: p?.address ?? "",
+    languages: p?.languages.join(", ") ?? "",
+    bio: p?.bio ?? "",
+  };
 
   return (
     <div className="rise space-y-6">
-      <PageHead title="Settings" summary="Your profile and preferences." />
+      <PageHead title="Settings" summary="Your profile, security, and preferences." />
 
-      <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
+      <Card>
+        <CardHead title="Your profile" />
+        <div className="px-[17px] pb-[17px]">
+          <MyProfileForm initial={profile} credential={detail.member.credential} registrationNo={detail.registrationNo} />
+        </div>
+      </Card>
+
+      <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHead title="Profile" />
-          <div className="flex flex-col items-center px-[17px] pb-[17px] text-center">
-            <Avatar name={me.name} size="lg" verified={me.credential.status === "verified"} />
-            <div className="mt-3 text-[15px] font-[640] text-text">{me.name}</div>
-            <div className="text-[12.5px] text-text-3">{principal.email}</div>
-            <div className="mt-2.5">
-              <CredentialChip body={me.credential.body} status={me.credential.status} />
-            </div>
-            {me.credential.registrationNo && (
-              <div className="mt-2 text-[11.5px] text-text-3">Reg. {me.credential.registrationNo}</div>
-            )}
-            {membership.isSupervisor && <div className="mt-1 text-[11.5px] text-accent">Supervisor</div>}
+          <CardHead title="Security" />
+          <div className="px-[17px] pb-[17px]">
+            <SecuritySettings initialTwoFactor={membership.isSupervisor} />
           </div>
         </Card>
 
-        <Preferences />
+        <Card>
+          <CardHead title="Preferences" />
+          <div className="px-[17px] pb-[17px]">
+            <Preferences />
+          </div>
+        </Card>
       </div>
     </div>
   );

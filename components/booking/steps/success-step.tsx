@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, CheckCircle2, MessageCircle, User } from "lucide-react";
+import { CalendarDays, CheckCircle2, MapPin, MessageCircle, User, Video } from "lucide-react";
 import type { BookingConfirmation } from "@/app/o/[slug]/book/actions";
 import { formatWhen } from "@/components/booking/steps/confirm-step";
 
@@ -34,6 +34,11 @@ export function SuccessStep({
       <div className="mx-auto mt-6 max-w-sm space-y-2 rounded-control border border-border bg-surface-2/60 p-4 text-left">
         <Line icon={<CalendarDays className="size-4" />} text={formatWhen(confirmation.startsAt)} />
         <Line icon={<User className="size-4" />} text={`${confirmation.serviceName} · ${confirmation.counsellorName}`} />
+        {confirmation.modality === "online" ? (
+          <Line icon={<Video className="size-4" />} text={confirmation.joinUrl ? "Online · your secure join link is ready" : "Online · a secure video link will be sent before your session"} />
+        ) : (
+          <Line icon={<MapPin className="size-4" />} text={confirmation.roomName ? `In person · ${confirmation.roomName}` : "In person · your room is confirmed before the session"} />
+        )}
         <Line
           icon={<MessageCircle className="size-4" />}
           text={`A confirmation will be sent by ${preferredContact.toLowerCase()} once it's ready.`}

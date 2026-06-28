@@ -6,6 +6,25 @@ import { availableSlots, type Slot } from "@/lib/domain/helpers";
 import { logAccess } from "@/lib/audit";
 import { CONSENT_PURPOSES } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
+import { getAdapters } from "@/lib/adapters";
+
+/** First active room with no overlapping booking in [start, start+duration). */
+async function assignRoom(orgId: string, date: string, startsAt: string, durationMin: number): Promise<string | null> {
+  const provider = await getDataProvider();
+  const [rooms, dayAppts] = await Promise.all([
+    provider.listRooms(orgId),
+    provider.listAppointmentsForOrg(orgId, { from: date, to: date }),
+  ]);
+  const startMs = new Date(startsAt).getTime();
+  const endMs = startMs + durationMin * 60_000;
+  const overlaps = (a: { startsAt: string; durationMin: number }) => {
+    const s = new Date(a.startsAt).getTime();
+    return startMs < s + a.durationMin * 60_000 && endMs > s;
+  };
+  const busy = new Set(dayAppts.filter((a) => a.roomId && a.state !== "cancelled" && overlaps(a)).map((a) => a.roomId));
+  const free = rooms.find((r) => r.status === "active" && !busy.has(r.id));
+  return free?.name ?? null;
+}
 
 /** SAST calendar-day string for an instant (fixed +02:00, no DST). */
 function sastToday(nowISO: string): string {
@@ -96,6 +115,10 @@ export interface BookingConfirmation {
   startsAt: string;
   durationMin: number;
   modality: "in_person" | "online";
+  /** Assigned consulting room for an in-person session (null = confirmed later). */
+  roomName: string | null;
+  /** Secure video link for an online session (null until the video adapter is live). */
+  joinUrl: string | null;
 }
 
 export async function submitBooking(
@@ -150,8 +173,26 @@ export async function submitBooking(
   });
 
   // Part A: no persistence  return an honest confirmation. Phase 9/10 persists
-  // the client account, appointment, intake, and consent records.
+  // the client account, appointment, intake, and consent records. The room
+  // assignment + video link below are the real logic that carries into Part B.
   const reference = `PH-${shortRef()}`;
+  const date = input.startsAt.slice(0, 10);
+
+  // In-person → assign a free consulting room. Online → mint a secure link via
+  // the video adapter (Dormant-by-Default: null until the org turns video on).
+  let roomName: string | null = null;
+  let joinUrl: string | null = null;
+  if (input.modality === "in_person") {
+    roomName = await assignRoom(config.org.id, date, input.startsAt, service.durationMin);
+  } else {
+    try {
+      const room = await getAdapters().video.createRoom({ appointmentId: reference });
+      joinUrl = room.url;
+    } catch {
+      joinUrl = null; // video dormant — the link is issued when it's configured (Phase 14)
+    }
+  }
+
   return {
     ok: true,
     confirmation: {
@@ -161,6 +202,8 @@ export async function submitBooking(
       startsAt: input.startsAt,
       durationMin: service.durationMin,
       modality: input.modality,
+      roomName,
+      joinUrl,
     },
   };
 }

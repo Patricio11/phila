@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarPlus, Heart, Phone, ShieldCheck } from "lucide-react";
+import { ArrowRight, CalendarPlus, Heart, Phone, ShieldCheck, Sprout } from "lucide-react";
 import { requireClient } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
 import { isConsentActive } from "@/lib/consent";
+import { stepProgress, encourage } from "@/lib/care/steps";
 import { PageHead } from "@/components/shell/page-head";
 import { Card, CardHead } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { UpcomingSessionCard } from "@/components/client/upcoming-session-card";
-import { CarePlanCard } from "@/components/client/care-plan-card";
 import { SessionTimeline } from "@/components/client/session-timeline";
 
 export const dynamic = "force-dynamic";
@@ -43,7 +43,6 @@ export default async function MeHomePage() {
   const upcoming = appts.find(
     (a) => new Date(a.startsAt).getTime() > nowMs && a.state === "scheduled",
   );
-  const counsellorName = upcoming?.counsellorName ?? appts[0]?.counsellorName ?? "your counsellor";
   const carePlanShared = consents.find((c) => c.purpose === "care_plan_share");
   const openInvoices = invoices.filter((i) => i.status === "unpaid");
   const activeConsents = consents.filter((c) => isConsentActive(c)).length;
@@ -83,7 +82,26 @@ export default async function MeHomePage() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           {carePlan && isConsentActive(carePlanShared) ? (
-            <CarePlanCard plan={carePlan} counsellorName={counsellorName} />
+            (() => {
+              const sp = stepProgress(carePlan.tasks);
+              return (
+                <Link href="/me/steps" className="group block rounded-card border border-border bg-surface p-5 shadow-sm transition-shadow hover:shadow-[var(--shadow-card)]">
+                  <div className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-accent">
+                    <Sprout className="size-4" strokeWidth={2} aria-hidden /> Your steps
+                  </div>
+                  <div className="mt-3 flex items-center gap-4">
+                    <div className="text-[28px] font-bold leading-none tabular-nums text-text">{sp.done}<span className="text-[16px] text-text-3">/{sp.total}</span></div>
+                    <p className="flex-1 text-[13px] leading-relaxed text-text-2">{encourage(sp.done, sp.total)}</p>
+                  </div>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2">
+                    <div className="h-full rounded-full bg-accent transition-[width] duration-500" style={{ width: `${sp.pct}%` }} />
+                  </div>
+                  <div className="mt-3 inline-flex items-center gap-1 text-[12.5px] font-medium text-accent">
+                    Open your steps <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" strokeWidth={2.2} aria-hidden />
+                  </div>
+                </Link>
+              );
+            })()
           ) : (
             <Card>
               <CardHead title="From your counsellor" />

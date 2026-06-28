@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarPlus, CheckCircle2, FileText, Mail, MessageSquare, NotebookPen, Phone, Target, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowLeft, CalendarPlus, FileText, Mail, MessageSquare, NotebookPen, Phone, Target, TrendingDown, TrendingUp } from "lucide-react";
 import { requireOrg } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SessionTimeline } from "@/components/client/session-timeline";
 import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";
 import { SafeguardingPanel } from "@/components/workspace/safeguarding-panel";
+import { CounsellorCareSteps } from "@/components/client/counsellor-care-steps";
 import { StatusDot } from "@/components/ui/status-dot";
 import { BlockedState } from "@/components/ui/blocked-state";
 
@@ -161,19 +162,7 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
               {carePlan ? (
                 <div className="space-y-4">
                   <p className="text-[13.5px] leading-relaxed text-text-2">{carePlan.summary}</p>
-                  <div>
-                    <div className="mb-2 flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-text-3">
-                      <Target className="size-3.5" strokeWidth={2} aria-hidden /> Goals
-                    </div>
-                    <ul className="space-y-1.5">
-                      {carePlan.tasks.map((t) => (
-                        <li key={t.id} className="flex items-start gap-2 text-[13px]">
-                          <CheckCircle2 className={t.done ? "mt-0.5 size-4 shrink-0 text-accent" : "mt-0.5 size-4 shrink-0 text-text-3/40"} strokeWidth={2} aria-hidden />
-                          <span className={t.done ? "text-text-3 line-through" : "text-text-2"}>{t.text}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  <CounsellorCareSteps clientId={client.id} clientFirstName={client.name.split(" ")[0] ?? "the client"} tasks={carePlan.tasks} />
                   {carePlan.nextStep && (
                     <div className="rounded-control border border-accent/20 bg-accent-soft/40 p-3 text-[12.5px] text-text-2">
                       <span className="font-semibold text-text">Next step · </span>{carePlan.nextStep}

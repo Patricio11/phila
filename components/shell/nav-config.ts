@@ -19,6 +19,7 @@ import {
   ReceiptText,
   ScrollText,
   ShieldCheck,
+  Sprout,
   Target,
   UserCog,
   UserRound,
@@ -73,6 +74,7 @@ export const clientNav: NavSection[] = [
     label: "Your space",
     items: [
       { label: "Home", href: "/me", icon: House, ready: true },
+      { label: "Your steps", href: "/me/steps", icon: Sprout, ready: true },
       { label: "Sessions", href: "/me/sessions", icon: CalendarHeart, ready: true },
       { label: "Documents", href: "/me/documents", icon: FileText, ready: true },
       { label: "Billing", href: "/me/billing", icon: CreditCard, ready: true },

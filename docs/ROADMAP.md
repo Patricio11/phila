@@ -154,6 +154,7 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 ### Task 3.3: "From your counsellor"  care plan + updates
 - [x] A calm **care-plan / session-updates** surface: what the counsellor chose to share after a session  advice, **between-session tasks** (with done/not-done), recommended resources, and the next step. This is the *shared* artifact only (never the private clinical note  Rule #1).
 - [x] Tasks the client can tick off; gentle, never gamified, never pressuring. New shares arrive as a soft "update from your counsellor" notification (Part B wires the push/WhatsApp).
+- [x] **"Your steps" — interactive, two-sided (2026-06-28):** the care-plan tasks are now a living loop. **Client** (`/me/steps`, mobile-first): a **progress ring**, **tap-to-tick** steps with a warm micro-celebration, and **gentle achievements** ("First step" · "Finding your rhythm" · "All steps done") — encouragement, *no points/streaks/shame* (honours the care ethic); resources + the counsellor's note below; a compact progress card on the home links in. **Counsellor** (client dossier): the same steps show **what the client has ticked off** ("2/3 done by Lerato") and an **Add a step** input puts a new, specific step in the client's portal. Actions: `toggleStep` (client) + `addCarePlanStep` (counsellor), both audited; `lib/care/steps` computes progress/achievements for both sides.
 
 **Done when (mock):** a client sees only their own data, their thread, their care plan + tasks, and can walk their consents.
 

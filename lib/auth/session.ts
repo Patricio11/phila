@@ -1,13 +1,17 @@
 import "server-only";
+import { headers } from "next/headers";
+import { eq } from "drizzle-orm";
 import type { PlatformRole, TeamRole } from "@/lib/domain/enums";
+import { auth } from "@/lib/auth/better-auth";
+import { getDb } from "@/db/client";
+import { orgMembers, orgs } from "@/db/schema";
 
 /**
- * The authenticated principal. In Part A this is a fixed mock identity so every
- * role's surface is demoable; Phase 9 replaces `getCurrentPrincipal()` with
- * Better Auth session resolution  the *shape* here is the contract the rest of
- * the app codes against, so that swap changes no call sites.
+ * The authenticated principal — resolved from the real Better Auth session
+ * (Phase 9). The *shape* is unchanged from Part A, so every guard and call site
+ * is untouched: only the resolver swapped from a fixed mock to a real session.
  *
- * Org staff (counsellor, org_admin, …) carry no platform role  their authority
+ * Org staff (counsellor, org_admin, …) carry no platform role — their authority
  * comes from an org membership. `client`, `funder`, and `super_admin` are
  * platform roles. A user may belong to several orgs with a different role in each.
  */
@@ -31,99 +35,44 @@ export interface Principal {
 }
 
 /**
- * Part-A mock principal: Nomsa Dlamini  a supervising counsellor at Masizakhe.
- * Switching the demo identity is a one-line change here until real auth lands.
+ * Resolve the current principal from the Better Auth session, or `null` if not
+ * signed in. Memberships come from `org_members`; the platform role + client link
+ * ride on the user as additional fields.
  */
-const MOCK_PRINCIPAL: Principal = {
-  userId: "user_nomsa",
-  name: "Nomsa Dlamini",
-  email: "nomsa@masizakhe.org.za",
-  platformRole: null,
-  memberships: [
-    {
-      orgId: "org_masizakhe",
-      orgName: "Masizakhe Counselling",
-      teamRole: "counsellor",
-      isSupervisor: true,
-    },
-  ],
-  activeOrgId: "org_masizakhe",
-  twoFactorEnabled: true,
-};
+export async function getCurrentPrincipal(): Promise<Principal | null> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user) return null;
+  const u = session.user as typeof session.user & { platformRole?: string | null; clientId?: string | null };
 
-export async function getCurrentPrincipal(): Promise<Principal> {
-  return MOCK_PRINCIPAL;
-}
+  const db = getDb();
+  const rows = await db
+    .select({
+      orgId: orgMembers.orgId,
+      orgName: orgs.name,
+      teamRole: orgMembers.teamRole,
+      isSupervisor: orgMembers.isSupervisor,
+    })
+    .from(orgMembers)
+    .innerJoin(orgs, eq(orgMembers.orgId, orgs.id))
+    .where(eq(orgMembers.userId, u.id));
 
-/**
- * Part-A demo client identity: Lerato Mahlangu, a client of Masizakhe. In a
- * no-auth Part A each role's surface assumes its own demo identity so the whole
- * product is clickable; Phase 9 resolves the real session and routes by role.
- */
-const MOCK_CLIENT: Principal = {
-  userId: "user_lerato",
-  name: "Lerato Mahlangu",
-  email: "lerato.m@example.co.za",
-  platformRole: "client",
-  memberships: [],
-  activeOrgId: "org_masizakhe",
-  twoFactorEnabled: false,
-  clientId: "cl_lerato",
-};
+  const memberships: OrgMembership[] = rows.map((r) => ({
+    orgId: r.orgId,
+    orgName: r.orgName,
+    teamRole: r.teamRole as TeamRole,
+    isSupervisor: r.isSupervisor,
+  }));
 
-export async function getClientPrincipal(): Promise<Principal> {
-  return MOCK_CLIENT;
-}
-
-/** Part-A demo org-admin (the Hub): Thandeka Mbeki, practice manager at Masizakhe. */
-const MOCK_ORG_ADMIN: Principal = {
-  userId: "user_thandeka",
-  name: "Thandeka Mbeki",
-  email: "thandeka@masizakhe.org.za",
-  platformRole: null,
-  memberships: [
-    { orgId: "org_masizakhe", orgName: "Masizakhe Counselling", teamRole: "org_admin", isSupervisor: false },
-  ],
-  activeOrgId: "org_masizakhe",
-  twoFactorEnabled: true,
-};
-
-export async function getOrgAdminPrincipal(): Promise<Principal> {
-  return MOCK_ORG_ADMIN;
-}
-
-/**
- * Part-A demo funder: Palesa Mokoena (DSD), scoped to one grant  external,
- * read-only, sees only aggregate k-anon figures. Phase 9 resolves the real
- * funder session + grant scope from the invite.
- */
-const MOCK_FUNDER: Principal = {
-  userId: "user_funder",
-  name: "Palesa Mokoena",
-  email: "palesa.mokoena@dsd.example.gov.za",
-  platformRole: "funder",
-  memberships: [],
-  activeOrgId: null,
-  twoFactorEnabled: false,
-};
-
-export async function getFunderPrincipal(): Promise<Principal> {
-  return MOCK_FUNDER;
-}
-
-/** Part-A demo platform operator (super-admin). 2FA enforced (Phase 9). */
-const MOCK_SUPER_ADMIN: Principal = {
-  userId: "user_operator",
-  name: "Sizwe Ndlovu",
-  email: "ops@philasa.com",
-  platformRole: "super_admin",
-  memberships: [],
-  activeOrgId: null,
-  twoFactorEnabled: true,
-};
-
-export async function getSuperAdminPrincipal(): Promise<Principal> {
-  return MOCK_SUPER_ADMIN;
+  return {
+    userId: u.id,
+    name: u.name,
+    email: u.email,
+    platformRole: (u.platformRole ?? null) as PlatformRole | null,
+    memberships,
+    activeOrgId: memberships[0]?.orgId ?? null,
+    twoFactorEnabled: false,
+    clientId: u.clientId ?? undefined,
+  };
 }
 
 export function activeMembership(principal: Principal): OrgMembership | null {

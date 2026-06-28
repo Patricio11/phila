@@ -1,13 +1,10 @@
 import "server-only";
+import { redirect } from "next/navigation";
 import type { OrgFeature, PlatformRole, TeamRole } from "@/lib/domain/enums";
 import { teamRoleCan, type Capability } from "@/lib/auth/roles";
 import {
   activeMembership,
-  getClientPrincipal,
   getCurrentPrincipal,
-  getFunderPrincipal,
-  getOrgAdminPrincipal,
-  getSuperAdminPrincipal,
   type OrgMembership,
   type Principal,
 } from "@/lib/auth/session";
@@ -42,7 +39,7 @@ export class FeatureDormantError extends Error {
 
 export async function requireAuth(): Promise<Principal> {
   const principal = await getCurrentPrincipal();
-  if (!principal) throw new AuthError();
+  if (!principal) redirect("/login");
   return principal;
 }
 
@@ -59,7 +56,7 @@ export async function requirePlatformRole(role: PlatformRole): Promise<Principal
  * demo client; Phase 9 resolves the real client session.
  */
 export async function requireClient(): Promise<{ principal: Principal; clientId: string }> {
-  const principal = await getClientPrincipal();
+  const principal = await requireAuth();
   if (principal.platformRole !== "client" || !principal.clientId)
     throw new ForbiddenError("Requires a client account");
   return { principal, clientId: principal.clientId };
@@ -70,7 +67,7 @@ export async function requireClient(): Promise<{ principal: Principal; clientId:
  * org-admin; Phase 9 resolves the real session and asserts the `org_admin` role.
  */
 export async function requireHub(): Promise<{ principal: Principal; membership: OrgMembership }> {
-  const principal = await getOrgAdminPrincipal();
+  const principal = await requireAuth();
   const membership = activeMembership(principal);
   if (!membership || membership.teamRole !== "org_admin")
     throw new ForbiddenError("Requires an org-admin account");
@@ -118,7 +115,7 @@ export async function requireOrgFeature(feature: OrgFeature): Promise<void> {
  * grant or anything identifiable (Rule #10).
  */
 export async function requireFunder(): Promise<Principal> {
-  const principal = await getFunderPrincipal();
+  const principal = await requireAuth();
   if (principal.platformRole !== "funder") throw new ForbiddenError("Requires a funder account");
   return principal;
 }
@@ -128,7 +125,7 @@ export async function requireFunder(): Promise<Principal> {
  * and impersonation is audited (Tenant-Isolation Rule). 2FA enforced in Phase 9.
  */
 export async function requireSuperAdmin(): Promise<Principal> {
-  const principal = await getSuperAdminPrincipal();
+  const principal = await requireAuth();
   if (principal.platformRole !== "super_admin") throw new ForbiddenError("Requires the platform console");
   return principal;
 }

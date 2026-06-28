@@ -1,13 +1,17 @@
 "use server";
 
 import { z } from "zod";
+import { headers } from "next/headers";
+import { eq } from "drizzle-orm";
 import { PROVINCES } from "@/lib/domain/enums";
+import { auth } from "@/lib/auth/better-auth";
+import { getDb } from "@/db/client";
+import { orgMembers } from "@/db/schema";
 
 /**
- * Auth flows (mock). Part A validates shape and returns success so the screens
- * are fully clickable; **no account is created, no email is sent, no session is
- * issued**  that's Phase 9 (Supabase Auth + TOTP + the consent gate), behind
- * these exact screens. Honest by default.
+ * Auth flows. Sign-in is **real** (Better Auth) as of Phase 9; the rest validate
+ * shape and return success until their phase wires them (sign-up Phase 9 finishes,
+ * reset Phase 12). The session cookie is set by Better Auth's nextCookies plugin.
  */
 type Result = { ok: true } | { ok: false; error: string };
 
@@ -16,10 +20,38 @@ const signInInput = z.object({
   password: z.string().min(1, "Enter your password."),
 });
 
-export async function signIn(raw: z.infer<typeof signInInput>): Promise<Result> {
+/** Where each role lands after sign-in. */
+async function homeForUser(userId: string, platformRole: string | null): Promise<string> {
+  if (platformRole === "client") return "/me";
+  if (platformRole === "funder") return "/funder";
+  if (platformRole === "super_admin") return "/admin";
+  const db = getDb();
+  const [m] = await db
+    .select({ role: orgMembers.teamRole })
+    .from(orgMembers)
+    .where(eq(orgMembers.userId, userId))
+    .limit(1);
+  return m?.role === "org_admin" ? "/hub" : "/app";
+}
+
+export async function signIn(
+  raw: z.infer<typeof signInInput>,
+): Promise<{ ok: true; redirect: string } | { ok: false; error: string }> {
   const parsed = signInInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check your details." };
-  return { ok: true };
+
+  let user: { id: string; platformRole?: string | null };
+  try {
+    const res = await auth.api.signInEmail({
+      body: { email: parsed.data.email, password: parsed.data.password },
+      headers: await headers(),
+    });
+    user = res.user as typeof user;
+  } catch {
+    return { ok: false, error: "Wrong email or password." };
+  }
+
+  return { ok: true, redirect: await homeForUser(user.id, user.platformRole ?? null) };
 }
 
 const registerInput = z.object({

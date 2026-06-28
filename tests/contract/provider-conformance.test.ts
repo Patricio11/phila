@@ -4,16 +4,19 @@ import { dbProvider } from "@/lib/db-provider";
 
 /**
  * Provider conformance  the contract that guarantees Part B is a swap, not a
- * rewrite. Both providers must expose the *same* method surface; the mock must
- * be real-async; and the consent / k-anon / outcome-honesty invariants the UI
- * relies on must hold. When `dbProvider` is filled in, this same suite runs
- * against it (set DATA_PROVIDER=db) and must stay green.
+ * rewrite. Both providers expose the *same* method surface; the mock is
+ * real-async; and the consent / k-anon / outcome-honesty invariants the UI relies
+ * on hold. `dbProvider` is a **hybrid**: it spreads the mock and overrides one
+ * method at a time with a real DB read — so non-migrated methods are the *same
+ * function* as the mock (seamless fallback), and migrated ones are real overrides.
  */
 const ORG = "org_masizakhe";
 const NOW = "2026-06-29T09:00:00+02:00";
 
 const mockKeys = Object.keys(mockProvider).sort();
 const dbKeys = Object.keys(dbProvider).sort();
+const mockFns = mockProvider as unknown as Record<string, unknown>;
+const dbFns = dbProvider as unknown as Record<string, unknown>;
 
 describe("structural conformance", () => {
   it("mock and db expose an identical method surface", () => {
@@ -21,14 +24,18 @@ describe("structural conformance", () => {
     expect(mockKeys.length).toBeGreaterThan(40); // sanity: the full surface, not a subset
   });
 
-  it("every mock method is a function", () => {
-    for (const k of mockKeys) expect(typeof (mockProvider as unknown as Record<string, unknown>)[k]).toBe("function");
+  it("every method on both providers is a function", () => {
+    for (const k of mockKeys) {
+      expect(typeof mockFns[k]).toBe("function");
+      expect(typeof dbFns[k]).toBe("function");
+    }
   });
 
-  it("the db stub throws 'not implemented' for every method", () => {
-    for (const k of dbKeys) {
-      expect(() => (dbProvider as unknown as Record<string, () => unknown>)[k]!()).toThrow(/not implemented/i);
-    }
+  it("migrated methods are real overrides; the rest delegate to the mock", () => {
+    // Migrated to the DB (Phase 9 slice): real overrides, distinct from the mock.
+    for (const k of ["getOrg", "getOrgBySlug"]) expect(dbFns[k]).not.toBe(mockFns[k]);
+    // Not yet migrated: the exact same function as the mock (consistent fallback).
+    for (const k of ["listClients", "getReporting", "listFunderGrants"]) expect(dbFns[k]).toBe(mockFns[k]);
   });
 });
 

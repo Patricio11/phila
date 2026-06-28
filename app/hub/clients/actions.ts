@@ -61,6 +61,33 @@ export async function importClients(
   return { ok: true, count: parsed.data.clients.length };
 }
 
+const inviteInput = z.object({
+  clientId: z.string().min(1),
+  channel: z.enum(["whatsapp", "sms", "email"]),
+});
+
+/**
+ * Invite a client to their portal (mock). Sends a set-password link over the
+ * chosen channel — WhatsApp/SMS to their number or email — depending on what
+ * the org has enabled and what contact details exist. Validated + audited;
+ * nothing is delivered until the Phase 12 channel rail is live.
+ */
+export async function inviteClientToPortal(
+  raw: z.infer<typeof inviteInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = inviteInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Couldn't send the invite." };
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `client:${parsed.data.clientId}/portal_invite`,
+    reason: `invite_${parsed.data.channel}`,
+  });
+  return { ok: true };
+}
+
 const mergeInput = z.object({
   keepId: z.string().min(1),
   mergeIds: z.array(z.string().min(1)).min(1, "Nothing to merge."),

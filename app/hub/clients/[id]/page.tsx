@@ -17,6 +17,7 @@ import { BlockedState } from "@/components/ui/blocked-state";
 import { SessionTimeline } from "@/components/client/session-timeline";
 import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";
 import { ReassignClientButton } from "@/components/hub/reassign-client-button";
+import { InviteClientButton } from "@/components/hub/invite-client-button";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +51,7 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
     reason: "hub_oversight",
   });
 
-  const { client, counsellor, consents, demographics, sessions, outcomes, documents, carePlan } = dossier;
+  const { client, counsellor, org, consents, demographics, sessions, outcomes, documents, carePlan } = dossier;
   const attended = sessions.filter((s) => s.state === "completed" || s.state === "discharged").length;
   const noShow = sessions.filter((s) => s.state === "no_show").length;
   const attendanceRate = attended + noShow > 0 ? Math.round((attended / (attended + noShow)) * 100) : null;
@@ -74,6 +75,7 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
         summary={`With ${counsellor.name} · ${client.province}`}
         actions={
           <div className="flex items-center gap-2">
+            <InviteClientButton clientId={client.id} clientName={client.name} phone={client.phone ?? null} email={client.email ?? null} whatsappOn={Boolean(org.features.whatsapp)} smsOn={Boolean(org.features.sms)} />
             <ReassignClientButton clientId={client.id} clientName={client.name} counsellors={counsellorOpts} currentCounsellorId={counsellor.id} />
             <Button asChild>
               <Link href="/hub/calendars"><CalendarPlus className="size-4" strokeWidth={2} aria-hidden /> Book session</Link>

@@ -40,17 +40,24 @@ export function SuccessStep({
         />
       </div>
 
-      <div className="mt-7 flex flex-col items-center gap-2">
+      <div className="mx-auto mt-5 max-w-sm rounded-control border border-accent/25 bg-accent-soft/30 p-4 text-left">
+        <div className="text-[13.5px] font-[640] text-text">Your private space is ready</div>
+        <p className="mt-1 text-[12.5px] leading-relaxed text-text-2">
+          We&apos;ve started a secure account for you. Set a password to see this session, reminders, and anything {orgName} shares.
+        </p>
         <Link
-          href={`/o/${orgSlug}`}
-          className="inline-flex h-11 items-center rounded-control px-5 text-[14px] font-medium text-white shadow-sm transition-[filter] hover:brightness-95"
+          href="/activate"
+          className="mt-3 inline-flex h-10 items-center rounded-control px-4 text-[13.5px] font-medium text-white shadow-sm transition-[filter] hover:brightness-95"
           style={{ backgroundColor: "var(--brand)" }}
         >
+          Set up your account
+        </Link>
+      </div>
+
+      <div className="mt-6">
+        <Link href={`/o/${orgSlug}`} className="text-[13px] font-medium text-text-2 hover:text-text hover:underline">
           Back to {orgName}
         </Link>
-        <p className="text-[12px] text-text-3">
-          You&apos;ll be able to manage this in your Phila account.
-        </p>
       </div>
     </div>
   );

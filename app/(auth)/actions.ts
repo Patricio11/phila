@@ -60,3 +60,16 @@ export async function resetPassword(raw: z.infer<typeof resetInput>): Promise<Re
 export async function completeOnboarding(): Promise<Result> {
   return { ok: true };
 }
+
+const activateInput = z.object({
+  password: z.string().min(8, "Use at least 8 characters."),
+  confirm: z.string().min(1),
+});
+
+/** A client (or invited team member) sets their password from an invite link (mock). */
+export async function activateAccount(raw: z.infer<typeof activateInput>): Promise<Result> {
+  const parsed = activateInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the form." };
+  if (parsed.data.password !== parsed.data.confirm) return { ok: false, error: "The passwords don't match." };
+  return { ok: true };
+}

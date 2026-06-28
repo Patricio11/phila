@@ -9,6 +9,7 @@ import { PaymentConnectionCard } from "@/components/hub/payment-connection-card"
 import { PublicPageEditor } from "@/components/hub/public-page-editor";
 import { BusinessHoursEditor } from "@/components/hub/business-hours-editor";
 import { OrgProfileForm, type OrgProfile } from "@/components/hub/org-profile-form";
+import { InvoiceSettingsForm } from "@/components/hub/invoice-settings-form";
 import { MessagingChannels } from "@/components/hub/messaging-channels";
 import { SecuritySettings } from "@/components/hub/security-settings";
 
@@ -18,9 +19,11 @@ export const metadata = { title: "Settings" };
 export default async function HubSettingsPage() {
   const { membership } = await requireHub();
   const provider = await getDataProvider();
-  const [settings, org] = await Promise.all([
+  const [settings, org, invoiceSettings, platform] = await Promise.all([
     provider.getOrgSettings(membership.orgId),
     provider.getOrg(membership.orgId),
+    provider.getInvoiceSettings(membership.orgId),
+    provider.getPlatformSettings(),
   ]);
   if (!settings || !org) notFound();
   const page = await provider.getOrgPublicPage(org.slug);
@@ -47,6 +50,14 @@ export default async function HubSettingsPage() {
         <CardHead title="Organisation" />
         <div className="px-[17px] pb-[17px]">
           <OrgProfileForm initial={profile} />
+        </div>
+      </Card>
+
+      {/* Invoicing & VAT */}
+      <Card>
+        <CardHead title="Invoicing & VAT" />
+        <div className="px-[17px] pb-[17px]">
+          <InvoiceSettingsForm initial={invoiceSettings} vatRatePercent={platform.vatRatePercent} />
         </div>
       </Card>
 

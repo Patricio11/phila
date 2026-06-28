@@ -65,6 +65,36 @@ export async function saveOrgProfile(
   return { ok: true };
 }
 
+const invoiceInput = z.object({
+  vatRegistered: z.boolean(),
+  vatNumber: z.string().trim().max(20).optional().or(z.literal("")),
+  pricesIncludeVat: z.boolean(),
+});
+
+/**
+ * Org invoicing/VAT setup (mock). The VAT *rate* is platform-wide (super admin);
+ * here the org sets whether it's registered, its VAT number, and inclusive vs
+ * exclusive pricing. Validated + audited; Phase 10 persists to the org row.
+ */
+export async function saveInvoiceSettings(
+  raw: z.infer<typeof invoiceInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = invoiceInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the VAT details." };
+  if (parsed.data.vatRegistered && !parsed.data.vatNumber?.trim()) {
+    return { ok: false, error: "Add your VAT number, or switch VAT registration off." };
+  }
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `org:${membership.orgId}/invoice_settings`,
+    reason: "update_invoice_settings",
+  });
+  return { ok: true };
+}
+
 const channelInput = z.object({
   channel: z.enum(["whatsapp", "sms", "email"]),
   provider: z.string().min(1, "Pick a provider."),

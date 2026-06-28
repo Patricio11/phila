@@ -12,10 +12,12 @@ export default async function NewInvoicePage() {
   const provider = await getDataProvider();
   const now = clockNow();
 
-  const [org, clients, services] = await Promise.all([
+  const [org, clients, services, invoiceSettings, platform] = await Promise.all([
     provider.getOrg(membership.orgId),
     provider.listOrgClients(membership.orgId, now),
     provider.listServices(membership.orgId),
+    provider.getInvoiceSettings(membership.orgId),
+    provider.getPlatformSettings(),
   ]);
   if (!org) notFound();
 
@@ -27,6 +29,10 @@ export default async function NewInvoicePage() {
       services={services.map((s) => ({ id: s.id, name: s.name, priceCents: s.priceCents }))}
       invoiceNumber="MZ-2026-0148"
       backHref="/hub/invoicing"
+      vatRatePercent={platform.vatRatePercent}
+      vatRegistered={invoiceSettings.vatRegistered}
+      vatNumber={invoiceSettings.vatNumber}
+      pricesIncludeVat={invoiceSettings.pricesIncludeVat}
     />
   );
 }

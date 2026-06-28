@@ -409,6 +409,21 @@ export interface ReportingResult {
   outcome: { points: OutcomePoint[]; coverage: { captured: number; total: number } };
 }
 
+/** Platform-wide settings the super admin controls (apply to every org). */
+export interface PlatformSettings {
+  /** National VAT rate as a percentage (e.g. 15). One change, every org updates. */
+  vatRatePercent: number;
+}
+
+/** An org's invoicing/VAT setup. The rate is global; registration is per-org. */
+export interface InvoiceSettings {
+  orgId: string;
+  vatRegistered: boolean;
+  vatNumber: string;
+  /** Whether the org's service prices already include VAT. */
+  pricesIncludeVat: boolean;
+}
+
 export type InsightsPeriod = "week" | "month" | "quarter";
 
 /** Hub-internal analytics filters. Demographic filters narrow the client cohort. */
@@ -611,6 +626,8 @@ export interface DataProvider {
   getBookingConfig(slug: string): Promise<BookingConfig | null>;
   getBookingSettings(orgId: string): Promise<BookingSettings>;
   getHubInsights(orgId: string, now: string, filters: InsightsFilters): Promise<HubInsights>;
+  getPlatformSettings(): Promise<PlatformSettings>;
+  getInvoiceSettings(orgId: string): Promise<InvoiceSettings>;
 
   // People
   getCounsellor(counsellorId: string): Promise<Counsellor | null>;

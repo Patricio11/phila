@@ -19,6 +19,8 @@ export const dbProvider: DataProvider = {
   listOrgSlugs: notYet,
   getBookingConfig: notYet,
   getBookingSettings: notYet,
+  getPlatformSettings: notYet,
+  getInvoiceSettings: notYet,
   getHubInsights: notYet,
   getCounsellor: notYet,
   listCounsellors: notYet,

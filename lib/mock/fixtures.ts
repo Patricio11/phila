@@ -791,6 +791,14 @@ export type BookingSettingsSeed = {
   counsellors: Record<string, { publiclyBookable: boolean }>;
 };
 
+/** Platform-wide settings (super admin). VAT is national — one change, all orgs. */
+export const platformSettings: { vatRatePercent: number } = { vatRatePercent: 15 };
+
+/** Per-org invoicing/VAT setup. Masizakhe is a registered vendor, prices ex-VAT. */
+export const invoiceSettings: Record<string, { vatRegistered: boolean; vatNumber: string; pricesIncludeVat: boolean }> = {
+  [ORG_ID]: { vatRegistered: true, vatNumber: "4512345678", pricesIncludeVat: false },
+};
+
 export const bookingSettings: Record<string, BookingSettingsSeed> = {
   [ORG_ID]: {
     publicBookingEnabled: true,

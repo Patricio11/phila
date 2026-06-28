@@ -4,6 +4,7 @@ import { Printer, X } from "lucide-react";
 import type { Invoice } from "@/lib/domain/types";
 import type { PaymentStatus } from "@/lib/domain/enums";
 import { Button } from "@/components/ui/button";
+import { computeVat } from "@/lib/domain/helpers";
 import { cn } from "@/lib/utils";
 
 const STATUS: Record<PaymentStatus, { label: string; cls: string }> = {
@@ -27,6 +28,9 @@ export function InvoicePreview({
   orgName,
   province,
   status,
+  vatRatePercent,
+  vatRegistered,
+  vatNumber,
   onClose,
 }: {
   invoice: Invoice;
@@ -34,11 +38,13 @@ export function InvoicePreview({
   orgName: string;
   province: string;
   status: PaymentStatus;
+  vatRatePercent: number;
+  vatRegistered: boolean;
+  vatNumber: string;
   onClose: () => void;
 }) {
-  const total = invoice.amountCents;
-  const subtotal = Math.round(total / 1.15);
-  const vat = total - subtotal;
+  // The stored amount is the gross total; decompose it for a registered vendor.
+  const { exVatCents, vatCents, totalCents } = computeVat({ amountCents: invoice.amountCents, vatRatePercent, vatRegistered, pricesIncludeVat: true });
   const s = STATUS[status];
 
   return (
@@ -60,9 +66,10 @@ export function InvoicePreview({
             <div>
               <div className="text-[20px] font-[720] tracking-[-0.02em]">{orgName}</div>
               <div className="mt-0.5 text-[12px] text-[#5b635e]">{province}, South Africa</div>
+              {vatRegistered && vatNumber ? <div className="mt-0.5 text-[12px] text-[#5b635e]">VAT no. {vatNumber}</div> : null}
             </div>
             <div className="text-right">
-              <div className="text-[22px] font-[700] tracking-[-0.02em] text-[#1C7D58]">TAX INVOICE</div>
+              <div className="text-[22px] font-[700] tracking-[-0.02em] text-[#1C7D58]">{vatRegistered ? "TAX INVOICE" : "INVOICE"}</div>
               <div className="mt-1 text-[12px] text-[#5b635e]">{invoice.number}</div>
               <div className={cn("mt-2 inline-block rounded border px-2 py-0.5 text-[11px] font-bold tracking-wide", s.cls)}>{s.label}</div>
             </div>
@@ -92,7 +99,7 @@ export function InvoicePreview({
                 <tr className="border-b border-[#e5e9e7]">
                   <td className="py-2.5">{invoice.serviceName}</td>
                   <td className="py-2.5 text-right tabular-nums">1</td>
-                  <td className="py-2.5 text-right tabular-nums">{rands(subtotal)}</td>
+                  <td className="py-2.5 text-right tabular-nums">{rands(exVatCents)}</td>
                 </tr>
               </tbody>
             </table>
@@ -100,17 +107,21 @@ export function InvoicePreview({
 
           <div className="mt-6 flex justify-end">
             <div className="w-64 space-y-1.5 text-[13px]">
-              <Row label="Subtotal" value={rands(subtotal)} />
-              <Row label="VAT (15%)" value={rands(vat)} />
+              {vatRegistered ? (
+                <>
+                  <Row label="Subtotal (excl VAT)" value={rands(exVatCents)} />
+                  <Row label={`VAT (${vatRatePercent}%)`} value={rands(vatCents)} />
+                </>
+              ) : null}
               <div className="flex items-center justify-between border-t-2 border-[#141916] pt-2 text-[15px] font-bold">
                 <span>Total</span>
-                <span className="tabular-nums">{rands(total)}</span>
+                <span className="tabular-nums">{rands(totalCents)}</span>
               </div>
             </div>
           </div>
 
           <p className="mt-10 text-[11px] text-[#8b938e]">
-            Thank you. Payment via your practice&apos;s preferred method (PayShap / EFT). This is a system-generated tax invoice.
+            Thank you. Payment via your practice&apos;s preferred method (PayShap / EFT). This is a system-generated {vatRegistered ? "tax invoice" : "invoice"}.
           </p>
         </div>
       </div>

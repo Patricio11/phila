@@ -62,6 +62,8 @@ import type {
 import {
   aiRailConfig,
   bookingSettings,
+  platformSettings,
+  invoiceSettings,
   carePlans,
   clientApptTemplates,
   clientDocuments,
@@ -391,6 +393,13 @@ export const mockProvider: DataProvider = {
   },
 
   getBookingSettings: (orgId) => ok(bookingSettingsFor(orgId)),
+
+  getPlatformSettings: () => ok({ vatRatePercent: platformSettings.vatRatePercent }),
+
+  getInvoiceSettings: (orgId) => {
+    const s = invoiceSettings[orgId];
+    return ok(s ? { orgId, ...s } : { orgId, vatRegistered: false, vatNumber: "", pricesIncludeVat: false });
+  },
 
   getHubInsights: (orgId, now, filters): Promise<HubInsights> => {
     const period: InsightsPeriod = filters.period ?? "month";

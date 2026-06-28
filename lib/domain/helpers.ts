@@ -108,6 +108,40 @@ function minutesOfInstant(iso: string): number {
   return toMinutes(time);
 }
 
+/* ---- VAT ---------------------------------------------------------------- */
+
+export interface VatBreakdown {
+  exVatCents: number;
+  vatCents: number;
+  totalCents: number;
+}
+
+/**
+ * Split an amount into ex-VAT / VAT / total. The VAT *rate* is a platform setting
+ * (national, super-admin controlled); each org controls whether it's registered
+ * and whether its entered prices already include VAT. A non-registered org never
+ * charges VAT (and may not issue a "tax invoice").
+ */
+export function computeVat(opts: {
+  amountCents: number;
+  vatRatePercent: number;
+  vatRegistered: boolean;
+  /** Whether the entered amount already includes VAT. */
+  pricesIncludeVat: boolean;
+}): VatBreakdown {
+  const { amountCents, vatRatePercent, vatRegistered, pricesIncludeVat } = opts;
+  if (!vatRegistered || vatRatePercent <= 0) {
+    return { exVatCents: amountCents, vatCents: 0, totalCents: amountCents };
+  }
+  const rate = vatRatePercent / 100;
+  if (pricesIncludeVat) {
+    const exVat = Math.round(amountCents / (1 + rate));
+    return { exVatCents: exVat, vatCents: amountCents - exVat, totalCents: amountCents };
+  }
+  const vat = Math.round(amountCents * rate);
+  return { exVatCents: amountCents, vatCents: vat, totalCents: amountCents + vat };
+}
+
 /* ---- Room utilisation ------------------------------------------------- */
 
 export interface RoomUtilisation {

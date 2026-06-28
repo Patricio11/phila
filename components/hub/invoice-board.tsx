@@ -31,7 +31,7 @@ function shortDate(iso: string): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "short" }).format(new Date(iso));
 }
 
-export function InvoiceBoard({ rows, nowISO, orgName, province }: { rows: InvoiceRow[]; nowISO: string; orgName: string; province: string }) {
+export function InvoiceBoard({ rows, nowISO, orgName, province, vatRatePercent, vatRegistered, vatNumber }: { rows: InvoiceRow[]; nowISO: string; orgName: string; province: string; vatRatePercent: number; vatRegistered: boolean; vatNumber: string }) {
   const { toast } = useToast();
   const nowMs = new Date(nowISO).getTime();
   const [statusOf, setStatusOf] = useState<Record<string, PaymentStatus>>({});
@@ -149,6 +149,9 @@ export function InvoiceBoard({ rows, nowISO, orgName, province }: { rows: Invoic
           orgName={orgName}
           province={province}
           status={effective(preview)}
+          vatRatePercent={vatRatePercent}
+          vatRegistered={vatRegistered}
+          vatNumber={vatNumber}
           onClose={() => setPreview(null)}
         />
       )}

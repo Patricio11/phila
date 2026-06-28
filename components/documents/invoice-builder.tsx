@@ -6,6 +6,7 @@ import { ArrowLeft, Plus, Printer, Send, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
+import { computeVat } from "@/lib/domain/helpers";
 
 interface LineItem {
   id: number;
@@ -13,8 +14,6 @@ interface LineItem {
   qty: number;
   unitCents: number;
 }
-
-const VAT_RATE = 0.15;
 
 function rands(cents: number): string {
   return `R ${(cents / 100).toLocaleString("en-ZA", { minimumFractionDigits: 2 })}`;
@@ -24,6 +23,7 @@ function rands(cents: number): string {
  * The A4 invoice builder (DESIGN.md §6 DocumentSheet / Task 7.4)  type directly
  * on a real document: borderless fields, live totals, a thin toolbar, and a clean
  * print stylesheet (`.print-area`). Fully responsive: fills a phone, scrolls.
+ * VAT honours the org's registration + the platform's national rate.
  */
 export function InvoiceBuilder({
   orgName,
@@ -32,6 +32,10 @@ export function InvoiceBuilder({
   services,
   invoiceNumber,
   backHref,
+  vatRatePercent,
+  vatRegistered,
+  vatNumber,
+  pricesIncludeVat,
 }: {
   orgName: string;
   province: string;
@@ -39,6 +43,10 @@ export function InvoiceBuilder({
   services: { id: string; name: string; priceCents: number | null }[];
   invoiceNumber: string;
   backHref: string;
+  vatRatePercent: number;
+  vatRegistered: boolean;
+  vatNumber: string;
+  pricesIncludeVat: boolean;
 }) {
   const { toast } = useToast();
   const [clientId, setClientId] = useState<string | null>(clients[0]?.id ?? null);
@@ -46,9 +54,8 @@ export function InvoiceBuilder({
   const [seq, setSeq] = useState(2);
 
   const clientName = clients.find((c) => c.id === clientId)?.name ?? "";
-  const subtotal = items.reduce((s, i) => s + i.qty * i.unitCents, 0);
-  const vat = Math.round(subtotal * VAT_RATE);
-  const total = subtotal + vat;
+  const lineSum = items.reduce((s, i) => s + i.qty * i.unitCents, 0);
+  const { exVatCents, vatCents, totalCents } = computeVat({ amountCents: lineSum, vatRatePercent, vatRegistered, pricesIncludeVat });
 
   const addFromService = (id: string) => {
     const svc = services.find((s) => s.id === id);
@@ -85,9 +92,10 @@ export function InvoiceBuilder({
           <div>
             <div className="text-[20px] font-[720] tracking-[-0.02em]">{orgName}</div>
             <div className="mt-0.5 text-[12px] text-[#5b635e]">{province}, South Africa</div>
+            {vatRegistered && vatNumber ? <div className="mt-0.5 text-[12px] text-[#5b635e]">VAT no. {vatNumber}</div> : null}
           </div>
           <div className="text-right">
-            <div className="text-[22px] font-[700] tracking-[-0.02em] text-[#1C7D58]">TAX INVOICE</div>
+            <div className="text-[22px] font-[700] tracking-[-0.02em] text-[#1C7D58]">{vatRegistered ? "TAX INVOICE" : "INVOICE"}</div>
             <div className="mt-1 text-[12px] text-[#5b635e]">{invoiceNumber}</div>
           </div>
         </div>
@@ -147,17 +155,21 @@ export function InvoiceBuilder({
         {/* Totals */}
         <div className="mt-6 flex justify-end">
           <div className="w-64 space-y-1.5 text-[13px]">
-            <Row label="Subtotal" value={rands(subtotal)} />
-            <Row label="VAT (15%)" value={rands(vat)} />
+            {vatRegistered ? (
+              <>
+                <Row label="Subtotal (excl VAT)" value={rands(exVatCents)} />
+                <Row label={`VAT (${vatRatePercent}%)`} value={rands(vatCents)} />
+              </>
+            ) : null}
             <div className="flex items-center justify-between border-t-2 border-[#141916] pt-2 text-[15px] font-bold">
               <span>Total</span>
-              <span className="tabular-nums">{rands(total)}</span>
+              <span className="tabular-nums">{rands(totalCents)}</span>
             </div>
           </div>
         </div>
 
         <p className="mt-10 text-[11px] text-[#8b938e]">
-          Thank you. Payment via your practice&apos;s preferred method. This is a system-generated tax invoice.
+          Thank you. Payment via your practice&apos;s preferred method. This is a system-generated {vatRegistered ? "tax invoice" : "invoice"}.
         </p>
       </div>
     </div>

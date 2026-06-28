@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { TeamRoleChip, ROLE_REACH } from "@/components/hub/team-role-chip";
 import { ManageMemberButton } from "@/components/hub/manage-member-modal";
 import { SendSetupLinkButton } from "@/components/hub/send-setup-link-button";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,7 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
   const { id } = await params;
   const { principal, membership } = await requireHub();
   const provider = await getDataProvider();
-  const now = new Date().toISOString();
+  const now = clockNow();
 
   const [detail, counsellors] = await Promise.all([
     provider.getTeamMemberDetail(membership.orgId, id, now),

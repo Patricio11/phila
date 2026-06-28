@@ -7,6 +7,7 @@ import {
   UserX,
   Users,
 } from "lucide-react";
+import { now as clockNow } from "@/lib/clock";
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
@@ -36,7 +37,7 @@ export default async function HubOverviewPage() {
   const { principal, membership } = await requireHub();
   const provider = await getDataProvider();
 
-  const now = new Date().toISOString();
+  const now = clockNow();
   const overview = await provider.getHubOverview(membership.orgId, now);
   if (!overview) notFound();
 

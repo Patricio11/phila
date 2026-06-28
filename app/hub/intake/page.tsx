@@ -2,6 +2,7 @@ import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { PageHead } from "@/components/shell/page-head";
 import { IntakeTracker } from "@/components/hub/intake-tracker";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Intake" };
@@ -9,7 +10,7 @@ export const metadata = { title: "Intake" };
 export default async function HubIntakePage() {
   const { membership } = await requireHub();
   const provider = await getDataProvider();
-  const now = new Date().toISOString();
+  const now = clockNow();
   const rows = await provider.listIntakeStatus(membership.orgId, now);
 
   const completed = rows.filter((r) => r.status === "completed").length;

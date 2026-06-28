@@ -8,6 +8,7 @@ import { PageHead } from "@/components/shell/page-head";
 import { Card } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
 import { GrantDashboard } from "@/components/funder/grant-dashboard";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,7 @@ export default async function FunderGrantPage({ params }: { params: Promise<{ id
   const { id } = await params;
   const principal = await requireFunder();
   const provider = await getDataProvider();
-  const now = new Date().toISOString();
+  const now = clockNow();
 
   // The provider returns null for any grant this funder isn't scoped to 
   // a funder can never reach another grant (Rule #10).

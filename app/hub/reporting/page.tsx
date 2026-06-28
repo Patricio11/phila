@@ -3,6 +3,7 @@ import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
 import { PageHead } from "@/components/shell/page-head";
 import { ReportingView } from "@/components/hub/reporting-view";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Reports & funders" };
@@ -10,7 +11,7 @@ export const metadata = { title: "Reports & funders" };
 export default async function HubReportingPage() {
   const { principal, membership } = await requireHub();
   const provider = await getDataProvider();
-  const now = new Date().toISOString();
+  const now = clockNow();
 
   const initial = await provider.getReporting(membership.orgId, now, {});
 

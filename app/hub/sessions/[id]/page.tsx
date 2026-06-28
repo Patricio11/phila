@@ -9,6 +9,7 @@ import { Card, CardHead } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { Tag } from "@/components/ui/tag";
 import { EmptyState } from "@/components/ui/empty-state";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Session note" };
@@ -24,7 +25,7 @@ export default async function HubSessionNotePage({ params }: { params: Promise<{
   const { id } = await params;
   const { principal, membership } = await requireHub();
   const provider = await getDataProvider();
-  const now = new Date().toISOString();
+  const now = clockNow();
 
   const data = await provider.getSession(id, now);
   if (!data || data.appointment.orgId !== membership.orgId) notFound();

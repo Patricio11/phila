@@ -18,6 +18,7 @@ import { SafeguardingPanel } from "@/components/workspace/safeguarding-panel";
 import { CounsellorCareSteps } from "@/components/client/counsellor-care-steps";
 import { StatusDot } from "@/components/ui/status-dot";
 import { BlockedState } from "@/components/ui/blocked-state";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,7 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
   const { principal, membership } = await requireOrg(["counsellor"]);
   const provider = await getDataProvider();
 
-  const now = new Date().toISOString();
+  const now = clockNow();
   const [dossier, counsellors] = await Promise.all([
     provider.getClientDossier(id, now),
     provider.listCounsellors(membership.orgId),

@@ -11,6 +11,7 @@ import { Tag } from "@/components/ui/tag";
 import { StatCard } from "@/components/ui/stat-card";
 import { CreateRoomButton } from "@/components/rooms/room-buttons";
 import { cn } from "@/lib/utils";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Rooms" };
@@ -51,7 +52,7 @@ interface DayCell {
 export default async function HubRoomsPage() {
   const { membership } = await requireHub();
   const provider = await getDataProvider();
-  const now = new Date().toISOString();
+  const now = clockNow();
 
   const [rooms, org, sites] = await Promise.all([
     provider.getRoomsOverview(membership.orgId, now),

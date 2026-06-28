@@ -6,6 +6,7 @@ import { Card, CardHead } from "@/components/ui/card";
 import { MyProfileForm, type MyProfile } from "@/components/settings/my-profile-form";
 import { SecuritySettings } from "@/components/hub/security-settings";
 import { Preferences } from "@/components/settings/preferences";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Settings" };
@@ -13,7 +14,7 @@ export const metadata = { title: "Settings" };
 export default async function CounsellorSettingsPage() {
   const { principal, membership } = await requireOrg(["counsellor"]);
   const provider = await getDataProvider();
-  const now = new Date().toISOString();
+  const now = clockNow();
   const detail = await provider.getTeamMemberDetail(membership.orgId, principal.userId, now);
   if (!detail) notFound();
 

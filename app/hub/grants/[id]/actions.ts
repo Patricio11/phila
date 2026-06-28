@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
+import { now as clockNow } from "@/lib/clock";
 
 /**
  * Grant actions. Narrative updates and the period export are the funder-facing
@@ -39,7 +40,7 @@ export async function postNarrative(
 
   return {
     ok: true,
-    narrative: { id: `n_${parsed.data.grantId}_${parsed.data.body.length}`, author: principal.name, body: parsed.data.body, postedAt: new Date().toISOString() },
+    narrative: { id: `n_${parsed.data.grantId}_${parsed.data.body.length}`, author: principal.name, body: parsed.data.body, postedAt: clockNow() },
   };
 }
 

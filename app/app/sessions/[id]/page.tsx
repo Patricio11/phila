@@ -4,6 +4,7 @@ import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
 import { resolveNoteAccess } from "@/lib/auth/roles";
 import { SessionEditor } from "@/components/workspace/session-editor";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Session" };
@@ -13,7 +14,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
   const { principal, membership } = await requireOrg(["counsellor"]);
   const provider = await getDataProvider();
 
-  const now = new Date().toISOString();
+  const now = clockNow();
   const [counsellors, org] = await Promise.all([
     provider.listCounsellors(membership.orgId),
     provider.getOrg(membership.orgId),

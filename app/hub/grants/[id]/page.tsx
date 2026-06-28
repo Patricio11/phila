@@ -11,6 +11,7 @@ import { Tag } from "@/components/ui/tag";
 import { GrantDashboard } from "@/components/funder/grant-dashboard";
 import { NarrativeComposer } from "@/components/funder/narrative-composer";
 import { ReportExport } from "@/components/funder/funder-actions";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export default async function GrantPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const { principal, membership } = await requireHub();
   const provider = await getDataProvider();
-  const now = new Date().toISOString();
+  const now = clockNow();
 
   const view = await provider.getGrantView(id, now);
   if (!view || view.grant.orgId !== membership.orgId) notFound();

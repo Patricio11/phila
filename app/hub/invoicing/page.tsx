@@ -3,6 +3,7 @@ import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
 import { PageHead } from "@/components/shell/page-head";
 import { InvoiceBoard, type InvoiceRow } from "@/components/hub/invoice-board";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Invoicing" };
@@ -10,7 +11,7 @@ export const metadata = { title: "Invoicing" };
 export default async function HubInvoicingPage() {
   const { principal, membership } = await requireHub();
   const provider = await getDataProvider();
-  const now = new Date().toISOString();
+  const now = clockNow();
 
   const [invoices, clients, org] = await Promise.all([
     provider.listOrgInvoices(membership.orgId),

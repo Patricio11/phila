@@ -22,12 +22,12 @@ describe("structural conformance", () => {
   });
 
   it("every mock method is a function", () => {
-    for (const k of mockKeys) expect(typeof (mockProvider as Record<string, unknown>)[k]).toBe("function");
+    for (const k of mockKeys) expect(typeof (mockProvider as unknown as Record<string, unknown>)[k]).toBe("function");
   });
 
   it("the db stub throws 'not implemented' for every method", () => {
     for (const k of dbKeys) {
-      expect(() => (dbProvider as Record<string, () => unknown>)[k]!()).toThrow(/not implemented/i);
+      expect(() => (dbProvider as unknown as Record<string, () => unknown>)[k]!()).toThrow(/not implemented/i);
     }
   });
 });

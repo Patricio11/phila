@@ -6,6 +6,7 @@ import { HubClientsTable } from "@/components/hub/hub-clients-table";
 import { AddClientButton } from "@/components/hub/add-client-modal";
 import { ImportClientsButton } from "@/components/hub/import-clients-modal";
 import { DedupeBanner } from "@/components/hub/dedupe-clients";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Clients" };
@@ -13,7 +14,7 @@ export const metadata = { title: "Clients" };
 export default async function HubClientsPage() {
   const { principal, membership } = await requireHub();
   const provider = await getDataProvider();
-  const now = new Date().toISOString();
+  const now = clockNow();
   const [rows, counsellors, duplicates] = await Promise.all([
     provider.listOrgClients(membership.orgId, now),
     provider.listCounsellors(membership.orgId),

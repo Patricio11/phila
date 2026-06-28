@@ -3,6 +3,7 @@ import { requireOrg } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { PageHead } from "@/components/shell/page-head";
 import { SessionsList } from "@/components/workspace/sessions-list";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Sessions" };
@@ -15,7 +16,7 @@ export default async function SessionsPage() {
   const me = counsellors.find((c) => c.userId === principal.userId);
   if (!me) notFound();
 
-  const now = new Date().toISOString();
+  const now = clockNow();
   const sessions = await provider.listCounsellorSessions(me.id, now);
 
   return (

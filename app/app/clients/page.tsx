@@ -4,6 +4,7 @@ import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
 import { PageHead } from "@/components/shell/page-head";
 import { CaseloadTable } from "@/components/workspace/caseload-table";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Clients" };
@@ -16,7 +17,7 @@ export default async function ClientsPage() {
   const me = counsellors.find((c) => c.userId === principal.userId);
   if (!me) notFound();
 
-  const now = new Date().toISOString();
+  const now = clockNow();
   const rows = await provider.listCaseload(me.id, now);
 
   await logAccess({

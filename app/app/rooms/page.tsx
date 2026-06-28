@@ -8,6 +8,7 @@ import { Card, CardHead } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CounsellorWeekRooms } from "@/components/workspace/counsellor-week-rooms";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Rooms" };
@@ -30,7 +31,7 @@ export default async function CounsellorRoomsPage() {
   const me = counsellors.find((c) => c.userId === principal.userId);
   if (!me) notFound();
 
-  const now = new Date().toISOString();
+  const now = clockNow();
   const [view, org] = await Promise.all([
     provider.getCounsellorRooms(me.id, now),
     provider.getOrg(membership.orgId),

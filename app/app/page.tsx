@@ -11,6 +11,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { ScheduleList } from "@/components/schedule/schedule-list";
 import { AttentionList } from "@/components/dashboard/attention-list";
 import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";
+import { now as clockNow } from "@/lib/clock";
 
 // Session-specific and time-sensitive ("today" must always be the real day), so
 // this renders per request rather than freezing at build time. In Part B the
@@ -26,7 +27,7 @@ export default async function DashboardPage() {
   const me = counsellors.find((c) => c.userId === principal.userId);
   if (!me) notFound();
 
-  const now = new Date().toISOString();
+  const now = clockNow();
   const dash = await provider.getCounsellorDashboard(me.id, now);
   if (!dash) notFound();
 

@@ -18,6 +18,7 @@ import { SessionTimeline } from "@/components/client/session-timeline";
 import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";
 import { ReassignClientButton } from "@/components/hub/reassign-client-button";
 import { InviteClientButton } from "@/components/hub/invite-client-button";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
   const { id } = await params;
   const { principal, membership } = await requireHub();
   const provider = await getDataProvider();
-  const now = new Date().toISOString();
+  const now = clockNow();
 
   const [dossier, counsellors] = await Promise.all([
     provider.getClientDossier(id, now),

@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { EditRoomButton } from "@/components/rooms/room-buttons";
 import { AssignCounsellorButton } from "@/components/rooms/assign-counsellor";
 import { RoomScheduleGrid } from "@/components/rooms/room-schedule-grid";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
   const { id } = await params;
   const { membership } = await requireHub();
   const provider = await getDataProvider();
-  const now = new Date().toISOString();
+  const now = clockNow();
 
   const [detail, sites, clients, services, rooms, counsellors] = await Promise.all([
     provider.getRoomDetail(id, now),

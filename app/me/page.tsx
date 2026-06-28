@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { UpcomingSessionCard } from "@/components/client/upcoming-session-card";
 import { SessionTimeline } from "@/components/client/session-timeline";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,7 @@ export default async function MeHomePage() {
   if (!client) notFound();
   const org = await provider.getOrg(client.orgId);
 
-  const now = new Date().toISOString();
+  const now = clockNow();
   const nowMs = new Date(now).getTime();
   const [appts, carePlan, consents, invoices] = await Promise.all([
     provider.listAppointmentsForClient(clientId, now),

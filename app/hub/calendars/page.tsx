@@ -3,6 +3,7 @@ import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { PageHead } from "@/components/shell/page-head";
 import { CalendarView } from "@/components/calendar/calendar-view";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Calendars" };
@@ -17,7 +18,7 @@ export default async function HubCalendarsPage() {
   ]);
   if (!org) notFound();
 
-  const now = new Date().toISOString();
+  const now = clockNow();
   const [lists, orgClients, services, rooms] = await Promise.all([
     Promise.all(counsellors.map((c) => provider.listCounsellorSessions(c.id, now))),
     provider.listClients(membership.orgId),

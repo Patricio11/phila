@@ -7,6 +7,7 @@ import { PageHead } from "@/components/shell/page-head";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SupervisionView } from "@/components/workspace/supervision-view";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Supervision" };
@@ -33,7 +34,7 @@ export default async function SupervisionPage() {
     );
   }
 
-  const now = new Date().toISOString();
+  const now = clockNow();
   const [items, overview] = await Promise.all([
     provider.getSupervisionQueue(me.id, now),
     provider.getSupervisionOverview(me.id, now),

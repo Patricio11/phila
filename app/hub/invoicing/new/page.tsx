@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { InvoiceBuilder } from "@/components/documents/invoice-builder";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "New invoice", robots: { index: false } };
@@ -9,7 +10,7 @@ export const metadata = { title: "New invoice", robots: { index: false } };
 export default async function NewInvoicePage() {
   const { membership } = await requireHub();
   const provider = await getDataProvider();
-  const now = new Date().toISOString();
+  const now = clockNow();
 
   const [org, clients, services] = await Promise.all([
     provider.getOrg(membership.orgId),

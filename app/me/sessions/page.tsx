@@ -7,6 +7,7 @@ import { PageHead } from "@/components/shell/page-head";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SessionTimeline } from "@/components/client/session-timeline";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Sessions" };
@@ -18,7 +19,7 @@ export default async function MeSessionsPage() {
   const client = await provider.getClient(clientId);
   if (!client) notFound();
 
-  const now = new Date().toISOString();
+  const now = clockNow();
   const nowMs = new Date(now).getTime();
   const appts = await provider.listAppointmentsForClient(clientId, now);
 

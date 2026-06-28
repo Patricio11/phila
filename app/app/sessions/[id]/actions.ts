@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { logAccess } from "@/lib/audit";
 import { APPOINTMENT_STATES } from "@/lib/domain/enums";
+import { now as clockNow } from "@/lib/clock";
 
 /**
  * Session-editor actions. In Part A they validate + audit and return success
@@ -64,7 +65,7 @@ export async function signNote(
   const parsed = signInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Cannot sign" };
 
-  const signedAt = new Date().toISOString();
+  const signedAt = clockNow();
   await logAccess({
     action: "note.read",
     actor: { userId: "counsellor", platformRole: null, teamRole: "counsellor" },

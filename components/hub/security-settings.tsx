@@ -5,8 +5,10 @@ import { KeyRound, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
-import { changePassword, setTwoFactor } from "@/lib/account/actions";
+import { changePassword as defaultChangePassword, setTwoFactor as defaultSetTwoFactor } from "@/lib/account/actions";
 import { cn } from "@/lib/utils";
+
+type PwResult = Promise<{ ok: true } | { ok: false; error: string }>;
 
 function Toggle({ on, onClick, disabled }: { on: boolean; onClick: () => void; disabled?: boolean }) {
   return (
@@ -16,7 +18,15 @@ function Toggle({ on, onClick, disabled }: { on: boolean; onClick: () => void; d
   );
 }
 
-export function SecuritySettings({ initialTwoFactor }: { initialTwoFactor: boolean }) {
+export function SecuritySettings({
+  initialTwoFactor,
+  onChangePassword = defaultChangePassword,
+  onSetTwoFactor = defaultSetTwoFactor,
+}: {
+  initialTwoFactor: boolean;
+  onChangePassword?: (raw: { current: string; next: string; confirm: string }) => PwResult;
+  onSetTwoFactor?: (raw: { enabled: boolean }) => PwResult;
+}) {
   const { toast } = useToast();
   const [twoFactor, setTF] = useState(initialTwoFactor);
   const [tfPending, startTF] = useTransition();
@@ -28,7 +38,7 @@ export function SecuritySettings({ initialTwoFactor }: { initialTwoFactor: boole
   const toggleTF = () =>
     startTF(async () => {
       const next = !twoFactor;
-      const res = await setTwoFactor({ enabled: next });
+      const res = await onSetTwoFactor({ enabled: next });
       if (!res.ok) return toast({ tone: "error", title: res.error });
       setTF(next);
       toast(next
@@ -46,7 +56,7 @@ export function SecuritySettings({ initialTwoFactor }: { initialTwoFactor: boole
     setAttempted(true);
     if (errors.current || errors.next || errors.confirm) return;
     startPw(async () => {
-      const res = await changePassword(pw);
+      const res = await onChangePassword(pw);
       if (!res.ok) return toast({ tone: "error", title: res.error });
       toast({ tone: "success", title: "Password changed", description: "Use your new password next time you sign in." });
       setPw({ current: "", next: "", confirm: "" });

@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   Target,
   UserCog,
+  UserRound,
   Users,
 } from "lucide-react";
 
@@ -76,6 +77,7 @@ export const clientNav: NavSection[] = [
       { label: "Documents", href: "/me/documents", icon: FileText, ready: true },
       { label: "Billing", href: "/me/billing", icon: CreditCard, ready: true },
       { label: "Consent", href: "/me/consent", icon: ShieldCheck, ready: true },
+      { label: "Profile", href: "/me/profile", icon: UserRound, ready: true },
     ],
   },
 ];

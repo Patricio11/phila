@@ -11,6 +11,7 @@ import type {
   Breakdown,
   CaseloadRow,
   CaseloadStatus,
+  ClientProfileView,
   Conversation,
   CounsellorDashboard,
   CounsellorRoomsView,
@@ -56,6 +57,7 @@ import {
   carePlans,
   clientApptTemplates,
   clientDocuments,
+  clientProfiles,
   clientOutcomes,
   clients as allClients,
   consents as allConsents,
@@ -407,6 +409,26 @@ export const mockProvider: DataProvider = {
 
   // ---- Client portal (own data only) ----------------------------------
   getClient: (clientId) => ok(allClients.find((c) => c.id === clientId) ?? null),
+
+  getClientProfile: (clientId): Promise<ClientProfileView | null> => {
+    const client = allClients.find((c) => c.id === clientId);
+    if (!client) return ok(null);
+    const p = clientProfiles[clientId];
+    const counsellor = allCounsellors.find((c) => c.id === client.primaryCounsellorId);
+    return ok({
+      name: client.name,
+      email: client.email ?? "",
+      phone: client.phone ?? "",
+      province: client.province,
+      dateOfBirth: p?.dateOfBirth ?? "",
+      address: p?.address ?? "",
+      emergencyName: p?.emergencyName ?? "",
+      emergencyPhone: p?.emergencyPhone ?? "",
+      preferredContact: p?.preferredContact ?? "WhatsApp",
+      counsellorName: counsellor?.name ?? "your counsellor",
+      memberSince: client.createdAt,
+    });
+  },
 
   listAppointmentsForClient: (clientId, now) =>
     ok(

@@ -133,6 +133,20 @@ export interface Conversation {
   messages: ChatMessage[];
 }
 
+export interface ClientProfileView {
+  name: string;
+  email: string;
+  phone: string;
+  province: string;
+  dateOfBirth: string;
+  address: string;
+  emergencyName: string;
+  emergencyPhone: string;
+  preferredContact: string;
+  counsellorName: string;
+  memberSince: string;
+}
+
 export interface TeamMessage {
   id: string;
   from: "me" | "them";
@@ -491,6 +505,7 @@ export interface DataProvider {
 
   // Client portal (a client only ever sees their own data)
   getClient(clientId: string): Promise<Client | null>;
+  getClientProfile(clientId: string): Promise<ClientProfileView | null>;
   listAppointmentsForClient(clientId: string, now: string): Promise<AppointmentView[]>;
   getCarePlan(clientId: string): Promise<CarePlan | null>;
   listClientDocuments(clientId: string): Promise<ClientDocument[]>;

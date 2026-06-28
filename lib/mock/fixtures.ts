@@ -153,6 +153,25 @@ export const clients: Client[] = [
   client("cl_lerato_2", "Lerato Mahlangu", "+27 82 451 7720", undefined, "Gauteng", "couns_nomsa", false, "2026-06-26T09:00:00+02:00"),
 ];
 
+/** A client's own profile details (the /me profile page). */
+export interface ClientProfileSeed {
+  dateOfBirth: string;
+  address: string;
+  emergencyName: string;
+  emergencyPhone: string;
+  preferredContact: "WhatsApp" | "Phone call" | "Email";
+}
+
+export const clientProfiles: Record<string, ClientProfileSeed> = {
+  cl_lerato: {
+    dateOfBirth: "1990-07-15",
+    address: "12 Tambo Street, Tembisa, 1632",
+    emergencyName: "Thabo Mahlangu (brother)",
+    emergencyPhone: "+27 82 990 1122",
+    preferredContact: "WhatsApp",
+  },
+};
+
 function client(
   id: string,
   name: string,

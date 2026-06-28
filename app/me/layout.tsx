@@ -16,7 +16,7 @@ export default async function MeLayout({ children }: { children: React.ReactNode
         navKey="client"
         orgName="Your space"
         user={{ name: principal.name, email: principal.email, roleLabel: "Client" }}
-        settingsHref="/me/consent"
+        settingsHref="/me/profile"
       >
         {children}
       </AppShell>

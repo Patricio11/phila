@@ -449,6 +449,9 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 >
 > **Working method for the rest of Part B (standing):** seed **all** mock data into the DB as each entity's
 > schema lands (production-real, nothing forgotten); every phase ships **unit + Playwright E2E + screenshots**.
+>
+> 9.0 slice details: **`docs/completed/PHASE_9.0_COMPLETE.md`**. Demo accounts: **`docs/DEMO_LOGINS.md`** (all
+> `phila1234`). **Phase 9 is NOT complete** — 9.2 (consent persistence) + 2FA remain before `PHASE_9_COMPLETE.md`.
 
 ### Task 9.0: Auth + onboarding UI shells (Part A, 2026-06-28)
 - [x] **Beautiful auth surface, mock-first** (real auth lands in 9.1–9.2 behind these exact screens). A warm branded **`AuthShell`** (gradient brand panel + POPIA/data-in-SA/private-notes trust signals on desktop; slim header, single-column on mobile). **`/login`** (email + password with **show/hide eye**, forgot-password link, "explore a demo workspace" quick-access), **`/signup`** (practice registration  name, your name, work email, **password strength meter**, province, POPIA agree → onboarding), **`/forgot-password`** + **`/reset-password`** with calm success states. Marketing CTAs now route to **Sign in / Get started**. The Security card password fields (Hub/counsellor/client) upgraded to the same eye-toggle + strength + **"passwords match"** indicator.

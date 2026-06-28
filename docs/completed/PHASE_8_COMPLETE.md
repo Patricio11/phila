@@ -52,3 +52,6 @@ portal → counsellor workspace → org-admin Hub → funder portal → super-ad
 Phase 9 (Better Auth + consent persistence) begins wiring mock → real **behind the seam**, with no UI
 change: `DATA_PROVIDER=db`, the RLS data engine, scheduling, notifications, video, the AI scribe,
 payments, funder analytics, SEO, hardening, tests, launch.
+
+
+Demo logins (all password phila1234): nomsa@masizakhe.org.za (counsellor), thandeka@masizakhe.org.za (hub), lerato.m@example.co.za (client), palesa.mokoena@dsd.example.gov.za (funder), ops@philasa.com (super admin).

@@ -394,7 +394,14 @@ notifications / AI / payments / video. Guards, `logAccess()`, consent utils, `db
   client mix filterable by gender/age/location. Distinct from the funder Reporting.
 - **`/hub/booking`**  per-org control of the public `/o/[slug]/book` flow, **enforced** by `getBookingConfig`:
   master switch, which services + counsellors are bookable, in-person/online, notice + horizon, intake-at-booking,
-  deposit. New seam methods `getIntakeBoard` · `getIntakeForm` · `getBookingSettings` · `getHubInsights`.
+  deposit. **Notice + horizon are wired into the live slot picker** (`availableSlots` drops too-soon starts; the
+  date picker caps at the horizon; enforced server-side via the clock) + 3 unit tests.
+- **`/hub/services`**  the service catalogue (name · duration · price / "Enquire"); add / edit / delete,
+  validated + audited. Cross-linked with Booking (catalogue here; who-can-book + modality there).
+- **Booking flow polish**  client picks **online vs in-person** when a service offers both (validated
+  server-side); the confirm step shows a **deposit** notice when the org requires one (collected Phase 13).
+- New seam methods `getIntakeBoard` · `getIntakeForm` · `getBookingSettings` · `getHubInsights` · `saveServices`;
+  `BookingConfig` carries `enabled` · notice/horizon · `serviceModalities` · `deposit`.
 
 ---
 ---

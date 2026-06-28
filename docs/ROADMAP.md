@@ -400,8 +400,15 @@ notifications / AI / payments / video. Guards, `logAccess()`, consent utils, `db
   validated + audited. Cross-linked with Booking (catalogue here; who-can-book + modality there).
 - **Booking flow polish**  client picks **online vs in-person** when a service offers both (validated
   server-side); the confirm step shows a **deposit** notice when the org requires one (collected Phase 13).
-- New seam methods `getIntakeBoard` · `getIntakeForm` · `getBookingSettings` · `getHubInsights` · `saveServices`;
-  `BookingConfig` carries `enabled` · notice/horizon · `serviceModalities` · `deposit`.
+- **Booking → appointment wiring**  in-person assigns a free consulting room (real availability check);
+  online mints a link via the **video adapter** (Dormant-by-Default — honest "link to follow" until live).
+- **VAT, the SA way**  the **rate is national** (super admin → `/admin/settings`, default 15%, one change →
+  every org) while **registration is per-org** (Hub → Settings ▸ Invoicing & VAT: registered toggle, VAT
+  number, inclusive/exclusive pricing). Applied across the invoice builder + preview via a shared, tested
+  `computeVat()`; "TAX INVOICE" only when registered.
+- New seam methods `getIntakeBoard` · `getIntakeForm` · `getBookingSettings` · `getHubInsights` · `saveServices`
+  · `getPlatformSettings` · `getInvoiceSettings`; `BookingConfig` carries `enabled` · notice/horizon ·
+  `serviceModalities` · `deposit`.
 
 ---
 ---

@@ -406,9 +406,16 @@ notifications / AI / payments / video. Guards, `logAccess()`, consent utils, `db
   every org) while **registration is per-org** (Hub → Settings ▸ Invoicing & VAT: registered toggle, VAT
   number, inclusive/exclusive pricing). Applied across the invoice builder + preview via a shared, tested
   `computeVat()`; "TAX INVOICE" only when registered.
+- **Invoicing, fully per-org**  Settings ▸ Invoicing & VAT now also sets the **number prefix + payment
+  terms** (invoices number themselves `PREFIX-YEAR-NNNN`, due dates follow), **banking details** (printed for
+  EFT, invoice no. as the reference), and a **"Pay now" button** toggle on sent invoices — gated on the org's
+  gateway being connected (Dormant-by-Default; collection wires up Phase 13).
+- **Rooms ▸ Manage sites**  rooms already had full CRUD; now branches/sites are manageable too (name +
+  province, add/rename/remove; a site with rooms can't be removed).
 - New seam methods `getIntakeBoard` · `getIntakeForm` · `getBookingSettings` · `getHubInsights` · `saveServices`
-  · `getPlatformSettings` · `getInvoiceSettings`; `BookingConfig` carries `enabled` · notice/horizon ·
-  `serviceModalities` · `deposit`.
+  · `getPlatformSettings` · `getInvoiceSettings` · `saveSites` · `saveInvoiceSettings` · `savePlatformVat`;
+  `BookingConfig` carries `enabled` · notice/horizon · `serviceModalities` · `deposit`; `InvoiceSettings` carries
+  VAT · numbering · terms · banking · `showPayButton`.
 
 ---
 ---

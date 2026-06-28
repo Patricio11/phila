@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { BellRing, Check, FilePlus2 } from "lucide-react";
-import type { Invoice } from "@/lib/mock/types";
+import type { Invoice } from "@/lib/domain/types";
 import type { PaymentStatus } from "@/lib/domain/enums";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";

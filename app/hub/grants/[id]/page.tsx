@@ -4,7 +4,7 @@ import { ArrowLeft, Users } from "lucide-react";
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
-import { coverageNote } from "@/lib/mock/helpers";
+import { coverageNote } from "@/lib/domain/helpers";
 import { PageHead } from "@/components/shell/page-head";
 import { Card } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";

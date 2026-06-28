@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Zap } from "lucide-react";
-import type { IntegrationCatalogItem } from "@/lib/mock/types";
+import type { IntegrationCatalogItem } from "@/lib/domain/types";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";

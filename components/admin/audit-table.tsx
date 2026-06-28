@@ -1,7 +1,7 @@
 "use client";
 
 import { Download } from "lucide-react";
-import type { PlatformAuditEvent } from "@/lib/mock/types";
+import type { PlatformAuditEvent } from "@/lib/domain/types";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";

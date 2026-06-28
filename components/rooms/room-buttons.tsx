@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Pencil, Plus } from "lucide-react";
-import type { Room } from "@/lib/mock/types";
+import type { Room } from "@/lib/domain/types";
 import { Button } from "@/components/ui/button";
 import { RoomFormModal } from "@/components/rooms/room-form-modal";
 

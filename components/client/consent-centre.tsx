@@ -6,7 +6,7 @@ import {
   CONSENT_PURPOSE_LABELS,
   type ConsentPurpose,
 } from "@/lib/domain/enums";
-import type { ConsentRecord } from "@/lib/mock/types";
+import type { ConsentRecord } from "@/lib/domain/types";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 

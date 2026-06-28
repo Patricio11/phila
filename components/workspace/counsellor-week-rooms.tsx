@@ -2,7 +2,7 @@
 
 import { Video } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
-import type { BusinessHours } from "@/lib/mock/types";
+import type { BusinessHours } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
 
 const HOUR_PX = 44;

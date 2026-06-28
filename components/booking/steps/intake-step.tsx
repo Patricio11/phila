@@ -1,6 +1,6 @@
 "use client";
 
-import type { IntakeForm } from "@/lib/mock/types";
+import type { IntakeForm } from "@/lib/domain/types";
 import { StepHeader } from "@/components/booking/step-header";
 import { FieldError, FieldHint, Input, Label, RadioGroup, Textarea } from "@/components/ui/input";
 import { intakeErrors } from "@/components/booking/validation";

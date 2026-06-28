@@ -1,12 +1,12 @@
 import { MessageSquareText } from "lucide-react";
 import type { GrantBreakdowns, IndicatorActual, OutcomePoint } from "@/lib/data-provider";
-import type { GrantNarrative } from "@/lib/mock/types";
+import type { GrantNarrative } from "@/lib/domain/types";
 import { Card, CardHead } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { IndicatorMeter } from "@/components/funder/indicator-meter";
 import { BreakdownBars } from "@/components/funder/breakdown-bars";
 import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";
-import { coverageNote } from "@/lib/mock/helpers";
+import { coverageNote } from "@/lib/domain/helpers";
 
 function postedOn(iso: string): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "long", year: "numeric" }).format(new Date(iso));

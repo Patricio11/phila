@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
-import type { BusinessHours } from "@/lib/mock/types";
+import type { BusinessHours } from "@/lib/domain/types";
 import { PageHead } from "@/components/shell/page-head";
 import { Card, CardHead } from "@/components/ui/card";
 import { IntegrationToggles } from "@/components/hub/integration-toggles";

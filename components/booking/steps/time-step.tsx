@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { CalendarX2, Loader2 } from "lucide-react";
-import type { BusinessHours } from "@/lib/mock/types";
-import { isoWeekday } from "@/lib/mock/helpers";
+import type { BusinessHours } from "@/lib/domain/types";
+import { isoWeekday } from "@/lib/domain/helpers";
 import { getAvailableSlots, type SlotOption } from "@/app/o/[slug]/book/actions";
 import { StepHeader } from "@/components/booking/step-header";
 import { cn } from "@/lib/utils";

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Check } from "lucide-react";
-import type { Room } from "@/lib/mock/types";
+import type { Room } from "@/lib/domain/types";
 import { Dialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
 import { Input, Label, FieldError } from "@/components/ui/input";

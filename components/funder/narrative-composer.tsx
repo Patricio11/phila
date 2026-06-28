@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Send } from "lucide-react";
-import type { GrantNarrative } from "@/lib/mock/types";
+import type { GrantNarrative } from "@/lib/domain/types";
 import { Textarea } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";

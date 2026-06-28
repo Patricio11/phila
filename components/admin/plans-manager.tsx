@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Pencil, Plus, Sparkles, X } from "lucide-react";
 import type { PlanWithUsage } from "@/lib/data-provider";
-import type { Plan } from "@/lib/mock/types";
+import type { Plan } from "@/lib/domain/types";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Plus, Video } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
-import type { BusinessHours } from "@/lib/mock/types";
+import type { BusinessHours } from "@/lib/domain/types";
 import { CreateAppointmentModal, type CreateInitial, type SchedulingOptions } from "@/components/scheduling/create-appointment-modal";
 import { cn } from "@/lib/utils";
 

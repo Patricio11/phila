@@ -53,7 +53,7 @@ import type {
   Room,
   Service,
   SessionNote,
-} from "@/lib/mock/types";
+} from "@/lib/domain/types";
 import {
   aiRailConfig,
   carePlans,
@@ -96,7 +96,7 @@ import {
 } from "@/lib/mock/fixtures";
 import { isConsentActive } from "@/lib/consent";
 import { liveOnly } from "@/lib/retention";
-import { applyKAnon, isoWeekday, roomUtilisation, SAST_OFFSET } from "@/lib/mock/helpers";
+import { applyKAnon, isoWeekday, roomUtilisation, SAST_OFFSET } from "@/lib/domain/helpers";
 import type { ConsentPurpose } from "@/lib/domain/enums";
 import {
   AGE_BAND_LABELS,

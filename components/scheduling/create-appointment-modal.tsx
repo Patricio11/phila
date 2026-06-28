@@ -8,8 +8,8 @@ import { Input, Label, Textarea, RadioGroup, FieldError } from "@/components/ui/
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { createAppointment } from "@/lib/scheduling/actions";
-import { isoWeekday } from "@/lib/mock/helpers";
-import type { BusinessHours } from "@/lib/mock/types";
+import { isoWeekday } from "@/lib/domain/helpers";
+import type { BusinessHours } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
 
 export interface SchedulingOptions {

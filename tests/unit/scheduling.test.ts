@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { isoWeekday, availableSlots } from "@/lib/mock/helpers";
-import type { Org, Appointment } from "@/lib/mock/types";
+import { isoWeekday, availableSlots } from "@/lib/domain/helpers";
+import type { Org, Appointment } from "@/lib/domain/types";
 
 const MON = "2026-06-29"; // a Monday
 const TUE = "2026-06-30";

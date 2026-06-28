@@ -4,7 +4,7 @@
  * South Africa runs on a single timezone with no DST, so wall-clock times are
  * anchored to a fixed +02:00 (SAST) offset.
  */
-import type { Appointment, BusinessHours, Org } from "@/lib/mock/types";
+import type { Appointment, BusinessHours, Org } from "@/lib/domain/types";
 
 export const SAST_OFFSET = "+02:00";
 

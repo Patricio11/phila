@@ -1,4 +1,4 @@
-import type { IntakeField } from "@/lib/mock/types";
+import type { IntakeField } from "@/lib/domain/types";
 import type { BookingState } from "@/components/booking/types";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

@@ -32,7 +32,7 @@ import type {
   Service,
   SessionNote,
   Site,
-} from "@/lib/mock/types";
+} from "@/lib/domain/types";
 
 /** Everything the booking flow (`/o/[slug]/book`) needs in one fetch. */
 export interface BookingConfig {
@@ -294,7 +294,7 @@ export interface RoomDayOccupancy {
 export interface RoomDetail {
   room: Room;
   siteName: string;
-  businessHours: import("@/lib/mock/types").BusinessHours;
+  businessHours: import("@/lib/domain/types").BusinessHours;
   utilisation: { meetings: number; bookedHours: number; utilisationPct: number; busiestDay: string | null };
   perDay: RoomDayOccupancy[];
   freeHours: number;

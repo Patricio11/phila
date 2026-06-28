@@ -3,7 +3,7 @@ import { CalendarDays, CheckCircle2, Users, UserX } from "lucide-react";
 import { requireOrg } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
-import { coverageNote } from "@/lib/mock/helpers";
+import { coverageNote } from "@/lib/domain/helpers";
 import { PageHead } from "@/components/shell/page-head";
 import { CreateAppointmentButton } from "@/components/scheduling/create-appointment-button";
 import { Card, CardBody, CardHead } from "@/components/ui/card";

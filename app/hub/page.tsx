@@ -11,7 +11,7 @@ import { now as clockNow } from "@/lib/clock";
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
-import { coverageNote, isoWeekday } from "@/lib/mock/helpers";
+import { coverageNote, isoWeekday } from "@/lib/domain/helpers";
 import { PageHead } from "@/components/shell/page-head";
 import { Card, CardHead } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";

@@ -1,7 +1,7 @@
 "use client";
 
 import { Printer, X } from "lucide-react";
-import type { Invoice } from "@/lib/mock/types";
+import type { Invoice } from "@/lib/domain/types";
 import type { PaymentStatus } from "@/lib/domain/enums";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Invoice } from "@/lib/mock/types";
+import type { Invoice } from "@/lib/domain/types";
 import type { PaymentStatus } from "@/lib/domain/enums";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";

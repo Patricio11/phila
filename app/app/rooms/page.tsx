@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { Building2, CalendarClock, DoorOpen, MapPin } from "lucide-react";
 import { requireOrg } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
-import { isoWeekday } from "@/lib/mock/helpers";
+import { isoWeekday } from "@/lib/domain/helpers";
 import { PageHead } from "@/components/shell/page-head";
 import { Card, CardHead } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";

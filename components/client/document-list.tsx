@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Download, FileText, Upload } from "lucide-react";
-import type { ClientDocument } from "@/lib/mock/types";
+import type { ClientDocument } from "@/lib/domain/types";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { EmptyState } from "@/components/ui/empty-state";

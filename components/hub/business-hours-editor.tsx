@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Clock } from "lucide-react";
-import type { BusinessHours } from "@/lib/mock/types";
+import type { BusinessHours } from "@/lib/domain/types";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { saveBusinessHours } from "@/app/hub/settings/actions";

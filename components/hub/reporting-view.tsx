@@ -11,7 +11,7 @@ import { Select } from "@/components/ui/select";
 import { FilterMenu } from "@/components/ui/filter-menu";
 import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";
 import { useToast } from "@/components/ui/toast";
-import { coverageNote } from "@/lib/mock/helpers";
+import { coverageNote } from "@/lib/domain/helpers";
 import { exportFunderReport, runReport } from "@/app/hub/reporting/actions";
 
 const PERIODS = ["This month", "This quarter", "Year to date", "Last 12 months"] as const;

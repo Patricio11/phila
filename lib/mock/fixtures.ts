@@ -18,7 +18,7 @@ import type {
   Room,
   Service,
   Site,
-} from "@/lib/mock/types";
+} from "@/lib/domain/types";
 import type { ConsentPurpose } from "@/lib/domain/enums";
 
 const ORG_ID = "org_masizakhe";
@@ -321,7 +321,7 @@ export const clientApptTemplates: Record<string, ClientApptTemplate[]> = {
 };
 
 /** The client-shared care plan (NOT the private note)  shared by the counsellor. */
-export const carePlans: Record<string, import("@/lib/mock/types").CarePlan> = {
+export const carePlans: Record<string, import("@/lib/domain/types").CarePlan> = {
   cl_lerato: {
     id: "care_lerato",
     clientId: "cl_lerato",
@@ -342,7 +342,7 @@ export const carePlans: Record<string, import("@/lib/mock/types").CarePlan> = {
   },
 };
 
-export const clientDocuments: Record<string, import("@/lib/mock/types").ClientDocument[]> = {
+export const clientDocuments: Record<string, import("@/lib/domain/types").ClientDocument[]> = {
   cl_lerato: [
     { id: "doc1", clientId: "cl_lerato", orgId: ORG_ID, name: "Your care plan  June", kind: "report", sizeLabel: "1 page", sharedBy: "counsellor", createdAt: "2026-06-20T16:01:00+02:00" },
     { id: "doc2", clientId: "cl_lerato", orgId: ORG_ID, name: "Wind-down routine guide", kind: "resource", sizeLabel: "PDF · 320 KB", sharedBy: "counsellor", createdAt: "2026-06-13T15:30:00+02:00" },
@@ -350,7 +350,7 @@ export const clientDocuments: Record<string, import("@/lib/mock/types").ClientDo
   ],
 };
 
-export const invoices: Record<string, import("@/lib/mock/types").Invoice[]> = {
+export const invoices: Record<string, import("@/lib/domain/types").Invoice[]> = {
   cl_lerato: [
     { id: "inv1", clientId: "cl_lerato", orgId: ORG_ID, number: "MZ-2026-0142", serviceName: "Individual counselling", amountCents: 45000, status: "unpaid", issuedAt: "2026-06-23T09:00:00+02:00", dueAt: "2026-07-07T09:00:00+02:00" },
     { id: "inv2", clientId: "cl_lerato", orgId: ORG_ID, number: "MZ-2026-0131", serviceName: "Individual counselling", amountCents: 45000, status: "paid", issuedAt: "2026-06-09T09:00:00+02:00", dueAt: "2026-06-23T09:00:00+02:00" },
@@ -458,14 +458,14 @@ export const conversations: Record<string, ConversationSeed[]> = {
 
 /* ---- Platform (super-admin) ------------------------------------------ */
 
-export const plans: import("@/lib/mock/types").Plan[] = [
+export const plans: import("@/lib/domain/types").Plan[] = [
   { id: "p_community", name: "Community", tagline: "For NGOs, faith-based & community services", priceCents: 65000, seats: 8, aiTokens: 50000, videoMinutes: 300, messaging: true, rooms: 5, ngo: true },
   { id: "p_practice", name: "Practice", tagline: "For a growing private practice", priceCents: 120000, seats: 5, aiTokens: 0, videoMinutes: 0, messaging: false, rooms: 3 },
   { id: "p_programme", name: "Programme", tagline: "For multi-counsellor programmes & EAPs", priceCents: 350000, seats: 15, aiTokens: 100000, videoMinutes: 600, messaging: true, rooms: 10, popular: true },
   { id: "p_enterprise", name: "Enterprise", tagline: "For large EAPs & provider networks", priceCents: 750000, seats: null, aiTokens: 500000, videoMinutes: 2000, messaging: true, rooms: null },
 ];
 
-export const platformOrgs: import("@/lib/mock/types").PlatformOrg[] = [
+export const platformOrgs: import("@/lib/domain/types").PlatformOrg[] = [
   { id: "org_masizakhe", name: "Masizakhe Counselling", province: "Gauteng", planId: "p_programme", subscriptionStatus: "active", members: 8, sessions7d: 42, aiSpendCents: 18500, createdAt: "2024-02-01", suspended: false },
   { id: "org_thrive", name: "Thrive EAP", province: "Western Cape", planId: "p_enterprise", subscriptionStatus: "active", members: 22, sessions7d: 96, aiSpendCents: 124300, createdAt: "2023-11-15", suspended: false },
   { id: "org_ubuntu", name: "Ubuntu Community Care", province: "KwaZulu-Natal", planId: "p_community", subscriptionStatus: "trialing", members: 6, sessions7d: 18, aiSpendCents: 4200, createdAt: "2026-06-10", suspended: false },
@@ -473,7 +473,7 @@ export const platformOrgs: import("@/lib/mock/types").PlatformOrg[] = [
   { id: "org_khula", name: "Khula Trust", province: "Eastern Cape", planId: "p_community", subscriptionStatus: "cancelled", members: 3, sessions7d: 0, aiSpendCents: 0, createdAt: "2024-09-01", suspended: true },
 ];
 
-export const aiRailConfig: import("@/lib/mock/types").AiRailConfig = {
+export const aiRailConfig: import("@/lib/domain/types").AiRailConfig = {
   provider: "anthropic",
   model: "claude-sonnet-4-6",
   maxTokens: 4000,
@@ -483,7 +483,7 @@ export const aiRailConfig: import("@/lib/mock/types").AiRailConfig = {
   defaultOrgCapCents: 200000,
 };
 
-export const integrationsCatalogue: import("@/lib/mock/types").IntegrationCatalogItem[] = [
+export const integrationsCatalogue: import("@/lib/domain/types").IntegrationCatalogItem[] = [
   { key: "whatsapp", name: "WhatsApp (Meta Cloud API)", category: "messaging", status: "mock", description: "Booking, reminder, and follow-up messages  WhatsApp-first." },
   { key: "sms", name: "SMS (Clickatell)", category: "messaging", status: "off", description: "SMS fallback for clients without WhatsApp." },
   { key: "livekit", name: "LiveKit video", category: "video", status: "mock", description: "Self-hosted, in-region video rooms for online sessions." },
@@ -494,7 +494,7 @@ export const integrationsCatalogue: import("@/lib/mock/types").IntegrationCatalo
   { key: "platform_psp", name: "Phila platform billing", category: "platform", status: "live", description: "Phila's own PSP  how orgs pay their subscription." },
 ];
 
-export const platformAuditEvents: import("@/lib/mock/types").PlatformAuditEvent[] = [
+export const platformAuditEvents: import("@/lib/domain/types").PlatformAuditEvent[] = [
   { id: "pa1", at: "2026-06-27T09:14:00+02:00", action: "impersonate.start", actor: "Sizwe Ndlovu", orgName: "MindWell Wellness", target: "org_mindwell", reason: "support_ticket_4821" },
   { id: "pa2", at: "2026-06-27T08:52:00+02:00", action: "note.read_hub_override", actor: "Thandeka Mbeki", orgName: "Masizakhe Counselling", target: "appointment:appt_couns_nomsa_1/note", reason: "hub_override" },
   { id: "pa3", at: "2026-06-26T16:30:00+02:00", action: "pii.export", actor: "Bongani Nkosi", orgName: "Thrive EAP", target: "funder_report.pdf", reason: "funder_export_k_anon" },
@@ -507,18 +507,18 @@ export const platformAuditEvents: import("@/lib/mock/types").PlatformAuditEvent[
 
 /* ---- Funders & grants (M&E) ------------------------------------------ */
 
-export const funders: import("@/lib/mock/types").Funder[] = [
+export const funders: import("@/lib/domain/types").Funder[] = [
   { id: "f_dsd", orgId: ORG_ID, name: "Department of Social Development", type: "government", contactName: "Palesa Mokoena", contactEmail: "palesa.mokoena@dsd.example.gov.za" },
   { id: "f_lotto", orgId: ORG_ID, name: "National Lotteries Commission", type: "lottery", contactName: "Sibusiso Dube", contactEmail: "grants@nlc.example.org.za" },
   { id: "f_csi", orgId: ORG_ID, name: "Standard Bank CSI", type: "corporate_csi", contactName: "Megan Reddy", contactEmail: "csi@standardbank.example.co.za" },
 ];
 
-export const grants: import("@/lib/mock/types").Grant[] = [
+export const grants: import("@/lib/domain/types").Grant[] = [
   { id: "g_dsd", funderId: "f_dsd", orgId: ORG_ID, title: "Community Wellness Programme", periodStart: "2026-04-01", periodEnd: "2027-03-31", amountCents: 85000000, restricted: true, reportingSchedule: "quarterly", status: "active" },
   { id: "g_lotto", funderId: "f_lotto", orgId: ORG_ID, title: "Youth Mental Health", periodStart: "2026-01-01", periodEnd: "2026-12-31", amountCents: 120000000, restricted: true, reportingSchedule: "biannual", status: "active" },
 ];
 
-export const grantIndicators: import("@/lib/mock/types").GrantIndicator[] = [
+export const grantIndicators: import("@/lib/domain/types").GrantIndicator[] = [
   { id: "i_dsd_1", grantId: "g_dsd", name: "Unique clients reached", type: "count", metric: "unique_clients", target: 30, unit: "clients", rule: "Distinct clients tagged to this grant." },
   { id: "i_dsd_2", grantId: "g_dsd", name: "Female participants", type: "percentage", metric: "pct_female", target: 60, unit: "%", rule: "Share of consented participants who are female." },
   { id: "i_dsd_3", grantId: "g_dsd", name: "Improved ≥5 on PHQ-9", type: "outcome_delta", metric: "phq9_improved_5", target: 70, unit: "%", rule: "Share with a ≥5-point PHQ-9 drop, first to latest." },
@@ -528,7 +528,7 @@ export const grantIndicators: import("@/lib/mock/types").GrantIndicator[] = [
   { id: "i_lotto_3", grantId: "g_lotto", name: "Sessions delivered", type: "count", metric: "sessions_delivered", target: 120, unit: "sessions", rule: "Completed sessions for tagged clients in the period." },
 ];
 
-export const grantAllocations: import("@/lib/mock/types").GrantAllocation[] = [
+export const grantAllocations: import("@/lib/domain/types").GrantAllocation[] = [
   { grantId: "g_dsd", clientId: "cl_lerato" },
   { grantId: "g_dsd", clientId: "cl_sipho" },
   { grantId: "g_dsd", clientId: "cl_fatima" },
@@ -540,12 +540,12 @@ export const grantAllocations: import("@/lib/mock/types").GrantAllocation[] = [
   { grantId: "g_lotto", clientId: "cl_kabelo" },
 ];
 
-export const grantNarratives: import("@/lib/mock/types").GrantNarrative[] = [
+export const grantNarratives: import("@/lib/domain/types").GrantNarrative[] = [
   { id: "n1", grantId: "g_dsd", author: "Thandeka Mbeki", body: "Q1 is off to a steady start. We've onboarded six clients into the programme and held the first round of assessments. Early PHQ-9 movement is encouraging, especially for clients balancing work and caregiving. We're focusing outreach on reaching more participants in the coming weeks.", postedAt: "2026-06-20T14:00:00+02:00" },
 ];
 
 /** Funder users scoped to their grant(s)  read-only (Phase 9 real invite flow). */
-export const funderContacts: import("@/lib/mock/types").FunderContact[] = [
+export const funderContacts: import("@/lib/domain/types").FunderContact[] = [
   { userId: "user_funder", funderId: "f_dsd", grantIds: ["g_dsd"] },
 ];
 
@@ -719,7 +719,7 @@ export const roomAssignments: RoomAssignment[] = [
 ];
 
 /** A few more invoices across clients so org invoicing has real spread. */
-export const orgExtraInvoices: import("@/lib/mock/types").Invoice[] = [
+export const orgExtraInvoices: import("@/lib/domain/types").Invoice[] = [
   { id: "inv_s1", clientId: "cl_fatima", orgId: ORG_ID, number: "MZ-2026-0145", serviceName: "Initial assessment", amountCents: 50000, status: "unpaid", issuedAt: "2026-06-24T09:00:00+02:00", dueAt: "2026-07-08T09:00:00+02:00" },
   { id: "inv_s2", clientId: "cl_johan", orgId: ORG_ID, number: "MZ-2026-0140", serviceName: "Individual counselling", amountCents: 45000, status: "paid", issuedAt: "2026-06-18T09:00:00+02:00", dueAt: "2026-07-02T09:00:00+02:00" },
   { id: "inv_s3", clientId: "cl_zanele", orgId: ORG_ID, number: "MZ-2026-0138", serviceName: "Couples counselling", amountCents: 75000, status: "unpaid", issuedAt: "2026-06-16T09:00:00+02:00", dueAt: "2026-06-30T09:00:00+02:00" },
@@ -756,7 +756,7 @@ export const supervisionTemplates: {
 ];
 
 /** The org's intake form, rendered during booking (Phase 2). */
-export const intakeForms: Record<string, import("@/lib/mock/types").IntakeForm> = {
+export const intakeForms: Record<string, import("@/lib/domain/types").IntakeForm> = {
   [ORG_ID]: {
     id: "intake_masizakhe",
     orgId: ORG_ID,

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Check, KeyRound, Lock, Zap } from "lucide-react";
-import type { AiRailConfig } from "@/lib/mock/types";
+import type { AiRailConfig } from "@/lib/domain/types";
 import { Card, CardHead } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

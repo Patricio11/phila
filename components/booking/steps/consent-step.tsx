@@ -1,7 +1,7 @@
 "use client";
 
 import { ShieldCheck } from "lucide-react";
-import type { Org } from "@/lib/mock/types";
+import type { Org } from "@/lib/domain/types";
 import type { BookingState } from "@/components/booking/types";
 import { ConsentField, type ConsentSpec } from "@/components/booking/consent-field";
 import { StepHeader } from "@/components/booking/step-header";

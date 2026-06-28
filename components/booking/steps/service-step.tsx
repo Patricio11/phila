@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Clock, Users } from "lucide-react";
-import type { Counsellor, Service } from "@/lib/mock/types";
+import type { Counsellor, Service } from "@/lib/domain/types";
 import { StepHeader } from "@/components/booking/step-header";
 import { Avatar } from "@/components/ui/avatar";
 import { CredentialChip } from "@/components/ui/credential-chip";

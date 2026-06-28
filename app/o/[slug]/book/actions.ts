@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { getDataProvider } from "@/lib/data-provider";
-import { availableSlots, type Slot } from "@/lib/mock/helpers";
+import { availableSlots, type Slot } from "@/lib/domain/helpers";
 import { logAccess } from "@/lib/audit";
 import { CONSENT_PURPOSES } from "@/lib/domain/enums";
 

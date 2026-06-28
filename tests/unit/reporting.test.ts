@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { applyKAnon, coverageNote, roomUtilisation, K_ANON_FLOOR } from "@/lib/mock/helpers";
-import type { Appointment, BusinessHours } from "@/lib/mock/types";
+import { applyKAnon, coverageNote, roomUtilisation, K_ANON_FLOOR } from "@/lib/domain/helpers";
+import type { Appointment, BusinessHours } from "@/lib/domain/types";
 
 describe("applyKAnon", () => {
   it("suppresses cells below the floor and labels them (never silent)", () => {

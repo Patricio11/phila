@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ArrowRight, BookOpen, Check, Sparkles } from "lucide-react";
-import type { CarePlan } from "@/lib/mock/types";
+import type { CarePlan } from "@/lib/domain/types";
 import { Card, CardHead } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";

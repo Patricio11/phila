@@ -138,8 +138,17 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
   + `#main-content`, toasts as aria-live, reduced-motion throughout, light/dark verified, PWA installable
   + offline shell. **Part-A ship gate MET**  38 routes, all five roles demoable on a phone in either
   theme, installed as an app, zero dead ends. See PHASE_8_COMPLETE.md.
-- **Phase 9** (Part B begins: Better Auth + consent persistence, mock→real behind the seam)  ⏳ next.
-- *(Update this block as phases ship. Part A is mock-first: nothing below Phase 9 touches a real DB.)*
+- **PART A — COMPLETE** ✅ **2026-06-28**. The whole product, all five roles, on the `dataProvider` seam;
+  POPIA spine live (consent state machine, `logAccess`, k-anon, private-note vs shared-care-plan); auth +
+  onboarding + invite shells; the **"Your steps"** loop. **Closeout hardening done:** zero `@/lib/mock`
+  imports in app+components (types/helpers → `lib/domain`); frozen `DataProvider` interface **proven by a
+  conformance suite**; **38 unit+contract tests green in CI** (tsc+lint+test+build); injectable clock
+  (`lib/clock.ts`); typed dormant **adapters** (`lib/adapters/`). Remaining (small, no UI change):
+  Playwright/axe sweep, optional loading/error flag. See `docs/completed/PHASE_A_COMPLETE.md` +
+  `docs/PHASE_A_CLOSEOUT.md`.
+- **Phase 9** (Part B begins: Better Auth + consent persistence, mock→real behind the seam)  ⏳ **next** —
+  plan in `docs/PHASE_9_PLAN.md`.
+- *(Update this block as phases ship. Part A is mock-first; Part B wires real behind the unchanged UI.)*
 
 ---
 

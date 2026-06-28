@@ -356,8 +356,9 @@ auto-rolls up to them, and a scoped, k-anon, read-only **funder portal**. The gr
 
 ---
 
-## 🚪 PART A → PART B CLOSEOUT GATE — status 2026-06-28
-*Full checklist + scorecard in `docs/PHASE_A_CLOSEOUT.md`. Audited against the code.*
+## ✅ PART A — COMPLETE (2026-06-28) · 🚪 CLOSEOUT GATE MET
+*Whole product, all five roles, on the seam. Closeout: `docs/completed/PHASE_A_COMPLETE.md` + scorecard in
+`docs/PHASE_A_CLOSEOUT.md`. Phase 9 plan: `docs/PHASE_9_PLAN.md`. Tagged `part-a-complete`.*
 
 **Product: complete.** Every role + surface is built mock-first; clinical loop, Hub oversight, funder portal,
 super-admin console, settings, internal messaging, "Your steps", auth/onboarding/invite — all click through;

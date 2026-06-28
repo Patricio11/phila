@@ -5,7 +5,7 @@
  * org membership lives in `org_members` (db/schema.ts). Ids are text so the demo
  * seed can use the same ids as the mock fixtures (seamless mock↔db fallback).
  */
-import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, integer } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -15,10 +15,23 @@ export const user = pgTable("user", {
   image: text("image"),
   createdAt: timestamp("created_at").$defaultFn(() => new Date()).notNull(),
   updatedAt: timestamp("updated_at").$defaultFn(() => new Date()).notNull(),
+  /** TOTP 2FA enrolled (Better Auth twoFactor plugin). */
+  twoFactorEnabled: boolean("two_factor_enabled").$defaultFn(() => false),
   /** Phila: platform role (client | funder | super_admin); null for org staff. */
   platformRole: text("platform_role"),
   /** Phila: for a client user, their linked client record id. */
   clientId: text("client_id"),
+});
+
+/** TOTP secret + backup codes per user (Better Auth twoFactor plugin). */
+export const twoFactor = pgTable("two_factor", {
+  id: text("id").primaryKey(),
+  secret: text("secret").notNull(),
+  backupCodes: text("backup_codes").notNull(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  verified: boolean("verified").$defaultFn(() => true),
+  failedVerificationCount: integer("failed_verification_count").$defaultFn(() => 0),
+  lockedUntil: timestamp("locked_until"),
 });
 
 export const session = pgTable("session", {

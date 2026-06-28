@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Check } from "lucide-react";
 import {
   CONSENT_PURPOSE_LABELS,
@@ -8,6 +8,7 @@ import {
 } from "@/lib/domain/enums";
 import type { ConsentRecord } from "@/lib/domain/types";
 import { useToast } from "@/components/ui/toast";
+import { setConsent } from "@/app/me/consent/actions";
 import { cn } from "@/lib/utils";
 
 /** Plain-English descriptions for the consent centre. */
@@ -40,23 +41,27 @@ export function ConsentCentre({ records }: { records: ConsentRecord[] }) {
   for (const r of records) initial.set(r.purpose, r.state);
 
   const [states, setStates] = useState<Map<ConsentPurpose, State>>(initial);
+  const [, start] = useTransition();
 
   // Only purposes the client actually has a relationship with are shown.
   const purposes = ORDER.filter((p) => states.has(p));
 
   const toggle = (purpose: ConsentPurpose) => {
-    setStates((prev) => {
-      const next = new Map(prev);
-      const on = prev.get(purpose) === "granted";
-      next.set(purpose, on ? "revoked" : "granted");
+    const wasOn = states.get(purpose) === "granted";
+    const grant = wasOn ? false : true;
+    // Optimistic — flip now, persist, revert on failure.
+    setStates((prev) => new Map(prev).set(purpose, grant ? "granted" : "revoked"));
+    start(async () => {
+      const res = await setConsent({ purpose, grant });
+      if (!res.ok) {
+        setStates((prev) => new Map(prev).set(purpose, wasOn ? "granted" : "revoked"));
+        return toast({ tone: "error", title: "Couldn't save that", description: res.error });
+      }
       toast({
-        tone: on ? "default" : "success",
-        title: on ? `Turned off: ${CONSENT_PURPOSE_LABELS[purpose]}` : `Turned on: ${CONSENT_PURPOSE_LABELS[purpose]}`,
-        description: on
-          ? "This takes effect right away. You can turn it back on any time."
-          : "Thank you  this takes effect right away.",
+        tone: grant ? "success" : "default",
+        title: grant ? `Turned on: ${CONSENT_PURPOSE_LABELS[purpose]}` : `Turned off: ${CONSENT_PURPOSE_LABELS[purpose]}`,
+        description: grant ? "Thank you  this takes effect right away." : "This takes effect right away. You can turn it back on any time.",
       });
-      return next;
     });
   };
 

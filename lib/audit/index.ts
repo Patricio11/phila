@@ -1,8 +1,8 @@
 /**
  * Audit log  `logAccess()` is invoked on every PII read/export and every
- * privileged action (Protected & Audited Rule). In Part A it writes to a
- * console/in-memory sink so the *call sites* exist from commit one; Phase 10
- * swaps the sink for the persistent `audit_log` table with no call-site change.
+ * privileged action (Protected & Audited Rule). The sink is swappable: with
+ * `DATA_PROVIDER=db` it **persists to the `audit_log` table** (Phase 9); on mock
+ * it keeps the in-memory/console sink. No call site changes either way.
  *
  * The rule that matters: the Hub reading a private note, a super-admin crossing
  * orgs, a funder opening a grant view  each is a recorded access, never silent.
@@ -64,7 +64,32 @@ class MemoryAuditSink implements AuditSink {
   }
 }
 
-const sink: AuditSink = new MemoryAuditSink();
+/**
+ * Persistent sink — writes to the `audit_log` table (Phase 9). Lazily imports the
+ * DB client so this module never forces a server-only import on the client, and
+ * never fails the user's action if a log write hiccups (it logs the error instead;
+ * fail-strict auditing is a Phase-10 hardening decision).
+ */
+class DbAuditSink implements AuditSink {
+  async write(event: AuditEvent): Promise<void> {
+    try {
+      const [{ getDb }, { auditLog }] = await Promise.all([import("@/db/client"), import("@/db/schema")]);
+      await getDb().insert(auditLog).values({
+        orgId: event.orgId,
+        actorUserId: event.actor.userId,
+        action: event.action,
+        target: event.target,
+        reason: event.reason ?? null,
+        meta: event.meta ?? null,
+        at: new Date(event.at),
+      });
+    } catch (err) {
+      console.error("[audit] failed to persist event", event.action, event.target, err);
+    }
+  }
+}
+
+const sink: AuditSink = process.env.DATA_PROVIDER === "db" ? new DbAuditSink() : new MemoryAuditSink();
 
 export async function logAccess(event: Omit<AuditEvent, "at"> & { at?: string }): Promise<void> {
   await sink.write({ ...event, at: event.at ?? new Date().toISOString() });

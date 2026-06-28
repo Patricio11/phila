@@ -12,10 +12,11 @@
  */
 import { eq } from "drizzle-orm";
 import type { DataProvider } from "@/lib/data-provider";
-import type { Org } from "@/lib/domain/types";
+import type { ConsentRecord, Org } from "@/lib/domain/types";
+import type { ConsentPurpose, ConsentState } from "@/lib/domain/enums";
 import { mockProvider } from "@/lib/mock/provider";
 import { getDb } from "@/db/client";
-import { orgs as orgsTable } from "@/db/schema";
+import { orgs as orgsTable, consents as consentsTable } from "@/db/schema";
 
 type OrgRow = typeof orgsTable.$inferSelect;
 
@@ -47,5 +48,18 @@ export const dbProvider: DataProvider = {
     const db = getDb();
     const [row] = await db.select().from(orgsTable).where(eq(orgsTable.slug, slug)).limit(1);
     return row && !row.deletedAt ? toOrg(row) : null;
+  },
+
+  // Consent — persisted, versioned, purpose-bound (the lawful basis for reads).
+  getClientConsents: async (clientId: string): Promise<ConsentRecord[]> => {
+    const db = getDb();
+    const rows = await db.select().from(consentsTable).where(eq(consentsTable.clientId, clientId));
+    return rows.map((r) => ({
+      clientId: r.clientId,
+      purpose: r.purpose as ConsentPurpose,
+      state: r.state as ConsentState,
+      version: r.version,
+      updatedAt: r.updatedAt.toISOString(),
+    }));
   },
 };

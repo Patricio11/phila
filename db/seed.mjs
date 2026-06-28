@@ -78,9 +78,29 @@ for (const [orgId, userId, role, sup] of members) {
     ON CONFLICT (org_id, user_id) DO NOTHING`;
 }
 
+// Consent — versioned, purpose-bound (mirrors the fixtures). All granted, v1.
+const consentSets = {
+  cl_lerato: ["booking", "notes", "demographics", "comms", "care_plan_share", "funder_reporting"],
+  cl_sipho: ["booking", "notes", "comms"],
+  cl_fatima: ["booking", "notes", "demographics", "comms", "funder_reporting"],
+  cl_johan: ["booking", "notes", "demographics"],
+  cl_zanele: ["booking", "notes", "demographics", "comms", "care_plan_share", "funder_reporting"],
+  cl_naledi: ["booking", "notes", "demographics", "comms"],
+  cl_kabelo: ["booking", "notes"],
+  cl_megan: ["booking", "notes", "comms"],
+};
+for (const [clientId, purposes] of Object.entries(consentSets)) {
+  for (const purpose of purposes) {
+    await sql`INSERT INTO consents (org_id, client_id, purpose, state, version, updated_at)
+      VALUES ('org_masizakhe', ${clientId}, ${purpose}::consent_purpose, 'granted'::consent_state, 1, ${now})
+      ON CONFLICT (client_id, purpose) DO NOTHING`;
+  }
+}
+
 const counts = await sql`SELECT
   (SELECT count(*) FROM orgs) AS orgs,
   (SELECT count(*) FROM "user") AS users,
   (SELECT count(*) FROM account) AS accounts,
-  (SELECT count(*) FROM org_members) AS members`;
+  (SELECT count(*) FROM org_members) AS members,
+  (SELECT count(*) FROM consents) AS consents`;
 console.log("seeded:", counts[0]);

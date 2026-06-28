@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Settings" };
 
 export default async function HubSettingsPage() {
-  const { membership } = await requireHub();
+  const { principal, membership } = await requireHub();
   const provider = await getDataProvider();
   const [settings, org, invoiceSettings, platform, subscription] = await Promise.all([
     provider.getOrgSettings(membership.orgId),
@@ -81,7 +81,7 @@ export default async function HubSettingsPage() {
         <Card>
           <CardHead title="Security" />
           <div className="px-[17px] pb-[17px]">
-            <SecuritySettings initialTwoFactor={false} />
+            <SecuritySettings initialTwoFactor={principal.twoFactorEnabled} />
           </div>
         </Card>
 

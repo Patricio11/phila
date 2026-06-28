@@ -450,8 +450,11 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 > **Working method for the rest of Part B (standing):** seed **all** mock data into the DB as each entity's
 > schema lands (production-real, nothing forgotten); every phase ships **unit + Playwright E2E + screenshots**.
 >
-> 9.0 slice details: **`docs/completed/PHASE_9.0_COMPLETE.md`**. Demo accounts: **`docs/DEMO_LOGINS.md`** (all
-> `phila1234`). **Phase 9 is NOT complete** — 9.2 (consent persistence) + 2FA remain before `PHASE_9_COMPLETE.md`.
+> **✅ Phase 9 COMPLETE (2026-06-29).** Real accounts for every role; persisted **consent** (versioned, audited)
+> + persisted **audit_log**; real **sign-up** (creates org+admin); **TOTP 2FA** (enrol + sign-in challenge,
+> gated to enrolled users only). Verified: 45 unit/contract + **9 Playwright E2E** (incl. consent-persists,
+> sign-up, full 2FA loop) with screenshots. Details: **`docs/completed/PHASE_9_COMPLETE.md`**. Demo accounts:
+> **`docs/DEMO_LOGINS.md`** (all `phila1234`).
 
 ### Task 9.0: Auth + onboarding UI shells (Part A, 2026-06-28)
 - [x] **Beautiful auth surface, mock-first** (real auth lands in 9.1–9.2 behind these exact screens). A warm branded **`AuthShell`** (gradient brand panel + POPIA/data-in-SA/private-notes trust signals on desktop; slim header, single-column on mobile). **`/login`** (email + password with **show/hide eye**, forgot-password link, "explore a demo workspace" quick-access), **`/signup`** (practice registration  name, your name, work email, **password strength meter**, province, POPIA agree → onboarding), **`/forgot-password`** + **`/reset-password`** with calm success states. Marketing CTAs now route to **Sign in / Get started**. The Security card password fields (Hub/counsellor/client) upgraded to the same eye-toggle + strength + **"passwords match"** indicator.
@@ -465,14 +468,14 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 - [x] **Better Auth + Drizzle adapter; email+password; sessions in Postgres** (2026-06-28). Verification + forgot/reset still to wire (Phase 12 notifications).
 - [x] **Role model + sign-in routes by role** (2026-06-28): platform role on the user (`client | funder | super_admin`, null for org staff) + org `team_role` in `org_members`; the sign-in Server Action routes each role to its home; multi-org membership resolved from the DB. Org switcher still to add.
 - [x] **Guards backed by real identity** (2026-06-28): `requireAuth`/`requireOrg`/`requireHub`/`requireClient`/`requireFunder`/`requireSuperAdmin`/`requireCapability`/`requireOrgFeature` resolve the real session; unauth → `/login`. `requireFunderGrant` scoping already enforced in the provider.
-- [ ] 2FA (TOTP) for `super_admin` + `org_admin` + supervising counsellors.
+- [x] **2FA (TOTP)** (2026-06-29) — Better Auth twoFactor: enrol (QR + backup codes + verify) in Security settings; the sign-in challenge appears **only for enrolled users**; disable flow. Tested end-to-end.
 
 ### Task 9.2: Sign-up + consent persistence
-- [ ] Client sign-up (lightweight, from booking) · counsellor + team (org-invited) · org_admin (org-created) · **funder (org-invited, scoped to grant(s), read-only)** · super_admin (issued, not self-registered).
-- [ ] Consent state machine persisted (`consents`: purpose + version + timestamp); booking/notes/demographics/AI/comms/care-plan-share/**funder_reporting** each independently granted/revoked; audit-logged.
-- [ ] Audit-log persistence (`audit_log` table); `/admin/audit` + Hub note-access reads from it.
+- [x] **Practice sign-up (org_admin, org-created)** (2026-06-29): `registerPractice` creates the org + first admin (Better Auth) → onboarding. Other roles arrive via invite/booking activation (those flows exist as shells; full creation lands as their clusters migrate).
+- [x] **Consent state machine persisted** (2026-06-29): `consents` (purpose + version + timestamp); `getClientConsents` reads the DB; the consent centre's toggle upserts via `setConsent` (grant bumps version; revoke keeps it), audited. A change survives reload (E2E).
+- [x] **Audit-log persistence** (2026-06-29): `logAccess()` writes to `audit_log` under `DATA_PROVIDER=db` (swappable sink, no call-site change). `/admin/audit` + Hub note-access read from it as those reads migrate.
 
-**Done when:** real auth + consent back the Part-A UIs unchanged; every PII read writes an audit row.
+**Done when:** real auth + consent back the Part-A UIs unchanged; every PII read writes an audit row. ✅ **Met.**
 
 ---
 

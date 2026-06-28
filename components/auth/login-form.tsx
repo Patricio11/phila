@@ -8,7 +8,8 @@ import { Input, Label, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PasswordField } from "@/components/auth/password-field";
 import { useToast } from "@/components/ui/toast";
-import { signIn } from "@/app/(auth)/actions";
+import { signIn, homeForCurrentUser } from "@/app/(auth)/actions";
+import { authClient } from "@/lib/auth/client";
 
 const DEMOS = [
   { email: "nomsa@masizakhe.org.za", label: "Counsellor", icon: Stethoscope },
@@ -25,6 +26,8 @@ export function LoginForm() {
   const [attempted, setAttempted] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [twoFactor, setTwoFactor] = useState(false);
+  const [code, setCode] = useState("");
 
   const errors = {
     email: !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? "Enter a valid email." : "",
@@ -35,7 +38,16 @@ export function LoginForm() {
     start(async () => {
       const res = await signIn(creds);
       if (!res.ok) return toast({ tone: "error", title: res.error });
+      if ("twoFactor" in res) return setTwoFactor(true); // prompt for the TOTP code
       router.push(res.redirect);
+    });
+
+  const verifyTwoFactor = () =>
+    start(async () => {
+      const { error } = await authClient.twoFactor.verifyTotp({ code });
+      if (error) return toast({ tone: "error", title: "That code didn't match — try the next one." });
+      const { redirect } = await homeForCurrentUser();
+      router.push(redirect);
     });
 
   const submit = () => {
@@ -43,6 +55,20 @@ export function LoginForm() {
     if (errors.email || errors.password) return;
     doSignIn({ email, password });
   };
+
+  if (twoFactor) {
+    return (
+      <div className="space-y-5">
+        <div className="space-y-1.5">
+          <Label htmlFor="login-totp">Authenticator code</Label>
+          <Input id="login-totp" inputMode="numeric" maxLength={6} autoFocus value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} placeholder="123456" className="tracking-[0.3em]" onKeyDown={(e) => e.key === "Enter" && verifyTwoFactor()} />
+          <p className="text-[12px] text-text-3">Enter the 6-digit code from your authenticator app.</p>
+        </div>
+        <Button onClick={verifyTwoFactor} loading={pending} disabled={code.length < 6} className="w-full">Verify</Button>
+        <button type="button" onClick={() => { setTwoFactor(false); setCode(""); }} className="w-full text-center text-[12.5px] font-medium text-text-3 hover:text-text">Back to sign in</button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">

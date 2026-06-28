@@ -42,7 +42,11 @@ export interface Principal {
 export async function getCurrentPrincipal(): Promise<Principal | null> {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) return null;
-  const u = session.user as typeof session.user & { platformRole?: string | null; clientId?: string | null };
+  const u = session.user as typeof session.user & {
+    platformRole?: string | null;
+    clientId?: string | null;
+    twoFactorEnabled?: boolean | null;
+  };
 
   const db = getDb();
   const rows = await db
@@ -70,7 +74,7 @@ export async function getCurrentPrincipal(): Promise<Principal | null> {
     platformRole: (u.platformRole ?? null) as PlatformRole | null,
     memberships,
     activeOrgId: memberships[0]?.orgId ?? null,
-    twoFactorEnabled: false,
+    twoFactorEnabled: Boolean(u.twoFactorEnabled),
     clientId: u.clientId ?? undefined,
   };
 }

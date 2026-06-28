@@ -1,51 +1,19 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, KeyRound, ShieldCheck } from "lucide-react";
+import { Check, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label, FieldError } from "@/components/ui/input";
 import { PasswordField } from "@/components/auth/password-field";
 import { useToast } from "@/components/ui/toast";
-import { changePassword as defaultChangePassword, setTwoFactor as defaultSetTwoFactor } from "@/lib/account/actions";
-import { cn } from "@/lib/utils";
+import { authClient } from "@/lib/auth/client";
+import { TwoFactorSetup } from "@/components/auth/two-factor-setup";
 
-type PwResult = Promise<{ ok: true } | { ok: false; error: string }>;
-
-function Toggle({ on, onClick, disabled }: { on: boolean; onClick: () => void; disabled?: boolean }) {
-  return (
-    <button type="button" onClick={onClick} disabled={disabled} aria-pressed={on} className={cn("inline-flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:opacity-50", on ? "bg-accent" : "bg-surface-2")}>
-      <span className={cn("size-4 rounded-full bg-surface shadow-sm transition-transform", on && "translate-x-4")} />
-    </button>
-  );
-}
-
-export function SecuritySettings({
-  initialTwoFactor,
-  onChangePassword = defaultChangePassword,
-  onSetTwoFactor = defaultSetTwoFactor,
-}: {
-  initialTwoFactor: boolean;
-  onChangePassword?: (raw: { current: string; next: string; confirm: string }) => PwResult;
-  onSetTwoFactor?: (raw: { enabled: boolean }) => PwResult;
-}) {
+export function SecuritySettings({ initialTwoFactor }: { initialTwoFactor: boolean }) {
   const { toast } = useToast();
-  const [twoFactor, setTF] = useState(initialTwoFactor);
-  const [tfPending, startTF] = useTransition();
-
   const [pwPending, startPw] = useTransition();
   const [attempted, setAttempted] = useState(false);
   const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
-
-  const toggleTF = () =>
-    startTF(async () => {
-      const next = !twoFactor;
-      const res = await onSetTwoFactor({ enabled: next });
-      if (!res.ok) return toast({ tone: "error", title: res.error });
-      setTF(next);
-      toast(next
-        ? { tone: "success", title: "Two-factor enabled", description: "You'll be asked for a code at sign-in (TOTP wires in Phase 9)." }
-        : { tone: "default", title: "Two-factor disabled" });
-    });
 
   const errors = {
     current: !pw.current ? "Enter your current password." : "",
@@ -57,9 +25,9 @@ export function SecuritySettings({
     setAttempted(true);
     if (errors.current || errors.next || errors.confirm) return;
     startPw(async () => {
-      const res = await onChangePassword(pw);
-      if (!res.ok) return toast({ tone: "error", title: res.error });
-      toast({ tone: "success", title: "Password changed", description: "Use your new password next time you sign in." });
+      const { error } = await authClient.changePassword({ currentPassword: pw.current, newPassword: pw.next, revokeOtherSessions: true });
+      if (error) return toast({ tone: "error", title: "That current password isn't right." });
+      toast({ tone: "success", title: "Password changed", description: "Other sessions were signed out for safety." });
       setPw({ current: "", next: "", confirm: "" });
       setAttempted(false);
     });
@@ -67,20 +35,8 @@ export function SecuritySettings({
 
   return (
     <div className="space-y-5">
-      {/* 2FA */}
-      <div className="flex items-start gap-3 rounded-control border border-border p-4">
-        <span className={cn("inline-flex size-9 shrink-0 items-center justify-center rounded-chip", twoFactor ? "bg-accent-soft text-accent" : "bg-surface-2 text-text-3")}>
-          <ShieldCheck className="size-[18px]" strokeWidth={1.9} aria-hidden />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[14px] font-[600] text-text">Two-factor authentication</span>
-            <span className={cn("rounded-chip px-1.5 py-0.5 text-[10.5px] font-semibold", twoFactor ? "bg-accent-soft text-accent" : "bg-surface-2 text-text-3")}>{twoFactor ? "On" : "Off"}</span>
-          </div>
-          <p className="mt-1 text-[12.5px] leading-relaxed text-text-2">An authenticator-app code at sign-in. Strongly recommended for admins  they can reach client records.</p>
-        </div>
-        <Toggle on={twoFactor} onClick={toggleTF} disabled={tfPending} />
-      </div>
+      {/* 2FA (real TOTP enrolment) */}
+      <TwoFactorSetup enabled={initialTwoFactor} />
 
       {/* Change password */}
       <div>

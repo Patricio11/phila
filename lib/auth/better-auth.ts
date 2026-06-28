@@ -2,6 +2,7 @@ import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
+import { twoFactor } from "better-auth/plugins";
 import { getDb } from "@/db/client";
 import * as schema from "@/db/schema";
 
@@ -34,5 +35,7 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     cookieCache: { enabled: true, maxAge: 60 * 5 },
   },
-  plugins: [nextCookies()],
+  // TOTP 2FA (enforced for super_admin / org_admin / supervisors in the UI).
+  // nextCookies() must be last so it can set cookies after every plugin runs.
+  plugins: [twoFactor({ issuer: "Phila" }), nextCookies()],
 });

@@ -44,7 +44,7 @@ export default async function CounsellorSettingsPage() {
         <Card>
           <CardHead title="Security" />
           <div className="px-[17px] pb-[17px]">
-            <SecuritySettings initialTwoFactor={membership.isSupervisor} />
+            <SecuritySettings initialTwoFactor={principal.twoFactorEnabled} />
           </div>
         </Card>
 

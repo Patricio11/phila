@@ -6,13 +6,12 @@ import { PageHead } from "@/components/shell/page-head";
 import { Card, CardHead } from "@/components/ui/card";
 import { ClientProfileForm, type ClientProfile } from "@/components/client/client-profile-form";
 import { SecuritySettings } from "@/components/hub/security-settings";
-import { changeClientPassword, setClientTwoFactor } from "@/app/me/profile/actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Profile" };
 
 export default async function MeProfilePage() {
-  const { clientId } = await requireClient();
+  const { principal, clientId } = await requireClient();
   const provider = await getDataProvider();
   const profile = await provider.getClientProfile(clientId);
   if (!profile) notFound();
@@ -52,7 +51,7 @@ export default async function MeProfilePage() {
       <Card>
         <CardHead title="Sign-in & security" />
         <div className="px-[17px] pb-[17px]">
-          <SecuritySettings initialTwoFactor={false} onChangePassword={changeClientPassword} onSetTwoFactor={setClientTwoFactor} />
+          <SecuritySettings initialTwoFactor={principal.twoFactorEnabled} />
         </div>
       </Card>
     </div>

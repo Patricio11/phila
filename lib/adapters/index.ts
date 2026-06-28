@@ -1,7 +1,7 @@
 /**
  * The dormant adapter set (Part A). Everything is "off": storage/AI/payments/
  * video throw `AdapterDormantError` if called, and notifications queue but never
- * deliver — exactly matching the UI's honest "nothing sends until messaging is
+ * deliver  exactly matching the UI's honest "nothing sends until messaging is
  * connected" copy. Part B replaces these with live implementations behind the
  * same interfaces (`lib/adapters/types.ts`); call sites don't change.
  */

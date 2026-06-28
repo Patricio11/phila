@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { getAdapters, adapters, AdapterDormantError } from "@/lib/adapters";
 
-describe("adapters — Dormant-by-Default (Rule #5)", () => {
+describe("adapters  Dormant-by-Default (Rule #5)", () => {
   it("every adapter ships 'off'", () => {
     expect(adapters.storage.status).toBe("off");
     expect(adapters.ai.status).toBe("off");

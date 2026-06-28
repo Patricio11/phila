@@ -144,8 +144,8 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 - [x] **Always-reachable crisis support (2026-06-27):** a calm, never-alarming "If you need to talk now" card  **SADAG 0800 567 567** (free, any time, `tel:` link) plus the 10111 / nearest-hospital line. A counselling portal should never make a person in distress hunt for help.
 
 ### Task 3.1.5: Profile + mobile polish (2026-06-28)
-- [x] **Client profile** (`/me/profile`, mobile-first): edit your details (name, mobile, email, **date of birth**, **home address**, **preferred contact**), an **emergency contact** block, a warm "your care team" note, and **Sign-in & security** (change password + 2FA). Backed by `getClientProfile` + client self-service actions (`saveClientProfile` / `changeClientPassword` / `setClientTwoFactor`, `requireClient`, audited). `SecuritySettings` now accepts action overrides so it's reused with client-scoped actions. Profile added to the client nav; account "Settings" points here. **99% of clients are on mobile** — single-column, large targets, no horizontal scroll.
-- [x] **Home magic:** the "Your next session" hero now shows a **live countdown** ("in 2 days" / "in 3 hours" / "Happening now") and an **Add to calendar** action that downloads an `.ics` (with a 1-hour reminder) — straight into the client's phone calendar.
+- [x] **Client profile** (`/me/profile`, mobile-first): edit your details (name, mobile, email, **date of birth**, **home address**, **preferred contact**), an **emergency contact** block, a warm "your care team" note, and **Sign-in & security** (change password + 2FA). Backed by `getClientProfile` + client self-service actions (`saveClientProfile` / `changeClientPassword` / `setClientTwoFactor`, `requireClient`, audited). `SecuritySettings` now accepts action overrides so it's reused with client-scoped actions. Profile added to the client nav; account "Settings" points here. **99% of clients are on mobile**  single-column, large targets, no horizontal scroll.
+- [x] **Home magic:** the "Your next session" hero now shows a **live countdown** ("in 2 days" / "in 3 hours" / "Happening now") and an **Add to calendar** action that downloads an `.ics` (with a 1-hour reminder)  straight into the client's phone calendar.
 
 ### Task 3.2: Records + control
 - [x] Documents (mock uploads), invoices (mock, "pay" stub), profile editor.
@@ -154,7 +154,7 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 ### Task 3.3: "From your counsellor"  care plan + updates
 - [x] A calm **care-plan / session-updates** surface: what the counsellor chose to share after a session  advice, **between-session tasks** (with done/not-done), recommended resources, and the next step. This is the *shared* artifact only (never the private clinical note  Rule #1).
 - [x] Tasks the client can tick off; gentle, never gamified, never pressuring. New shares arrive as a soft "update from your counsellor" notification (Part B wires the push/WhatsApp).
-- [x] **"Your steps" — interactive, two-sided (2026-06-28):** the care-plan tasks are now a living loop. **Client** (`/me/steps`, mobile-first): a **progress ring**, **tap-to-tick** steps with a warm micro-celebration, and **gentle achievements** ("First step" · "Finding your rhythm" · "All steps done") — encouragement, *no points/streaks/shame* (honours the care ethic); resources + the counsellor's note below; a compact progress card on the home links in. **Counsellor** (client dossier): the same steps show **what the client has ticked off** ("2/3 done by Lerato") and an **Add a step** input puts a new, specific step in the client's portal. Actions: `toggleStep` (client) + `addCarePlanStep` (counsellor), both audited; `lib/care/steps` computes progress/achievements for both sides.
+- [x] **"Your steps"  interactive, two-sided (2026-06-28):** the care-plan tasks are now a living loop. **Client** (`/me/steps`, mobile-first): a **progress ring**, **tap-to-tick** steps with a warm micro-celebration, and **gentle achievements** ("First step" · "Finding your rhythm" · "All steps done")  encouragement, *no points/streaks/shame* (honours the care ethic); resources + the counsellor's note below; a compact progress card on the home links in. **Counsellor** (client dossier): the same steps show **what the client has ticked off** ("2/3 done by Lerato") and an **Add a step** input puts a new, specific step in the client's portal. Actions: `toggleStep` (client) + `addCarePlanStep` (counsellor), both audited; `lib/care/steps` computes progress/achievements for both sides.
 
 **Done when (mock):** a client sees only their own data, their thread, their care plan + tasks, and can walk their consents.
 
@@ -184,19 +184,19 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 ### Task 4.4: Supervision (if `supervisor`)
 - [x] `/app/supervision`: queue of supervisee notes to review + sign-off; provenance is honest.
 - [x] **Counsellor side trimmed (2026-06-28):** **Billing** and **Reports** removed from the counsellor workspace (they're Hub/admin concerns). Nav is Dashboard · Calendar · Clients · Sessions · Messages · Supervision · Rooms.
-- [x] **Supervision built out (2026-06-28):** `/app/supervision` is now a real workflow — a **stats strip** (supervisees · awaiting sign-off · avg turnaround · signed this month), a **"Your supervisees"** panel (credential, caseload, pending count), and a **review queue** where each note expands to show the full clinical note (AI/safeguarding flags, submitted-ago), and the supervisor either **Signs off** or **Requests changes with feedback** (`signOffNote`, audited; safeguarding sorts to the top). **The Hub assigns supervision:** a member's **"Reports to"** supervisor is set in the Manage-member modal (`/hub/team/[id]`), choosing from counsellors flagged as supervisors (`saveTeamMember` carries `supervisorCounsellorId`). Supervisors see only their own supervisees.
+- [x] **Supervision built out (2026-06-28):** `/app/supervision` is now a real workflow  a **stats strip** (supervisees · awaiting sign-off · avg turnaround · signed this month), a **"Your supervisees"** panel (credential, caseload, pending count), and a **review queue** where each note expands to show the full clinical note (AI/safeguarding flags, submitted-ago), and the supervisor either **Signs off** or **Requests changes with feedback** (`signOffNote`, audited; safeguarding sorts to the top). **The Hub assigns supervision:** a member's **"Reports to"** supervisor is set in the Manage-member modal (`/hub/team/[id]`), choosing from counsellors flagged as supervisors (`saveTeamMember` carries `supervisorCounsellorId`). Supervisors see only their own supervisees.
 
 ### Task 4.7: Sessions list polish
 - [x] **Sessions list (2026-06-28):** `/app/sessions` gains a **stat strip** (upcoming · today · completed · no-shows), **segmented filters** (Upcoming / Recent / All) and **client search**, with status word + room/online on every row. Client component over the same `listCounsellorSessions`.
 
 ### Task 4.8: Counsellor Rooms view
-- [x] **Your week in rooms (2026-06-28):** `/app/rooms` is now visual — a **stat strip** (rooms assigned · days in office · in-person this week · sites) and a **"Your week"** time-grid showing the **room bands** you're assigned to (coloured) with your **in-person bookings overlaid**, so the gaps are obvious. Assignments list kept below as detail.
+- [x] **Your week in rooms (2026-06-28):** `/app/rooms` is now visual  a **stat strip** (rooms assigned · days in office · in-person this week · sites) and a **"Your week"** time-grid showing the **room bands** you're assigned to (coloured) with your **in-person bookings overlaid**, so the gaps are obvious. Assignments list kept below as detail.
 
 ### Task 4.6: Counsellor account & settings
-- [x] **Account settings (2026-06-28):** `/app/settings` is a real account area — **edit your own profile** (name, phone, **date of birth**, **home address**, languages, bio; email + credential read-only, managed by the practice), a **Security** card (**two-factor** + **change password**), and **Preferences** (theme, notification channels). Personal actions (`changePassword` / `setTwoFactor` / `saveMyProfile`) moved to a shared `lib/account/actions` and reused by both the counsellor and the Hub.
+- [x] **Account settings (2026-06-28):** `/app/settings` is a real account area  **edit your own profile** (name, phone, **date of birth**, **home address**, languages, bio; email + credential read-only, managed by the practice), a **Security** card (**two-factor** + **change password**), and **Preferences** (theme, notification channels). Personal actions (`changePassword` / `setTwoFactor` / `saveMyProfile`) moved to a shared `lib/account/actions` and reused by both the counsellor and the Hub.
 
-### Task 4.5: Messages — internal team communication
-- [x] **Internal team messaging (2026-06-28):** `/app/messages` (counsellor) and `/hub/messages` (hub) are a two-pane chat for **staff-to-staff** communication — hub ↔ counsellor and counsellor ↔ counsellor (supervision, handovers, scheduling). Optimistic send wired to an audited `sendTeamMessage`; thread search; start a new conversation with any active colleague; day separators, unread badges, mobile back-stack. **This is internal/private to the practice** — client notices (booking, reminder, reschedule/cancel) go out over **SMS/WhatsApp**, configured BYO in Settings → Messaging channels and fired on booking events (Phase 12). Provider: `listTeamThreads(userId)` over a `teamThreads` fixture; the old client-chat view was replaced.
+### Task 4.5: Messages  internal team communication
+- [x] **Internal team messaging (2026-06-28):** `/app/messages` (counsellor) and `/hub/messages` (hub) are a two-pane chat for **staff-to-staff** communication  hub ↔ counsellor and counsellor ↔ counsellor (supervision, handovers, scheduling). Optimistic send wired to an audited `sendTeamMessage`; thread search; start a new conversation with any active colleague; day separators, unread badges, mobile back-stack. **This is internal/private to the practice**  client notices (booking, reminder, reschedule/cancel) go out over **SMS/WhatsApp**, configured BYO in Settings → Messaging channels and fired on booking events (Phase 12). Provider: `listTeamThreads(userId)` over a `teamThreads` fixture; the old client-chat view was replaced.
 
 **Done when (mock):** a counsellor walks a full day  see calendar → open session → AI-draft a note → sign → mark completed → the thread updates.
 
@@ -210,10 +210,10 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 - [x] `/hub` overview: clients today/week/month, income + **income prediction**, no-show rate, open intakes, pending credential checks  all `<StatCard>` with honest coverage captions.
 - [x] `/hub/calendars`: oversight of **every** counsellor's calendar (resource lanes); book on behalf; reschedule/cancel; allocate counsellor + **room**.
 - [x] **Day/week/month depth (2026-06-28):** income is now **actual + predicted for today, this week, and this month** (not month-only), plus a **new-clients** stat (today · week · month). Spec-driven.
-- [x] **Staffing load (2026-06-27):** a **"Team this week"** panel on `/hub` — every counsellor with their session count, a load bar against weekly capacity (amber when near capacity), credential status, and seen/upcoming split — the "who's stretched, who has room" view, paired beside "Needs attention".
+- [x] **Staffing load (2026-06-27):** a **"Team this week"** panel on `/hub`  every counsellor with their session count, a load bar against weekly capacity (amber when near capacity), credential status, and seen/upcoming split  the "who's stretched, who has room" view, paired beside "Needs attention".
 
 ### Task 5.2: Team, roles & clients
-- [x] **Clinic access model (2026-06-28):** the **Hub (org admin) owns the record — full access to every client, note and upload**. A read-only `/hub/sessions/[id]` lets the Hub open any counsellor's clinical note (with care-plan + AI/sign provenance); **every open is audit-logged** (`note.read_hub_override`). Each **counsellor is scoped to their own caseload** (+ supervisees) — `/app/clients/[id]` 404s on another counsellor's client, and notes stay author+supervisor-only.
+- [x] **Clinic access model (2026-06-28):** the **Hub (org admin) owns the record  full access to every client, note and upload**. A read-only `/hub/sessions/[id]` lets the Hub open any counsellor's clinical note (with care-plan + AI/sign provenance); **every open is audit-logged** (`note.read_hub_override`). Each **counsellor is scoped to their own caseload** (+ supervisees)  `/app/clients/[id]` 404s on another counsellor's client, and notes stay author+supervisor-only.
 - [x] `/hub/team`: invite / add / deactivate team members and **set each member's org role**  `org_admin`, `counsellor` (+`supervisor`), `front_desk` / `intake_coordinator`, `finance`, `programme_manager`. Permissions differ per role (clinical-note access = counsellor + supervisor only; front desk schedules; finance bills; programme manager sees aggregate/consented reporting).
 - [x] Counsellor credential status (HPCSA / ASCHP) + supervisor edges; **per-counsellor room schedule** (see 5.6).
 - [x] `/hub/clients`: full list; reassign counsellor; **cancel/delete client with stats preserved** (Outcome-Honesty Rule  deletion never distorts compiled stats).
@@ -241,7 +241,7 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 
 ### Task 5.5: Settings, payments & public page editor
 - [x] `/hub/settings`: default duration, buffer, breaks; **business hours** (per-day enable + start/end); integration toggles (AI/video/WhatsApp) **dormant by default**.
-- [x] **Settings built out (2026-06-28):** the page now opens with an **Organisation profile** (name, trading name, **registration/NPO**, **HPCSA practice no.**, contact email/phone, website, physical address — validated + audited via `saveOrgProfile`), a **Security** card (**two-factor** toggle + **change password** with strength/confirm checks), and **Messaging channels — BYO** (WhatsApp · SMS · Email each connect *your own* provider with credentials + Test, dormant until connected, via `connectChannel`). Existing Scheduling, Payments-BYO, Platform features (AI/Video), and Public-page editor are kept in a clean responsive layout.
+- [x] **Settings built out (2026-06-28):** the page now opens with an **Organisation profile** (name, trading name, **registration/NPO**, **HPCSA practice no.**, contact email/phone, website, physical address  validated + audited via `saveOrgProfile`), a **Security** card (**two-factor** toggle + **change password** with strength/confirm checks), and **Messaging channels  BYO** (WhatsApp · SMS · Email each connect *your own* provider with credentials + Test, dormant until connected, via `connectChannel`). Existing Scheduling, Payments-BYO, Platform features (AI/Video), and Public-page editor are kept in a clean responsive layout.
 - [x] **Editable working hours + calendar enforcement (2026-06-28):** business hours are now an **editable** per-day editor (toggle a day open/closed, set start–end) saved via `saveBusinessHours` (validated + audited). The **calendar enforces them**: closed days show "Closed" and aren't clickable; clicks outside the open window or inside a break don't open booking; month view hides "+" on closed days; and the **create-appointment modal rejects** a closed day, an out-of-hours time, a too-late start, or a break overlap. Phase 11 enforces the same server-side.
 - [x] **Org payment connection (BYO gateway):** the org connects its *own* gateway so **clients pay the org directly**  pick a provider from the catalogue the platform enables (Stitch / Ozow for PayShap + pay-by-bank, Yoco / Paystack for cards), **switch it on, enter the org's own credentials** (stored encrypted), Test connection, set as default. Switching providers is one toggle. (Wired in Phase 15B.)
 - [x] Public-page editor: edit §2.2 content + `--brand-accent` + SEO fields (mock save).
@@ -356,12 +356,12 @@ auto-rolls up to them, and a scoped, k-anon, read-only **funder portal**. The gr
 
 ---
 
-## ✅ PART A — COMPLETE (2026-06-28) · 🚪 CLOSEOUT GATE MET
+## ✅ PART A  COMPLETE (2026-06-28) · 🚪 CLOSEOUT GATE MET
 *Whole product, all five roles, on the seam. Closeout: `docs/completed/PHASE_A_COMPLETE.md` + scorecard in
 `docs/PHASE_A_CLOSEOUT.md`. Phase 9 plan: `docs/PHASE_9_PLAN.md`. Tagged `part-a-complete`.*
 
 **Product: complete.** Every role + surface is built mock-first; clinical loop, Hub oversight, funder portal,
-super-admin console, settings, internal messaging, "Your steps", auth/onboarding/invite — all click through;
+super-admin console, settings, internal messaging, "Your steps", auth/onboarding/invite  all click through;
 `tsc`/`lint`/`next build` green; all routes 200.
 
 **Seam + hardening: done (2026-06-28 hardening pass).** Zero `@/lib/mock` imports in app + components
@@ -372,16 +372,16 @@ central injectable **clock** (`lib/clock.ts`, all 28 "now" call sites migrated) 
 Typed **adapter interfaces** (`lib/adapters/`, Dormant-by-Default) are the Part-B attach points for storage /
 notifications / AI / payments / video. Guards, `logAccess()`, consent utils, `db/` scaffold, `SECURITY.md` present.
 
-- [x] **Provider-conformance suite** (§2/§7) — `tests/contract/`.
+- [x] **Provider-conformance suite** (§2/§7)  `tests/contract/`.
 - [x] **Vitest unit + conformance harness in CI** (§7).
-- [x] **Determinism** (§4) — `lib/clock.ts`, deterministic mock ids.
-- [x] **Adapter interfaces** (§5) — `lib/adapters/`.
-- [x] **Strict zero-`lib/mock`-import bar** (§1) — `lib/domain/{types,helpers}`.
+- [x] **Determinism** (§4)  `lib/clock.ts`, deterministic mock ids.
+- [x] **Adapter interfaces** (§5)  `lib/adapters/`.
+- [x] **Strict zero-`lib/mock`-import bar** (§1)  `lib/domain/{types,helpers}`.
 
 **Remaining (small; none change the UI):**
 - [ ] **Playwright E2E + axe** sweep (§7).
-- [ ] Optional **loading/error mock flag** (§3) — states already drawn (Phase 8).
-- [ ] **Closeout ritual** (§8) — `PHASE_A_COMPLETE.md`, `PHASE_9_PLAN.md`, tag the commit.
+- [ ] Optional **loading/error mock flag** (§3)  states already drawn (Phase 8).
+- [ ] **Closeout ritual** (§8)  `PHASE_A_COMPLETE.md`, `PHASE_9_PLAN.md`, tag the commit.
 
 ---
 ---
@@ -397,12 +397,12 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 *Goal: real accounts, all roles, multi-tenant sessions, and lawful consent.*
 
 ### Task 9.0: Auth + onboarding UI shells (Part A, 2026-06-28)
-- [x] **Beautiful auth surface, mock-first** (real auth lands in 9.1–9.2 behind these exact screens). A warm branded **`AuthShell`** (gradient brand panel + POPIA/data-in-SA/private-notes trust signals on desktop; slim header, single-column on mobile). **`/login`** (email + password with **show/hide eye**, forgot-password link, "explore a demo workspace" quick-access), **`/signup`** (practice registration — name, your name, work email, **password strength meter**, province, POPIA agree → onboarding), **`/forgot-password`** + **`/reset-password`** with calm success states. Marketing CTAs now route to **Sign in / Get started**. The Security card password fields (Hub/counsellor/client) upgraded to the same eye-toggle + strength + **"passwords match"** indicator.
-- [x] **Onboarding wizard** (`/onboarding`): a 4-step flow — practice basics → working hours → **verification documents** → done — with a progress bar, smooth steps, Skip, and a celebratory finish → the Hub. `completeOnboarding` (mock).
-- [x] **Platform-controlled onboarding requirements** (your call): the **super admin** configures the **documents every new practice must upload** at `/admin/onboarding` (toggle required/optional, add/remove; `saveOnboardingRequirements`, audited). The onboarding wizard **reads that exact checklist** (`listOnboardingRequirements`) for its upload step — so the platform owns the verification gate, and the practice (Hub) uploads to satisfy it.
+- [x] **Beautiful auth surface, mock-first** (real auth lands in 9.1–9.2 behind these exact screens). A warm branded **`AuthShell`** (gradient brand panel + POPIA/data-in-SA/private-notes trust signals on desktop; slim header, single-column on mobile). **`/login`** (email + password with **show/hide eye**, forgot-password link, "explore a demo workspace" quick-access), **`/signup`** (practice registration  name, your name, work email, **password strength meter**, province, POPIA agree → onboarding), **`/forgot-password`** + **`/reset-password`** with calm success states. Marketing CTAs now route to **Sign in / Get started**. The Security card password fields (Hub/counsellor/client) upgraded to the same eye-toggle + strength + **"passwords match"** indicator.
+- [x] **Onboarding wizard** (`/onboarding`): a 4-step flow  practice basics → working hours → **verification documents** → done  with a progress bar, smooth steps, Skip, and a celebratory finish → the Hub. `completeOnboarding` (mock).
+- [x] **Platform-controlled onboarding requirements** (your call): the **super admin** configures the **documents every new practice must upload** at `/admin/onboarding` (toggle required/optional, add/remove; `saveOnboardingRequirements`, audited). The onboarding wizard **reads that exact checklist** (`listOnboardingRequirements`) for its upload step  so the platform owns the verification gate, and the practice (Hub) uploads to satisfy it.
 - [x] **Document review (2026-06-28):** the admin org detail (`/admin/orgs/[id]`) shows each practice's uploads with status (verified · awaiting review · sent back · not uploaded), filename + age, and **Verify / Send-back** actions (`reviewOnboardingDoc`, audited). An overall **verification badge** (Verified / Pending / Action needed) rolls up and gates payouts + funder sharing. `getOrgOnboardingReview` merges requirements with per-org submissions.
-- [x] **Client invite + activation (2026-06-28):** the Hub can **Invite a client to their portal** from the client page — over **WhatsApp / SMS** (their number) or **email**, offering only the channels the org has enabled *and* has details for (`inviteClientToPortal`, audited). The client taps the link → **`/activate`** (set a password → their `/me` space). The **auto-register-at-booking** path is wired too: the public booking success now says "your private space is ready" with a **Set up your account** CTA into the same activation page.
-- [x] **Team invite + activation (2026-06-28):** the Hub invites a counsellor / team member from `/hub/team` (Invite member) and can **(re)send a setup link** from the member page (`sendSetupLink`, audited). **`/activate` is now role-aware** — a team invite (`?role=counsellor|org_admin`) reads "Welcome to the team · access your workspace" and lands them in **/app** or **/hub**; a client invite keeps the warm portal copy and lands in **/me**. One activation page, the right destination per role.
+- [x] **Client invite + activation (2026-06-28):** the Hub can **Invite a client to their portal** from the client page  over **WhatsApp / SMS** (their number) or **email**, offering only the channels the org has enabled *and* has details for (`inviteClientToPortal`, audited). The client taps the link → **`/activate`** (set a password → their `/me` space). The **auto-register-at-booking** path is wired too: the public booking success now says "your private space is ready" with a **Set up your account** CTA into the same activation page.
+- [x] **Team invite + activation (2026-06-28):** the Hub invites a counsellor / team member from `/hub/team` (Invite member) and can **(re)send a setup link** from the member page (`sendSetupLink`, audited). **`/activate` is now role-aware**  a team invite (`?role=counsellor|org_admin`) reads "Welcome to the team · access your workspace" and lands them in **/app** or **/hub**; a client invite keeps the warm portal copy and lands in **/me**. One activation page, the right destination per role.
 
 ### Task 9.1: Better Auth setup
 - [ ] Better Auth + Drizzle adapter; email+password + verification + forgot/reset; sessions in Postgres.

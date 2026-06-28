@@ -112,9 +112,9 @@ export default async function HubOverviewPage() {
         />
       </div>
 
-      {/* Income — actual & predicted, day / week / month */}
+      {/* Income  actual & predicted, day / week / month */}
       <Card>
-        <CardHead title="Income — actual & predicted" />
+        <CardHead title="Income  actual & predicted" />
         <div className="grid grid-cols-3 divide-x divide-border px-[17px] pb-[17px] pt-1">
           <IncomeCol label="Today" actual={rands(overview.income.todayCents)} predicted={rands(overview.income.predictedTodayCents)} />
           <IncomeCol label="This week" actual={rands(overview.income.weekCents)} predicted={rands(overview.income.predictedWeekCents)} />

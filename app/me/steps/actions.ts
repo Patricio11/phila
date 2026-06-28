@@ -7,7 +7,7 @@ import { logAccess } from "@/lib/audit";
 /**
  * A client ticks a between-session step done (or undone). Mock: validated +
  * audited; the optimistic UI holds the state. Phase 11 persists to the care
- * plan task and notifies the counsellor. Gentle by design — encouragement,
+ * plan task and notifies the counsellor. Gentle by design  encouragement,
  * never pressure (Safeguarding / care ethic).
  */
 const input = z.object({

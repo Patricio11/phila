@@ -15,7 +15,7 @@ function minutesOf(iso: string): number { return Number(iso.slice(11, 13)) * 60 
 function hhmm(iso: string): string { return iso.slice(11, 16); }
 
 /**
- * The counsellor's week in rooms — where they're assigned to work (room bands)
+ * The counsellor's week in rooms  where they're assigned to work (room bands)
  * and their in-person bookings within, so the gaps are visible at a glance.
  */
 export function CounsellorWeekRooms({

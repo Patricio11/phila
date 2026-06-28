@@ -44,7 +44,7 @@ export function CounsellorCareSteps({ clientId, clientFirstName, tasks: initial 
             <span className={t.done ? "text-text-3 line-through" : "text-text-2"}>{t.text}</span>
           </li>
         ))}
-        {tasks.length === 0 && <li className="text-[12.5px] text-text-3">No steps yet — add a gentle one below.</li>}
+        {tasks.length === 0 && <li className="text-[12.5px] text-text-3">No steps yet  add a gentle one below.</li>}
       </ul>
 
       <div className="mt-3 flex items-center gap-2">

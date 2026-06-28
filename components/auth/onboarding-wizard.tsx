@@ -27,7 +27,7 @@ export function OnboardingWizard({ requirements }: { requirements: OnboardingReq
   const [pending, start] = useTransition();
   const [step, setStep] = useState(0);
 
-  // Step state (local — Phase 10 persists to the org row).
+  // Step state (local  Phase 10 persists to the org row).
   const [practice, setPractice] = useState({ name: "", email: "", phone: "", address: "" });
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [hours, setHours] = useState({ start: "08:00", end: "17:00" });
@@ -81,7 +81,7 @@ export function OnboardingWizard({ requirements }: { requirements: OnboardingReq
             <h1 className="text-[20px] font-[680] tracking-[-0.02em] text-text">{STEPS[step]!.title}</h1>
           </div>
 
-          {/* STEP 0 — practice */}
+          {/* STEP 0  practice */}
           {step === 0 && (
             <div className="space-y-4">
               <p className="text-[13.5px] text-text-2">A few basics about your practice. You can change all of this later in Settings.</p>
@@ -94,10 +94,10 @@ export function OnboardingWizard({ requirements }: { requirements: OnboardingReq
             </div>
           )}
 
-          {/* STEP 1 — hours */}
+          {/* STEP 1  hours */}
           {step === 1 && (
             <div className="space-y-4">
-              <p className="text-[13.5px] text-text-2">When is your practice open? This shapes the calendar — closed days can&apos;t be booked.</p>
+              <p className="text-[13.5px] text-text-2">When is your practice open? This shapes the calendar  closed days can&apos;t be booked.</p>
               <div>
                 <Label>Working days</Label>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -114,10 +114,10 @@ export function OnboardingWizard({ requirements }: { requirements: OnboardingReq
             </div>
           )}
 
-          {/* STEP 2 — documents (admin-configured) */}
+          {/* STEP 2  documents (admin-configured) */}
           {step === 2 && (
             <div className="space-y-4">
-              <p className="text-[13.5px] text-text-2">Upload these so we can verify your practice. Your account works right away — <span className="font-medium text-text">verification unlocks payouts and funder sharing</span>.</p>
+              <p className="text-[13.5px] text-text-2">Upload these so we can verify your practice. Your account works right away  <span className="font-medium text-text">verification unlocks payouts and funder sharing</span>.</p>
               <ul className="space-y-2">
                 {requirements.map((r) => {
                   const done = Boolean(uploaded[r.id]);
@@ -141,11 +141,11 @@ export function OnboardingWizard({ requirements }: { requirements: OnboardingReq
                   );
                 })}
               </ul>
-              {requiredLeft > 0 && <p className="text-[12px] text-text-3">{requiredLeft} required document{requiredLeft === 1 ? "" : "s"} still to upload — you can finish these later from Settings.</p>}
+              {requiredLeft > 0 && <p className="text-[12px] text-text-3">{requiredLeft} required document{requiredLeft === 1 ? "" : "s"} still to upload  you can finish these later from Settings.</p>}
             </div>
           )}
 
-          {/* STEP 3 — done */}
+          {/* STEP 3  done */}
           {step === 3 && (
             <div className="space-y-4 text-center">
               <span className="mx-auto inline-flex size-14 items-center justify-center rounded-full bg-accent text-accent-ink"><PartyPopper className="size-7" strokeWidth={2} aria-hidden /></span>

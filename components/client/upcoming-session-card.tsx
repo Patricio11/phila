@@ -123,7 +123,7 @@ export function UpcomingSessionCard({
                 toast({
                   tone: "default",
                   title: "The session room opens here",
-                  description: "Your counsellor will start it — you'll join right from this page.",
+                  description: "Your counsellor will start it  you'll join right from this page.",
                 })
               }
             >

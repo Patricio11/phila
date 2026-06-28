@@ -55,7 +55,7 @@ export function OnboardingRequirementsEditor({ initial }: { initial: OnboardingR
             </div>
           </li>
         ))}
-        {items.length === 0 && <li className="text-[12.5px] text-text-3">No requirements — practices won&apos;t be asked for any documents.</li>}
+        {items.length === 0 && <li className="text-[12.5px] text-text-3">No requirements  practices won&apos;t be asked for any documents.</li>}
       </ul>
 
       <div className="rounded-control border border-dashed border-border p-3.5">

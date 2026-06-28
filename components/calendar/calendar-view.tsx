@@ -206,7 +206,7 @@ function TimeGrid({ dates, today, nowMin, businessHours, events, onCreate, onEve
 
   const clickToTime = (e: React.MouseEvent<HTMLDivElement>, date: string) => {
     const bh = businessHours[isoWeekday(date)];
-    if (!bh) return; // closed day — not bookable
+    if (!bh) return; // closed day  not bookable
     const rect = e.currentTarget.getBoundingClientRect();
     const y = e.clientY - rect.top;
     const mins = START_HOUR * 60 + Math.floor((y / HOUR_PX) * 60 / 30) * 30;

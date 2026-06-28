@@ -45,7 +45,7 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
   if (!dossier || !me || dossier.client.orgId !== membership.orgId) notFound();
 
   // A counsellor reaches only their own clients (and, if a supervisor, their
-  // supervisees') — never another counsellor's caseload. The Hub has full access.
+  // supervisees')  never another counsellor's caseload. The Hub has full access.
   const author = counsellors.find((c) => c.id === dossier.client.primaryCounsellorId);
   const isMine = dossier.client.primaryCounsellorId === me.id;
   const isSupervisee = me.isSupervisor && author?.supervisorId === me.id;

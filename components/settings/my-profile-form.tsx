@@ -86,7 +86,7 @@ export function MyProfileForm({
           <Input value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="Street, suburb, city, postal code" />
         </Field>
         <Field label="About you" className="sm:col-span-2">
-          <Textarea value={form.bio} onChange={(e) => set("bio", e.target.value)} placeholder="A short bio — shown to your practice and, if you choose, on your public profile." className="min-h-[80px]" />
+          <Textarea value={form.bio} onChange={(e) => set("bio", e.target.value)} placeholder="A short bio  shown to your practice and, if you choose, on your public profile." className="min-h-[80px]" />
         </Field>
       </div>
 

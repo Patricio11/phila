@@ -80,13 +80,13 @@ export function CreateAppointmentModal({
     if (!time) e.time = "Pick a time.";
     if (!isOnline && !roomId) e.room = "Pick a room.";
 
-    // Working-hours guard — an in-person or online booking can't fall on a
+    // Working-hours guard  an in-person or online booking can't fall on a
     // closed day or outside the practice's hours (Phase 11 enforces server-side).
     const bh = options.businessHours;
     if (bh && date) {
       const day = bh[isoWeekday(date) as keyof BusinessHours];
       if (!day) {
-        e.date = "The practice is closed that day — pick a working day.";
+        e.date = "The practice is closed that day  pick a working day.";
       } else if (time) {
         const t = hm(time);
         if (t < hm(day.start) || t >= hm(day.end)) {

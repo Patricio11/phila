@@ -6,7 +6,7 @@ import { PROVINCES } from "@/lib/domain/enums";
 /**
  * Auth flows (mock). Part A validates shape and returns success so the screens
  * are fully clickable; **no account is created, no email is sent, no session is
- * issued** — that's Phase 9 (Supabase Auth + TOTP + the consent gate), behind
+ * issued**  that's Phase 9 (Supabase Auth + TOTP + the consent gate), behind
  * these exact screens. Honest by default.
  */
 type Result = { ok: true } | { ok: false; error: string };

@@ -25,7 +25,7 @@ const CHANNELS: ChannelDef[] = [
     key: "whatsapp",
     label: "WhatsApp",
     icon: MessageCircle,
-    blurb: "Booking, reminder and follow-up messages on WhatsApp — your own Business number.",
+    blurb: "Booking, reminder and follow-up messages on WhatsApp  your own Business number.",
     providers: [
       { value: "meta", label: "Meta WhatsApp Cloud API" },
       { value: "twilio", label: "Twilio" },
@@ -40,7 +40,7 @@ const CHANNELS: ChannelDef[] = [
     key: "sms",
     label: "SMS",
     icon: Smartphone,
-    blurb: "SMS fallback for clients without WhatsApp — connect a South African SMS provider.",
+    blurb: "SMS fallback for clients without WhatsApp  connect a South African SMS provider.",
     providers: [
       { value: "smsportal", label: "SMSPortal" },
       { value: "clickatell", label: "Clickatell" },
@@ -55,7 +55,7 @@ const CHANNELS: ChannelDef[] = [
     key: "email",
     label: "Email",
     icon: Mail,
-    blurb: "Confirmations, invoices and reports by email — from your own domain.",
+    blurb: "Confirmations, invoices and reports by email  from your own domain.",
     providers: [
       { value: "sendgrid", label: "SendGrid" },
       { value: "postmark", label: "Postmark" },
@@ -72,7 +72,7 @@ export function MessagingChannels() {
   return (
     <div className="space-y-2.5">
       {CHANNELS.map((c) => <ChannelRow key={c.key} def={c} />)}
-      <p className="pt-1 text-[11px] text-text-3">Bring your own provider — credentials are stored encrypted and nothing sends until a channel is connected.</p>
+      <p className="pt-1 text-[11px] text-text-3">Bring your own provider  credentials are stored encrypted and nothing sends until a channel is connected.</p>
     </div>
   );
 }
@@ -91,7 +91,7 @@ function ChannelRow({ def }: { def: ChannelDef }) {
       if (!res.ok) return toast({ tone: "error", title: res.error });
       setConnected(true);
       setOpen(false);
-      toast({ tone: "success", title: `${def.label} connected`, description: "It's live the moment messaging turns on — test sends are recorded." });
+      toast({ tone: "success", title: `${def.label} connected`, description: "It's live the moment messaging turns on  test sends are recorded." });
     });
   };
 

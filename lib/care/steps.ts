@@ -1,6 +1,6 @@
 /**
  * Between-session "steps" progress + gentle achievements. Encouraging, never
- * competitive — no points, no streaks-that-shame. Pure + shared by the client
+ * competitive  no points, no streaks-that-shame. Pure + shared by the client
  * (their steps) and the counsellor (seeing what's been done).
  */
 export interface StepTask {
@@ -35,7 +35,7 @@ export function stepProgress(tasks: StepTask[]): StepProgress {
     achievements: [
       { id: "first", label: "First step", description: "You got started.", earned: done >= 1 },
       { id: "rhythm", label: "Finding your rhythm", description: "Halfway through your steps.", earned: total > 0 && ratio >= 0.5 },
-      { id: "all", label: "All steps done", description: "Every step — beautifully done.", earned: total > 0 && done === total },
+      { id: "all", label: "All steps done", description: "Every step  beautifully done.", earned: total > 0 && done === total },
     ],
   };
 }
@@ -44,6 +44,6 @@ export function stepProgress(tasks: StepTask[]): StepProgress {
 export function encourage(done: number, total: number): string {
   if (total === 0) return "Your counsellor will add a few gentle steps after your next session.";
   if (done === 0) return "Small steps, in your own time. There's no rush.";
-  if (done === total) return "You've done everything this week — be proud of that. 🌱";
-  return `${done} of ${total} done — you're moving at your own pace, and that's perfect.`;
+  if (done === total) return "You've done everything this week  be proud of that. 🌱";
+  return `${done} of ${total} done  you're moving at your own pace, and that's perfect.`;
 }

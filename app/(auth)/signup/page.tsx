@@ -9,7 +9,7 @@ export default function SignupPage() {
   return (
     <AuthShell
       title="Create your practice"
-      subtitle="A few details to get started — you'll finish setting up in a moment."
+      subtitle="A few details to get started  you'll finish setting up in a moment."
       footer={<>Already have an account? <Link href="/login" className="font-medium text-accent hover:underline">Sign in</Link></>}
     >
       <SignupForm />

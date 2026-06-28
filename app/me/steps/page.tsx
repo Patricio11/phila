@@ -28,7 +28,7 @@ export default async function MeStepsPage() {
 
   return (
     <div className="rise space-y-5">
-      <PageHead title="Your steps" summary="Small, kind things to try between sessions — at your own pace." />
+      <PageHead title="Your steps" summary="Small, kind things to try between sessions  at your own pace." />
 
       {visible ? (
         <Card>
@@ -43,7 +43,7 @@ export default async function MeStepsPage() {
         </Card>
       ) : (
         <Card className="p-2">
-          <EmptyState icon={Sprout} title="No steps yet" body="After a session, anything your counsellor suggests to try will appear here — gentle, and only when you're ready." />
+          <EmptyState icon={Sprout} title="No steps yet" body="After a session, anything your counsellor suggests to try will appear here  gentle, and only when you're ready." />
         </Card>
       )}
     </div>

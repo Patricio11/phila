@@ -5,7 +5,7 @@ import { requireOrg } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 
 /**
- * Send an internal team message (mock) — staff-to-staff (hub ↔ counsellor,
+ * Send an internal team message (mock)  staff-to-staff (hub ↔ counsellor,
  * counsellor ↔ counsellor). Validated + audited; the composer keeps an
  * optimistic copy. Client notices go out over SMS/WhatsApp, never here.
  * Phase 12 persists the thread and pushes an in-app notification.

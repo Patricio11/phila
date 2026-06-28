@@ -1,17 +1,17 @@
 /**
  * Part-B integration adapters as **typed interfaces** (Closeout §5). Each is a
  * named, typed attach point so Phase 13–17 clip in a real implementation without
- * re-plumbing — the app already depends on the interface, not the vendor.
+ * re-plumbing  the app already depends on the interface, not the vendor.
  *
  * **Dormant-by-Default (Rule #5):** every adapter ships "off"; nothing sends,
  * stores, charges, or calls a model until an admin configures it. The mock impls
- * in `index.ts` are honest about that — they never pretend to deliver.
+ * in `index.ts` are honest about that  they never pretend to deliver.
  */
 export type AdapterStatus = "off" | "mock" | "live";
 
 export class AdapterDormantError extends Error {
   constructor(public readonly adapter: string) {
-    super(`${adapter} is not configured (dormant) — turn it on in Settings`);
+    super(`${adapter} is not configured (dormant)  turn it on in Settings`);
     this.name = "AdapterDormantError";
   }
 }
@@ -34,7 +34,7 @@ export interface NotificationsAdapter {
 
 export interface AiAdapter {
   readonly status: AdapterStatus;
-  /** Draft a clinical note from session cues — de-identified, never retaining audio. */
+  /** Draft a clinical note from session cues  de-identified, never retaining audio. */
   draftNote(input: { cues: string; deidentify?: boolean }): Promise<{ draft: string; model: string }>;
 }
 

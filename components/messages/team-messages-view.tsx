@@ -145,7 +145,7 @@ export function TeamMessagesView({ threads: initial, teammates = [] }: { threads
 
               <div className="border-t border-border p-3">
                 <div className="mb-2 flex items-center gap-1.5 text-[11.5px] text-text-3">
-                  <Lock className="size-3.5 shrink-0" strokeWidth={2} aria-hidden /> Internal — private to your team. Client reminders go out by SMS/WhatsApp, not here.
+                  <Lock className="size-3.5 shrink-0" strokeWidth={2} aria-hidden /> Internal  private to your team. Client reminders go out by SMS/WhatsApp, not here.
                 </div>
                 <div className="flex items-end gap-2">
                   <textarea

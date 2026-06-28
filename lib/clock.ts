@@ -1,7 +1,7 @@
 /**
  * The one clock. Every "now" in the app flows through here so a demo or test can
  * **freeze today** and get identical, deterministic screens (Closeout §4). Part B
- * keeps this — server requests still call `now()`; only tests/demos freeze it.
+ * keeps this  server requests still call `now()`; only tests/demos freeze it.
  *
  * Pages call `now()` for the request instant; pure logic and provider methods
  * take `now` as a parameter (already the case), so they stay testable.

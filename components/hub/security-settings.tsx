@@ -77,7 +77,7 @@ export function SecuritySettings({
             <span className="text-[14px] font-[600] text-text">Two-factor authentication</span>
             <span className={cn("rounded-chip px-1.5 py-0.5 text-[10.5px] font-semibold", twoFactor ? "bg-accent-soft text-accent" : "bg-surface-2 text-text-3")}>{twoFactor ? "On" : "Off"}</span>
           </div>
-          <p className="mt-1 text-[12.5px] leading-relaxed text-text-2">An authenticator-app code at sign-in. Strongly recommended for admins — they can reach client records.</p>
+          <p className="mt-1 text-[12.5px] leading-relaxed text-text-2">An authenticator-app code at sign-in. Strongly recommended for admins  they can reach client records.</p>
         </div>
         <Toggle on={twoFactor} onClick={toggleTF} disabled={tfPending} />
       </div>

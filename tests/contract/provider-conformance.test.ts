@@ -3,7 +3,7 @@ import { mockProvider } from "@/lib/mock/provider";
 import { dbProvider } from "@/lib/db-provider";
 
 /**
- * Provider conformance — the contract that guarantees Part B is a swap, not a
+ * Provider conformance  the contract that guarantees Part B is a swap, not a
  * rewrite. Both providers must expose the *same* method surface; the mock must
  * be real-async; and the consent / k-anon / outcome-honesty invariants the UI
  * relies on must hold. When `dbProvider` is filled in, this same suite runs
@@ -52,7 +52,7 @@ describe("invariants the UI depends on", () => {
     const allRows = [r.byProvince, r.byGender, r.byPopulationGroup, r.byAgeBand, r.byEmployment].flat();
     expect(allRows.length).toBeGreaterThan(0);
     for (const row of allRows) {
-      // either reportable (>= floor) or explicitly suppressed — never a small raw count
+      // either reportable (>= floor) or explicitly suppressed  never a small raw count
       expect(row.suppressed || (row.count ?? 0) >= 5).toBe(true);
       if (row.suppressed) expect(row.count).toBeNull();
     }

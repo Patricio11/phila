@@ -3,7 +3,7 @@ import { Lock, MapPin, ShieldCheck } from "lucide-react";
 import { BrandMark } from "@/components/brand/aloe-mark";
 
 /**
- * AuthShell — the calm, branded frame for sign-in / sign-up / reset. A warm
+ * AuthShell  the calm, branded frame for sign-in / sign-up / reset. A warm
  * brand panel on the left (desktop), the form on the right. Mobile-first: the
  * brand collapses to a slim header and the form fills the screen.
  */
@@ -20,7 +20,7 @@ export function AuthShell({
 }) {
   return (
     <div className="flex min-h-dvh bg-surface">
-      {/* Brand panel — desktop only */}
+      {/* Brand panel  desktop only */}
       <aside className="relative hidden w-[42%] max-w-[560px] overflow-hidden lg:flex lg:flex-col bg-[radial-gradient(120%_120%_at_0%_0%,var(--color-accent)_0%,#0d5c40_55%,#0a4a34_100%)] p-10 text-white">
         <div className="pointer-events-none absolute -right-24 -top-24 size-[420px] rounded-full bg-white/10 blur-2xl" aria-hidden />
         <div className="pointer-events-none absolute -bottom-32 -left-16 size-[360px] rounded-full bg-black/10 blur-2xl" aria-hidden />

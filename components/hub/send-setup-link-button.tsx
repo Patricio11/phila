@@ -14,7 +14,7 @@ export function SendSetupLinkButton({ userId, name, email }: { userId: string; n
     start(async () => {
       const res = await sendSetupLink({ userId });
       if (!res.ok) return toast({ tone: "error", title: res.error });
-      toast({ tone: "success", title: `Setup link sent to ${name.split(" ")[0]}`, description: `${email} will get a link to set a password and sign in — once email is connected.` });
+      toast({ tone: "success", title: `Setup link sent to ${name.split(" ")[0]}`, description: `${email} will get a link to set a password and sign in  once email is connected.` });
     });
 
   return (

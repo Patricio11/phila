@@ -693,7 +693,7 @@ export const mockProvider: DataProvider = {
       predictedWeekCents: incomeWeekCents + futureSum(inWk),
     };
 
-    // New clients (by intake/createdAt) per period — honest, soft-deletes excluded.
+    // New clients (by intake/createdAt) per period  honest, soft-deletes excluded.
     const createdInDay = (iso: string) => iso.startsWith(today);
     const newClientsToday = clients.filter((c) => createdInDay(c.createdAt)).length;
     const newClientsWeek = clients.filter((c) => inWk(c.createdAt)).length;

@@ -30,7 +30,7 @@ export default async function HubSessionNotePage({ params }: { params: Promise<{
   const data = await provider.getSession(id, now);
   if (!data || data.appointment.orgId !== membership.orgId) notFound();
 
-  // The clinic owns the record — the Hub has full access, and every note read is
+  // The clinic owns the record  the Hub has full access, and every note read is
   // written to the audit trail (Protected & Audited Rule). Never silent.
   await logAccess({
     action: "note.read_hub_override",
@@ -68,7 +68,7 @@ export default async function HubSessionNotePage({ params }: { params: Promise<{
       <div className="flex items-start gap-2.5 rounded-control border border-accent/25 bg-accent-soft/40 p-3.5">
         <ShieldCheck className="mt-0.5 size-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
         <p className="text-[12.5px] leading-relaxed text-text-2">
-          Full clinic access. You&apos;re viewing {appt.counsellorName.split(" ")[0]}&apos;s clinical note — this access is recorded in the audit trail.
+          Full clinic access. You&apos;re viewing {appt.counsellorName.split(" ")[0]}&apos;s clinical note  this access is recorded in the audit trail.
         </p>
       </div>
 

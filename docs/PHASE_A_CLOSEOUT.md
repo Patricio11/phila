@@ -13,7 +13,7 @@ what already works.
 
 ---
 
-## ✅ Audit status — 2026-06-28 (verified against the code; **hardening pass done**)
+## ✅ Audit status  2026-06-28 (verified against the code; **hardening pass done**)
 
 The **product is complete** (every role/surface, mock-first; tsc/lint/test/build green; all routes 200) and
 the **hardening pass is done** bar three small items. Honest scorecard:
@@ -24,23 +24,23 @@ the **hardening pass is done** bar three small items. Honest scorecard:
 | 1 | Zero `@/lib/mock` imports in app + components (strict bar) | ✅ types/helpers moved to `lib/domain`; `lib/mock` is fixtures + provider only |
 | 1 | Every Part-B method exists with final signature/return shape | ✅ full `DataProvider` interface |
 | 2 | One `DataProvider` interface; `mockProvider` implements; `dbProvider` throwing stub; `DATA_PROVIDER` switch | ✅ |
-| 2 | **Provider-conformance suite** | ✅ `tests/contract/` — identical surface, stub throws, k-anon/consent/funder invariants |
+| 2 | **Provider-conformance suite** | ✅ `tests/contract/`  identical surface, stub throws, k-anon/consent/funder invariants |
 | 3 | All provider methods return Promises · empty/blocked states everywhere | ✅ |
-| 3 | On-demand **loading / error** mock flag | ❌ (low value; states already drawn — Phase 8) |
+| 3 | On-demand **loading / error** mock flag | ❌ (low value; states already drawn  Phase 8) |
 | 4 | Injectable `now()` + freeze for deterministic runs; no raw `new Date()` for "now" in pages | ✅ `lib/clock.ts`; all 28 call sites migrated |
 | 5 | Guards · `logAccess()` + consent on PII paths · `db/` scaffold · `docs/SECURITY.md` | ✅ |
-| 5 | **Adapter interfaces** (storage/notifications/AI/payments/video) | ✅ `lib/adapters/` — typed, Dormant-by-Default, honest mocks |
+| 5 | **Adapter interfaces** (storage/notifications/AI/payments/video) | ✅ `lib/adapters/`  typed, Dormant-by-Default, honest mocks |
 | 6 | Demo-ready gate (Phase 8) | ✅ |
 | 7 | **Vitest unit + conformance** harness, green in CI | ✅ 38 tests; GitHub Actions runs tsc+lint+test+build |
 | 7 | **Playwright E2E + axe** | ❌ pending (E2E happy-paths + a11y sweep) |
 | 8 | Phase 8 ticked + dated | ✅ |
 | 8 | `PHASE_A_COMPLETE.md` · `PHASE_9_PLAN.md` · git **tag** | ❌ pending |
 
-**Bottom line:** the seam is total and the contract is frozen + **proven by a conformance suite** — Part B is a
+**Bottom line:** the seam is total and the contract is frozen + **proven by a conformance suite**  Part B is a
 **swap, not a rewrite**. Determinism (clock), adapter interfaces, and the strict zero-`lib/mock` bar are done;
 38 unit+contract tests run green in CI. Only three small items remain, none of which change the UI:
 **(a)** Playwright E2E + axe sweep (§7), **(b)** the optional loading/error mock flag (§3), and **(c)** the
-closeout ritual — `PHASE_A_COMPLETE.md`, `PHASE_9_PLAN.md`, and the git tag (§8).
+closeout ritual  `PHASE_A_COMPLETE.md`, `PHASE_9_PLAN.md`, and the git tag (§8).
 
 ---
 

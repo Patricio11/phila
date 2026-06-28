@@ -22,7 +22,7 @@ export default async function MessagesPage() {
 
   return (
     <div className="rise space-y-5">
-      <PageHead title="Messages" summary="Private messages with your team — the hub and your colleagues." />
+      <PageHead title="Messages" summary="Private messages with your team  the hub and your colleagues." />
       <TeamMessagesView threads={threads} teammates={teammates} />
     </div>
   );

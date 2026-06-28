@@ -68,7 +68,7 @@ const inviteInput = z.object({
 
 /**
  * Invite a client to their portal (mock). Sends a set-password link over the
- * chosen channel — WhatsApp/SMS to their number or email — depending on what
+ * chosen channel  WhatsApp/SMS to their number or email  depending on what
  * the org has enabled and what contact details exist. Validated + audited;
  * nothing is delivered until the Phase 12 channel rail is live.
  */

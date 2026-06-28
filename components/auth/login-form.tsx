@@ -59,7 +59,7 @@ export function LoginForm() {
 
       <Button onClick={submit} loading={pending} className="w-full">Sign in</Button>
 
-      {/* Demo workspaces — explore without an account (Part A). */}
+      {/* Demo workspaces  explore without an account (Part A). */}
       <div className="pt-1">
         <div className="relative flex items-center">
           <span className="h-px flex-1 bg-border" />

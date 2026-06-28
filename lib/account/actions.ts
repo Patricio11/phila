@@ -5,7 +5,7 @@ import { requireOrg } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 
 /**
- * Personal account actions — usable by any org member (counsellor or admin) on
+ * Personal account actions  usable by any org member (counsellor or admin) on
  * their **own** account. Mock: validated + audited; never logs the password.
  * Phase 9 wires TOTP + the real password store.
  */

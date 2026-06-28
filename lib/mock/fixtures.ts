@@ -154,7 +154,7 @@ export const clients: Client[] = [
 ];
 
 /**
- * Onboarding document requirements — configured by the platform (super) admin.
+ * Onboarding document requirements  configured by the platform (super) admin.
  * Every new practice uploads these during onboarding; the platform reviews them
  * before the practice is fully verified.
  */
@@ -359,7 +359,7 @@ export const invoices: Record<string, import("@/lib/domain/types").Invoice[]> = 
 };
 
 /**
- * Internal team threads — staff-to-staff messaging (hub ↔ counsellor,
+ * Internal team threads  staff-to-staff messaging (hub ↔ counsellor,
  * counsellor ↔ counsellor). This is private practice communication; client
  * notices go out over SMS/WhatsApp, not here.
  */
@@ -376,9 +376,9 @@ export const teamThreads: TeamThreadSeed[] = [
     participants: ["user_thandeka", "user_nomsa"],
     unreadFor: "user_nomsa",
     messages: [
-      { id: "tm1", from: "user_thandeka", text: "Hi Nomsa — the DSD funder report is due Friday. Can you confirm the outcome measures for your caseload are captured?", at: "2026-06-27T08:40:00+02:00" },
+      { id: "tm1", from: "user_thandeka", text: "Hi Nomsa  the DSD funder report is due Friday. Can you confirm the outcome measures for your caseload are captured?", at: "2026-06-27T08:40:00+02:00" },
       { id: "tm2", from: "user_nomsa", text: "Morning Thandeka. Yes, all up to date. I'll send the narrative notes by Thursday.", at: "2026-06-27T09:05:00+02:00" },
-      { id: "tm3", from: "user_thandeka", text: "Wonderful, thank you 🙏 Also — Lerato has two records on the system, looks like a double entry. Could you flag it for the front desk to merge?", at: "2026-06-28T07:50:00+02:00" },
+      { id: "tm3", from: "user_thandeka", text: "Wonderful, thank you 🙏 Also  Lerato has two records on the system, looks like a double entry. Could you flag it for the front desk to merge?", at: "2026-06-28T07:50:00+02:00" },
     ],
   },
   {
@@ -395,7 +395,7 @@ export const teamThreads: TeamThreadSeed[] = [
     id: "tt_thandeka_lindiwe",
     participants: ["user_thandeka", "user_lindiwe"],
     messages: [
-      { id: "tm7", from: "user_lindiwe", text: "Consulting room 2 was double-booked Thursday 14:00 — I moved Aisha's session to room J1. All sorted.", at: "2026-06-26T11:15:00+02:00" },
+      { id: "tm7", from: "user_lindiwe", text: "Consulting room 2 was double-booked Thursday 14:00  I moved Aisha's session to room J1. All sorted.", at: "2026-06-26T11:15:00+02:00" },
       { id: "tm8", from: "user_thandeka", text: "Great catch, thank you Lindiwe.", at: "2026-06-26T11:40:00+02:00" },
     ],
   },
@@ -746,7 +746,7 @@ export const supervisionTemplates: {
   {
     superviseeId: "couns_aisha", clientId: "cl_kabelo", clientName: "Kabelo Moeketsi", serviceId: "svc_individual",
     sessionDayOffset: -2, submittedDayOffset: -1, aiGenerated: false, risk: true,
-    note: "Kabelo presented low and withdrawn, spoke about feeling overwhelmed at home. A safeguarding concern came up — I stayed with it, agreed a follow-up within the week, and shared current support options. Requesting supervisor input on the safety plan before next session.",
+    note: "Kabelo presented low and withdrawn, spoke about feeling overwhelmed at home. A safeguarding concern came up  I stayed with it, agreed a follow-up within the week, and shared current support options. Requesting supervisor input on the safety plan before next session.",
   },
   {
     superviseeId: "couns_thabo", clientId: "cl_naledi", clientName: "Naledi Tshabalala", serviceId: "svc_assessment",

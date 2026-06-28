@@ -79,7 +79,7 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
             <InviteClientButton clientId={client.id} clientName={client.name} phone={client.phone ?? null} email={client.email ?? null} whatsappOn={Boolean(org.features.whatsapp)} smsOn={Boolean(org.features.sms)} />
             <ReassignClientButton clientId={client.id} clientName={client.name} counsellors={counsellorOpts} currentCounsellorId={counsellor.id} />
             <Button asChild>
-              <Link href="/hub/calendars"><CalendarPlus className="size-4" strokeWidth={2} aria-hidden /> Book session</Link>
+              <Link href="/hub/appointments"><CalendarPlus className="size-4" strokeWidth={2} aria-hidden /> Book session</Link>
             </Button>
           </div>
         }

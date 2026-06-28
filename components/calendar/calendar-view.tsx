@@ -6,7 +6,7 @@ import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
 import type { BusinessHours } from "@/lib/domain/types";
 import { isoWeekday } from "@/lib/domain/helpers";
-import { rescheduleAppointment } from "@/app/app/calendar/actions";
+import { rescheduleAppointment } from "@/app/app/appointments/actions";
 import { CreateAppointmentModal, type CreateInitial, type SchedulingOptions } from "@/components/scheduling/create-appointment-modal";
 import { AppointmentDetail } from "@/components/calendar/appointment-detail";
 import { Button } from "@/components/ui/button";

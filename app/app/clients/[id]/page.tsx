@@ -118,7 +118,7 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
             </Link>
           </Button>
           <Button asChild variant="ghost">
-            <Link href="/app/calendar">
+            <Link href="/app/appointments">
               <CalendarPlus className="size-4" strokeWidth={2} aria-hidden /> Book
             </Link>
           </Button>

@@ -1,35 +1,34 @@
 import { notFound } from "next/navigation";
-import { requireOrg } from "@/lib/auth/guard";
+import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { PageHead } from "@/components/shell/page-head";
 import { CalendarView } from "@/components/calendar/calendar-view";
 import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Calendar" };
+export const metadata = { title: "Appointments" };
 
-export default async function CalendarPage() {
-  const { principal, membership } = await requireOrg(["counsellor"]);
+export default async function HubCalendarsPage() {
+  const { membership } = await requireHub();
   const provider = await getDataProvider();
 
   const [counsellors, org] = await Promise.all([
     provider.listCounsellors(membership.orgId),
     provider.getOrg(membership.orgId),
   ]);
-  const me = counsellors.find((c) => c.userId === principal.userId);
-  if (!me || !org) notFound();
+  if (!org) notFound();
 
   const now = clockNow();
-  const [events, allClients, services, rooms] = await Promise.all([
-    provider.listCounsellorSessions(me.id, now),
+  const [lists, orgClients, services, rooms] = await Promise.all([
+    Promise.all(counsellors.map((c) => provider.listCounsellorSessions(c.id, now))),
     provider.listClients(membership.orgId),
     provider.listServices(membership.orgId),
     provider.listRooms(membership.orgId),
   ]);
+  const events = lists.flat();
   const scheduling = {
     orgId: membership.orgId,
-    defaultCounsellorId: me.id,
-    clients: allClients.map((c) => ({ id: c.id, name: c.name })),
+    clients: orgClients.map((c) => ({ id: c.id, name: c.name })),
     services: services.map((s) => ({ id: s.id, name: s.name, durationMin: s.durationMin })),
     counsellors: counsellors.map((c) => ({ id: c.id, name: c.name })),
     rooms: rooms.map((r) => ({ id: r.id, name: r.name })),
@@ -38,8 +37,11 @@ export default async function CalendarPage() {
 
   return (
     <div className="rise space-y-5">
-      <PageHead title="Calendar" summary="Your week, day, month, or agenda  click a slot to book." />
-      <CalendarView events={events} businessHours={org.scheduling.businessHours} scheduling={scheduling} nowISO={now} />
+      <PageHead
+        title="Appointments"
+        summary={`Every counsellor's sessions in one view  ${counsellors.length} counsellors. Click a slot to book on behalf.`}
+      />
+      <CalendarView events={events} businessHours={org.scheduling.businessHours} scheduling={scheduling} nowISO={now} openSessions={false} clientBasePath="/hub/clients" />
     </div>
   );
 }

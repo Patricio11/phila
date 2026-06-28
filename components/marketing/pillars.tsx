@@ -139,7 +139,7 @@ function OrgVisual() {
         <StatCard icon={DoorOpen} label="Room use" value="72%" coverage="2 sites" />
       </div>
       <Card>
-        <CardHead title="Calendars" />
+        <CardHead title="Appointments" />
         <div className="space-y-1.5 px-3.5 pb-3.5">
           {[
             { name: "Nomsa Dlamini", fill: 82, c: "var(--accent)" },

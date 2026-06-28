@@ -11,7 +11,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { StatusDot, type DotTone } from "@/components/ui/status-dot";
 import { useToast } from "@/components/ui/toast";
-import { rescheduleAppointment } from "@/app/app/calendar/actions";
+import { rescheduleAppointment } from "@/app/app/appointments/actions";
 import { markProgress } from "@/app/app/sessions/[id]/actions";
 import { cn } from "@/lib/utils";
 

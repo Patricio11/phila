@@ -5,6 +5,17 @@ import { getDataProvider } from "@/lib/data-provider";
 import { availableSlots, type Slot } from "@/lib/domain/helpers";
 import { logAccess } from "@/lib/audit";
 import { CONSENT_PURPOSES } from "@/lib/domain/enums";
+import { now as clockNow } from "@/lib/clock";
+
+/** SAST calendar-day string for an instant (fixed +02:00, no DST). */
+function sastToday(nowISO: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(nowISO));
+}
+function addDays(date: string, n: number): string {
+  const d = new Date(`${date}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
 
 /**
  * Booking server actions  the same shape Part B keeps. In Part A they run the
@@ -43,12 +54,20 @@ export async function getAvailableSlots(
     : config.counsellors;
   if (candidates.length === 0) return { ok: false, error: "No counsellor available" };
 
+  // Enforce the org's booking window server-side: nothing in the past, and
+  // nothing past the horizon, regardless of what the client UI requests.
+  const now = clockNow();
+  const today = sastToday(now);
+  const latest = addDays(today, config.maxDaysAhead);
+  if (date < today || date > latest) return { ok: true, slots: [] };
+
   // Compute each candidate's free slots, then union by start time. For "any
-  // available" the first free counsellor at a given time is assigned.
+  // available" the first free counsellor at a given time is assigned. The slot
+  // engine drops any start sooner than the org's minimum notice.
   const byStart = new Map<string, SlotOption>();
   for (const c of candidates) {
     const existing = await provider.listAppointmentsForCounsellor(c.id, { from: date, to: date });
-    const slots: Slot[] = availableSlots({ org, date, durationMin, existing });
+    const slots: Slot[] = availableSlots({ org, date, durationMin, existing, now, minNoticeHours: config.minNoticeHours });
     for (const s of slots) {
       if (!byStart.has(s.start)) {
         byStart.set(s.start, { start: s.start, label: s.label, counsellorId: c.id });

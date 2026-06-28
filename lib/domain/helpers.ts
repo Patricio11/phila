@@ -54,6 +54,10 @@ export function availableSlots(opts: {
   date: string;
   durationMin?: number;
   existing: readonly Appointment[];
+  /** Current instant (ISO). With `minNoticeHours`, slots too soon are dropped. */
+  now?: string;
+  /** Earliest a client may book, in hours from `now` (the org's booking policy). */
+  minNoticeHours?: number;
 }): Slot[] {
   const { org, date } = opts;
   const duration = opts.durationMin ?? org.scheduling.defaultDurationMin;
@@ -84,6 +88,12 @@ export function availableSlots(opts: {
     const sessionEnd = t + duration;
     const clashes = blocked.some((w) => t < w.end && sessionEnd > w.start);
     if (!clashes) slots.push({ start: instant(date, fromMinutes(t)), label: fromMinutes(t) });
+  }
+
+  // Honour the booking notice: drop any start sooner than `now + minNoticeHours`.
+  if (opts.now && opts.minNoticeHours && opts.minNoticeHours > 0) {
+    const earliest = new Date(opts.now).getTime() + opts.minNoticeHours * 3_600_000;
+    return slots.filter((s) => new Date(s.start).getTime() >= earliest);
   }
   return slots;
 }

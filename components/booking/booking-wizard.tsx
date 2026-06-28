@@ -180,6 +180,8 @@ export function BookingWizard({
           slug={slug}
           businessHours={org.scheduling.businessHours}
           durationMin={durationMin}
+          maxDaysAhead={config.maxDaysAhead}
+          minNoticeHours={config.minNoticeHours}
           counsellorId={state.counsellorId}
           date={state.date}
           slotStart={state.slotStart}

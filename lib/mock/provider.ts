@@ -381,6 +381,8 @@ export const mockProvider: DataProvider = {
       counsellors: allCounsellors.filter((c) => c.orgId === org.id && bookableCounsellor.has(c.id)),
       intakeForm,
       enabled: settings.publicBookingEnabled,
+      minNoticeHours: settings.minNoticeHours,
+      maxDaysAhead: settings.maxDaysAhead,
     });
   },
 

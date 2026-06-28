@@ -68,4 +68,27 @@ describe("availableSlots", () => {
     const slots = availableSlots({ org, date: MON, durationMin: 60, existing: [appt(`${MON}T09:00:00+02:00`, 60, "cancelled")] });
     expect(slots).toHaveLength(9);
   });
+
+  it("drops slots inside the minimum-notice window", () => {
+    // "Now" is 06:00 SAST on the booking day; a 12-hour notice closes everything
+    // before 18:00, so the whole 08:00–16:00 day is gone, but the next day stays full.
+    const now = `${MON}T06:00:00+02:00`;
+    const today = availableSlots({ org, date: MON, durationMin: 60, existing: [], now, minNoticeHours: 12 });
+    expect(today).toHaveLength(0);
+    const tomorrow = availableSlots({ org, date: TUE, durationMin: 60, existing: [], now, minNoticeHours: 12 });
+    expect(tomorrow).toHaveLength(9);
+  });
+
+  it("keeps later slots when notice only clears part of the day", () => {
+    // Now 08:00 SAST, 4-hour notice → first bookable start is 12:00.
+    const now = `${MON}T08:00:00+02:00`;
+    const slots = availableSlots({ org, date: MON, durationMin: 60, existing: [], now, minNoticeHours: 4 });
+    expect(slots.some((s) => s.label === "11:00")).toBe(false);
+    expect(slots[0]!.label).toBe("12:00");
+  });
+
+  it("is unchanged when no notice is set (back-compatible)", () => {
+    const slots = availableSlots({ org, date: MON, durationMin: 60, existing: [], now: `${MON}T09:00:00+02:00`, minNoticeHours: 0 });
+    expect(slots).toHaveLength(9);
+  });
 });

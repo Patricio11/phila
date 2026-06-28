@@ -8,8 +8,11 @@ import { getAvailableSlots, type SlotOption } from "@/app/o/[slug]/book/actions"
 import { StepHeader } from "@/components/booking/step-header";
 import { cn } from "@/lib/utils";
 
-/** Build the next open business days from today (SAST), honouring closed days. */
-function upcomingOpenDays(businessHours: BusinessHours, count: number): string[] {
+/**
+ * Build the next open business days from today (SAST), honouring closed days and
+ * the org's booking horizon — the calendar never opens further than `maxDaysAhead`.
+ */
+function upcomingOpenDays(businessHours: BusinessHours, count: number, maxDaysAhead: number): string[] {
   const today = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Africa/Johannesburg",
     year: "numeric",
@@ -18,7 +21,7 @@ function upcomingOpenDays(businessHours: BusinessHours, count: number): string[]
   }).format(new Date());
 
   const days: string[] = [];
-  for (let i = 0; i < 30 && days.length < count; i++) {
+  for (let i = 0; i <= maxDaysAhead && days.length < count; i++) {
     const d = new Date(`${today}T12:00:00Z`);
     d.setUTCDate(d.getUTCDate() + i);
     const date = d.toISOString().slice(0, 10);
@@ -40,6 +43,8 @@ export function TimeStep({
   slug,
   businessHours,
   durationMin,
+  maxDaysAhead,
+  minNoticeHours,
   counsellorId,
   date,
   slotStart,
@@ -49,13 +54,15 @@ export function TimeStep({
   slug: string;
   businessHours: BusinessHours;
   durationMin: number;
+  maxDaysAhead: number;
+  minNoticeHours: number;
   counsellorId: string | null;
   date: string | null;
   slotStart: string | null;
   onPickDate: (date: string) => void;
   onPickSlot: (start: string, counsellorId: string) => void;
 }) {
-  const [days] = useState(() => upcomingOpenDays(businessHours, 10));
+  const [days] = useState(() => upcomingOpenDays(businessHours, 10, maxDaysAhead));
   const [slots, setSlots] = useState<SlotOption[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -77,7 +84,14 @@ export function TimeStep({
 
   return (
     <div>
-      <StepHeader title="Pick a time" subtitle="Times shown honour the practice's hours and breaks." />
+      <StepHeader
+        title="Pick a time"
+        subtitle={
+          minNoticeHours > 0
+            ? `Times shown honour the practice's hours${minNoticeHours >= 24 ? `, and need ${Math.round(minNoticeHours / 24)} day${minNoticeHours >= 48 ? "s" : ""}' notice` : `, and need ${minNoticeHours} hours' notice`}.`
+            : "Times shown honour the practice's hours and breaks."
+        }
+      />
 
       {/* Day chips */}
       <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">

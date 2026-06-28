@@ -44,6 +44,10 @@ export interface BookingConfig {
   intakeForm: IntakeForm;
   /** Master switch — false means the org takes bookings by invite only. */
   enabled: boolean;
+  /** Earliest a client may book, in hours from now (enforced by the slot engine). */
+  minNoticeHours: number;
+  /** How far ahead the calendar opens, in days (caps the date picker). */
+  maxDaysAhead: number;
 }
 
 /** Per-service public-booking policy (which services the org lists, and how). */

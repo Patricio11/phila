@@ -1,12 +1,44 @@
 "use client";
 
-import { CalendarDays, Clock, MapPin, Video } from "lucide-react";
+import { CalendarDays, CalendarPlus, Clock, MapPin, Video } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 
 const JOIN_WINDOW_MIN = 10;
+
+function countdownLabel(minsUntil: number, durationMin: number): string {
+  if (minsUntil <= 0 && minsUntil > -durationMin) return "Happening now";
+  if (minsUntil <= 0) return "";
+  if (minsUntil < 60) return `in ${Math.round(minsUntil)} min`;
+  if (minsUntil < 1440) return `in ${Math.round(minsUntil / 60)} hour${Math.round(minsUntil / 60) === 1 ? "" : "s"}`;
+  const days = Math.round(minsUntil / 1440);
+  return `in ${days} day${days === 1 ? "" : "s"}`;
+}
+
+function downloadIcs(appt: AppointmentView) {
+  const start = new Date(appt.startsAt);
+  const end = new Date(start.getTime() + appt.durationMin * 60000);
+  const z = (d: Date) => `${d.toISOString().replace(/[-:]/g, "").split(".")[0]}Z`;
+  const ics = [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Phila//Counselling//EN", "BEGIN:VEVENT",
+    `UID:${appt.id}@phila`,
+    `DTSTAMP:${z(new Date())}`,
+    `DTSTART:${z(start)}`,
+    `DTEND:${z(end)}`,
+    `SUMMARY:Counselling session with ${appt.counsellorName}`,
+    `LOCATION:${appt.type === "online" ? "Online (join from your Phila portal)" : (appt.roomName ?? "In person")}`,
+    "BEGIN:VALARM", "TRIGGER:-PT1H", "ACTION:DISPLAY", "DESCRIPTION:Counselling session in 1 hour", "END:VALARM",
+    "END:VEVENT", "END:VCALENDAR",
+  ].join("\r\n");
+  const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "counselling-session.ics";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 /** Friendly relative day + time in SAST. */
 function relativeWhen(startISO: string, nowMs: number): string {
@@ -53,8 +85,11 @@ export function UpcomingSessionCard({
 
   return (
     <div className="overflow-hidden rounded-card border border-border bg-surface shadow-sm">
-      <div className="border-b border-border bg-accent-soft/40 px-5 py-2.5 text-[12px] font-semibold uppercase tracking-wide text-accent">
-        Your next session
+      <div className="flex items-center justify-between gap-2 border-b border-border bg-accent-soft/40 px-5 py-2.5">
+        <span className="text-[12px] font-semibold uppercase tracking-wide text-accent">Your next session</span>
+        {countdownLabel(minsUntil, appt.durationMin) && (
+          <span className="rounded-chip bg-surface px-2 py-0.5 text-[11px] font-semibold text-accent shadow-sm">{countdownLabel(minsUntil, appt.durationMin)}</span>
+        )}
       </div>
       <div className="p-5">
         <div className="flex items-center gap-3">
@@ -79,8 +114,8 @@ export function UpcomingSessionCard({
           />
         </div>
 
-        {appt.type === "online" && (
-          <div className="mt-5">
+        <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+          {appt.type === "online" && (
             <Button
               className="w-full"
               disabled={!joinable}
@@ -88,15 +123,18 @@ export function UpcomingSessionCard({
                 toast({
                   tone: "default",
                   title: "The session room opens here",
-                  description: "Your counsellor will start it  you'll join right from this page.",
+                  description: "Your counsellor will start it — you'll join right from this page.",
                 })
               }
             >
               <Video className="size-4" strokeWidth={2} aria-hidden />
               {joinable ? "Join session" : "Join opens 10 minutes before"}
             </Button>
-          </div>
-        )}
+          )}
+          <Button variant="ghost" className="w-full sm:w-auto" onClick={() => downloadIcs(appt)}>
+            <CalendarPlus className="size-4" strokeWidth={2} aria-hidden /> Add to calendar
+          </Button>
+        </div>
       </div>
     </div>
   );

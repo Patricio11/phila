@@ -143,6 +143,10 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 - [x] The client's own **session history** (a clean timeline); previous sessions; recurring series.
 - [x] **Always-reachable crisis support (2026-06-27):** a calm, never-alarming "If you need to talk now" card  **SADAG 0800 567 567** (free, any time, `tel:` link) plus the 10111 / nearest-hospital line. A counselling portal should never make a person in distress hunt for help.
 
+### Task 3.1.5: Profile + mobile polish (2026-06-28)
+- [x] **Client profile** (`/me/profile`, mobile-first): edit your details (name, mobile, email, **date of birth**, **home address**, **preferred contact**), an **emergency contact** block, a warm "your care team" note, and **Sign-in & security** (change password + 2FA). Backed by `getClientProfile` + client self-service actions (`saveClientProfile` / `changeClientPassword` / `setClientTwoFactor`, `requireClient`, audited). `SecuritySettings` now accepts action overrides so it's reused with client-scoped actions. Profile added to the client nav; account "Settings" points here. **99% of clients are on mobile** — single-column, large targets, no horizontal scroll.
+- [x] **Home magic:** the "Your next session" hero now shows a **live countdown** ("in 2 days" / "in 3 hours" / "Happening now") and an **Add to calendar** action that downloads an `.ics` (with a 1-hour reminder) — straight into the client's phone calendar.
+
 ### Task 3.2: Records + control
 - [x] Documents (mock uploads), invoices (mock, "pay" stub), profile editor.
 - [x] **Consent centre**  view/revoke each purpose; honest state; revoke reflects immediately.

@@ -63,6 +63,7 @@ export const dbProvider: DataProvider = {
   getPlatformOverview: notYet,
   listPlatformOrgs: notYet,
   getPlatformOrgDetail: notYet,
+  listOnboardingRequirements: notYet,
   listPlans: notYet,
   getAiRail: notYet,
   listIntegrations: notYet,

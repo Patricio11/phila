@@ -367,6 +367,11 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 ## 🔐 PHASE 9: IDENTITY, AUTH & CONSENT
 *Goal: real accounts, all roles, multi-tenant sessions, and lawful consent.*
 
+### Task 9.0: Auth + onboarding UI shells (Part A, 2026-06-28)
+- [x] **Beautiful auth surface, mock-first** (real auth lands in 9.1–9.2 behind these exact screens). A warm branded **`AuthShell`** (gradient brand panel + POPIA/data-in-SA/private-notes trust signals on desktop; slim header, single-column on mobile). **`/login`** (email + password with **show/hide eye**, forgot-password link, "explore a demo workspace" quick-access), **`/signup`** (practice registration — name, your name, work email, **password strength meter**, province, POPIA agree → onboarding), **`/forgot-password`** + **`/reset-password`** with calm success states. Marketing CTAs now route to **Sign in / Get started**. The Security card password fields (Hub/counsellor/client) upgraded to the same eye-toggle + strength + **"passwords match"** indicator.
+- [x] **Onboarding wizard** (`/onboarding`): a 4-step flow — practice basics → working hours → **verification documents** → done — with a progress bar, smooth steps, Skip, and a celebratory finish → the Hub. `completeOnboarding` (mock).
+- [x] **Platform-controlled onboarding requirements** (your call): the **super admin** configures the **documents every new practice must upload** at `/admin/onboarding` (toggle required/optional, add/remove; `saveOnboardingRequirements`, audited). The onboarding wizard **reads that exact checklist** (`listOnboardingRequirements`) for its upload step — so the platform owns the verification gate, and the practice (Hub) uploads to satisfy it.
+
 ### Task 9.1: Better Auth setup
 - [ ] Better Auth + Drizzle adapter; email+password + verification + forgot/reset; sessions in Postgres.
 - [ ] Role model  **platform** (`super_admin | client | funder`) + **org team_role** (`org_admin | counsellor | front_desk | finance | programme_manager`, +`supervisor`); Server-Action sign-in routes by role; multi-org membership resolution + org switcher.

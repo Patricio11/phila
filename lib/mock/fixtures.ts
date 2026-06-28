@@ -153,6 +153,19 @@ export const clients: Client[] = [
   client("cl_lerato_2", "Lerato Mahlangu", "+27 82 451 7720", undefined, "Gauteng", "couns_nomsa", false, "2026-06-26T09:00:00+02:00"),
 ];
 
+/**
+ * Onboarding document requirements — configured by the platform (super) admin.
+ * Every new practice uploads these during onboarding; the platform reviews them
+ * before the practice is fully verified.
+ */
+export const onboardingRequirements: { id: string; label: string; description: string; required: boolean }[] = [
+  { id: "hpcsa", label: "HPCSA practice registration", description: "Your practice's HPCSA registration certificate.", required: true },
+  { id: "cipc", label: "Company / NPO registration", description: "CIPC company registration or your NPO certificate.", required: true },
+  { id: "popia", label: "POPIA Information Officer", description: "Appointment of your Information Officer (POPIA s56).", required: true },
+  { id: "address", label: "Proof of practice address", description: "A recent utility bill or lease for the premises.", required: true },
+  { id: "indemnity", label: "Professional indemnity insurance", description: "Current cover for your counsellors (recommended).", required: false },
+];
+
 /** A client's own profile details (the /me profile page). */
 export interface ClientProfileSeed {
   dateOfBirth: string;

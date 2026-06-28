@@ -65,6 +65,7 @@ import {
   integrationsCatalogue,
   plans,
   platformAuditEvents,
+  onboardingRequirements,
   platformOrgs,
   counsellorDayTemplates,
   counsellors as allCounsellors,
@@ -1154,6 +1155,8 @@ export const mockProvider: DataProvider = {
         return { org, planName: plan?.name ?? "", planPriceCents: plan?.priceCents ?? 0 };
       }),
     ),
+
+  listOnboardingRequirements: () => ok(onboardingRequirements),
 
   getPlatformOrgDetail: (orgId) => {
     const org = platformOrgs.find((o) => o.id === orgId);

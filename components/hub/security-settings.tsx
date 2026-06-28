@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { KeyRound, ShieldCheck } from "lucide-react";
+import { Check, KeyRound, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input, Label, FieldError } from "@/components/ui/input";
+import { Label, FieldError } from "@/components/ui/input";
+import { PasswordField } from "@/components/auth/password-field";
 import { useToast } from "@/components/ui/toast";
 import { changePassword as defaultChangePassword, setTwoFactor as defaultSetTwoFactor } from "@/lib/account/actions";
 import { cn } from "@/lib/utils";
@@ -89,19 +90,21 @@ export function SecuritySettings({
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label>Current password</Label>
-            <Input type="password" value={pw.current} onChange={(e) => setPw((p) => ({ ...p, current: e.target.value }))} invalid={Boolean(attempted && errors.current)} />
+            <PasswordField value={pw.current} onChange={(v) => setPw((p) => ({ ...p, current: v }))} autoComplete="current-password" invalid={Boolean(attempted && errors.current)} />
             {attempted && errors.current ? <FieldError>{errors.current}</FieldError> : null}
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>New password</Label>
-              <Input type="password" value={pw.next} onChange={(e) => setPw((p) => ({ ...p, next: e.target.value }))} invalid={Boolean(attempted && errors.next)} />
+              <PasswordField value={pw.next} onChange={(v) => setPw((p) => ({ ...p, next: v }))} autoComplete="new-password" meter invalid={Boolean(attempted && errors.next)} />
               {attempted && errors.next ? <FieldError>{errors.next}</FieldError> : null}
             </div>
             <div className="space-y-1.5">
               <Label>Confirm new password</Label>
-              <Input type="password" value={pw.confirm} onChange={(e) => setPw((p) => ({ ...p, confirm: e.target.value }))} invalid={Boolean(attempted && errors.confirm)} />
-              {attempted && errors.confirm ? <FieldError>{errors.confirm}</FieldError> : null}
+              <PasswordField value={pw.confirm} onChange={(v) => setPw((p) => ({ ...p, confirm: v }))} autoComplete="new-password" invalid={Boolean(attempted && errors.confirm)} />
+              {pw.confirm.length > 0 && pw.confirm === pw.next ? (
+                <p className="flex items-center gap-1 text-[11.5px] font-medium text-accent"><Check className="size-3.5" strokeWidth={2.5} aria-hidden /> Passwords match</p>
+              ) : attempted && errors.confirm ? <FieldError>{errors.confirm}</FieldError> : null}
             </div>
           </div>
           <Button size="sm" onClick={submitPw} loading={pwPending}>Update password</Button>

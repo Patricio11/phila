@@ -421,6 +421,13 @@ export interface PlanWithUsage {
   mrrCents: number;
 }
 
+export interface OnboardingRequirement {
+  id: string;
+  label: string;
+  description: string;
+  required: boolean;
+}
+
 export interface PlatformOrgDetail {
   org: PlatformOrg;
   planName: string;
@@ -538,6 +545,7 @@ export interface DataProvider {
   getPlatformOverview(): Promise<PlatformOverview>;
   listPlatformOrgs(): Promise<PlatformOrgRow[]>;
   getPlatformOrgDetail(orgId: string): Promise<PlatformOrgDetail | null>;
+  listOnboardingRequirements(): Promise<OnboardingRequirement[]>;
   listPlans(): Promise<PlanWithUsage[]>;
   getAiRail(): Promise<AiRailConfig>;
   listIntegrations(): Promise<IntegrationCatalogItem[]>;

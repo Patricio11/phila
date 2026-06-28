@@ -189,6 +189,9 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 ### Task 4.7: Sessions list polish
 - [x] **Sessions list (2026-06-28):** `/app/sessions` gains a **stat strip** (upcoming · today · completed · no-shows), **segmented filters** (Upcoming / Recent / All) and **client search**, with status word + room/online on every row. Client component over the same `listCounsellorSessions`.
 
+### Task 4.8: Counsellor Rooms view
+- [x] **Your week in rooms (2026-06-28):** `/app/rooms` is now visual — a **stat strip** (rooms assigned · days in office · in-person this week · sites) and a **"Your week"** time-grid showing the **room bands** you're assigned to (coloured) with your **in-person bookings overlaid**, so the gaps are obvious. Assignments list kept below as detail.
+
 ### Task 4.6: Counsellor account & settings
 - [x] **Account settings (2026-06-28):** `/app/settings` is a real account area — **edit your own profile** (name, phone, **date of birth**, **home address**, languages, bio; email + credential read-only, managed by the practice), a **Security** card (**two-factor** + **change password**), and **Preferences** (theme, notification channels). Personal actions (`changePassword` / `setTwoFactor` / `saveMyProfile`) moved to a shared `lib/account/actions` and reused by both the counsellor and the Hub.
 
@@ -207,6 +210,7 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 - [x] `/hub` overview: clients today/week/month, income + **income prediction**, no-show rate, open intakes, pending credential checks  all `<StatCard>` with honest coverage captions.
 - [x] `/hub/calendars`: oversight of **every** counsellor's calendar (resource lanes); book on behalf; reschedule/cancel; allocate counsellor + **room**.
 - [x] **Day/week/month depth (2026-06-28):** income is now **actual + predicted for today, this week, and this month** (not month-only), plus a **new-clients** stat (today · week · month). Spec-driven.
+- [x] **Staffing load (2026-06-27):** a **"Team this week"** panel on `/hub` — every counsellor with their session count, a load bar against weekly capacity (amber when near capacity), credential status, and seen/upcoming split — the "who's stretched, who has room" view, paired beside "Needs attention".
 
 ### Task 5.2: Team, roles & clients
 - [x] **Clinic access model (2026-06-28):** the **Hub (org admin) owns the record — full access to every client, note and upload**. A read-only `/hub/sessions/[id]` lets the Hub open any counsellor's clinical note (with care-plan + AI/sign provenance); **every open is audit-logged** (`note.read_hub_override`). Each **counsellor is scoped to their own caseload** (+ supervisees) — `/app/clients/[id]` 404s on another counsellor's client, and notes stay author+supervisor-only.
@@ -323,6 +327,9 @@ auto-rolls up to them, and a scoped, k-anon, read-only **funder portal**. The gr
 
 ### Task 7.5: Outcome measures
 - [x] PHQ-9 / GAD-7 capture + `<OutcomeTrend>` trend across sessions; honest "not yet measured" empty state.
+
+### Task 7.6: KPI card refresh
+- [x] **`<StatCard>` redesign (2026-06-28):** reworked from an icon stacked **on top** of the value to a calm **icon-left** layout (value leads, small tinted icon beside it). `icon` is now optional and a `tone` (default / warn / danger) colours the value + icon for warning metrics (overdue, safeguarding). Trend chip + honest coverage caption preserved. Applies across every dashboard at once; the Rooms summary cards delegate to it.
 
 **Done when (mock):** calendar, create-modal, video shell, AI-draft, builder, and outcomes all click through and look finished.
 

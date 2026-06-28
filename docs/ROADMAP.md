@@ -412,6 +412,9 @@ notifications / AI / payments / video. Guards, `logAccess()`, consent utils, `db
   gateway being connected (Dormant-by-Default; collection wires up Phase 13).
 - **Rooms ▸ Manage sites**  rooms already had full CRUD; now branches/sites are manageable too (name +
   province, add/rename/remove; a site with rooms can't be removed).
+- **Client billing parity (`/me/billing`)**  the client now opens the **same A4 invoice** (VAT, banking,
+  reference) the Hub issues, and the **"Pay now" button is gated by the org's toggle + connected gateway** —
+  consistent with the Hub. When online pay is off but banking is set, the client sees a clear "Pay by EFT" cue.
 - New seam methods `getIntakeBoard` · `getIntakeForm` · `getBookingSettings` · `getHubInsights` · `saveServices`
   · `getPlatformSettings` · `getInvoiceSettings` · `saveSites` · `saveInvoiceSettings` · `savePlatformVat`;
   `BookingConfig` carries `enabled` · notice/horizon · `serviceModalities` · `deposit`; `InvoiceSettings` carries

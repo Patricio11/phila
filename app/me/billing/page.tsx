@@ -17,9 +17,11 @@ export default async function MeBillingPage() {
 
   const client = await provider.getClient(clientId);
   if (!client) notFound();
-  const [org, invoices] = await Promise.all([
+  const [org, invoices, invoiceSettings, platform] = await Promise.all([
     provider.getOrg(client.orgId),
     provider.listClientInvoices(clientId),
+    provider.getInvoiceSettings(client.orgId),
+    provider.getPlatformSettings(),
   ]);
 
   await logAccess({
@@ -34,7 +36,15 @@ export default async function MeBillingPage() {
     <div className="rise space-y-6">
       <PageHead title="Billing" summary="Your invoices from the practice." />
       {invoices.length > 0 ? (
-        <InvoiceList invoices={invoices} payEnabled={Boolean(org?.features.payments)} />
+        <InvoiceList
+          invoices={invoices}
+          clientName={client.name}
+          orgName={org?.name ?? "Your practice"}
+          province={org?.province ?? ""}
+          vatRatePercent={platform.vatRatePercent}
+          settings={invoiceSettings}
+          paymentsEnabled={Boolean(org?.features.payments)}
+        />
       ) : (
         <Card className="p-2">
           <EmptyState icon={Receipt} title="No invoices yet" body="Invoices from your practice will appear here." />

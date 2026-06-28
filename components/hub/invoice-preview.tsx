@@ -5,6 +5,7 @@ import type { Invoice } from "@/lib/domain/types";
 import type { PaymentStatus } from "@/lib/domain/enums";
 import type { InvoiceSettings } from "@/lib/data-provider";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { computeVat } from "@/lib/domain/helpers";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +45,7 @@ export function InvoicePreview({
   paymentsEnabled: boolean;
   onClose: () => void;
 }) {
+  const { toast } = useToast();
   const { vatRegistered, vatNumber } = settings;
   // The stored amount is the gross total; decompose it for a registered vendor.
   const { exVatCents, vatCents, totalCents } = computeVat({ amountCents: invoice.amountCents, vatRatePercent, vatRegistered, pricesIncludeVat: true });
@@ -125,9 +127,9 @@ export function InvoicePreview({
 
           {showPay && (
             <div className="no-print mt-6 flex justify-end">
-              <a href="#" onClick={(e) => e.preventDefault()} className="inline-flex h-11 items-center gap-2 rounded-control bg-[#1C7D58] px-5 text-[14px] font-semibold text-white shadow-sm transition-[filter] hover:brightness-95">
+              <button type="button" onClick={() => toast({ tone: "default", title: "Opening secure payment", description: `Pay ${orgName} ${rands(totalCents)} through their gateway.` })} className="inline-flex h-11 items-center gap-2 rounded-control bg-[#1C7D58] px-5 text-[14px] font-semibold text-white shadow-sm transition-[filter] hover:brightness-95">
                 <CreditCard className="size-4" strokeWidth={2} aria-hidden /> Pay {rands(totalCents)} now
-              </a>
+              </button>
             </div>
           )}
 

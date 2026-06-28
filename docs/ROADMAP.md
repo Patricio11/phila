@@ -363,18 +363,24 @@ auto-rolls up to them, and a scoped, k-anon, read-only **funder portal**. The gr
 super-admin console, settings, internal messaging, "Your steps", auth/onboarding/invite — all click through;
 `tsc`/`lint`/`next build` green; all routes 200.
 
-**Seam: solid (the high-leverage half).** Zero fixture/provider **data** leaks in components (only `lib/mock`
-`types` + pure `helpers` remain); the full `DataProvider` interface is frozen with final signatures;
-`mockProvider` implements it; `dbProvider` is a throwing stub; `DATA_PROVIDER=mock|db` switch in place.
-Guards, `logAccess()`, consent utils, `db/` scaffold, and `docs/SECURITY.md` are present.
+**Seam + hardening: done (2026-06-28 hardening pass).** Zero `@/lib/mock` imports in app + components
+(types/helpers moved to `lib/domain`; `lib/mock` is fixtures + provider only); the full `DataProvider`
+interface is frozen and **proven by a conformance suite**; `dbProvider` is a throwing stub; `DATA_PROVIDER`
+switch in place. **38 unit + contract tests green in CI** (GitHub Actions: tsc + lint + test + build). A
+central injectable **clock** (`lib/clock.ts`, all 28 "now" call sites migrated) gives deterministic runs.
+Typed **adapter interfaces** (`lib/adapters/`, Dormant-by-Default) are the Part-B attach points for storage /
+notifications / AI / payments / video. Guards, `logAccess()`, consent utils, `db/` scaffold, `SECURITY.md` present.
 
-**Outstanding hardening before Phase 9 opens (none change the UI):**
-- [ ] **Provider-conformance suite** (§2/§7) — the contract test that proves the swap.
-- [ ] **Vitest + Playwright + axe harness** (§7) — Part-A regression guard for all of Part B.
-- [ ] **Determinism** (§4) — a central injectable `now()` + seed; pages still call `new Date()`.
-- [ ] **Formal adapter interfaces** (§5) — storage / notifications / AI / payments / video (today: data/UI + dormant flags).
-- [ ] **Move `lib/mock/{types,helpers}` → `lib/domain`** for the strict zero-`lib/mock`-import bar (§1).
-- [ ] **Closeout ritual** (§8) — `PHASE_A_COMPLETE.md`, `PHASE_9_PLAN.md`, and tag the Part-A-complete commit.
+- [x] **Provider-conformance suite** (§2/§7) — `tests/contract/`.
+- [x] **Vitest unit + conformance harness in CI** (§7).
+- [x] **Determinism** (§4) — `lib/clock.ts`, deterministic mock ids.
+- [x] **Adapter interfaces** (§5) — `lib/adapters/`.
+- [x] **Strict zero-`lib/mock`-import bar** (§1) — `lib/domain/{types,helpers}`.
+
+**Remaining (small; none change the UI):**
+- [ ] **Playwright E2E + axe** sweep (§7).
+- [ ] Optional **loading/error mock flag** (§3) — states already drawn (Phase 8).
+- [ ] **Closeout ritual** (§8) — `PHASE_A_COMPLETE.md`, `PHASE_9_PLAN.md`, tag the commit.
 
 ---
 ---

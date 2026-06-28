@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, FileText, Send, Users } from "lucide-react";
+import Link from "next/link";
+import { Eye, FileText, Send, SlidersHorizontal, Users } from "lucide-react";
 import type { IntakeBoard, IntakeReviewRow } from "@/lib/data-provider";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Avatar } from "@/components/ui/avatar";
@@ -97,6 +98,9 @@ export function IntakeTracker({ board }: { board: IntakeBoard }) {
           <div className="ml-auto flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => setPreviewForm(true)}>
               <Eye className="size-4" strokeWidth={2} aria-hidden /> Preview form
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/hub/intake/form"><SlidersHorizontal className="size-4" strokeWidth={2} aria-hidden /> Edit form</Link>
             </Button>
             <Button size="sm" onClick={() => toast({ tone: "default", title: "Send to a programme cohort", description: "Pick a cohort to send the intake to everyone at once." })}>
               <Users className="size-4" strokeWidth={2} aria-hidden /> Send to cohort

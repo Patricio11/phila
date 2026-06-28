@@ -1034,6 +1034,8 @@ export const mockProvider: DataProvider = {
     return ok({ form: intakeForms[orgId] ?? null, rows });
   },
 
+  getIntakeForm: (orgId) => ok(intakeForms[orgId] ?? null),
+
   listOrgInvoices: (orgId) => ok(orgInvoicesFor(orgId)),
 
   getReporting: (orgId, now, filters): Promise<ReportingResult> => {

@@ -558,6 +558,7 @@ export interface DataProvider {
   listSites(orgId: string): Promise<Site[]>;
   listIntakeStatus(orgId: string, now: string): Promise<IntakeStatusRow[]>;
   getIntakeBoard(orgId: string, now: string): Promise<IntakeBoard>;
+  getIntakeForm(orgId: string): Promise<import("@/lib/domain/types").IntakeForm | null>;
   listOrgInvoices(orgId: string): Promise<Invoice[]>;
   getReporting(orgId: string, now: string, filters: ReportingFilters): Promise<ReportingResult>;
   getOrgSettings(orgId: string): Promise<OrgSettings | null>;

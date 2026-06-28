@@ -8,6 +8,7 @@
 import type {
   AppointmentView,
   AttentionItem,
+  BookingSettings,
   Breakdown,
   CaseloadRow,
   CaseloadStatus,
@@ -20,9 +21,11 @@ import type {
   GrantBreakdowns,
   GrantSummary,
   GrantView,
+  HubInsights,
   HubOverview,
   IndicatorActual,
   IndicatorStatus,
+  InsightsPeriod,
   IntakeBoard,
   IntakeReviewRow,
   IntakeStatusRow,
@@ -58,6 +61,7 @@ import type {
 } from "@/lib/domain/types";
 import {
   aiRailConfig,
+  bookingSettings,
   carePlans,
   clientApptTemplates,
   clientDocuments,
@@ -238,6 +242,40 @@ function consentActiveFor(clientId: string, purpose: ConsentPurpose): boolean {
 }
 
 /**
+ * Resolve an org's booking settings: the configured seed if present, else honest
+ * defaults — everything in-person, online only where the org has video, and an
+ * unverified counsellor is *not* publicly bookable until their credential clears.
+ */
+function bookingSettingsFor(orgId: string): BookingSettings {
+  const org = orgs.find((o) => o.id === orgId);
+  const services = allServices.filter((s) => s.orgId === orgId);
+  const counsellors = allCounsellors.filter((c) => c.orgId === orgId);
+  const seed = bookingSettings[orgId];
+  return {
+    orgId,
+    publicBookingEnabled: seed?.publicBookingEnabled ?? true,
+    minNoticeHours: seed?.minNoticeHours ?? 12,
+    maxDaysAhead: seed?.maxDaysAhead ?? 60,
+    requireIntake: seed?.requireIntake ?? true,
+    requireDeposit: seed?.requireDeposit ?? false,
+    depositCents: seed?.depositCents ?? 0,
+    services: services.map((s) => {
+      const o = seed?.services[s.id];
+      return {
+        serviceId: s.id,
+        publiclyBookable: o?.publiclyBookable ?? true,
+        inPerson: o?.inPerson ?? true,
+        online: o?.online ?? Boolean(org?.features.video),
+      };
+    }),
+    counsellors: counsellors.map((c) => {
+      const o = seed?.counsellors[c.id];
+      return { counsellorId: c.id, publiclyBookable: o?.publiclyBookable ?? c.credential.status === "verified" };
+    }),
+  };
+}
+
+/**
  * Seed the private note contextually (Part A has no note store). A safeguarding
  * session carries an unsigned draft; a completed one a signed, AI-drafted note.
  * Copy stays non-diagnostic and never names a method (Safeguarding Rule).
@@ -333,11 +371,106 @@ export const mockProvider: DataProvider = {
     if (!org) return ok(null);
     const intakeForm = intakeForms[org.id];
     if (!intakeForm) return ok(null);
+    const settings = bookingSettingsFor(org.id);
+    const bookableService = new Set(settings.services.filter((s) => s.publiclyBookable).map((s) => s.serviceId));
+    const bookableCounsellor = new Set(settings.counsellors.filter((c) => c.publiclyBookable).map((c) => c.counsellorId));
     return ok({
       org,
-      services: allServices.filter((s) => s.orgId === org.id),
-      counsellors: allCounsellors.filter((c) => c.orgId === org.id),
+      // The org's booking settings decide what the public actually sees.
+      services: allServices.filter((s) => s.orgId === org.id && bookableService.has(s.id)),
+      counsellors: allCounsellors.filter((c) => c.orgId === org.id && bookableCounsellor.has(c.id)),
       intakeForm,
+      enabled: settings.publicBookingEnabled,
+    });
+  },
+
+  getBookingSettings: (orgId) => ok(bookingSettingsFor(orgId)),
+
+  getHubInsights: (orgId, now, filters): Promise<HubInsights> => {
+    const period: InsightsPeriod = filters.period ?? "month";
+    const counsellors = allCounsellors.filter((c) => c.orgId === orgId);
+    const clients = liveOnly(allClients.filter((c) => c.orgId === orgId));
+    const appts = counsellors.flatMap((c) => materialise(c.id, now));
+    const nowMs = new Date(now).getTime();
+    const today = sastDate(now);
+    const week = isoWeekRange(today);
+    const month = today.slice(0, 7);
+
+    const live = appts.filter((a) => a.state !== "cancelled");
+    const onDay = (d: string) => live.filter((a) => a.startsAt.startsWith(d)).length;
+    const inWeek = (d: string) => d >= week.from && d <= week.to;
+    const sessionsToday = onDay(today);
+    const sessionsWeek = live.filter((a) => inWeek(a.startsAt.slice(0, 10))).length;
+    const sessionsMonth = live.filter((a) => a.startsAt.startsWith(month)).length;
+
+    // The selected window [from, to] (inclusive date strings).
+    const ms = (mStr: string, delta: number) => {
+      const [y, m] = mStr.split("-").map(Number);
+      return new Date(Date.UTC((y as number), (m as number) - 1 + delta, 1)).toISOString().slice(0, 7);
+    };
+    const monthEnd = (mStr: string) => {
+      const [y, m] = mStr.split("-").map(Number);
+      return new Date(Date.UTC((y as number), (m as number), 0)).toISOString().slice(0, 10);
+    };
+    const window =
+      period === "week"
+        ? { from: week.from, to: week.to }
+        : period === "month"
+          ? { from: `${month}-01`, to: monthEnd(month) }
+          : { from: `${ms(month, -2)}-01`, to: monthEnd(month) };
+    const inWindow = (iso: string) => { const d = iso.slice(0, 10); return d >= window.from && d <= window.to; };
+
+    const windowLive = live.filter((a) => inWindow(a.startsAt));
+    const completed = windowLive.filter((a) => a.state === "completed" || a.state === "discharged").length;
+    const upcoming = windowLive.filter((a) => a.state === "scheduled" && new Date(a.startsAt).getTime() > nowMs).length;
+    const noShows = windowLive.filter((a) => a.state === "no_show").length;
+    const cancelled = appts.filter((a) => a.state === "cancelled" && inWindow(a.startsAt)).length;
+    const attendanceRate = completed + noShows === 0 ? 0 : Math.round((completed / (completed + noShows)) * 100);
+    const activeClients = new Set(windowLive.map((a) => a.clientId)).size;
+    const newClients = clients.filter((c) => inWindow(c.createdAt)).length;
+    const revenueActualCents = orgInvoicesFor(orgId)
+      .filter((i) => i.status === "paid" && inWindow(i.issuedAt))
+      .reduce((s, i) => s + i.amountCents, 0);
+
+    // Trends — always day-level (this week) + month-level (last 6 months).
+    const shortMonth = (mStr: string) => new Intl.DateTimeFormat("en-ZA", { month: "short" }).format(new Date(`${mStr}-01T12:00:00Z`));
+    const shortDay = (d: string) => new Intl.DateTimeFormat("en-ZA", { weekday: "short", timeZone: "UTC" }).format(new Date(`${d}T12:00:00Z`));
+    const byDay = Array.from({ length: 7 }, (_, i) => addDays(week.from, i)).map((d) => ({ key: d, label: shortDay(d), count: onDay(d) }));
+    const byMonth = Array.from({ length: 6 }, (_, i) => ms(month, -(5 - i))).map((mStr) => ({
+      key: mStr,
+      label: shortMonth(mStr),
+      count: live.filter((a) => a.startsAt.startsWith(mStr)).length,
+    }));
+
+    // Client mix — consented demographics, real counts (no k-anon: internal view).
+    const consentedIds = new Set(clients.filter((c) => consentActiveFor(c.id, "demographics")).map((c) => c.id));
+    let demos = allDemographics.filter((d) => consentedIds.has(d.clientId));
+    const withDemographics = demos.length;
+    if (filters.gender) demos = demos.filter((d) => d.gender === filters.gender);
+    if (filters.province) demos = demos.filter((d) => d.province === filters.province);
+    if (filters.ageBand) demos = demos.filter((d) => d.ageBand === filters.ageBand);
+
+    return ok({
+      period,
+      sessionsToday,
+      sessionsWeek,
+      sessionsMonth,
+      completed,
+      upcoming,
+      cancelled,
+      noShows,
+      attendanceRate,
+      newClients,
+      activeClients,
+      revenueActualCents,
+      byDay,
+      byMonth,
+      totalClients: clients.length,
+      matchedClients: demos.length,
+      withDemographics,
+      byGender: countBy(demos, (d) => GENDER_LABELS[d.gender]),
+      byAgeBand: countBy(demos, (d) => AGE_BAND_LABELS[d.ageBand]),
+      byProvince: countBy(demos, (d) => d.province),
     });
   },
 

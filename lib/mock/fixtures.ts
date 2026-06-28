@@ -774,6 +774,46 @@ export const intakeForms: Record<string, import("@/lib/domain/types").IntakeForm
   },
 };
 
+/**
+ * How Masizakhe runs public booking. Deliberately not "everything on": trauma
+ * debriefing is internal-referral only, and Thabo (credential still pending)
+ * isn't listed publicly — so toggling these visibly changes /o/masizakhe/book.
+ * Orgs with no entry fall back to sensible defaults (see provider).
+ */
+export type BookingSettingsSeed = {
+  publicBookingEnabled: boolean;
+  minNoticeHours: number;
+  maxDaysAhead: number;
+  requireIntake: boolean;
+  requireDeposit: boolean;
+  depositCents: number;
+  services: Record<string, { publiclyBookable: boolean; inPerson: boolean; online: boolean }>;
+  counsellors: Record<string, { publiclyBookable: boolean }>;
+};
+
+export const bookingSettings: Record<string, BookingSettingsSeed> = {
+  [ORG_ID]: {
+    publicBookingEnabled: true,
+    minNoticeHours: 12,
+    maxDaysAhead: 60,
+    requireIntake: true,
+    requireDeposit: false,
+    depositCents: 0,
+    services: {
+      svc_individual: { publiclyBookable: true, inPerson: true, online: true },
+      svc_couples: { publiclyBookable: true, inPerson: true, online: false },
+      svc_assessment: { publiclyBookable: true, inPerson: true, online: false },
+      svc_trauma: { publiclyBookable: false, inPerson: true, online: false },
+    },
+    counsellors: {
+      couns_nomsa: { publiclyBookable: true },
+      couns_thabo: { publiclyBookable: false },
+      couns_aisha: { publiclyBookable: true },
+      couns_pieter: { publiclyBookable: true },
+    },
+  },
+};
+
 /** Completed intake submissions (what the client filled in before their first session). */
 export const intakeResponses: Record<string, { submittedDaysAgo: number; answers: Record<string, string> }> = {
   cl_lerato: {

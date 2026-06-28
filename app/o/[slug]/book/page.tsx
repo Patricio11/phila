@@ -27,6 +27,18 @@ export default async function BookPage({
   const config = await provider.getBookingConfig(slug);
   if (!config) notFound();
 
+  // Master switch: the practice takes bookings by invite only.
+  if (!config.enabled || config.services.length === 0 || config.counsellors.length === 0) {
+    return (
+      <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-6 text-center">
+        <h1 className="text-[20px] font-semibold text-text">Booking isn&apos;t open online</h1>
+        <p className="mt-2 text-[14px] leading-relaxed text-text-2">
+          {config.org.name} arranges sessions directly. Please contact the practice and they&apos;ll set up your first appointment.
+        </p>
+      </main>
+    );
+  }
+
   const initialServiceId = config.services.some((s) => s.id === service) ? service! : null;
 
   return <BookingWizard config={config} initialServiceId={initialServiceId} />;

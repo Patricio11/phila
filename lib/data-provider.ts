@@ -37,9 +37,48 @@ import type {
 /** Everything the booking flow (`/o/[slug]/book`) needs in one fetch. */
 export interface BookingConfig {
   org: Org;
+  /** Only the publicly-bookable services, per the org's booking settings. */
   services: Service[];
+  /** Only the counsellors taking public bookings, per the org's booking settings. */
   counsellors: Counsellor[];
   intakeForm: IntakeForm;
+  /** Master switch — false means the org takes bookings by invite only. */
+  enabled: boolean;
+}
+
+/** Per-service public-booking policy (which services the org lists, and how). */
+export interface BookingServicePolicy {
+  serviceId: string;
+  publiclyBookable: boolean;
+  inPerson: boolean;
+  online: boolean;
+}
+
+/** Per-counsellor public-booking policy (who takes new public bookings). */
+export interface BookingCounsellorPolicy {
+  counsellorId: string;
+  publiclyBookable: boolean;
+}
+
+/**
+ * How an org runs its public booking. The Hub owns this — each practice differs
+ * (some are invite-only; some keep assessments internal; some don't list interns).
+ * `getBookingConfig` enforces visibility from here; the slot engine + payments
+ * enforce notice / horizon / deposit when they go live (Phase 11 / 13).
+ */
+export interface BookingSettings {
+  orgId: string;
+  publicBookingEnabled: boolean;
+  /** Earliest a client may book, in hours from now (e.g. 12 = no same-morning). */
+  minNoticeHours: number;
+  /** How far ahead the calendar opens, in days. */
+  maxDaysAhead: number;
+  /** Collect the intake form during booking (vs. send it after). */
+  requireIntake: boolean;
+  requireDeposit: boolean;
+  depositCents: number;
+  services: BookingServicePolicy[];
+  counsellors: BookingCounsellorPolicy[];
 }
 
 /** The composed payload for an org's public micro-site (`/o/[slug]`). */
@@ -362,6 +401,63 @@ export interface ReportingResult {
   outcome: { points: OutcomePoint[]; coverage: { captured: number; total: number } };
 }
 
+export type InsightsPeriod = "week" | "month" | "quarter";
+
+/** Hub-internal analytics filters. Demographic filters narrow the client cohort. */
+export interface InsightsFilters {
+  period?: InsightsPeriod;
+  province?: string;
+  gender?: string;
+  ageBand?: string;
+}
+
+export interface InsightsBar {
+  /** Bucket key (date / month). */
+  key: string;
+  /** Short display label. */
+  label: string;
+  count: number;
+}
+
+export interface InsightsMix {
+  label: string;
+  count: number;
+}
+
+/**
+ * Internal management analytics for the Hub — how the practice is actually going.
+ * Real counts (the org's own data), NOT k-anonymised: this is the operator's view,
+ * distinct from the funder-facing `ReportingResult`. Demographic cuts still honour
+ * consent (POPIA); coverage is stated honestly. Audited on read.
+ */
+export interface HubInsights {
+  period: InsightsPeriod;
+  /** Session volumes — the at-a-glance "how many sessions" the Hub couldn't see. */
+  sessionsToday: number;
+  sessionsWeek: number;
+  sessionsMonth: number;
+  /** Operational metrics for the selected period. */
+  completed: number;
+  upcoming: number;
+  cancelled: number;
+  noShows: number;
+  attendanceRate: number;
+  newClients: number;
+  activeClients: number;
+  revenueActualCents: number;
+  /** Sessions per day across the current week (Mon–Sun). */
+  byDay: InsightsBar[];
+  /** Sessions per month across the last 6 months. */
+  byMonth: InsightsBar[];
+  /** Client mix (consented demographics, real counts), filtered by the cohort filters. */
+  totalClients: number;
+  matchedClients: number;
+  withDemographics: number;
+  byGender: InsightsMix[];
+  byAgeBand: InsightsMix[];
+  byProvince: InsightsMix[];
+}
+
 export interface OrgSettings {
   org: Org;
   paymentProvider: import("@/lib/domain/enums").PaymentProvider | null;
@@ -505,6 +601,8 @@ export interface DataProvider {
   listOrgSlugs(): Promise<string[]>;
   /** Booking flow config (service/counsellor/intake) for a public org. */
   getBookingConfig(slug: string): Promise<BookingConfig | null>;
+  getBookingSettings(orgId: string): Promise<BookingSettings>;
+  getHubInsights(orgId: string, now: string, filters: InsightsFilters): Promise<HubInsights>;
 
   // People
   getCounsellor(counsellorId: string): Promise<Counsellor | null>;

@@ -428,6 +428,23 @@ export interface OnboardingRequirement {
   required: boolean;
 }
 
+export type OnboardingDocStatus = "verified" | "pending" | "rejected" | "missing";
+
+export interface OrgOnboardingDoc {
+  requirementId: string;
+  label: string;
+  required: boolean;
+  status: OnboardingDocStatus;
+  fileName: string | null;
+  uploadedAt: string | null;
+}
+
+export interface OrgOnboardingReview {
+  docs: OrgOnboardingDoc[];
+  /** Roll-up: verified (all required verified) · action_needed (a rejected/required-missing) · pending. */
+  verification: "verified" | "pending" | "action_needed";
+}
+
 export interface PlatformOrgDetail {
   org: PlatformOrg;
   planName: string;
@@ -546,6 +563,7 @@ export interface DataProvider {
   listPlatformOrgs(): Promise<PlatformOrgRow[]>;
   getPlatformOrgDetail(orgId: string): Promise<PlatformOrgDetail | null>;
   listOnboardingRequirements(): Promise<OnboardingRequirement[]>;
+  getOrgOnboardingReview(orgId: string): Promise<OrgOnboardingReview>;
   listPlans(): Promise<PlanWithUsage[]>;
   getAiRail(): Promise<AiRailConfig>;
   listIntegrations(): Promise<IntegrationCatalogItem[]>;

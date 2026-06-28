@@ -166,6 +166,31 @@ export const onboardingRequirements: { id: string; label: string; description: s
   { id: "indemnity", label: "Professional indemnity insurance", description: "Current cover for your counsellors (recommended).", required: false },
 ];
 
+/** What each practice has uploaded against the onboarding requirements (mock). */
+export const orgOnboardingDocs: Record<string, Record<string, { status: "verified" | "pending" | "rejected"; fileName: string; daysAgo: number }>> = {
+  org_masizakhe: {
+    hpcsa: { status: "verified", fileName: "HPCSA-registration.pdf", daysAgo: 40 },
+    cipc: { status: "verified", fileName: "CIPC-registration.pdf", daysAgo: 40 },
+    popia: { status: "pending", fileName: "POPIA-officer-appointment.pdf", daysAgo: 2 },
+    address: { status: "verified", fileName: "lease-auckland-park.pdf", daysAgo: 40 },
+  },
+  org_khula: {
+    hpcsa: { status: "verified", fileName: "hpcsa.pdf", daysAgo: 120 },
+    cipc: { status: "verified", fileName: "npo-cert.pdf", daysAgo: 120 },
+    popia: { status: "verified", fileName: "popia.pdf", daysAgo: 120 },
+    address: { status: "verified", fileName: "address.pdf", daysAgo: 120 },
+    indemnity: { status: "verified", fileName: "indemnity.pdf", daysAgo: 90 },
+  },
+  org_thrive: {
+    hpcsa: { status: "pending", fileName: "hpcsa-cert.pdf", daysAgo: 1 },
+  },
+  org_mindwell: {
+    hpcsa: { status: "verified", fileName: "hpcsa.pdf", daysAgo: 15 },
+    cipc: { status: "rejected", fileName: "registration-old.pdf", daysAgo: 6 },
+    popia: { status: "pending", fileName: "popia.pdf", daysAgo: 3 },
+  },
+};
+
 /** A client's own profile details (the /me profile page). */
 export interface ClientProfileSeed {
   dateOfBirth: string;

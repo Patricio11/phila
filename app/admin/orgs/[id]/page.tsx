@@ -7,6 +7,7 @@ import type { TeamRole } from "@/lib/domain/enums";
 import { logAccess } from "@/lib/audit";
 import { PageHead } from "@/components/shell/page-head";
 import { Card, CardHead } from "@/components/ui/card";
+import { OrgDocReview } from "@/components/admin/org-doc-review";
 import { Avatar } from "@/components/ui/avatar";
 import { Tag } from "@/components/ui/tag";
 import { CredentialChip } from "@/components/ui/credential-chip";
@@ -28,8 +29,18 @@ export default async function AdminOrgDetailPage({ params }: { params: Promise<{
   const { id } = await params;
   const principal = await requireSuperAdmin();
   const provider = await getDataProvider();
-  const detail = await provider.getPlatformOrgDetail(id);
+  const [detail, review] = await Promise.all([
+    provider.getPlatformOrgDetail(id),
+    provider.getOrgOnboardingReview(id),
+  ]);
   if (!detail) notFound();
+
+  const VERIFY: Record<typeof review.verification, { label: string; tone: "accent" | "warn" | "danger" }> = {
+    verified: { label: "Verified", tone: "accent" },
+    pending: { label: "Verification pending", tone: "warn" },
+    action_needed: { label: "Action needed", tone: "danger" },
+  };
+  const vstate = VERIFY[review.verification];
 
   await logAccess({
     action: "admin.action",
@@ -54,7 +65,12 @@ export default async function AdminOrgDetailPage({ params }: { params: Promise<{
           </span>
         }
         summary={`${org.province} · ${detail.planName} plan`}
-        actions={<Tag tone={org.suspended ? "neutral" : org.subscriptionStatus === "active" ? "accent" : org.subscriptionStatus === "trialing" ? "info" : "warn"}>{org.suspended ? "Suspended" : org.subscriptionStatus}</Tag>}
+        actions={
+          <div className="flex items-center gap-2">
+            <Tag tone={vstate.tone}>{vstate.label}</Tag>
+            <Tag tone={org.suspended ? "neutral" : org.subscriptionStatus === "active" ? "accent" : org.subscriptionStatus === "trialing" ? "info" : "warn"}>{org.suspended ? "Suspended" : org.subscriptionStatus}</Tag>
+          </div>
+        }
       />
 
       {/* Summary strip */}
@@ -65,6 +81,15 @@ export default async function AdminOrgDetailPage({ params }: { params: Promise<{
         <Stat value={String(org.sessions7d)} label="Sessions · 7d" />
         <Stat value={rands(org.aiSpendCents)} label="AI spend" />
       </div>
+
+      {/* Verification documents */}
+      <Card>
+        <CardHead title="Verification documents" action={<Tag tone={vstate.tone}>{vstate.label}</Tag>} />
+        <div className="px-[17px] pb-[17px]">
+          <p className="mb-3 text-[12.5px] text-text-2">What this practice uploaded during onboarding. Verify each, or send one back. Verification gates payouts and funder sharing.</p>
+          <OrgDocReview orgId={id} docs={review.docs} />
+        </div>
+      </Card>
 
       {detail.fullyModeled ? (
         GROUPS.map((g) => {

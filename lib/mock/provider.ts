@@ -33,6 +33,8 @@ import type {
   DuplicateGroup,
   RoomDetail,
   RoomView,
+  OnboardingDocStatus,
+  OrgOnboardingReview,
   SupervisionOverview,
   TeamMemberDetail,
   TeamMemberView,
@@ -66,6 +68,7 @@ import {
   plans,
   platformAuditEvents,
   onboardingRequirements,
+  orgOnboardingDocs,
   platformOrgs,
   counsellorDayTemplates,
   counsellors as allCounsellors,
@@ -1157,6 +1160,26 @@ export const mockProvider: DataProvider = {
     ),
 
   listOnboardingRequirements: () => ok(onboardingRequirements),
+
+  getOrgOnboardingReview: (orgId): Promise<OrgOnboardingReview> => {
+    const submitted = orgOnboardingDocs[orgId] ?? {};
+    const docs = onboardingRequirements.map((req) => {
+      const s = submitted[req.id];
+      return {
+        requirementId: req.id,
+        label: req.label,
+        required: req.required,
+        status: (s?.status ?? "missing") as OnboardingDocStatus,
+        fileName: s?.fileName ?? null,
+        uploadedAt: s ? new Date(Date.now() - s.daysAgo * 86_400_000).toISOString() : null,
+      };
+    });
+    const required = docs.filter((d) => d.required);
+    const actionNeeded = docs.some((d) => d.status === "rejected") || required.some((d) => d.status === "missing");
+    const allVerified = required.every((d) => d.status === "verified");
+    const verification = actionNeeded ? "action_needed" : allVerified ? "verified" : "pending";
+    return ok({ docs, verification });
+  },
 
   getPlatformOrgDetail: (orgId) => {
     const org = platformOrgs.find((o) => o.id === orgId);

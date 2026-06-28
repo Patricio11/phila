@@ -11,18 +11,18 @@ export default async function HubIntakePage() {
   const { membership } = await requireHub();
   const provider = await getDataProvider();
   const now = clockNow();
-  const rows = await provider.listIntakeStatus(membership.orgId, now);
+  const board = await provider.getIntakeBoard(membership.orgId, now);
 
-  const completed = rows.filter((r) => r.status === "completed").length;
-  const sent = rows.filter((r) => r.status === "sent").length;
+  const completed = board.rows.filter((r) => r.status === "completed").length;
+  const sent = board.rows.filter((r) => r.status === "sent").length;
 
   return (
     <div className="rise space-y-6">
       <PageHead
         title="Intake"
-        summary={`${completed} completed · ${sent} awaiting · send a form to a client or a whole programme cohort.`}
+        summary={`${completed} completed · ${sent} awaiting · review what clients sent, or send the form to someone new.`}
       />
-      <IntakeTracker rows={rows} />
+      <IntakeTracker board={board} />
     </div>
   );
 }

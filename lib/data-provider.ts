@@ -310,6 +310,17 @@ export interface IntakeStatusRow {
   sentAt: string | null;
 }
 
+export interface IntakeReviewRow extends IntakeStatusRow {
+  submittedAt: string | null;
+  /** The client's answers, keyed by form-field id (only when completed). */
+  answers: Record<string, string> | null;
+}
+
+export interface IntakeBoard {
+  form: import("@/lib/domain/types").IntakeForm | null;
+  rows: IntakeReviewRow[];
+}
+
 export interface DuplicateClient {
   id: string;
   name: string;
@@ -546,6 +557,7 @@ export interface DataProvider {
   getRoomDetail(roomId: string, now: string): Promise<RoomDetail | null>;
   listSites(orgId: string): Promise<Site[]>;
   listIntakeStatus(orgId: string, now: string): Promise<IntakeStatusRow[]>;
+  getIntakeBoard(orgId: string, now: string): Promise<IntakeBoard>;
   listOrgInvoices(orgId: string): Promise<Invoice[]>;
   getReporting(orgId: string, now: string, filters: ReportingFilters): Promise<ReportingResult>;
   getOrgSettings(orgId: string): Promise<OrgSettings | null>;

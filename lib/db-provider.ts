@@ -52,6 +52,7 @@ export const dbProvider: DataProvider = {
   getRoomDetail: notYet,
   listSites: notYet,
   listIntakeStatus: notYet,
+  getIntakeBoard: notYet,
   listOrgInvoices: notYet,
   getReporting: notYet,
   getOrgSettings: notYet,

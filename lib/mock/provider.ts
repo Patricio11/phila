@@ -23,6 +23,8 @@ import type {
   HubOverview,
   IndicatorActual,
   IndicatorStatus,
+  IntakeBoard,
+  IntakeReviewRow,
   IntakeStatusRow,
   OrgClientRow,
   OutcomePoint,
@@ -80,6 +82,7 @@ import {
   grantNarratives,
   grants,
   intakeForms,
+  intakeResponses,
   invoices as allInvoices,
   orgExtraInvoices,
   orgPublicContent,
@@ -1009,6 +1012,26 @@ export const mockProvider: DataProvider = {
         };
       }),
     );
+  },
+
+  getIntakeBoard: (orgId, now): Promise<IntakeBoard> => {
+    const counsellors = allCounsellors.filter((c) => c.orgId === orgId);
+    const clients = liveOnly(allClients.filter((c) => c.orgId === orgId));
+    const nowMs = new Date(now).getTime();
+    const rows = clients.map((client) => {
+      const response = intakeResponses[client.id] ?? null;
+      const appts = clientAppointments(client.id, now);
+      const status: IntakeReviewRow["status"] = response ? "completed" : appts.length > 0 ? "sent" : "not_sent";
+      return {
+        client,
+        counsellorName: counsellors.find((c) => c.id === client.primaryCounsellorId)?.name ?? "Unassigned",
+        status,
+        sentAt: appts.length > 0 || response ? client.createdAt : null,
+        submittedAt: response ? new Date(nowMs - response.submittedDaysAgo * 86_400_000).toISOString() : null,
+        answers: response?.answers ?? null,
+      };
+    });
+    return ok({ form: intakeForms[orgId] ?? null, rows });
   },
 
   listOrgInvoices: (orgId) => ok(orgInvoicesFor(orgId)),

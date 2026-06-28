@@ -774,6 +774,32 @@ export const intakeForms: Record<string, import("@/lib/domain/types").IntakeForm
   },
 };
 
+/** Completed intake submissions (what the client filled in before their first session). */
+export const intakeResponses: Record<string, { submittedDaysAgo: number; answers: Record<string, string> }> = {
+  cl_lerato: {
+    submittedDaysAgo: 49,
+    answers: {
+      full_name: "Lerato Mahlangu",
+      phone: "+27 82 451 7720",
+      email: "lerato.m@example.co.za",
+      reason: "I've been feeling overwhelmed at work and not sleeping well. I'd like help managing the stress, and the mornings are the hardest part of my day.",
+      preferred_contact: "WhatsApp",
+      first_time: "Yes, before",
+    },
+  },
+  cl_johan: {
+    submittedDaysAgo: 18,
+    answers: {
+      full_name: "Johan Botha",
+      phone: "+27 84 220 9931",
+      email: "jbotha@example.co.za",
+      reason: "I'm going through a difficult separation and would like a space to process it and figure out the next few months.",
+      preferred_contact: "Phone call",
+      first_time: "This is my first time",
+    },
+  },
+};
+
 /** Public micro-site copy per org  no PII, safe to render unauthenticated. */
 export const orgPublicContent: Record<
   string,

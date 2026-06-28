@@ -41,10 +41,10 @@ export function Hero() {
 
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <Button asChild size="lg">
-              <a href="#contact">
-                Book a walkthrough
+              <Link href="/signup">
+                Get started
                 <ArrowRight className="size-4" strokeWidth={2.2} aria-hidden />
-              </a>
+              </Link>
             </Button>
             <Button asChild variant="ghost" size="lg">
               <Link href="/app">See the dashboard</Link>

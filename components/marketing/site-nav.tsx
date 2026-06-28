@@ -56,10 +56,10 @@ export function SiteNav() {
         <div className="ml-auto flex items-center gap-1.5">
           <ThemeToggle />
           <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
-            <Link href="/app">Open the app</Link>
+            <Link href="/login">Sign in</Link>
           </Button>
           <Button asChild size="sm" className="hidden sm:inline-flex">
-            <a href="#contact">Book a walkthrough</a>
+            <Link href="/signup">Get started</Link>
           </Button>
           <button
             type="button"
@@ -93,10 +93,10 @@ export function SiteNav() {
           ))}
           <div className="mt-2 flex gap-2">
             <Button asChild variant="ghost" size="sm" className="flex-1">
-              <Link href="/app">Open the app</Link>
+              <Link href="/login" onClick={() => setOpen(false)}>Sign in</Link>
             </Button>
             <Button asChild size="sm" className="flex-1">
-              <a href="#contact" onClick={() => setOpen(false)}>Book a walkthrough</a>
+              <Link href="/signup" onClick={() => setOpen(false)}>Get started</Link>
             </Button>
           </div>
         </nav>

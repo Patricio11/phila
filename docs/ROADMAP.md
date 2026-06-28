@@ -438,6 +438,18 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 ## 🔐 PHASE 9: IDENTITY, AUTH & CONSENT
 *Goal: real accounts, all roles, multi-tenant sessions, and lawful consent.*
 
+> **▶ Part B is live (2026-06-28).** Neon Postgres connected; `DATA_PROVIDER=db`. The **mock→real swap is
+> proven end-to-end on a vertical slice**: Better Auth (email+password) over Drizzle/Neon; the session +
+> guards resolve the **real principal from the DB** (unchanged `Principal` shape → zero call-site changes);
+> real login routes every role to its home; unauth → `/login`. `dbProvider` is a **hybrid** (spreads the mock,
+> overrides `getOrg`/`getOrgBySlug` with real reads, falls back to mock elsewhere) so the app stays whole as
+> it migrates method-by-method. The DB is seeded from the fixtures with **matching ids**, so fallback and real
+> reads agree. Verified: 45 unit/contract + **6 Playwright E2E** (login per role, wrong-password, guard
+> redirect) with screenshots in `/screenshots`.
+>
+> **Working method for the rest of Part B (standing):** seed **all** mock data into the DB as each entity's
+> schema lands (production-real, nothing forgotten); every phase ships **unit + Playwright E2E + screenshots**.
+
 ### Task 9.0: Auth + onboarding UI shells (Part A, 2026-06-28)
 - [x] **Beautiful auth surface, mock-first** (real auth lands in 9.1–9.2 behind these exact screens). A warm branded **`AuthShell`** (gradient brand panel + POPIA/data-in-SA/private-notes trust signals on desktop; slim header, single-column on mobile). **`/login`** (email + password with **show/hide eye**, forgot-password link, "explore a demo workspace" quick-access), **`/signup`** (practice registration  name, your name, work email, **password strength meter**, province, POPIA agree → onboarding), **`/forgot-password`** + **`/reset-password`** with calm success states. Marketing CTAs now route to **Sign in / Get started**. The Security card password fields (Hub/counsellor/client) upgraded to the same eye-toggle + strength + **"passwords match"** indicator.
 - [x] **Onboarding wizard** (`/onboarding`): a 4-step flow  practice basics → working hours → **verification documents** → done  with a progress bar, smooth steps, Skip, and a celebratory finish → the Hub. `completeOnboarding` (mock).
@@ -447,9 +459,9 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 - [x] **Team invite + activation (2026-06-28):** the Hub invites a counsellor / team member from `/hub/team` (Invite member) and can **(re)send a setup link** from the member page (`sendSetupLink`, audited). **`/activate` is now role-aware**  a team invite (`?role=counsellor|org_admin`) reads "Welcome to the team · access your workspace" and lands them in **/app** or **/hub**; a client invite keeps the warm portal copy and lands in **/me**. One activation page, the right destination per role.
 
 ### Task 9.1: Better Auth setup
-- [ ] Better Auth + Drizzle adapter; email+password + verification + forgot/reset; sessions in Postgres.
-- [ ] Role model  **platform** (`super_admin | client | funder`) + **org team_role** (`org_admin | counsellor | front_desk | finance | programme_manager`, +`supervisor`); Server-Action sign-in routes by role; multi-org membership resolution + org switcher.
-- [ ] Route-group guards via proxy: `requireRole` / `requireOrg` / `requireOrgFeature` / **`requireFunderGrant`** (scopes a funder to their grant(s) only, read-only) on `(app)` / `(hub)` / `(admin)` / `(me)` / `(funder)`.
+- [x] **Better Auth + Drizzle adapter; email+password; sessions in Postgres** (2026-06-28). Verification + forgot/reset still to wire (Phase 12 notifications).
+- [x] **Role model + sign-in routes by role** (2026-06-28): platform role on the user (`client | funder | super_admin`, null for org staff) + org `team_role` in `org_members`; the sign-in Server Action routes each role to its home; multi-org membership resolved from the DB. Org switcher still to add.
+- [x] **Guards backed by real identity** (2026-06-28): `requireAuth`/`requireOrg`/`requireHub`/`requireClient`/`requireFunder`/`requireSuperAdmin`/`requireCapability`/`requireOrgFeature` resolve the real session; unauth → `/login`. `requireFunderGrant` scoping already enforced in the provider.
 - [ ] 2FA (TOTP) for `super_admin` + `org_admin` + supervising counsellors.
 
 ### Task 9.2: Sign-up + consent persistence

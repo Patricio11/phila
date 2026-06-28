@@ -12,14 +12,19 @@ export default async function NewInvoicePage() {
   const provider = await getDataProvider();
   const now = clockNow();
 
-  const [org, clients, services, invoiceSettings, platform] = await Promise.all([
+  const [org, clients, services, invoiceSettings, platform, invoices] = await Promise.all([
     provider.getOrg(membership.orgId),
     provider.listOrgClients(membership.orgId, now),
     provider.listServices(membership.orgId),
     provider.getInvoiceSettings(membership.orgId),
     provider.getPlatformSettings(),
+    provider.listOrgInvoices(membership.orgId),
   ]);
   if (!org) notFound();
+
+  // Next number in the org's series: PREFIX-YEAR-NNNN.
+  const year = now.slice(0, 4);
+  const invoiceNumber = `${invoiceSettings.invoicePrefix}-${year}-${String(invoices.length + 1).padStart(4, "0")}`;
 
   return (
     <InvoiceBuilder
@@ -27,12 +32,11 @@ export default async function NewInvoicePage() {
       province={org.province}
       clients={clients.map((c) => ({ id: c.client.id, name: c.client.name }))}
       services={services.map((s) => ({ id: s.id, name: s.name, priceCents: s.priceCents }))}
-      invoiceNumber="MZ-2026-0148"
+      invoiceNumber={invoiceNumber}
       backHref="/hub/invoicing"
       vatRatePercent={platform.vatRatePercent}
-      vatRegistered={invoiceSettings.vatRegistered}
-      vatNumber={invoiceSettings.vatNumber}
-      pricesIncludeVat={invoiceSettings.pricesIncludeVat}
+      settings={invoiceSettings}
+      paymentsEnabled={Boolean(org.features.payments)}
     />
   );
 }

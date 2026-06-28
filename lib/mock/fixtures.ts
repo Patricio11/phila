@@ -41,7 +41,7 @@ export const orgs: Org[] = [
     brandAccent: "#1C7D58",
     province: "Gauteng",
     timezone: "Africa/Johannesburg",
-    features: { ai: false, video: false, whatsapp: false, sms: false, payments: false },
+    features: { ai: false, video: false, whatsapp: false, sms: false, payments: true },
     scheduling: { defaultDurationMin: 60, bufferMin: 10, businessHours },
   },
 ];
@@ -795,8 +795,22 @@ export type BookingSettingsSeed = {
 export const platformSettings: { vatRatePercent: number } = { vatRatePercent: 15 };
 
 /** Per-org invoicing/VAT setup. Masizakhe is a registered vendor, prices ex-VAT. */
-export const invoiceSettings: Record<string, { vatRegistered: boolean; vatNumber: string; pricesIncludeVat: boolean }> = {
-  [ORG_ID]: { vatRegistered: true, vatNumber: "4512345678", pricesIncludeVat: false },
+export const invoiceSettings: Record<
+  string,
+  { vatRegistered: boolean; vatNumber: string; pricesIncludeVat: boolean; invoicePrefix: string; paymentTermsDays: number; bankName: string; accountName: string; accountNumber: string; branchCode: string; showPayButton: boolean }
+> = {
+  [ORG_ID]: {
+    vatRegistered: true,
+    vatNumber: "4512345678",
+    pricesIncludeVat: false,
+    invoicePrefix: "MZ",
+    paymentTermsDays: 14,
+    bankName: "First National Bank",
+    accountName: "Masizakhe Counselling NPC",
+    accountNumber: "62845109973",
+    branchCode: "250655",
+    showPayButton: true,
+  },
 };
 
 export const bookingSettings: Record<string, BookingSettingsSeed> = {

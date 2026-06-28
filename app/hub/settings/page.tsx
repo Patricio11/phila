@@ -57,7 +57,7 @@ export default async function HubSettingsPage() {
       <Card>
         <CardHead title="Invoicing & VAT" />
         <div className="px-[17px] pb-[17px]">
-          <InvoiceSettingsForm initial={invoiceSettings} vatRatePercent={platform.vatRatePercent} />
+          <InvoiceSettingsForm initial={invoiceSettings} vatRatePercent={platform.vatRatePercent} paymentsEnabled={Boolean(org.features.payments)} />
         </div>
       </Card>
 

@@ -10,6 +10,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Tag } from "@/components/ui/tag";
 import { StatCard } from "@/components/ui/stat-card";
 import { CreateRoomButton } from "@/components/rooms/room-buttons";
+import { ManageSitesButton } from "@/components/rooms/manage-sites-button";
 import { cn } from "@/lib/utils";
 import { now as clockNow } from "@/lib/clock";
 
@@ -94,12 +95,21 @@ export default async function HubRoomsPage() {
   const avgUtil = active.length === 0 ? 0 : Math.round(active.reduce((s, r) => s + r.utilisation.utilisationPct, 0) / active.length);
   const inMaintenance = rooms.filter((r) => r.room.status === "maintenance").length;
 
+  // Rooms-per-site, so the site manager can stop you removing a site that's in use.
+  const roomCounts: Record<string, number> = {};
+  for (const r of rooms) roomCounts[r.room.siteId] = (roomCounts[r.room.siteId] ?? 0) + 1;
+
   return (
     <div className="rise space-y-7">
       <PageHead
         title="Rooms & resources"
         summary="Every room's weekly rhythm and how well it's used  across all your sites."
-        actions={<CreateRoomButton sites={sites.map((s) => ({ id: s.id, name: s.name }))} />}
+        actions={
+          <div className="flex items-center gap-2">
+            <ManageSitesButton sites={sites.map((s) => ({ id: s.id, name: s.name, province: s.province }))} roomCounts={roomCounts} />
+            <CreateRoomButton sites={sites.map((s) => ({ id: s.id, name: s.name }))} />
+          </div>
+        }
       />
 
       {/* Summary band */}

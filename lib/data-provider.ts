@@ -422,6 +422,17 @@ export interface InvoiceSettings {
   vatNumber: string;
   /** Whether the org's service prices already include VAT. */
   pricesIncludeVat: boolean;
+  /** Invoice number prefix, e.g. "MZ" → MZ-2026-0149. */
+  invoicePrefix: string;
+  /** Days until an invoice is due. */
+  paymentTermsDays: number;
+  /** Banking details printed on invoices for EFT (blank = omitted). */
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+  branchCode: string;
+  /** Show a "Pay now" button on sent invoices (needs the org's gateway connected). */
+  showPayButton: boolean;
 }
 
 export type InsightsPeriod = "week" | "month" | "quarter";

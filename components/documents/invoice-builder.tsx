@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Printer, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, CreditCard, Plus, Printer, Send, Trash2 } from "lucide-react";
+import type { InvoiceSettings } from "@/lib/data-provider";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
@@ -33,9 +34,8 @@ export function InvoiceBuilder({
   invoiceNumber,
   backHref,
   vatRatePercent,
-  vatRegistered,
-  vatNumber,
-  pricesIncludeVat,
+  settings,
+  paymentsEnabled,
 }: {
   orgName: string;
   province: string;
@@ -44,11 +44,11 @@ export function InvoiceBuilder({
   invoiceNumber: string;
   backHref: string;
   vatRatePercent: number;
-  vatRegistered: boolean;
-  vatNumber: string;
-  pricesIncludeVat: boolean;
+  settings: InvoiceSettings;
+  paymentsEnabled: boolean;
 }) {
   const { toast } = useToast();
+  const { vatRegistered, vatNumber, pricesIncludeVat } = settings;
   const [clientId, setClientId] = useState<string | null>(clients[0]?.id ?? null);
   const [items, setItems] = useState<LineItem[]>([{ id: 1, description: "Individual counselling", qty: 1, unitCents: 45000 }]);
   const [seq, setSeq] = useState(2);
@@ -56,6 +56,7 @@ export function InvoiceBuilder({
   const clientName = clients.find((c) => c.id === clientId)?.name ?? "";
   const lineSum = items.reduce((s, i) => s + i.qty * i.unitCents, 0);
   const { exVatCents, vatCents, totalCents } = computeVat({ amountCents: lineSum, vatRatePercent, vatRegistered, pricesIncludeVat });
+  const showPay = settings.showPayButton && paymentsEnabled;
 
   const addFromService = (id: string) => {
     const svc = services.find((s) => s.id === id);
@@ -110,7 +111,7 @@ export function InvoiceBuilder({
           </div>
           <div className="text-right text-[12px] text-[#5b635e]">
             <div>Issued: {new Intl.DateTimeFormat("en-ZA", { day: "numeric", month: "short", year: "numeric" }).format(new Date())}</div>
-            <div className="mt-0.5">Due in 14 days</div>
+            <div className="mt-0.5">Due in {settings.paymentTermsDays} days</div>
           </div>
         </div>
 
@@ -168,8 +169,29 @@ export function InvoiceBuilder({
           </div>
         </div>
 
-        <p className="mt-10 text-[11px] text-[#8b938e]">
-          Thank you. Payment via your practice&apos;s preferred method. This is a system-generated {vatRegistered ? "tax invoice" : "invoice"}.
+        {showPay && (
+          <div className="no-print mt-6 flex justify-end">
+            <button type="button" onClick={() => toast({ tone: "success", title: "Payment", description: `Opens your gateway to pay ${rands(totalCents)}.` })} className="inline-flex h-11 items-center gap-2 rounded-control bg-[#1C7D58] px-5 text-[14px] font-semibold text-white shadow-sm transition-[filter] hover:brightness-95">
+              <CreditCard className="size-4" strokeWidth={2} aria-hidden /> Pay {rands(totalCents)} now
+            </button>
+          </div>
+        )}
+
+        {settings.accountNumber ? (
+          <div className="mt-8 border-t border-[#e5e9e7] pt-4 text-[11.5px] text-[#5b635e]">
+            <div className="font-semibold text-[#141916]">Banking details (EFT)</div>
+            <div className="mt-1 flex flex-wrap gap-x-6 gap-y-0.5">
+              {settings.bankName && <span>{settings.bankName}</span>}
+              {settings.accountName && <span>{settings.accountName}</span>}
+              <span>Acc {settings.accountNumber}</span>
+              {settings.branchCode && <span>Branch {settings.branchCode}</span>}
+              <span>Ref: {invoiceNumber}</span>
+            </div>
+          </div>
+        ) : null}
+
+        <p className="mt-8 text-[11px] text-[#8b938e]">
+          Thank you. This is a system-generated {vatRegistered ? "tax invoice" : "invoice"}.
         </p>
       </div>
     </div>

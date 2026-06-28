@@ -43,8 +43,8 @@ export default async function HubInvoicingPage() {
         orgName={org?.name ?? membership.orgName}
         province={org?.province ?? ""}
         vatRatePercent={platform.vatRatePercent}
-        vatRegistered={invoiceSettings.vatRegistered}
-        vatNumber={invoiceSettings.vatNumber}
+        settings={invoiceSettings}
+        paymentsEnabled={Boolean(org?.features.payments)}
       />
     </div>
   );

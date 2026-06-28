@@ -69,6 +69,13 @@ const invoiceInput = z.object({
   vatRegistered: z.boolean(),
   vatNumber: z.string().trim().max(20).optional().or(z.literal("")),
   pricesIncludeVat: z.boolean(),
+  invoicePrefix: z.string().trim().min(1, "Add an invoice prefix.").max(8, "Keep the prefix short.").regex(/^[A-Za-z0-9-]+$/, "Letters, numbers, and hyphens only."),
+  paymentTermsDays: z.number().int().min(0).max(180),
+  bankName: z.string().trim().max(60).optional().or(z.literal("")),
+  accountName: z.string().trim().max(80).optional().or(z.literal("")),
+  accountNumber: z.string().trim().max(20).regex(/^\d*$/, "Account number is digits only.").optional().or(z.literal("")),
+  branchCode: z.string().trim().max(10).regex(/^\d*$/, "Branch code is digits only.").optional().or(z.literal("")),
+  showPayButton: z.boolean(),
 });
 
 /**

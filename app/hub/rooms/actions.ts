@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
-import { ROOM_STATUSES } from "@/lib/domain/enums";
+import { PROVINCES, ROOM_STATUSES } from "@/lib/domain/enums";
 
 /**
  * Room CRUD (mock). Validates + audits and returns success; Phase 10/11 persist
@@ -32,6 +32,36 @@ export async function saveRoom(
     orgId: membership.orgId,
     target: parsed.data.id ? `room:${parsed.data.id}` : "room:new",
     reason: parsed.data.id ? "update_room" : "create_room",
+  });
+  return { ok: true };
+}
+
+const sitesInput = z.object({
+  sites: z
+    .array(z.object({ id: z.string().min(1), name: z.string().trim().min(2, "Each site needs a name.").max(80), province: z.enum(PROVINCES) }))
+    .min(1, "Keep at least one site."),
+});
+
+/**
+ * Manage the org's sites/branches (mock). Rooms live at a site, so a practice
+ * with more than one location manages them here. Validated + audited; Phase 10
+ * persists. A site with rooms can't simply vanish — that guard lands with the DB.
+ */
+export async function saveSites(
+  raw: z.infer<typeof sitesInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { membership } = await requireHub();
+  const parsed = sitesInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the sites." };
+  const names = parsed.data.sites.map((s) => s.name.toLowerCase());
+  if (new Set(names).size !== names.length) return { ok: false, error: "Two sites share a name — give each a distinct one." };
+
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: "hub", platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `org:${membership.orgId}/sites`,
+    reason: "update_sites",
   });
   return { ok: true };
 }

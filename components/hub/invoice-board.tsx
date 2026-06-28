@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BellRing, Check, FilePlus2 } from "lucide-react";
 import type { Invoice } from "@/lib/domain/types";
 import type { PaymentStatus } from "@/lib/domain/enums";
+import type { InvoiceSettings } from "@/lib/data-provider";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
@@ -31,7 +32,7 @@ function shortDate(iso: string): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "short" }).format(new Date(iso));
 }
 
-export function InvoiceBoard({ rows, nowISO, orgName, province, vatRatePercent, vatRegistered, vatNumber }: { rows: InvoiceRow[]; nowISO: string; orgName: string; province: string; vatRatePercent: number; vatRegistered: boolean; vatNumber: string }) {
+export function InvoiceBoard({ rows, nowISO, orgName, province, vatRatePercent, settings, paymentsEnabled }: { rows: InvoiceRow[]; nowISO: string; orgName: string; province: string; vatRatePercent: number; settings: InvoiceSettings; paymentsEnabled: boolean }) {
   const { toast } = useToast();
   const nowMs = new Date(nowISO).getTime();
   const [statusOf, setStatusOf] = useState<Record<string, PaymentStatus>>({});
@@ -150,8 +151,8 @@ export function InvoiceBoard({ rows, nowISO, orgName, province, vatRatePercent, 
           province={province}
           status={effective(preview)}
           vatRatePercent={vatRatePercent}
-          vatRegistered={vatRegistered}
-          vatNumber={vatNumber}
+          settings={settings}
+          paymentsEnabled={paymentsEnabled}
           onClose={() => setPreview(null)}
         />
       )}

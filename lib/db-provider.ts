@@ -20,6 +20,7 @@ export const dbProvider: DataProvider = {
   getBookingConfig: notYet,
   getBookingSettings: notYet,
   getPlatformSettings: notYet,
+  getOrgSubscription: notYet,
   getInvoiceSettings: notYet,
   getHubInsights: notYet,
   getCounsellor: notYet,

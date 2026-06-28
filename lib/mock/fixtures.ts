@@ -794,6 +794,11 @@ export type BookingSettingsSeed = {
 /** Platform-wide settings (super admin). VAT is national — one change, all orgs. */
 export const platformSettings: { vatRatePercent: number } = { vatRatePercent: 15 };
 
+/** Which Phila plan each org is on — what they pay Phila (the system gateway). */
+export const orgSubscriptions: Record<string, { planId: string; status: "active" | "trialing" | "past_due" }> = {
+  [ORG_ID]: { planId: "p_community", status: "active" },
+};
+
 /** Per-org invoicing/VAT setup. Masizakhe is a registered vendor, prices ex-VAT. */
 export const invoiceSettings: Record<
   string,

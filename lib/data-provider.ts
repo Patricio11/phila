@@ -562,6 +562,19 @@ export interface PlanWithUsage {
   mrrCents: number;
 }
 
+/**
+ * An org's own Phila subscription — what the practice pays *Phila*, billed via the
+ * platform's **system gateway** (distinct from the org's BYO gateway, which is for
+ * client invoices). This is the org-facing side of platform billing.
+ */
+export interface OrgSubscription {
+  plan: Plan;
+  status: "active" | "trialing" | "past_due";
+  nextBillingAt: string;
+  /** The platform PSP that collects subscription fees. */
+  billedVia: string;
+}
+
 export interface OnboardingRequirement {
   id: string;
   label: string;
@@ -639,6 +652,7 @@ export interface DataProvider {
   getHubInsights(orgId: string, now: string, filters: InsightsFilters): Promise<HubInsights>;
   getPlatformSettings(): Promise<PlatformSettings>;
   getInvoiceSettings(orgId: string): Promise<InvoiceSettings>;
+  getOrgSubscription(orgId: string, now: string): Promise<OrgSubscription | null>;
 
   // People
   getCounsellor(counsellorId: string): Promise<Counsellor | null>;

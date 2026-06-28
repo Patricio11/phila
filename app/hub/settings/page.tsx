@@ -10,8 +10,10 @@ import { PublicPageEditor } from "@/components/hub/public-page-editor";
 import { BusinessHoursEditor } from "@/components/hub/business-hours-editor";
 import { OrgProfileForm, type OrgProfile } from "@/components/hub/org-profile-form";
 import { InvoiceSettingsForm } from "@/components/hub/invoice-settings-form";
+import { YourPlanCard } from "@/components/hub/your-plan-card";
 import { MessagingChannels } from "@/components/hub/messaging-channels";
 import { SecuritySettings } from "@/components/hub/security-settings";
+import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Settings" };
@@ -19,11 +21,12 @@ export const metadata = { title: "Settings" };
 export default async function HubSettingsPage() {
   const { membership } = await requireHub();
   const provider = await getDataProvider();
-  const [settings, org, invoiceSettings, platform] = await Promise.all([
+  const [settings, org, invoiceSettings, platform, subscription] = await Promise.all([
     provider.getOrgSettings(membership.orgId),
     provider.getOrg(membership.orgId),
     provider.getInvoiceSettings(membership.orgId),
     provider.getPlatformSettings(),
+    provider.getOrgSubscription(membership.orgId, clockNow()),
   ]);
   if (!settings || !org) notFound();
   const page = await provider.getOrgPublicPage(org.slug);
@@ -94,10 +97,20 @@ export default async function HubSettingsPage() {
         <Card>
           <CardHead title="Payments  your own gateway" />
           <div className="px-[17px] pb-[17px]">
-            <p className="mb-3 text-[12.5px] text-text-2">Connect your gateway so clients pay your org directly. Funds settle to you; Phila just orchestrates.</p>
+            <p className="mb-3 text-[12.5px] text-text-2">Connect your gateway so clients pay your org directly for invoices. Funds settle to you; Phila just orchestrates. Switching providers is one choice.</p>
             <PaymentConnectionCard />
           </div>
         </Card>
+
+        {/* Your Phila plan — billed via the platform's system gateway */}
+        {subscription && (
+          <Card>
+            <CardHead title="Your Phila plan" />
+            <div className="px-[17px] pb-[17px]">
+              <YourPlanCard subscription={subscription} />
+            </div>
+          </Card>
+        )}
 
         {/* Platform features */}
         <Card>

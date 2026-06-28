@@ -63,6 +63,7 @@ import {
   aiRailConfig,
   bookingSettings,
   platformSettings,
+  orgSubscriptions,
   invoiceSettings,
   carePlans,
   clientApptTemplates,
@@ -395,6 +396,15 @@ export const mockProvider: DataProvider = {
   getBookingSettings: (orgId) => ok(bookingSettingsFor(orgId)),
 
   getPlatformSettings: () => ok({ vatRatePercent: platformSettings.vatRatePercent }),
+
+  getOrgSubscription: (orgId, now) => {
+    const sub = orgSubscriptions[orgId];
+    const plan = sub ? plans.find((p) => p.id === sub.planId) : undefined;
+    if (!sub || !plan) return ok(null);
+    const d = new Date(now);
+    const nextBillingAt = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)).toISOString();
+    return ok({ plan, status: sub.status, nextBillingAt, billedVia: "Phila platform billing" });
+  },
 
   getInvoiceSettings: (orgId) => {
     const s = invoiceSettings[orgId];

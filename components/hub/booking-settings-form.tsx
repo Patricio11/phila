@@ -105,7 +105,11 @@ export function BookingSettingsForm({
 
         {/* Services */}
         <Card>
-          <CardHead title="Services clients can book" count={bookableCount} />
+          <CardHead
+            title="Services clients can book"
+            count={bookableCount}
+            action={<Link href="/hub/services" className="text-[12px] font-medium text-accent hover:underline">Edit services</Link>}
+          />
           <div className="divide-y divide-border">
             {s.services.map((p) => {
               const info = nameOfService(p.serviceId);

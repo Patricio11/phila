@@ -84,6 +84,7 @@ const submitInput = z.object({
   serviceId: z.string().min(1),
   counsellorId: z.string().min(1),
   startsAt: z.string().min(1),
+  modality: z.enum(["in_person", "online"]),
   intake: z.record(z.string(), z.string()),
   consents: z.record(z.enum(CONSENT_PURPOSES), z.boolean()),
 });
@@ -94,6 +95,7 @@ export interface BookingConfirmation {
   counsellorName: string;
   startsAt: string;
   durationMin: number;
+  modality: "in_person" | "online";
 }
 
 export async function submitBooking(
@@ -121,6 +123,11 @@ export async function submitBooking(
   const service = config.services.find((s) => s.id === input.serviceId);
   const counsellor = config.counsellors.find((c) => c.id === input.counsellorId);
   if (!service || !counsellor) return { ok: false, error: "That service is no longer available." };
+
+  // The chosen way to attend must be one the service actually offers.
+  const allowed = config.serviceModalities[service.id];
+  if (input.modality === "online" && !allowed?.online) return { ok: false, error: "That service isn't offered online." };
+  if (input.modality === "in_person" && !allowed?.inPerson) return { ok: false, error: "That service is offered online only." };
 
   // Record the consent grants and the (mock) booking  every PII capture audited.
   for (const purpose of CONSENT_PURPOSES) {
@@ -153,6 +160,7 @@ export async function submitBooking(
       counsellorName: counsellor.name,
       startsAt: input.startsAt,
       durationMin: service.durationMin,
+      modality: input.modality,
     },
   };
 }

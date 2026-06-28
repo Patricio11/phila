@@ -3,6 +3,8 @@ import type { ConsentPurpose } from "@/lib/domain/enums";
 /** The wizard's working state  resumable, persisted to localStorage per org. */
 export interface BookingState {
   serviceId: string | null;
+  /** How the session is attended; null until chosen (or auto-set when only one). */
+  modality: "in_person" | "online" | null;
   /** null = "any available" counsellor. */
   counsellorId: string | null;
   date: string | null; // YYYY-MM-DD
@@ -15,6 +17,7 @@ export interface BookingState {
 
 export const EMPTY_BOOKING: BookingState = {
   serviceId: null,
+  modality: null,
   counsellorId: null,
   date: null,
   slotStart: null,

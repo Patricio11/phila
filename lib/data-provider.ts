@@ -48,6 +48,10 @@ export interface BookingConfig {
   minNoticeHours: number;
   /** How far ahead the calendar opens, in days (caps the date picker). */
   maxDaysAhead: number;
+  /** How each bookable service may be attended (keyed by service id). */
+  serviceModalities: Record<string, { inPerson: boolean; online: boolean }>;
+  /** Deposit to confirm a booking (collected when payments go live, Phase 13). */
+  deposit: { required: boolean; cents: number };
 }
 
 /** Per-service public-booking policy (which services the org lists, and how). */

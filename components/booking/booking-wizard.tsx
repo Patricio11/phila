@@ -90,10 +90,17 @@ export function BookingWizard({
     setState((prev) => ({ ...prev, ...next }));
   }
 
+  function defaultModality(svcId: string): BookingState["modality"] {
+    const mm = config.serviceModalities[svcId];
+    if (!mm) return null;
+    if (mm.inPerson && mm.online) return null; // both offered → the client must choose
+    return mm.online ? "online" : "in_person";
+  }
+
   const canAdvance = (() => {
     switch (step) {
       case 0:
-        return Boolean(state.serviceId);
+        return Boolean(state.serviceId) && Boolean(state.modality);
       case 1:
         return Boolean(state.slotStart);
       case 2:
@@ -132,6 +139,7 @@ export function BookingWizard({
         serviceId: state.serviceId!,
         counsellorId: state.slotCounsellorId!,
         startsAt: state.slotStart!,
+        modality: state.modality ?? "in_person",
         intake: state.intake,
         consents,
       });
@@ -169,9 +177,12 @@ export function BookingWizard({
         <ServiceStep
           services={config.services}
           counsellors={config.counsellors}
+          serviceModalities={config.serviceModalities}
           serviceId={state.serviceId}
+          modality={state.modality}
           counsellorId={state.counsellorId}
-          onService={(id) => patch({ serviceId: id, date: null, slotStart: null, slotCounsellorId: null })}
+          onService={(id) => patch({ serviceId: id, modality: defaultModality(id), date: null, slotStart: null, slotCounsellorId: null })}
+          onModality={(modality) => patch({ modality })}
           onCounsellor={(id) => patch({ counsellorId: id, slotStart: null, slotCounsellorId: null })}
         />
       )}

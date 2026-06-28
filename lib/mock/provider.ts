@@ -383,6 +383,10 @@ export const mockProvider: DataProvider = {
       enabled: settings.publicBookingEnabled,
       minNoticeHours: settings.minNoticeHours,
       maxDaysAhead: settings.maxDaysAhead,
+      serviceModalities: Object.fromEntries(
+        settings.services.filter((s) => bookableService.has(s.serviceId)).map((s) => [s.serviceId, { inPerson: s.inPerson, online: s.online }]),
+      ),
+      deposit: { required: settings.requireDeposit, cents: settings.depositCents },
     });
   },
 

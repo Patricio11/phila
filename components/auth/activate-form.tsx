@@ -9,7 +9,7 @@ import { PasswordField, strength } from "@/components/auth/password-field";
 import { useToast } from "@/components/ui/toast";
 import { activateAccount } from "@/app/(auth)/actions";
 
-export function ActivateForm() {
+export function ActivateForm({ destination = "/me", team = false }: { destination?: string; team?: boolean }) {
   const router = useRouter();
   const { toast } = useToast();
   const [pending, start] = useTransition();
@@ -28,8 +28,8 @@ export function ActivateForm() {
     start(async () => {
       const res = await activateAccount({ password, confirm });
       if (!res.ok) return toast({ tone: "error", title: res.error });
-      toast({ tone: "success", title: "Welcome to your space 🌱" });
-      router.push("/me");
+      toast({ tone: "success", title: team ? "You're all set 🎉" : "Welcome to your space 🌱" });
+      router.push(destination);
     });
   };
 

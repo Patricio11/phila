@@ -49,6 +49,22 @@ const inviteInput = z.object({
   teamRole: z.enum(TEAM_ROLES),
 });
 
+/** (Re)send a member their set-password link (mock). Phase 12 delivers the email. */
+export async function sendSetupLink(
+  raw: { userId: string },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  if (!raw.userId) return { ok: false, error: "Invalid member." };
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `member:${raw.userId}/setup_link`,
+    reason: "send_setup_link",
+  });
+  return { ok: true };
+}
+
 export async function inviteMember(
   raw: z.infer<typeof inviteInput>,
 ): Promise<{ ok: true } | { ok: false; error: string }> {

@@ -14,6 +14,7 @@ import { CredentialChip } from "@/components/ui/credential-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TeamRoleChip, ROLE_REACH } from "@/components/hub/team-role-chip";
 import { ManageMemberButton } from "@/components/hub/manage-member-modal";
+import { SendSetupLinkButton } from "@/components/hub/send-setup-link-button";
 
 export const dynamic = "force-dynamic";
 
@@ -77,6 +78,7 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
         actions={
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-[12.5px] text-text-2"><StatusDot tone={member.active ? "green" : "grey"} /> {member.active ? "Active" : "Deactivated"}</span>
+            <SendSetupLinkButton userId={member.userId} name={member.name} email={member.email} />
             <ManageMemberButton member={member} counsellorId={detail.counsellorId} currentSupervisorId={detail.supervisorId} supervisorOptions={supervisorOptions} label="Manage" />
           </div>
         }

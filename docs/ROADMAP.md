@@ -378,10 +378,23 @@ notifications / AI / payments / video. Guards, `logAccess()`, consent utils, `db
 - [x] **Adapter interfaces** (§5)  `lib/adapters/`.
 - [x] **Strict zero-`lib/mock`-import bar** (§1)  `lib/domain/{types,helpers}`.
 
+- [x] **Closeout ritual** (§8)  `PHASE_A_COMPLETE.md` + `PHASE_9_PLAN.md` written, commit tagged `part-a-complete`.
+
 **Remaining (small; none change the UI):**
 - [ ] **Playwright E2E + axe** sweep (§7).
 - [ ] Optional **loading/error mock flag** (§3)  states already drawn (Phase 8).
-- [ ] **Closeout ritual** (§8)  `PHASE_A_COMPLETE.md`, `PHASE_9_PLAN.md`, tag the commit.
+
+**Post-closeout Part-A refinements (2026-06-28) — depth the demo surfaced, all on the seam:**
+- **Intake, end-to-end.** `/hub/intake` reviews what clients *submitted* (each answer + date), not just "send";
+  and **the Hub owns its questions** at `/hub/intake/form`  a builder (add / reorder / delete; text · paragraph
+  · phone · email · multiple-choice; Required / Confidential; live preview). No more hardcoded intake.
+- **"Calendar" → "Appointments"** across counsellor + Hub (nav, routes, headings); "Booking" stays the public word.
+- **`/hub/insights`**  internal management analytics (real counts, audited, consent-gated demographics, NOT
+  k-anon): sessions today/week/month, attendance/no-shows, new+active clients, revenue, day+month trends, and
+  client mix filterable by gender/age/location. Distinct from the funder Reporting.
+- **`/hub/booking`**  per-org control of the public `/o/[slug]/book` flow, **enforced** by `getBookingConfig`:
+  master switch, which services + counsellors are bookable, in-person/online, notice + horizon, intake-at-booking,
+  deposit. New seam methods `getIntakeBoard` · `getIntakeForm` · `getBookingSettings` · `getHubInsights`.
 
 ---
 ---

@@ -355,6 +355,28 @@ auto-rolls up to them, and a scoped, k-anon, read-only **funder portal**. The gr
 **Done when (mock):** a stranger can demo the whole product across all roles on a phone, **in either theme, installed as an app**, it looks finished and alive, and there are zero dead ends. **This is the Part-A ship gate.**
 
 ---
+
+## 🚪 PART A → PART B CLOSEOUT GATE — status 2026-06-28
+*Full checklist + scorecard in `docs/PHASE_A_CLOSEOUT.md`. Audited against the code.*
+
+**Product: complete.** Every role + surface is built mock-first; clinical loop, Hub oversight, funder portal,
+super-admin console, settings, internal messaging, "Your steps", auth/onboarding/invite — all click through;
+`tsc`/`lint`/`next build` green; all routes 200.
+
+**Seam: solid (the high-leverage half).** Zero fixture/provider **data** leaks in components (only `lib/mock`
+`types` + pure `helpers` remain); the full `DataProvider` interface is frozen with final signatures;
+`mockProvider` implements it; `dbProvider` is a throwing stub; `DATA_PROVIDER=mock|db` switch in place.
+Guards, `logAccess()`, consent utils, `db/` scaffold, and `docs/SECURITY.md` are present.
+
+**Outstanding hardening before Phase 9 opens (none change the UI):**
+- [ ] **Provider-conformance suite** (§2/§7) — the contract test that proves the swap.
+- [ ] **Vitest + Playwright + axe harness** (§7) — Part-A regression guard for all of Part B.
+- [ ] **Determinism** (§4) — a central injectable `now()` + seed; pages still call `new Date()`.
+- [ ] **Formal adapter interfaces** (§5) — storage / notifications / AI / payments / video (today: data/UI + dormant flags).
+- [ ] **Move `lib/mock/{types,helpers}` → `lib/domain`** for the strict zero-`lib/mock`-import bar (§1).
+- [ ] **Closeout ritual** (§8) — `PHASE_A_COMPLETE.md`, `PHASE_9_PLAN.md`, and tag the Part-A-complete commit.
+
+---
 ---
 
 # 🟩 PART B  WIRE IT REAL (Phases 9–20)

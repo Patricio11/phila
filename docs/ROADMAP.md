@@ -489,10 +489,11 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 > services, sites, rooms, demographics), **appointments** (`listCounsellorSessions`/`listAppointmentsFor*`),
 > **clinical** (care plans, documents, outcomes — `getCarePlan`/`listClientDocuments`), **billing**
 > (invoices — `listClientInvoices`/`listOrgInvoices`), and **funders/grants** (M&E tables + `listFunders`/
-> `listFunderGrants`). **Remaining before Phase 10 is DONE:** the **composite dashboards + reporting engine**
-> (`getHubOverview`/`getCounsellorDashboard`/`getReporting`/`listCaseload`/k-anon grant views still
-> mock-fallback — the heaviest piece), payments + comms + AI tables, **RLS (10.2)**, and Storage (10.3). 17
-> migrations on Neon; 15 Playwright E2E + 45 unit green.
+> `listFunderGrants`). The **home dashboards are now real too**: `getHubOverview` + `getCounsellorDashboard`
+> aggregate DB rows via pure, unit-tested `compute*` functions in `lib/domain/dashboards.ts` (so calendar +
+> home read the SAME appointments). **Remaining before Phase 10 is DONE:** `getReporting` (k-anon) +
+> `listCaseload` + the k-anon grant views, payments + comms + AI tables, **RLS (10.2)**, and Storage (10.3).
+> 17 migrations on Neon; 16 Playwright E2E + 51 unit green.
 
 ### Task 10.1: Drizzle schema
 - [x] Tenancy + identity (Phase 9): `orgs`, `org_members` (+ `team_role`, `is_supervisor`), Better Auth `user`/`session`/`account`/`two_factor`. **Directory** (2026-06-29): `counsellors` (credential flattened), `clients` (soft-delete), `services`, `demographics`. Still to add: `sessions`/`session_notes`, `recurring_series`, `intake_forms`/`intake_responses`.

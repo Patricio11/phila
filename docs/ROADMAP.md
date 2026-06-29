@@ -487,11 +487,12 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 > agree). **Done so far:** identity + tenancy (Phase 9), **consent + audit** (persisted), and four data
 > clusters each with schema + seed + real reads + a DB-write E2E proof: **directory** (clients, counsellors,
 > services, sites, rooms, demographics), **appointments** (`listCounsellorSessions`/`listAppointmentsFor*`),
-> **clinical** (care plans, documents, outcomes — `getCarePlan`/`listClientDocuments`), and **billing**
-> (invoices — `listClientInvoices`/`listOrgInvoices`). **Remaining before Phase 10 is DONE:** funders/grants
-> (M&E + the k-anon composites), the **composite dashboards** (`getHubOverview`/`getCounsellorDashboard`/
-> reporting/caseload still mock-fallback), payments + comms + AI tables, **RLS (10.2)**, and Storage (10.3).
-> 16 migrations on Neon; 14 Playwright E2E + 45 unit green.
+> **clinical** (care plans, documents, outcomes — `getCarePlan`/`listClientDocuments`), **billing**
+> (invoices — `listClientInvoices`/`listOrgInvoices`), and **funders/grants** (M&E tables + `listFunders`/
+> `listFunderGrants`). **Remaining before Phase 10 is DONE:** the **composite dashboards + reporting engine**
+> (`getHubOverview`/`getCounsellorDashboard`/`getReporting`/`listCaseload`/k-anon grant views still
+> mock-fallback — the heaviest piece), payments + comms + AI tables, **RLS (10.2)**, and Storage (10.3). 17
+> migrations on Neon; 15 Playwright E2E + 45 unit green.
 
 ### Task 10.1: Drizzle schema
 - [x] Tenancy + identity (Phase 9): `orgs`, `org_members` (+ `team_role`, `is_supervisor`), Better Auth `user`/`session`/`account`/`two_factor`. **Directory** (2026-06-29): `counsellors` (credential flattened), `clients` (soft-delete), `services`, `demographics`. Still to add: `sessions`/`session_notes`, `recurring_series`, `intake_forms`/`intake_responses`.

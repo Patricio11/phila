@@ -176,3 +176,46 @@ export const appointments = pgTable("appointments", {
   state: text("state").notNull(),
   tags: jsonb("tags").$type<string[]>().default([]).notNull(),
 });
+
+/* ── Clinical cluster (Phase 10) ───────────────────────────────────────── */
+
+/** The PRIVATE clinical note — author + supervisor only; Hub access audited. */
+export const sessionNotes = pgTable("session_notes", {
+  id: text("id").primaryKey(),
+  appointmentId: text("appointment_id").notNull(),
+  authorCounsellorId: text("author_counsellor_id").notNull(),
+  body: text("body").notNull(),
+  aiGenerated: boolean("ai_generated").default(false).notNull(),
+  signedAt: timestamp("signed_at", { withTimezone: true }),
+});
+
+/** The client-SHARED care plan (distinct from the private note). */
+export const carePlans = pgTable("care_plans", {
+  id: text("id").primaryKey(),
+  clientId: text("client_id").notNull(),
+  authorCounsellorId: text("author_counsellor_id").notNull(),
+  summary: text("summary").notNull(),
+  tasks: jsonb("tasks").$type<{ id: string; text: string; done: boolean }[]>().default([]).notNull(),
+  resources: jsonb("resources").$type<{ label: string; note?: string }[]>().default([]).notNull(),
+  nextStep: text("next_step"),
+  sharedAt: timestamp("shared_at", { withTimezone: true }),
+});
+
+export const clientDocuments = pgTable("client_documents", {
+  id: text("id").primaryKey(),
+  clientId: text("client_id").notNull(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  name: text("name").notNull(),
+  kind: text("kind").notNull(),
+  sizeLabel: text("size_label").notNull(),
+  sharedBy: text("shared_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+});
+
+export const outcomeMeasures = pgTable("outcome_measures", {
+  id: text("id").primaryKey(),
+  clientId: text("client_id").notNull(),
+  tool: text("tool").notNull(),
+  score: integer("score").notNull(),
+  takenAt: timestamp("taken_at", { withTimezone: true }).notNull(),
+});

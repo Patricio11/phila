@@ -12,7 +12,7 @@
  */
 import { and, eq, gte, isNull, lte } from "drizzle-orm";
 import type { AppointmentView, DataProvider } from "@/lib/data-provider";
-import type { Appointment, Client, ConsentRecord, Counsellor, Org, Room, Service, Site } from "@/lib/domain/types";
+import type { Appointment, CarePlan, Client, ClientDocument, ConsentRecord, Counsellor, Org, Room, Service, Site } from "@/lib/domain/types";
 import type { AppointmentState, AppointmentType, ConsentPurpose, ConsentState, CredentialBody, CredentialStatus, Province, RoomStatus } from "@/lib/domain/enums";
 import { mockProvider } from "@/lib/mock/provider";
 import { getDb } from "@/db/client";
@@ -25,6 +25,8 @@ import {
   rooms as roomsTable,
   clients as clientsTable,
   appointments as appointmentsTable,
+  carePlans as carePlansTable,
+  clientDocuments as clientDocumentsTable,
 } from "@/db/schema";
 
 type ApptRow = typeof appointmentsTable.$inferSelect;
@@ -157,6 +159,16 @@ export const dbProvider: DataProvider = {
     return rows
       .map((r) => ({ ...toAppt(r.a), clientName: r.clientName ?? "Unknown client", serviceName: r.serviceName ?? "Session", counsellorName: r.counsellorName ?? "", roomName: r.roomName ?? null }))
       .sort((a, b) => b.startsAt.localeCompare(a.startsAt));
+  },
+
+  // ── Clinical cluster — care plan (shared) + documents ─────────────────
+  getCarePlan: async (clientId: string): Promise<CarePlan | null> => {
+    const [r] = await getDb().select().from(carePlansTable).where(eq(carePlansTable.clientId, clientId)).limit(1);
+    return r ? { id: r.id, clientId: r.clientId, authorCounsellorId: r.authorCounsellorId, summary: r.summary, tasks: r.tasks, resources: r.resources, nextStep: r.nextStep, sharedAt: r.sharedAt ? r.sharedAt.toISOString() : null } : null;
+  },
+  listClientDocuments: async (clientId: string): Promise<ClientDocument[]> => {
+    const rows = await getDb().select().from(clientDocumentsTable).where(eq(clientDocumentsTable.clientId, clientId));
+    return rows.map((d) => ({ id: d.id, clientId: d.clientId, orgId: d.orgId, name: d.name, kind: d.kind as ClientDocument["kind"], sizeLabel: d.sizeLabel, sharedBy: d.sharedBy as ClientDocument["sharedBy"], createdAt: d.createdAt.toISOString() }));
   },
 
   // Consent — persisted, versioned, purpose-bound (the lawful basis for reads).

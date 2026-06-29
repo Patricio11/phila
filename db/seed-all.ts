@@ -23,6 +23,9 @@ import {
   demographics as demographicsFx,
   consents as consentsFx,
   counsellorDayTemplates as dayTemplates,
+  carePlans as carePlansFx,
+  clientDocuments as docsFx,
+  clientOutcomes as outcomesFx,
 } from "@/lib/mock/fixtures";
 
 /** SAST calendar-day for an instant (fixed +02:00, no DST). */
@@ -144,6 +147,25 @@ async function main() {
     );
   }
 
+  // ── Clinical cluster ──────────────────────────────────────────────────
+  for (const plan of Object.values(carePlansFx)) {
+    await db.insert(schema.carePlans).values({
+      id: plan.id, clientId: plan.clientId, authorCounsellorId: plan.authorCounsellorId, summary: plan.summary,
+      tasks: plan.tasks, resources: plan.resources, nextStep: plan.nextStep, sharedAt: plan.sharedAt ? new Date(plan.sharedAt) : null,
+    }).onConflictDoNothing();
+  }
+  for (const docs of Object.values(docsFx)) {
+    for (const d of docs) {
+      await db.insert(schema.clientDocuments).values({ id: d.id, clientId: d.clientId, orgId: d.orgId, name: d.name, kind: d.kind, sizeLabel: d.sizeLabel, sharedBy: d.sharedBy, createdAt: new Date(d.createdAt) }).onConflictDoNothing();
+    }
+  }
+  for (const [clientId, measures] of Object.entries(outcomesFx)) {
+    for (let i = 0; i < measures.length; i++) {
+      const m = measures[i]!;
+      await db.insert(schema.outcomeMeasures).values({ id: `om_${clientId}_${i}`, clientId, tool: m.tool, score: m.score, takenAt: new Date(now.getTime() - m.weeksAgo * 7 * 86_400_000) }).onConflictDoNothing();
+    }
+  }
+
   const sql = neon(url!);
   const [c] = await sql`select
     (select count(*)::int from orgs) orgs,
@@ -154,7 +176,10 @@ async function main() {
     (select count(*)::int from rooms) rooms,
     (select count(*)::int from demographics) demographics,
     (select count(*)::int from consents) consents,
-    (select count(*)::int from appointments) appointments`;
+    (select count(*)::int from appointments) appointments,
+    (select count(*)::int from care_plans) care_plans,
+    (select count(*)::int from client_documents) documents,
+    (select count(*)::int from outcome_measures) outcomes`;
   console.log("seeded:", c);
 }
 

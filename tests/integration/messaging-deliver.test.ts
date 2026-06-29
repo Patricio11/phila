@@ -18,13 +18,13 @@ const vars = { clientName: "Lerato", practiceName: "Masizakhe", serviceName: "In
 const recipient = { phone: "+27820000123", email: "lerato@example.co.za", preferredContact: "Phone call" }; // → SMS
 
 beforeEach(async () => {
-  await sql`DELETE FROM message_log WHERE org_id=${ORG}`;
+  await sql`DELETE FROM message_log WHERE org_id=${ORG} AND to_masked='+27***23'`;
   await sql`DELETE FROM credit_ledger WHERE org_id=${ORG} AND reason='send'`;
   await sql`UPDATE credit_balances SET balance=100 WHERE org_id=${ORG} AND channel='sms'`;
   await sql`DELETE FROM message_opt_outs WHERE org_id=${ORG}`;
 });
 afterAll(async () => {
-  await sql`DELETE FROM message_log WHERE org_id=${ORG}`;
+  await sql`DELETE FROM message_log WHERE org_id=${ORG} AND to_masked='+27***23'`;
   await sql`DELETE FROM credit_ledger WHERE org_id=${ORG} AND reason='send'`;
   await sql`DELETE FROM message_opt_outs WHERE org_id=${ORG}`;
   await sql`UPDATE credit_balances SET balance=100 WHERE org_id=${ORG} AND channel='sms'`;
@@ -36,7 +36,7 @@ describe("deliver pipeline", () => {
     expect(out.channel).toBe("sms"); // "Phone call" → SMS
     expect(out.status).toBe("dormant"); // no BulkSMS creds in test env — honest, not "sent"
 
-    const [log] = await sql`SELECT status, cost_credits, to_masked FROM message_log WHERE org_id=${ORG} ORDER BY created_at DESC LIMIT 1`;
+    const [log] = await sql`SELECT status, cost_credits, to_masked FROM message_log WHERE org_id=${ORG} AND to_masked='+27***23' ORDER BY created_at DESC LIMIT 1`;
     expect(log!.status).toBe("dormant");
     expect(log!.cost_credits).toBe(0); // dormant never charges
     expect(String(log!.to_masked)).not.toContain("0000123"); // contact is masked
@@ -49,7 +49,7 @@ describe("deliver pipeline", () => {
     await sql`UPDATE credit_balances SET balance=0 WHERE org_id=${ORG} AND channel='sms'`;
     const out = await deliver({ orgId: ORG, trigger: "booked", ref: "appt_t2", recipient, vars });
     expect(out.status).toBe("no_credit");
-    const [log] = await sql`SELECT status FROM message_log WHERE org_id=${ORG} ORDER BY created_at DESC LIMIT 1`;
+    const [log] = await sql`SELECT status FROM message_log WHERE org_id=${ORG} AND to_masked='+27***23' ORDER BY created_at DESC LIMIT 1`;
     expect(log!.status).toBe("no_credit");
   });
 

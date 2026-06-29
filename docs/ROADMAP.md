@@ -561,8 +561,15 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 
 ---
 
-## 💬 PHASE 12: NOTIFICATIONS (WHATSAPP + EMAIL + SMS)
+## 💬 PHASE 12: NOTIFICATIONS (WHATSAPP + EMAIL + SMS) ✅
 *Goal: instant, honest booking/cancel/reschedule/reminder notifications  WhatsApp-first.*
+
+> **✅ COMPLETE (2026-06-29).** Channels (WhatsApp BYO via Meta Cloud API; SMS via Phila BulkSMS credits; Email
+> via Phila domain with practice reply-to + credits), routed by the client's preferred contact; a hub-editable
+> template manager; the deliver chokepoint (resolve → POPIA gate → meter → honest `message_log` states); all
+> five triggers + a T-24h/T-1h reminder sweep; super-admin manual credit grant; opt-out (STOP) + delivery
+> webhooks; and a Recent-activity view. 79 unit/integration green. Self-serve credit purchase is **Phase 15.1**.
+> See `docs/completed/PHASE_12_COMPLETE.md`.
 
 > **Model (decided 2026-06-29):** the org enables any of **WhatsApp / SMS / Email** per channel; each message routes by the **client's preferred contact** among the enabled channels (Phila already captures `preferredContact`), with a fallback order. **Opt-out + quiet hours always win** (POPIA). Channels are dormant-by-default and never fake a "sent".
 > - **WhatsApp = BYO (Meta Cloud API).** Each org connects its **own** WhatsApp Business number — Meta ties sender identity, templates, and quality to the org's WABA, so one shared number can't work. Org enters Phone Number ID, WABA ID, Access Token, App Secret, Verify Token (encrypted at rest); Configured → Live with a Test Connection; a "Help me set up" path for orgs without a WABA. 24h-window aware (approved templates outside it). Not Phila-metered — the org pays Meta.
@@ -571,23 +578,23 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 > - **Credits = balances + append-only idempotent ledger + caps.** 0 balance → send blocked with an honest "top up" nudge (never a fake send). WhatsApp (BYO) is uncounted. **Self-serve credit purchase lands in Phase 15.1** (needs the platform gateway); until then, top-ups are a super-admin manual grant with an honest "self-serve purchase arrives with billing" state for orgs.
 
 ### Task 12.1: Schema + credits model
-- [ ] `org_messaging_settings` (per-channel enable, email reply-to/from-name, quiet hours), `whatsapp_connections` (BYO Meta creds, **encrypted**, status off/configured/live), `credit_balances` (org × channel), `credit_ledger` (append-only, idempotency-keyed), `message_log` (honest delivery state), `message_templates` (system defaults + org overrides), `message_opt_outs`. Migration + seed (system templates, demo balances) + RLS on every org-scoped table.
+- [x] `org_messaging_settings` (per-channel enable, email reply-to/from-name, quiet hours), `whatsapp_connections` (BYO Meta creds, **encrypted**, status off/configured/live), `credit_balances` (org × channel), `credit_ledger` (append-only, idempotency-keyed), `message_log` (honest delivery state), `message_templates` (system defaults + org overrides), `message_opt_outs`. Migration + seed (system templates, demo balances) + RLS on every org-scoped table.
 
 ### Task 12.2: Org **Notifications** settings (Settings → Notifications)
-- [ ] WhatsApp **BYO credentials card** (the YetoEFT/`payment-connection-card` pattern): provider creds, Test connection, Save (encrypted), "Help me set up". SMS + Email rows: **powered by Phila**, balance + **Buy credits**, email Reply-To. Per-channel enable toggles. Routing + quiet-hours editor.
-- [ ] **Template manager (hub-editable):** the hub views every message (channel × trigger), edits the wording (live token preview, e.g. `{clientName}`/`{date}`), and **resets to the Phila default**. Edits write an org-override row in `message_templates`; the system defaults (org_id null) are the fallback. WhatsApp template-name field for Meta-approved templates (outside the 24h window).
+- [x] WhatsApp **BYO credentials card** (the YetoEFT/`payment-connection-card` pattern): provider creds, Test connection, Save (encrypted), "Help me set up". SMS + Email rows: **powered by Phila**, balance + **Buy credits**, email Reply-To. Per-channel enable toggles. Routing + quiet-hours editor.
+- [x] **Template manager (hub-editable):** the hub views every message (channel × trigger), edits the wording (live token preview, e.g. `{clientName}`/`{date}`), and **resets to the Phila default**. Edits write an org-override row in `message_templates`; the system defaults (org_id null) are the fallback. WhatsApp template-name field for Meta-approved templates (outside the 24h window).
 
 ### Task 12.3: Send pipeline (one chokepoint) + real transports
-- [ ] `lib/messaging/deliver.ts`: resolve recipient + preferred channel → POPIA gate (consent/opt-out/quiet hours) → transport select (org Meta · Phila BulkSMS · Phila email) → **meter** (SMS/Email decrement credits; 0 = block) → transmit (WA 24h-window/template) → record honest `message_log` status → audit. Pure `resolveChannel` / `decideSend` (unit-tested). Transports: Meta Cloud API, BulkSMS, Resend.
+- [x] `lib/messaging/deliver.ts`: resolve recipient + preferred channel → POPIA gate (consent/opt-out/quiet hours) → transport select (org Meta · Phila BulkSMS · Phila email) → **meter** (SMS/Email decrement credits; 0 = block) → transmit (WA 24h-window/template) → record honest `message_log` status → audit. Pure `resolveChannel` / `decideSend` (unit-tested). Transports: Meta Cloud API, BulkSMS, Resend.
 
 ### Task 12.4: Triggers
-- [ ] booked / rescheduled / cancelled / **reminder (T-24h, T-1h)** / no-show — wired into the existing booking/reschedule/cancel/markProgress actions (replacing their "no message sent yet" honesty notes). Reminder sweep endpoint.
+- [x] booked / rescheduled / cancelled / **reminder (T-24h, T-1h)** / no-show — wired into the existing booking/reschedule/cancel/markProgress actions (replacing their "no message sent yet" honesty notes). Reminder sweep endpoint.
 
 ### Task 12.5: Platform side
-- [ ] Super-admin: Phila's **BulkSMS + email** provider credentials (system-wide) in `/admin/integrations`; credit pack pricing; **manual credit grant** (until Phase 15.1).
+- [x] Super-admin: Phila's **BulkSMS + email** provider credentials (system-wide) in `/admin/integrations`; credit pack pricing; **manual credit grant** (until Phase 15.1).
 
 ### Task 12.6: Opt-out + quiet hours + delivery webhooks
-- [ ] STOP/opt-out handling; quiet-hours enforcement; WhatsApp + email **delivery-status webhooks** update `message_log` (sent → delivered/failed); dead-letter on retry exhaustion.
+- [x] STOP/opt-out handling; quiet-hours enforcement; WhatsApp + email **delivery-status webhooks** update `message_log` (sent → delivered/failed); dead-letter on retry exhaustion.
 
 **Done when:** a real booking/reschedule/cancel/reminder reaches the client on their preferred channel (WhatsApp via the org's number, SMS/Email via Phila credits), metered + capped + audited, with honest delivery states and opt-out/quiet-hours respected.
 

@@ -18,7 +18,7 @@ const CID = "cl_trig_probe";
 const AID = "appt_trig_probe";
 
 afterEach(async () => {
-  await sql`DELETE FROM message_log WHERE org_id=${ORG}`;
+  await sql`DELETE FROM message_log WHERE org_id=${ORG} AND to_masked='+27***99'`;
   await sql`DELETE FROM appointments WHERE id=${AID}`;
   await sql`DELETE FROM clients WHERE id=${CID}`;
 });
@@ -27,12 +27,14 @@ describe("notifyAppointment", () => {
   it("records an honest message_log entry for a booking event", async () => {
     await sql`INSERT INTO clients (id, org_id, name, phone, email, province, primary_counsellor_id, risk_flag, created_at)
       VALUES (${CID}, ${ORG}, 'Trigger Probe', '+27820009999', 'probe@example.co.za', 'Gauteng', 'couns_nomsa', false, now())`;
+    // couns_pieter (not nomsa) + a date well clear of the series test's 2027-03 range, so the
+    // parallel integration tests don't collide on the shared DB.
     await sql`INSERT INTO appointments (id, org_id, client_id, counsellor_id, service_id, type, room_id, starts_at, duration_min, state, tags)
-      VALUES (${AID}, ${ORG}, ${CID}, 'couns_nomsa', 'svc_individual', 'online', null, '2027-04-01T10:00:00+02:00', 60, 'scheduled', '[]'::jsonb)`;
+      VALUES (${AID}, ${ORG}, ${CID}, 'couns_pieter', 'svc_individual', 'online', null, '2027-09-01T10:00:00+02:00', 60, 'scheduled', '[]'::jsonb)`;
 
     await notifyAppointment(AID, "booked");
 
-    const [log] = await sql`SELECT channel, trigger, status FROM message_log WHERE org_id=${ORG} ORDER BY created_at DESC LIMIT 1`;
+    const [log] = await sql`SELECT channel, trigger, status FROM message_log WHERE org_id=${ORG} AND to_masked='+27***99' ORDER BY created_at DESC LIMIT 1`;
     expect(log).toBeTruthy();
     expect(log!.trigger).toBe("booked");
     // masizakhe has SMS+Email on (WhatsApp off); no stated preference → fallback to SMS.

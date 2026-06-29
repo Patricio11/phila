@@ -563,9 +563,32 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 
 ## 💬 PHASE 12: NOTIFICATIONS (WHATSAPP + EMAIL + SMS)
 *Goal: instant, honest booking/cancel/reschedule/reminder notifications  WhatsApp-first.*
-- [ ] Env-driven transport adapter: WhatsApp (Meta Cloud API / 360dialog / Clickatell) + Resend email + optional SMS. Dormant until configured.
-- [ ] Triggers: booked / rescheduled / cancelled / reminder (T-24h, T-1h) / no-show follow-up. 24h-window awareness for WhatsApp; approved templates outside it.
-- [ ] **Opt-out + quiet hours** always win; honest delivery states (no fake "sent"); **metered + capped** (Cost Rule); audited.
+
+> **Model (decided 2026-06-29):** the org enables any of **WhatsApp / SMS / Email** per channel; each message routes by the **client's preferred contact** among the enabled channels (Phila already captures `preferredContact`), with a fallback order. **Opt-out + quiet hours always win** (POPIA). Channels are dormant-by-default and never fake a "sent".
+> - **WhatsApp = BYO (Meta Cloud API).** Each org connects its **own** WhatsApp Business number — Meta ties sender identity, templates, and quality to the org's WABA, so one shared number can't work. Org enters Phone Number ID, WABA ID, Access Token, App Secret, Verify Token (encrypted at rest); Configured → Live with a Test Connection; a "Help me set up" path for orgs without a WABA. 24h-window aware (approved templates outside it). Not Phila-metered — the org pays Meta.
+> - **SMS = Phila system bulk + credits.** One platform integration (**BulkSMS.com**) serves every org; orgs buy **Phila SMS credits**. No per-org SMS account. Metered + capped.
+> - **Email = Phila send + practice identity + credits.** Phila sends from its **own verified domain** but with the **practice as the display name and Reply-To = the practice's email** (best deliverability, zero org setup, replies reach the practice). Orgs buy **Phila email credits**. BYO sending domain is a later premium.
+> - **Credits = balances + append-only idempotent ledger + caps.** 0 balance → send blocked with an honest "top up" nudge (never a fake send). WhatsApp (BYO) is uncounted. **Self-serve credit purchase lands in Phase 15.1** (needs the platform gateway); until then, top-ups are a super-admin manual grant with an honest "self-serve purchase arrives with billing" state for orgs.
+
+### Task 12.1: Schema + credits model
+- [ ] `org_messaging_settings` (per-channel enable, email reply-to/from-name, quiet hours), `whatsapp_connections` (BYO Meta creds, **encrypted**, status off/configured/live), `credit_balances` (org × channel), `credit_ledger` (append-only, idempotency-keyed), `message_log` (honest delivery state), `message_templates` (system defaults + org overrides), `message_opt_outs`. Migration + seed (system templates, demo balances) + RLS on every org-scoped table.
+
+### Task 12.2: Org **Notifications** settings (Settings → Notifications)
+- [ ] WhatsApp **BYO credentials card** (the YetoEFT/`payment-connection-card` pattern): provider creds, Test connection, Save (encrypted), "Help me set up". SMS + Email rows: **powered by Phila**, balance + **Buy credits**, email Reply-To. Per-channel enable toggles. Routing + quiet-hours editor.
+
+### Task 12.3: Send pipeline (one chokepoint) + real transports
+- [ ] `lib/messaging/deliver.ts`: resolve recipient + preferred channel → POPIA gate (consent/opt-out/quiet hours) → transport select (org Meta · Phila BulkSMS · Phila email) → **meter** (SMS/Email decrement credits; 0 = block) → transmit (WA 24h-window/template) → record honest `message_log` status → audit. Pure `resolveChannel` / `decideSend` (unit-tested). Transports: Meta Cloud API, BulkSMS, Resend.
+
+### Task 12.4: Triggers
+- [ ] booked / rescheduled / cancelled / **reminder (T-24h, T-1h)** / no-show — wired into the existing booking/reschedule/cancel/markProgress actions (replacing their "no message sent yet" honesty notes). Reminder sweep endpoint.
+
+### Task 12.5: Platform side
+- [ ] Super-admin: Phila's **BulkSMS + email** provider credentials (system-wide) in `/admin/integrations`; credit pack pricing; **manual credit grant** (until Phase 15.1).
+
+### Task 12.6: Opt-out + quiet hours + delivery webhooks
+- [ ] STOP/opt-out handling; quiet-hours enforcement; WhatsApp + email **delivery-status webhooks** update `message_log` (sent → delivered/failed); dead-letter on retry exhaustion.
+
+**Done when:** a real booking/reschedule/cancel/reminder reaches the client on their preferred channel (WhatsApp via the org's number, SMS/Email via Phila credits), metered + capped + audited, with honest delivery states and opt-out/quiet-hours respected.
 
 ---
 
@@ -598,7 +621,10 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 - [ ] Each org connects its **own** gateway (the provider it switched on + credentials it entered in Task 5.5), stored encrypted; a **PSP orchestrator** abstracts Stitch / Ozow (PayShap + pay-by-bank) + Yoco / Paystack (cards) behind one interface so switching providers is a toggle.
 - [ ] Invoices (from the A4 builder) charge through the **org's** connected gateway → funds settle to the org; webhooks + idempotency keys (load-shedding-safe); paid / unpaid / cancelled / refunded tracking; income + **income prediction** from real data; metered where Phila fronts a cost.
 
-**Done when:** an org subscribes to Phila (A), connects its own gateway in one switch (B), and a client pays an invoice that settles to the org.
+### Task 15.1: Phila credit purchase (orgs buy SMS/Email credits → Phila)
+- [ ] Self-serve checkout for the **notification credit packs** from Phase 12 — orgs buy SMS / email credit packs via the platform system gateway (Task 15A's PSP); a successful payment posts a `purchase` entry to the `credit_ledger` and tops up `credit_balances` (idempotent on the payment ref). Replaces Phase 12's super-admin manual grant. Pack pricing from the platform; receipts + a top-up history; low-balance prompts become real "Buy more".
+
+**Done when:** an org subscribes to Phila (A), connects its own gateway in one switch (B), a client pays an invoice that settles to the org, and an org can **buy notification credits** that top up their balance automatically (15.1).
 
 ---
 

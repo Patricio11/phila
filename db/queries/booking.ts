@@ -2,8 +2,9 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { appointments, clients, consents } from "@/db/schema";
-import { rooms as roomsTable } from "@/db/schema";
+import { rooms as roomsTable, roomAssignments as roomAssignmentsTable } from "@/db/schema";
 import { CONSENT_PURPOSES, type ConsentPurpose } from "@/lib/domain/enums";
+import { isoWeekday } from "@/lib/domain/helpers";
 import { now as clockNow } from "@/lib/clock";
 
 /** Server-side id (randomness is fine — not a React render). */
@@ -52,16 +53,23 @@ export async function persistBooking(input: PersistBookingInput): Promise<{ clie
   if (input.modality === "in_person") {
     const startMs = new Date(input.startsAt).getTime();
     const endMs = startMs + input.durationMin * 60_000;
-    const [roomRows, orgAppts] = await Promise.all([
+    const [roomRows, orgAppts, assigns] = await Promise.all([
       db.select().from(roomsTable).where(eq(roomsTable.orgId, input.orgId)),
       db.select().from(appointments).where(eq(appointments.orgId, input.orgId)),
+      db.select().from(roomAssignmentsTable).where(eq(roomAssignmentsTable.counsellorId, input.counsellorId)),
     ]);
     const overlaps = (a: { startsAt: Date; durationMin: number }) => {
       const s = a.startsAt.getTime();
       return startMs < s + a.durationMin * 60_000 && endMs > s;
     };
     const busy = new Set(orgAppts.filter((a) => a.roomId && a.state !== "cancelled" && overlaps(a)).map((a) => a.roomId));
-    const free = roomRows.find((r) => r.status === "active" && !busy.has(r.id));
+    const isFree = (r: { id: string; status: string }) => r.status === "active" && !busy.has(r.id);
+    // Prefer the counsellor's assigned room for this weekday/time; else first free.
+    const weekday = isoWeekday(input.startsAt.slice(0, 10));
+    const hhmm = input.startsAt.slice(11, 16); // SAST wall-clock from the +02:00 instant
+    const assigned = assigns.find((ra) => ra.days.includes(weekday) && ra.start <= hhmm && hhmm < ra.end);
+    const preferred = assigned ? roomRows.find((r) => r.id === assigned.roomId && isFree(r)) : undefined;
+    const free = preferred ?? roomRows.find(isFree);
     roomId = free?.id ?? null;
     roomName = free?.name ?? null;
   }

@@ -137,6 +137,17 @@ export const rooms = pgTable("rooms", {
   colour: text("colour").notNull(),
 });
 
+/** A counsellor's recurring room booking (the schedule the engine defaults from). */
+export const roomAssignments = pgTable("room_assignments", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  counsellorId: text("counsellor_id").notNull().references(() => counsellors.id),
+  roomId: text("room_id").notNull().references(() => rooms.id),
+  days: jsonb("days").$type<number[]>().default([]).notNull(),
+  start: text("start").notNull(),
+  end: text("end").notNull(),
+});
+
 export const clients = pgTable("clients", {
   id: text("id").primaryKey(),
   orgId: text("org_id").notNull().references(() => orgs.id),

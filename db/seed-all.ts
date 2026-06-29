@@ -19,6 +19,7 @@ import {
   services as servicesFx,
   sites as sitesFx,
   rooms as roomsFx,
+  roomAssignments as roomAssignmentsFx,
   clients as clientsFx,
   demographics as demographicsFx,
   consents as consentsFx,
@@ -115,6 +116,11 @@ async function main() {
   }
   for (const r of roomsFx) {
     await db.insert(schema.rooms).values({ id: r.id, orgId: r.orgId, siteId: r.siteId, name: r.name, capacity: r.capacity, equipment: r.equipment, status: r.status, colour: r.colour }).onConflictDoNothing();
+  }
+  for (const ra of roomAssignmentsFx) {
+    const orgId = roomsFx.find((r) => r.id === ra.roomId)?.orgId;
+    if (!orgId) continue;
+    await db.insert(schema.roomAssignments).values({ id: ra.id, orgId, counsellorId: ra.counsellorId, roomId: ra.roomId, days: ra.days, start: ra.start, end: ra.end }).onConflictDoNothing();
   }
   for (const c of clientsFx) {
     await db.insert(schema.clients).values({

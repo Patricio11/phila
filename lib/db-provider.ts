@@ -11,7 +11,7 @@
  * as the write paths migrate (docs/SECURITY.md).
  */
 import { and, eq, gte, isNull, lte } from "drizzle-orm";
-import type { AppointmentView, CaseloadRow, CaseloadStatus, CounsellorDashboard, DataProvider, HubOverview, OutcomePoint } from "@/lib/data-provider";
+import type { AppointmentView, CaseloadRow, CaseloadStatus, CounsellorDashboard, DataProvider, HubOverview, OutcomePoint, RoomView, RoomDetail } from "@/lib/data-provider";
 import { computeHubOverview, computeCounsellorDashboard } from "@/lib/domain/dashboards";
 import { desc, inArray } from "drizzle-orm";
 import type { Appointment, CarePlan, Client, ClientDocument, ConsentRecord, Counsellor, Funder, Grant, Invoice, Org, Room, Service, Site } from "@/lib/domain/types";
@@ -35,7 +35,9 @@ import {
   grants as grantsTable,
   funderContacts as funderContactsTable,
   outcomeMeasures as outcomeMeasuresTable,
+  roomAssignments as roomAssignmentsTable,
 } from "@/db/schema";
+import { isoWeekday, roomUtilisation } from "@/lib/domain/helpers";
 
 function toGrant(r: typeof grantsTable.$inferSelect): Grant {
   return { id: r.id, funderId: r.funderId, orgId: r.orgId, title: r.title, periodStart: r.periodStart, periodEnd: r.periodEnd, amountCents: r.amountCents, restricted: r.restricted, reportingSchedule: r.reportingSchedule as Grant["reportingSchedule"], status: r.status as Grant["status"] };
@@ -72,6 +74,35 @@ async function counsellorApptViews(counsellorId: string): Promise<AppointmentVie
     .leftJoin(roomsTable, eq(appointmentsTable.roomId, roomsTable.id))
     .where(eq(appointmentsTable.counsellorId, counsellorId));
   return rows.map((r) => ({ ...toAppt(r.a), clientName: r.clientName ?? "Unknown client", serviceName: r.serviceName ?? "Session", counsellorName: r.counsellorName ?? "", roomName: r.roomName ?? null }));
+}
+
+/** All of an org's appointments as joined views (client/service/counsellor/room names). */
+async function orgApptViews(orgId: string): Promise<AppointmentView[]> {
+  const rows = await getDb()
+    .select({ a: appointmentsTable, clientName: clientsTable.name, serviceName: servicesTable.name, counsellorName: counsellorsTable.name, roomName: roomsTable.name })
+    .from(appointmentsTable)
+    .leftJoin(clientsTable, eq(appointmentsTable.clientId, clientsTable.id))
+    .leftJoin(servicesTable, eq(appointmentsTable.serviceId, servicesTable.id))
+    .leftJoin(counsellorsTable, eq(appointmentsTable.counsellorId, counsellorsTable.id))
+    .leftJoin(roomsTable, eq(appointmentsTable.roomId, roomsTable.id))
+    .where(eq(appointmentsTable.orgId, orgId));
+  return rows.map((r) => ({ ...toAppt(r.a), clientName: r.clientName ?? "Unknown client", serviceName: r.serviceName ?? "Session", counsellorName: r.counsellorName ?? "", roomName: r.roomName ?? null }));
+}
+
+/* SAST date helpers (fixed +02:00, no DST) for the weekly room window. */
+function sastDateOf(nowISO: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(nowISO));
+}
+function addDaysIso(date: string, n: number): string {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+/** The 7 dates (Mon→Sun) of the ISO week containing `now`. */
+function weekDatesOf(nowISO: string): string[] {
+  const today = sastDateOf(nowISO);
+  const monday = addDaysIso(today, -(isoWeekday(today) - 1));
+  return Array.from({ length: 7 }, (_, i) => addDaysIso(monday, i));
 }
 
 type OrgRow = typeof orgsTable.$inferSelect;
@@ -175,6 +206,75 @@ export const dbProvider: DataProvider = {
   listRooms: async (orgId: string): Promise<Room[]> => {
     const rows = await getDb().select().from(roomsTable).where(eq(roomsTable.orgId, orgId));
     return rows.map(toRoom);
+  },
+
+  // ── Rooms cluster — utilisation rolled up from REAL appointments ───────
+  getRoomsOverview: async (orgId: string, now: string): Promise<RoomView[]> => {
+    const db = getDb();
+    const [[orgRow], roomRows, siteRows, counsellorRows, views, assignmentRows] = await Promise.all([
+      db.select().from(orgsTable).where(eq(orgsTable.id, orgId)).limit(1),
+      db.select().from(roomsTable).where(eq(roomsTable.orgId, orgId)),
+      db.select().from(sitesTable).where(eq(sitesTable.orgId, orgId)),
+      db.select().from(counsellorsTable).where(eq(counsellorsTable.orgId, orgId)),
+      orgApptViews(orgId),
+      db.select().from(roomAssignmentsTable).where(eq(roomAssignmentsTable.orgId, orgId)),
+    ]);
+    if (!orgRow) return [];
+    const org = toOrg(orgRow);
+    const weekDates = weekDatesOf(now);
+    return roomRows.map((r): RoomView => {
+      const room = toRoom(r);
+      const roomAppts = views.filter((a) => a.roomId === room.id);
+      return {
+        room,
+        siteName: siteRows.find((s) => s.id === room.siteId)?.name ?? "",
+        utilisation: roomUtilisation({ appointments: roomAppts, businessHours: org.scheduling.businessHours, weekDates }),
+        assignments: assignmentRows.filter((ra) => ra.roomId === room.id).map((ra) => ({ counsellorName: counsellorRows.find((c) => c.id === ra.counsellorId)?.name ?? "", days: ra.days, start: ra.start, end: ra.end })),
+        bookings: roomAppts.filter((a) => weekDates.some((d) => a.startsAt.startsWith(d))).sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
+      };
+    });
+  },
+
+  getRoomDetail: async (roomId: string, now: string): Promise<RoomDetail | null> => {
+    const db = getDb();
+    const [roomRow] = await db.select().from(roomsTable).where(eq(roomsTable.id, roomId)).limit(1);
+    if (!roomRow) return null;
+    const room = toRoom(roomRow);
+    const [[orgRow], siteRows, counsellorRows, views, assignmentRows] = await Promise.all([
+      db.select().from(orgsTable).where(eq(orgsTable.id, room.orgId)).limit(1),
+      db.select().from(sitesTable).where(eq(sitesTable.orgId, room.orgId)),
+      db.select().from(counsellorsTable).where(eq(counsellorsTable.orgId, room.orgId)),
+      orgApptViews(room.orgId),
+      db.select().from(roomAssignmentsTable).where(eq(roomAssignmentsTable.orgId, room.orgId)),
+    ]);
+    if (!orgRow) return null;
+    const bh = toOrg(orgRow).scheduling.businessHours;
+    const weekDates = weekDatesOf(now);
+    const today = sastDateOf(now);
+    const roomAppts = views.filter((a) => a.roomId === room.id);
+    const toMin = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
+    const openMinutes = (date: string) => {
+      const h = bh[isoWeekday(date)];
+      if (!h) return 0;
+      const breaks = (h.breaks ?? []).reduce((s, b) => s + (toMin(b.end) - toMin(b.start)), 0);
+      return Math.max(0, toMin(h.end) - toMin(h.start) - breaks);
+    };
+    const perDay = weekDates.map((date) => {
+      const openMin = openMinutes(date);
+      const bookedMin = roomAppts.filter((a) => a.startsAt.startsWith(date) && a.state !== "cancelled").reduce((s, a) => s + a.durationMin, 0);
+      return { date, dow: isoWeekday(date), openMin, bookedMin, freeMin: Math.max(0, openMin - bookedMin), pct: openMin === 0 ? 0 : Math.min(100, Math.round((bookedMin / openMin) * 100)), isToday: date === today };
+    });
+    return {
+      room,
+      siteName: siteRows.find((s) => s.id === room.siteId)?.name ?? "",
+      businessHours: bh,
+      utilisation: roomUtilisation({ appointments: roomAppts, businessHours: bh, weekDates }),
+      perDay,
+      freeHours: Math.round((perDay.reduce((s, d) => s + d.freeMin, 0) / 60) * 10) / 10,
+      capacityNote: `Seats ${room.capacity}${room.equipment.length ? ` · ${room.equipment.join(", ")}` : ""}`,
+      assignments: assignmentRows.filter((ra) => ra.roomId === room.id).map((ra) => ({ counsellorName: counsellorRows.find((c) => c.id === ra.counsellorId)?.name ?? "", days: ra.days, start: ra.start, end: ra.end })),
+      bookings: roomAppts.filter((a) => weekDates.some((d) => a.startsAt.startsWith(d))).sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
+    };
   },
 
   // ── Scheduling cluster — real appointments from the DB ────────────────

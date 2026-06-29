@@ -71,6 +71,13 @@
       "when": 1782717791062,
       "tag": "0009_whole_northstar",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1782736242509,
+      "tag": "0010_special_abomination",
+      "breakpoints": true
     }
   ]
 }

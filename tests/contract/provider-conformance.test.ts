@@ -33,7 +33,7 @@ describe("structural conformance", () => {
 
   it("migrated methods are real overrides; the rest delegate to the mock", () => {
     // Migrated to the DB (directory + appointments + clinical + billing + funders).
-    for (const k of ["getOrg", "getOrgBySlug", "getClientConsents", "listClients", "getClient", "listCounsellors", "getCounsellor", "listServices", "listSites", "listRooms", "listCounsellorSessions", "listCaseload", "getCarePlan", "listClientDocuments", "listClientInvoices", "listOrgInvoices", "listFunders", "listFunderGrants", "getHubOverview", "getCounsellorDashboard"]) {
+    for (const k of ["getOrg", "getOrgBySlug", "getClientConsents", "listClients", "getClient", "listCounsellors", "getCounsellor", "listServices", "listSites", "listRooms", "listCounsellorSessions", "listCaseload", "getRoomsOverview", "getRoomDetail", "getCarePlan", "listClientDocuments", "listClientInvoices", "listOrgInvoices", "listFunders", "listFunderGrants", "getHubOverview", "getCounsellorDashboard"]) {
       expect(dbFns[k]).not.toBe(mockFns[k]);
     }
     // Seeded M&E reads nothing writes at runtime — delegate to the mock (the DB is

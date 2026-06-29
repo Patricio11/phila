@@ -10,6 +10,7 @@
  */
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
+import { eq } from "drizzle-orm";
 import { hashPassword } from "better-auth/crypto";
 import * as schema from "@/db/schema";
 import {
@@ -21,7 +22,18 @@ import {
   clients as clientsFx,
   demographics as demographicsFx,
   consents as consentsFx,
+  counsellorDayTemplates as dayTemplates,
 } from "@/lib/mock/fixtures";
+
+/** SAST calendar-day for an instant (fixed +02:00, no DST). */
+function sastDate(d: Date): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+}
+function addDays(date: string, n: number): string {
+  const d = new Date(`${date}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
 
 const url = process.env.DATABASE_URL;
 if (!url) throw new Error("DATABASE_URL not set");
@@ -108,6 +120,30 @@ async function main() {
     await db.insert(schema.consents).values({ orgId: ORG, clientId: c.clientId, purpose: c.purpose, state: c.state, version: c.version, updatedAt: new Date(c.updatedAt) }).onConflictDoNothing();
   }
 
+  // ── Appointments — materialised around NOW from the day templates, so the
+  //    demo always has a live week. Refreshed each seed (delete the templated
+  //    rows; real client bookings are left untouched).
+  const durationOf = new Map(servicesFx.map((s) => [s.id, s.durationMin]));
+  const today = sastDate(now);
+  for (const [cid, template] of Object.entries(dayTemplates)) {
+    for (let i = 0; i < template.length; i++) await db.delete(schema.appointments).where(eq(schema.appointments.id, `appt_${cid}_${i}`));
+    await db.insert(schema.appointments).values(
+      template.map((e, i) => ({
+        id: `appt_${cid}_${i}`,
+        orgId: ORG,
+        clientId: e.clientId,
+        counsellorId: cid,
+        serviceId: e.serviceId,
+        type: e.type,
+        roomId: e.roomId,
+        startsAt: new Date(`${addDays(today, e.dayOffset)}T${e.time}:00+02:00`),
+        durationMin: durationOf.get(e.serviceId) ?? 60,
+        state: e.state,
+        tags: e.tags ?? [],
+      })),
+    );
+  }
+
   const sql = neon(url!);
   const [c] = await sql`select
     (select count(*)::int from orgs) orgs,
@@ -117,7 +153,8 @@ async function main() {
     (select count(*)::int from services) services,
     (select count(*)::int from rooms) rooms,
     (select count(*)::int from demographics) demographics,
-    (select count(*)::int from consents) consents`;
+    (select count(*)::int from consents) consents,
+    (select count(*)::int from appointments) appointments`;
   console.log("seeded:", c);
 }
 

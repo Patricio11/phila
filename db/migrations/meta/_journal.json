@@ -43,6 +43,13 @@
       "when": 1782685003780,
       "tag": "0005_tense_cobalt_man",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782710575200,
+      "tag": "0006_legal_namor",
+      "breakpoints": true
     }
   ]
 }

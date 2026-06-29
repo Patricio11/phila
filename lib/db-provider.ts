@@ -10,10 +10,10 @@
  * `org_members` + `user` (lib/auth/session.ts). RLS becomes the tenant boundary
  * as the write paths migrate (docs/SECURITY.md).
  */
-import { and, eq, isNull } from "drizzle-orm";
-import type { DataProvider } from "@/lib/data-provider";
-import type { Client, ConsentRecord, Counsellor, Org, Room, Service, Site } from "@/lib/domain/types";
-import type { ConsentPurpose, ConsentState, CredentialBody, CredentialStatus, Province, RoomStatus } from "@/lib/domain/enums";
+import { and, eq, gte, isNull, lte } from "drizzle-orm";
+import type { AppointmentView, DataProvider } from "@/lib/data-provider";
+import type { Appointment, Client, ConsentRecord, Counsellor, Org, Room, Service, Site } from "@/lib/domain/types";
+import type { AppointmentState, AppointmentType, ConsentPurpose, ConsentState, CredentialBody, CredentialStatus, Province, RoomStatus } from "@/lib/domain/enums";
 import { mockProvider } from "@/lib/mock/provider";
 import { getDb } from "@/db/client";
 import {
@@ -24,7 +24,24 @@ import {
   sites as sitesTable,
   rooms as roomsTable,
   clients as clientsTable,
+  appointments as appointmentsTable,
 } from "@/db/schema";
+
+type ApptRow = typeof appointmentsTable.$inferSelect;
+function toAppt(r: ApptRow): Appointment {
+  return {
+    id: r.id, orgId: r.orgId, clientId: r.clientId, counsellorId: r.counsellorId, serviceId: r.serviceId,
+    type: r.type as AppointmentType, roomId: r.roomId, startsAt: r.startsAt.toISOString(),
+    durationMin: r.durationMin, state: r.state as AppointmentState, tags: r.tags,
+  };
+}
+/** Inclusive [from, to] day-range predicate over a timestamptz column. */
+function dayRange(col: typeof appointmentsTable.startsAt, opts?: { from?: string; to?: string }) {
+  const bounds = [];
+  if (opts?.from) bounds.push(gte(col, new Date(`${opts.from}T00:00:00+02:00`)));
+  if (opts?.to) bounds.push(lte(col, new Date(`${opts.to}T23:59:59+02:00`)));
+  return bounds;
+}
 
 type OrgRow = typeof orgsTable.$inferSelect;
 
@@ -117,6 +134,29 @@ export const dbProvider: DataProvider = {
   listRooms: async (orgId: string): Promise<Room[]> => {
     const rows = await getDb().select().from(roomsTable).where(eq(roomsTable.orgId, orgId));
     return rows.map(toRoom);
+  },
+
+  // ── Scheduling cluster — real appointments from the DB ────────────────
+  listAppointmentsForCounsellor: async (counsellorId: string, opts?: { from?: string; to?: string }): Promise<Appointment[]> => {
+    const rows = await getDb().select().from(appointmentsTable).where(and(eq(appointmentsTable.counsellorId, counsellorId), ...dayRange(appointmentsTable.startsAt, opts)));
+    return rows.map(toAppt);
+  },
+  listAppointmentsForOrg: async (orgId: string, opts?: { from?: string; to?: string }): Promise<Appointment[]> => {
+    const rows = await getDb().select().from(appointmentsTable).where(and(eq(appointmentsTable.orgId, orgId), ...dayRange(appointmentsTable.startsAt, opts)));
+    return rows.map(toAppt);
+  },
+  listCounsellorSessions: async (counsellorId: string): Promise<AppointmentView[]> => {
+    const rows = await getDb()
+      .select({ a: appointmentsTable, clientName: clientsTable.name, serviceName: servicesTable.name, counsellorName: counsellorsTable.name, roomName: roomsTable.name })
+      .from(appointmentsTable)
+      .leftJoin(clientsTable, eq(appointmentsTable.clientId, clientsTable.id))
+      .leftJoin(servicesTable, eq(appointmentsTable.serviceId, servicesTable.id))
+      .leftJoin(counsellorsTable, eq(appointmentsTable.counsellorId, counsellorsTable.id))
+      .leftJoin(roomsTable, eq(appointmentsTable.roomId, roomsTable.id))
+      .where(eq(appointmentsTable.counsellorId, counsellorId));
+    return rows
+      .map((r) => ({ ...toAppt(r.a), clientName: r.clientName ?? "Unknown client", serviceName: r.serviceName ?? "Session", counsellorName: r.counsellorName ?? "", roomName: r.roomName ?? null }))
+      .sort((a, b) => b.startsAt.localeCompare(a.startsAt));
   },
 
   // Consent — persisted, versioned, purpose-bound (the lawful basis for reads).

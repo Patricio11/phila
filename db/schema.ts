@@ -160,3 +160,19 @@ export const demographics = pgTable("demographics", {
   ageBand: text("age_band").notNull(),
   province: text("province").notNull(),
 });
+
+/* ── Scheduling cluster (Phase 11): real appointments ──────────────────── */
+
+export const appointments = pgTable("appointments", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  clientId: text("client_id").notNull(),
+  counsellorId: text("counsellor_id").notNull(),
+  serviceId: text("service_id").notNull(),
+  type: text("type").notNull(),
+  roomId: text("room_id"),
+  startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+  durationMin: integer("duration_min").notNull(),
+  state: text("state").notNull(),
+  tags: jsonb("tags").$type<string[]>().default([]).notNull(),
+});

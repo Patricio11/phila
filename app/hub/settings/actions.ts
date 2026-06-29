@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
+import { saveBusinessHours as persistBusinessHours } from "@/db/queries/settings";
 
 /**
  * Working hours (mock). Validated + audited; Phase 11 persists them and the
@@ -26,6 +27,8 @@ export async function saveBusinessHours(
   for (const d of Object.values(parsed.data.hours)) {
     if (d && d.end <= d.start) return { ok: false, error: "Each day's end time must be after its start." };
   }
+
+  if (process.env.DATA_PROVIDER === "db") await persistBusinessHours(membership.orgId, parsed.data.hours);
 
   await logAccess({
     action: "admin.action",

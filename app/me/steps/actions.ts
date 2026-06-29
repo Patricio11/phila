@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { requireClient } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
+import { toggleStep as persistToggleStep } from "@/db/queries/settings";
 
 /**
  * A client ticks a between-session step done (or undone). Mock: validated +
@@ -21,6 +22,7 @@ export async function toggleStep(
   const { principal, clientId } = await requireClient();
   const parsed = input.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Couldn't update that step." };
+  if (process.env.DATA_PROVIDER === "db") await persistToggleStep(clientId, parsed.data.taskId, parsed.data.done);
   await logAccess({
     action: "pii.read",
     actor: { userId: principal.userId, platformRole: "client", teamRole: null },

@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
+import { markInvoicePaid as persistMarkPaid } from "@/db/queries/settings";
 
 /**
  * Invoice actions (mock). Validated + audited; Phase 15 settles real payments
@@ -17,6 +18,7 @@ export async function markInvoicePaid(
   const { principal, membership } = await requireHub();
   const parsed = markInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid request" };
+  if (process.env.DATA_PROVIDER === "db") await persistMarkPaid(parsed.data.invoiceId);
   await logAccess({
     action: "admin.action",
     actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },

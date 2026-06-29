@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { logAccess } from "@/lib/audit";
 import { createAppointment as persistCreateAppointment } from "@/db/queries/appointments";
+import { isSlotTakenError, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
 
 /**
  * Create an appointment (mock). Validates + audits and returns a confirmation
@@ -37,11 +38,16 @@ export async function createAppointment(
     return { ok: false, error: "Pick a room for an in-person session." };
 
   if (process.env.DATA_PROVIDER === "db") {
-    await persistCreateAppointment({
-      orgId: data.orgId, clientId: data.clientId, serviceId: data.serviceId, counsellorId: data.counsellorId,
-      type: data.type, roomId: data.roomId, date: data.date, time: data.time, durationMin: data.durationMin,
-      recurring: data.recurring, recurringCount: data.recurringCount ?? null,
-    });
+    try {
+      await persistCreateAppointment({
+        orgId: data.orgId, clientId: data.clientId, serviceId: data.serviceId, counsellorId: data.counsellorId,
+        type: data.type, roomId: data.roomId, date: data.date, time: data.time, durationMin: data.durationMin,
+        recurring: data.recurring, recurringCount: data.recurringCount ?? null,
+      });
+    } catch (e) {
+      if (isSlotTakenError(e)) return { ok: false, error: SLOT_TAKEN_MESSAGE };
+      throw e;
+    }
   }
 
   await logAccess({

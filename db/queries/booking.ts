@@ -67,19 +67,26 @@ export async function persistBooking(input: PersistBookingInput): Promise<{ clie
   }
 
   const appointmentId = rid("appt");
-  await db.insert(appointments).values({
-    id: appointmentId,
-    orgId: input.orgId,
-    clientId,
-    counsellorId: input.counsellorId,
-    serviceId: input.serviceId,
-    type: input.modality,
-    roomId,
-    startsAt: new Date(input.startsAt),
-    durationMin: input.durationMin,
-    state: "scheduled",
-    tags: [],
-  });
+  try {
+    await db.insert(appointments).values({
+      id: appointmentId,
+      orgId: input.orgId,
+      clientId,
+      counsellorId: input.counsellorId,
+      serviceId: input.serviceId,
+      type: input.modality,
+      roomId,
+      startsAt: new Date(input.startsAt),
+      durationMin: input.durationMin,
+      state: "scheduled",
+      tags: [],
+    });
+  } catch (e) {
+    // The slot was taken between availability-check and insert (the exclusion
+    // constraint won the race). Don't leave an orphan client behind.
+    await db.delete(clients).where(eq(clients.id, clientId));
+    throw e;
+  }
 
   for (const purpose of CONSENT_PURPOSES) {
     if (input.consents[purpose]) {

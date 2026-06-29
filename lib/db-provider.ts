@@ -137,6 +137,16 @@ export const dbProvider: DataProvider = {
     return row && !row.deletedAt ? toOrg(row) : null;
   },
 
+  // The public booking config keeps its mock-sourced settings (booking policy +
+  // intake form, persisted in later phases) but swaps in the REAL org so the
+  // availability engine honours the practice's actual (persisted) business hours.
+  getBookingConfig: async (slug: string) => {
+    const base = await mockProvider.getBookingConfig(slug);
+    if (!base) return null;
+    const [row] = await getDb().select().from(orgsTable).where(eq(orgsTable.slug, slug)).limit(1);
+    return row && !row.deletedAt ? { ...base, org: toOrg(row) } : base;
+  },
+
   // ── Directory cluster — single-table reads from the DB ────────────────
   listCounsellors: async (orgId: string): Promise<Counsellor[]> => {
     const rows = await getDb().select().from(counsellorsTable).where(eq(counsellorsTable.orgId, orgId));

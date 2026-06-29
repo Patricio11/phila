@@ -18,8 +18,9 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "e2e:report": "playwright show-report",
-    "db:seed": "tsx db/seed-all.ts",
-    "db:rls": "tsx db/apply-rls.ts"
+    "db:seed": "tsx --env-file=.env.local db/seed-all.ts",
+    "db:rls": "tsx db/apply-sql.ts db/rls.sql",
+    "db:constraints": "tsx db/apply-sql.ts db/scheduling.sql"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",

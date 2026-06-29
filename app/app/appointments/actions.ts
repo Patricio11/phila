@@ -3,12 +3,12 @@
 import { z } from "zod";
 import { logAccess } from "@/lib/audit";
 import { rescheduleAppointment as persistReschedule } from "@/db/queries/appointments";
+import { isSlotTakenError, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
 
 /**
- * Reschedule (mock). In Part A this validates + audits and returns success  **no
- * notification fires** (the messaging rail is dormant; honest). Phase 11 wires
- * the real scheduling engine (conflict re-check, room validation) and Phase 12
- * the notification, behind this same shape.
+ * Reschedule. Moves the session; the DB exclusion constraints reject a move that
+ * would double-book the counsellor or the room (race-free). Audited. No
+ * notification fires yet (the messaging rail is dormant until Phase 12).
  */
 const input = z.object({
   appointmentId: z.string().min(1),
@@ -20,7 +20,14 @@ export async function rescheduleAppointment(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const parsed = input.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid request" };
-  if (process.env.DATA_PROVIDER === "db") await persistReschedule(parsed.data.appointmentId, parsed.data.newStart);
+  if (process.env.DATA_PROVIDER === "db") {
+    try {
+      await persistReschedule(parsed.data.appointmentId, parsed.data.newStart);
+    } catch (e) {
+      if (isSlotTakenError(e)) return { ok: false, error: SLOT_TAKEN_MESSAGE };
+      throw e;
+    }
+  }
   await logAccess({
     action: "admin.action",
     actor: { userId: "counsellor", platformRole: null, teamRole: "counsellor" },

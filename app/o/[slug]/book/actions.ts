@@ -8,6 +8,7 @@ import { CONSENT_PURPOSES } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
 import { getAdapters } from "@/lib/adapters";
 import { persistBooking } from "@/db/queries/booking";
+import { isSlotTakenError, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
 
 /** First active room with no overlapping booking in [start, start+duration). */
 async function assignRoom(orgId: string, date: string, startsAt: string, durationMin: number): Promise<string | null> {
@@ -183,18 +184,23 @@ export async function submitBooking(
   // the confirmation. Online always mints a link via the video adapter (dormant
   // → null until the org turns video on).
   if (process.env.DATA_PROVIDER === "db") {
-    const res = await persistBooking({
-      orgId: config.org.id,
-      province: config.org.province,
-      serviceId: service.id,
-      counsellorId: counsellor.id,
-      startsAt: input.startsAt,
-      durationMin: service.durationMin,
-      modality: input.modality,
-      intake: input.intake,
-      consents: input.consents,
-    });
-    roomName = res.roomName;
+    try {
+      const res = await persistBooking({
+        orgId: config.org.id,
+        province: config.org.province,
+        serviceId: service.id,
+        counsellorId: counsellor.id,
+        startsAt: input.startsAt,
+        durationMin: service.durationMin,
+        modality: input.modality,
+        intake: input.intake,
+        consents: input.consents,
+      });
+      roomName = res.roomName;
+    } catch (e) {
+      if (isSlotTakenError(e)) return { ok: false, error: SLOT_TAKEN_MESSAGE };
+      throw e;
+    }
   } else if (input.modality === "in_person") {
     roomName = await assignRoom(config.org.id, date, input.startsAt, service.durationMin);
   }

@@ -303,3 +303,87 @@ export const funderContacts = pgTable("funder_contacts", {
   funderId: text("funder_id").notNull(),
   grantIds: jsonb("grant_ids").$type<string[]>().default([]).notNull(),
 }, (t) => [uniqueIndex("funder_contact_uq").on(t.userId, t.funderId)]);
+
+/* ---- Messaging / notifications (Phase 12) ---------------------------- */
+
+/** Per-org channel enablement + routing/quiet-hours. WhatsApp is BYO; SMS+Email are Phila-provided. */
+export const orgMessagingSettings = pgTable("org_messaging_settings", {
+  orgId: text("org_id").primaryKey().references(() => orgs.id),
+  whatsappEnabled: boolean("whatsapp_enabled").default(false).notNull(),
+  smsEnabled: boolean("sms_enabled").default(false).notNull(),
+  emailEnabled: boolean("email_enabled").default(false).notNull(),
+  emailReplyTo: text("email_reply_to"),
+  emailFromName: text("email_from_name"),
+  quietStart: text("quiet_start"), // "21:00" SAST; null = none
+  quietEnd: text("quiet_end"), // "07:00" SAST
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
+/** Org's own WhatsApp Business (Meta Cloud API). Tokens encrypted at rest. */
+export const whatsappConnections = pgTable("whatsapp_connections", {
+  orgId: text("org_id").primaryKey().references(() => orgs.id),
+  phoneNumberId: text("phone_number_id"),
+  wabaId: text("waba_id"),
+  accessTokenEnc: text("access_token_enc"),
+  appSecretEnc: text("app_secret_enc"),
+  verifyToken: text("verify_token"),
+  status: text("status").default("off").notNull(), // off | configured | live
+  verifiedAt: timestamp("verified_at", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
+/** Phila credit balances per metered channel (sms, email). WhatsApp is BYO (org pays Meta). */
+export const creditBalances = pgTable("credit_balances", {
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  channel: text("channel").notNull(), // sms | email
+  balance: integer("balance").default(0).notNull(),
+}, (t) => [uniqueIndex("credit_balance_uq").on(t.orgId, t.channel)]);
+
+/** Append-only credit movements (purchase / send / refund / grant). Idempotent on idempotency_key. */
+export const creditLedger = pgTable("credit_ledger", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  channel: text("channel").notNull(),
+  delta: integer("delta").notNull(), // + purchase, - send
+  reason: text("reason").notNull(), // purchase | send | refund | grant
+  ref: text("ref"),
+  idempotencyKey: text("idempotency_key").notNull(),
+  balanceAfter: integer("balance_after").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+}, (t) => [uniqueIndex("credit_ledger_idem_uq").on(t.idempotencyKey)]);
+
+/** Every send, with an HONEST delivery state (never a fake "sent"). */
+export const messageLog = pgTable("message_log", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  channel: text("channel").notNull(),
+  toMasked: text("to_masked").notNull(),
+  templateKey: text("template_key").notNull(),
+  trigger: text("trigger").notNull(), // booked | rescheduled | cancelled | reminder | no_show
+  status: text("status").notNull(), // queued | sent | delivered | failed | blocked | opted_out | no_credit
+  detail: text("detail"),
+  providerMessageId: text("provider_message_id"),
+  costCredits: integer("cost_credits").default(0).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+});
+
+/** Message templates. orgId null = Phila system default; an org row overrides. */
+export const messageTemplates = pgTable("message_templates", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id"), // null = system default
+  channel: text("channel").notNull(),
+  key: text("key").notNull(), // booked | rescheduled | cancelled | reminder | no_show
+  body: text("body").notNull(),
+  whatsappTemplateName: text("whatsapp_template_name"), // Meta-approved template (used outside the 24h window)
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
+/** Recipient opt-outs (POPIA) — always win over any send. */
+export const messageOptOuts = pgTable("message_opt_outs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  channel: text("channel").notNull(),
+  target: text("target").notNull(), // phone or email
+  reason: text("reason"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+}, (t) => [uniqueIndex("opt_out_uq").on(t.orgId, t.channel, t.target)]);

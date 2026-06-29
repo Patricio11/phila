@@ -27,7 +27,7 @@ grant execute on function app_is_super() to phila_app;
 do $$
 declare t text;
 begin
-  foreach t in array array['appointments','audit_log','client_documents','clients','consents','counsellors','funders','grants','invoices','org_members','rooms','room_assignments','services','sites']
+  foreach t in array array['appointments','audit_log','client_documents','clients','consents','counsellors','funders','grants','invoices','org_members','rooms','room_assignments','services','sites','org_messaging_settings','whatsapp_connections','credit_balances','credit_ledger','message_log','message_opt_outs']
   loop
     execute format('alter table %I enable row level security', t);
     execute format('alter table %I force row level security', t);
@@ -44,6 +44,16 @@ alter table orgs force row level security;
 drop policy if exists org_isolation on orgs;
 --##
 create policy org_isolation on orgs using (app_is_super() or id = app_current_org()) with check (app_is_super() or id = app_current_org());
+--##
+-- message_templates: system defaults (org_id null) are readable by everyone; org
+-- rows are isolated. Writes must target the caller's own org.
+alter table message_templates enable row level security;
+--##
+alter table message_templates force row level security;
+--##
+drop policy if exists org_isolation on message_templates;
+--##
+create policy org_isolation on message_templates using (app_is_super() or org_id is null or org_id = app_current_org()) with check (app_is_super() or org_id = app_current_org());
 --##
 -- Clinical children scoped via clients.org_id.
 do $$

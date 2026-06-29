@@ -36,6 +36,7 @@ import {
   grantNarratives as narrativesFx,
   funderContacts as funderContactsFx,
 } from "@/lib/mock/fixtures";
+import { CHANNELS, TRIGGERS, DEFAULT_TEMPLATES } from "@/lib/messaging/templates";
 
 /** SAST calendar-day for an instant (fixed +02:00, no DST). */
 function sastDate(d: Date): string {
@@ -193,6 +194,25 @@ async function main() {
   for (const a of allocationsFx) await db.insert(schema.grantAllocations).values({ grantId: a.grantId, clientId: a.clientId }).onConflictDoNothing();
   for (const n of narrativesFx) await db.insert(schema.grantNarratives).values({ id: n.id, grantId: n.grantId, author: n.author, body: n.body, postedAt: new Date(n.postedAt) }).onConflictDoNothing();
   for (const fc of funderContactsFx) await db.insert(schema.funderContacts).values({ userId: fc.userId, funderId: fc.funderId, grantIds: fc.grantIds }).onConflictDoNothing();
+
+  // ── Messaging (Phase 12): system templates + demo settings/credits ────
+  const msgNow = new Date();
+  for (const channel of CHANNELS) {
+    for (const trigger of TRIGGERS) {
+      await db.insert(schema.messageTemplates).values({
+        id: `tpl_sys_${channel}_${trigger}`, orgId: null, channel, key: trigger,
+        body: DEFAULT_TEMPLATES[channel][trigger], whatsappTemplateName: channel === "whatsapp" ? `phila_${trigger}` : null, updatedAt: msgNow,
+      }).onConflictDoNothing();
+    }
+  }
+  await db.insert(schema.orgMessagingSettings).values({
+    orgId: "org_masizakhe", whatsappEnabled: false, smsEnabled: true, emailEnabled: true,
+    emailReplyTo: "reception@masizakhe.org.za", emailFromName: "Masizakhe Counselling", quietStart: "21:00", quietEnd: "07:00", updatedAt: msgNow,
+  }).onConflictDoNothing();
+  for (const channel of ["sms", "email"] as const) {
+    await db.insert(schema.creditBalances).values({ orgId: "org_masizakhe", channel, balance: 100 }).onConflictDoNothing();
+    await db.insert(schema.creditLedger).values({ orgId: "org_masizakhe", channel, delta: 100, reason: "grant", ref: "seed", idempotencyKey: `seed_grant_${channel}_org_masizakhe`, balanceAfter: 100, createdAt: msgNow }).onConflictDoNothing();
+  }
 
   const sql = neon(url!);
   const [c] = await sql`select

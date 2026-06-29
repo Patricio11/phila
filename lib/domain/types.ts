@@ -150,6 +150,8 @@ export interface Appointment {
   durationMin: number;
   state: AppointmentState;
   tags?: string[];
+  /** Set on every appointment in a recurring series (enables edit-this/all). */
+  seriesId?: string | null;
 }
 
 /** The **private** clinical note  author + supervisor only; Hub access audited. */

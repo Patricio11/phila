@@ -17,7 +17,8 @@ alter table appointments add constraint appt_no_counsellor_overlap
   exclude using gist (
     counsellor_id with =,
     appt_window(starts_at, duration_min) with &&
-  ) where (state <> 'cancelled');
+  ) where (state <> 'cancelled')
+  deferrable initially deferred;
 --##
 alter table appointments drop constraint if exists appt_no_room_overlap;
 --##
@@ -25,4 +26,5 @@ alter table appointments add constraint appt_no_room_overlap
   exclude using gist (
     room_id with =,
     appt_window(starts_at, duration_min) with &&
-  ) where (room_id is not null and state <> 'cancelled');
+  ) where (room_id is not null and state <> 'cancelled')
+  deferrable initially deferred;

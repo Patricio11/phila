@@ -186,6 +186,8 @@ export const appointments = pgTable("appointments", {
   durationMin: integer("duration_min").notNull(),
   state: text("state").notNull(),
   tags: jsonb("tags").$type<string[]>().default([]).notNull(),
+  seriesId: text("series_id"), // links a recurring series (edit-this/all)
+  cancelReason: text("cancel_reason"),
 });
 
 /* ── Clinical cluster (Phase 10) ───────────────────────────────────────── */

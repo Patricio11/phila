@@ -2,18 +2,21 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { AlertTriangle, CalendarDays, Check, Clock, Hourglass, MapPin, NotebookPen, Stethoscope, User, UserX, Video, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { AlertTriangle, CalendarDays, Check, Clock, Hourglass, MapPin, NotebookPen, Repeat, Stethoscope, User, UserX, Video, X } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
+import { Input, Textarea } from "@/components/ui/input";
 import { StatusDot, type DotTone } from "@/components/ui/status-dot";
 import { useToast } from "@/components/ui/toast";
-import { rescheduleAppointment } from "@/app/app/appointments/actions";
+import { rescheduleAppointment, cancelAppointment } from "@/app/app/appointments/actions";
 import { markProgress } from "@/app/app/sessions/[id]/actions";
 import { cn } from "@/lib/utils";
+
+type EditScope = "this" | "following";
 
 const STATE: Record<AppointmentState, { label: string; tone: DotTone }> = {
   scheduled: { label: "Scheduled", tone: "blue" },
@@ -59,12 +62,17 @@ export function AppointmentDetail({
   clientBasePath?: string;
 }) {
   const { toast } = useToast();
+  const router = useRouter();
   const [pending, start] = useTransition();
   const [showReschedule, setShowReschedule] = useState(false);
+  const [showCancel, setShowCancel] = useState(false);
   const [date, setDate] = useState(appt?.startsAt.slice(0, 10) ?? "");
   const [time, setTime] = useState(appt?.startsAt.slice(11, 16) ?? "");
   const [override, setOverride] = useState(false);
+  const [scope, setScope] = useState<EditScope>("this");
+  const [reason, setReason] = useState("");
 
+  const isSeries = Boolean(appt?.seriesId);
   const state = appt ? STATE[appt.state] : null;
   const proposedStart = date && time ? `${date}T${time}:00+02:00` : null;
   const conflict = appt && proposedStart && conflictFor ? conflictFor(appt, proposedStart) : null;
@@ -83,13 +91,31 @@ export function AppointmentDetail({
     if (!appt || !proposedStart) return;
     if (conflict && !override) { setOverride(true); return; } // first click warns, second proceeds
     const newStart = proposedStart;
+    const useScope: EditScope = isSeries ? scope : "this";
     start(async () => {
-      const res = await rescheduleAppointment({ appointmentId: appt.id, newStart });
+      const res = await rescheduleAppointment({ appointmentId: appt.id, newStart, scope: useScope });
       if (!res.ok) return toast({ tone: "error", title: res.error });
       onUpdated?.({ ...appt, startsAt: newStart, state: "scheduled" });
+      if (useScope === "following") router.refresh();
       setShowReschedule(false);
       setOverride(false);
-      toast({ tone: "success", title: "Session moved", description: "No message was sent  that happens once messaging is set up." });
+      setScope("this");
+      toast({ tone: "success", title: res.moved > 1 ? `${res.moved} sessions moved` : "Session moved", description: "No message was sent  that happens once messaging is set up." });
+    });
+  };
+
+  const doCancel = () => {
+    if (!appt) return;
+    const useScope: EditScope = isSeries ? scope : "this";
+    start(async () => {
+      const res = await cancelAppointment({ appointmentId: appt.id, reason, scope: useScope });
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      onUpdated?.({ ...appt, state: "cancelled" });
+      if (useScope === "following") router.refresh();
+      setShowCancel(false);
+      setScope("this");
+      setReason("");
+      toast({ tone: "success", title: res.cancelled > 1 ? `${res.cancelled} sessions cancelled` : "Session cancelled" });
     });
   };
 
@@ -126,8 +152,13 @@ export function AppointmentDetail({
               <Link href={`${clientBasePath}/${appt.clientId}`} className="text-[16px] font-[660] text-text hover:text-accent hover:underline">
                 {appt.clientName}
               </Link>
-              <div className="mt-0.5 inline-flex items-center gap-1.5 text-[12px] text-text-2">
-                <StatusDot tone={state.tone} /> {state.label}
+              <div className="mt-0.5 flex items-center gap-2 text-[12px] text-text-2">
+                <span className="inline-flex items-center gap-1.5"><StatusDot tone={state.tone} /> {state.label}</span>
+                {isSeries && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-2/60 px-1.5 py-0.5 text-[10.5px] font-medium text-text-3">
+                    <Repeat className="size-3" strokeWidth={2} aria-hidden /> Weekly series
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -150,19 +181,30 @@ export function AppointmentDetail({
             <div className="space-y-3 border-t border-border pt-4">
               {showReschedule ? (
                 <div className="space-y-2.5 rounded-control border border-border bg-surface-2/40 p-3">
-                  <div className="text-[12px] font-semibold text-text">Move this session</div>
+                  <div className="text-[12px] font-semibold text-text">Move {isSeries && scope === "following" ? "these sessions" : "this session"}</div>
                   <div className="grid grid-cols-2 gap-2">
                     <Input type="date" value={date} onChange={(e) => { setDate(e.target.value); setOverride(false); }} aria-label="New date" />
                     <Input type="time" value={time} onChange={(e) => { setTime(e.target.value); setOverride(false); }} aria-label="New time" />
                   </div>
+                  {isSeries && <ScopeToggle scope={scope} onChange={setScope} kind="move" />}
                   {conflict && (
                     <div className="flex items-start gap-2 rounded-control border border-warn/30 bg-warn-soft px-2.5 py-2 text-[12px] text-warn">
                       <AlertTriangle className="mt-0.5 size-3.5 shrink-0" strokeWidth={2} aria-hidden /> {conflict}
                     </div>
                   )}
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => { setShowReschedule(false); setOverride(false); }} disabled={pending}>Cancel</Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setShowReschedule(false); setOverride(false); setScope("this"); }} disabled={pending}>Cancel</Button>
                     <Button size="sm" onClick={doReschedule} loading={pending}>{conflict ? (override ? "Move anyway" : "Check & move") : "Move session"}</Button>
+                  </div>
+                </div>
+              ) : showCancel ? (
+                <div className="space-y-2.5 rounded-control border border-danger/30 bg-danger-soft/40 p-3">
+                  <div className="text-[12px] font-semibold text-text">Cancel {isSeries && scope === "following" ? "these sessions" : "this session"}</div>
+                  <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Reason (optional)  kept on the record" aria-label="Cancellation reason" />
+                  {isSeries && <ScopeToggle scope={scope} onChange={setScope} kind="cancel" />}
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => { setShowCancel(false); setScope("this"); setReason(""); }} disabled={pending}>Keep session</Button>
+                    <Button variant="danger" size="sm" onClick={doCancel} loading={pending}>Cancel {isSeries && scope === "following" ? "all following" : "session"}</Button>
                   </div>
                 </div>
               ) : (
@@ -171,7 +213,7 @@ export function AppointmentDetail({
                   <ActionChip icon={Check} label="Completed" tone="accent" active={appt.state === "completed"} onClick={() => mark("completed")} disabled={pending} />
                   <ActionChip icon={UserX} label="No-show" tone="warn" active={appt.state === "no_show"} onClick={() => mark("no_show")} disabled={pending} />
                   <ActionChip icon={Hourglass} label="Postponed" tone="warn" active={appt.state === "postponed"} onClick={() => mark("postponed")} disabled={pending} />
-                  <ActionChip icon={X} label="Cancel" tone="danger" active={appt.state === "cancelled"} onClick={() => mark("cancelled")} disabled={pending} />
+                  <ActionChip icon={X} label="Cancel" tone="danger" active={appt.state === "cancelled"} onClick={() => setShowCancel(true)} disabled={pending} />
                 </div>
               )}
               <p className="text-[11px] text-text-3">Marking a session never sends a message  the messaging rail is set up later.</p>
@@ -180,6 +222,34 @@ export function AppointmentDetail({
         </div>
       )}
     </Dialog>
+  );
+}
+
+/** This-session vs whole-series picker, shown only for recurring appointments. */
+function ScopeToggle({ scope, onChange, kind }: { scope: EditScope; onChange: (s: EditScope) => void; kind: "move" | "cancel" }) {
+  const verb = kind === "move" ? "Move" : "Cancel";
+  const opts: { value: EditScope; label: string }[] = [
+    { value: "this", label: "This session only" },
+    { value: "following", label: `${verb} all following` },
+  ];
+  return (
+    <div className="inline-flex rounded-control border border-border bg-surface p-0.5" role="radiogroup" aria-label="Apply to">
+      {opts.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          role="radio"
+          aria-checked={scope === o.value}
+          onClick={() => onChange(o.value)}
+          className={cn(
+            "rounded-[calc(var(--radius-control)-2px)] px-2.5 py-1 text-[12px] font-medium transition-colors",
+            scope === o.value ? "bg-accent-soft text-accent" : "text-text-2 hover:text-text",
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
   );
 }
 

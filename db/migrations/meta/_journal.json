@@ -78,6 +78,13 @@
       "when": 1782736242509,
       "tag": "0010_special_abomination",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1782739662516,
+      "tag": "0011_productive_microbe",
+      "breakpoints": true
     }
   ]
 }

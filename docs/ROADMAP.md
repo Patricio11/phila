@@ -491,9 +491,13 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 > (invoices — `listClientInvoices`/`listOrgInvoices`), and **funders/grants** (M&E tables + `listFunders`/
 > `listFunderGrants`). The **home dashboards are now real too**: `getHubOverview` + `getCounsellorDashboard`
 > aggregate DB rows via pure, unit-tested `compute*` functions in `lib/domain/dashboards.ts` (so calendar +
-> home read the SAME appointments). **Remaining before Phase 10 is DONE:** `getReporting` (k-anon) +
-> `listCaseload` + the k-anon grant views, payments + comms + AI tables, **RLS (10.2)**, and Storage (10.3).
-> 17 migrations on Neon; 16 Playwright E2E + 51 unit green.
+> home read the SAME appointments). **Writes now persist too** — the `db/queries/*` typed layer is live and
+> four mutation clusters write real rows (each with a DB-write E2E): **bookings** (public booking →
+> client + appointment + consent + room allocation), **catalogue** (services/rooms/sites), **appointment
+> lifecycle** (create/reschedule/mark), and **settings/care/invoicing** (mark-paid, care-step ticks, business
+> hours). **Remaining before Phase 10 is DONE:** `getReporting` (k-anon) + `listCaseload` + the k-anon grant
+> views, the settings/profile + payments + comms + AI tables, **RLS (10.2)**, and Storage (10.3).
+> 17 migrations on Neon; 20 Playwright E2E + 51 unit green.
 
 ### Task 10.1: Drizzle schema
 - [x] Tenancy + identity (Phase 9): `orgs`, `org_members` (+ `team_role`, `is_supervisor`), Better Auth `user`/`session`/`account`/`two_factor`. **Directory** (2026-06-29): `counsellors` (credential flattened), `clients` (soft-delete), `services`, `demographics`. Still to add: `sessions`/`session_notes`, `recurring_series`, `intake_forms`/`intake_responses`.
@@ -509,7 +513,7 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 
 ### Task 10.3: The real `dataProvider` + integrity
 - [~] **`dbProvider` matching the mock interface, UI unchanged** — in progress. Built as a **hybrid**: spreads the mock, overrides per cluster. Migrated so far: `getOrg`/`getOrgBySlug`, `getClientConsents`, the directory reads (`listClients`/`getClient`/`listCounsellors`/`getCounsellor`/`listServices`/`listSites`/`listRooms`), and the appointment reads (`listCounsellorSessions`/`listAppointmentsForCounsellor`/`listAppointmentsForOrg`). The composite dashboards + remaining clusters still fall back to mock.
-- [ ] Typed query fns in `db/queries/*` (no raw queries in components); Server Actions + Zod on every mutation; `logAccess()` on every PII path.
+- [~] Typed query fns in `db/queries/*` (no raw queries in components); Server Actions + Zod on every mutation; `logAccess()` on every PII path. **Live (2026-06-29):** `db/queries/{booking,catalogue,appointments,settings}.ts`; booking, services/rooms/sites, create/reschedule/mark, mark-paid, care-step toggle, and business hours all persist in db mode (each with a DB-write E2E). Remaining mutations to wire: intake-form save, org profile/branding, booking + invoice settings, team/client invites, note signing.
 - [ ] **Select-list redaction:** `session_notes.body`, contact, `national_id_enc`, demographics never selected on a shared/cross-role path.
 - [ ] Supabase Storage (private buckets, signed URLs, service-role server-only) for documents / uploads / generated reports; magic-byte sniff + size limits + per-user rate limit; every file access audited.
 

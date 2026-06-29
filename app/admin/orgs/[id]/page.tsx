@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Info } from "lucide-react";
 import { requireSuperAdmin } from "@/lib/auth/guard";
+import { getCreditBalances } from "@/db/queries/messaging";
+import { GrantCredits } from "@/components/admin/grant-credits";
 import { getDataProvider, type TeamMemberView } from "@/lib/data-provider";
 import type { TeamRole } from "@/lib/domain/enums";
 import { logAccess } from "@/lib/audit";
@@ -29,9 +31,10 @@ export default async function AdminOrgDetailPage({ params }: { params: Promise<{
   const { id } = await params;
   const principal = await requireSuperAdmin();
   const provider = await getDataProvider();
-  const [detail, review] = await Promise.all([
+  const [detail, review, credits] = await Promise.all([
     provider.getPlatformOrgDetail(id),
     provider.getOrgOnboardingReview(id),
+    getCreditBalances(id),
   ]);
   if (!detail) notFound();
 
@@ -88,6 +91,14 @@ export default async function AdminOrgDetailPage({ params }: { params: Promise<{
         <div className="px-[17px] pb-[17px]">
           <p className="mb-3 text-[12.5px] text-text-2">What this practice uploaded during onboarding. Verify each, or send one back. Verification gates payouts and funder sharing.</p>
           <OrgDocReview orgId={id} docs={review.docs} />
+        </div>
+      </Card>
+
+      {/* Notification credits (manual top-up until Phase 15.1) */}
+      <Card>
+        <CardHead title="Notification credits" />
+        <div className="px-[17px] pb-[17px]">
+          <GrantCredits orgId={id} balances={credits} />
         </div>
       </Card>
 

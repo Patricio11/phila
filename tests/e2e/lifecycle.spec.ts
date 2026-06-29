@@ -22,7 +22,7 @@ async function signIn(page: Page, email: string, password = "phila1234") {
 test("marking a session completed persists the state to the DB", async ({ page }) => {
   const id = `appt_e2e_${Date.now()}`;
   await sql`INSERT INTO appointments (id, org_id, client_id, counsellor_id, service_id, type, room_id, starts_at, duration_min, state, tags)
-    VALUES (${id}, 'org_masizakhe', 'cl_megan', 'couns_nomsa', 'svc_individual', 'in_person', 'room_s1', ${`${sastToday()}T11:00:00+02:00`}, 60, 'scheduled', '[]'::jsonb)`;
+    VALUES (${id}, 'org_masizakhe', 'cl_megan', 'couns_nomsa', 'svc_individual', 'in_person', 'room_s1', ${`${sastToday()}T13:00:00+02:00`}, 60, 'scheduled', '[]'::jsonb)`;
   try {
     await signIn(page, "nomsa@masizakhe.org.za");
     await page.waitForURL("**/app", { timeout: 30_000 });

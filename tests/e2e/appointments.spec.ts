@@ -24,7 +24,7 @@ async function signIn(page: Page, email: string, password = "phila1234") {
 
 test("counsellor calendar renders an appointment written to the DB", async ({ page }) => {
   const id = `appt_e2e_${Date.now()}`;
-  const startsAt = `${sastToday()}T16:30:00+02:00`;
+  const startsAt = `${sastToday()}T12:00:00+02:00`; // midday gap — free for Nomsa + room_s1 (no overlap)
   await sql`INSERT INTO appointments (id, org_id, client_id, counsellor_id, service_id, type, room_id, starts_at, duration_min, state, tags)
     VALUES (${id}, 'org_masizakhe', 'cl_megan', 'couns_nomsa', 'svc_individual', 'in_person', 'room_s1', ${startsAt}, 60, 'scheduled', '[]'::jsonb)`;
   try {

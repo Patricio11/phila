@@ -41,10 +41,12 @@ test("a booking made offline queues, then syncs to the DB on reconnect", async (
   expect((await sql`SELECT count(*)::int n FROM clients WHERE name = ${name}`)[0]!.n).toBe(0);
   await page.screenshot({ path: "screenshots/offline-queued.png", fullPage: true });
 
-  // Reconnect → the queue flushes → a real booking lands.
+  // Reconnect → the queue flushes → a real booking lands. Poll on the JOIN so we
+  // wait for BOTH the client and its appointment (persistBooking inserts them in
+  // sequence), not just the client row.
   await context.setOffline(false);
   await expect
-    .poll(async () => (await sql`SELECT count(*)::int n FROM clients WHERE name = ${name}`)[0]!.n, { timeout: 25_000 })
+    .poll(async () => (await sql`SELECT count(*)::int n FROM clients c JOIN appointments a ON a.client_id = c.id WHERE c.name = ${name}`)[0]!.n, { timeout: 25_000 })
     .toBe(1);
 
   const [row] = await sql`SELECT c.id cid, a.state FROM clients c JOIN appointments a ON a.client_id = c.id WHERE c.name = ${name}`;

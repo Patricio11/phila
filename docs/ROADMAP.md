@@ -525,11 +525,15 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 
 ---
 
-## 🗓️ PHASE 11: SCHEDULING ENGINE 🔄
+## 🗓️ PHASE 11: SCHEDULING ENGINE ✅
 *Goal: real availability, rooms, room-assignments, and recurring series behind the Part-A calendar.*
 
-> **🔄 IN PROGRESS (2026-06-29).** The engine's **core is in and proven**: real availability + race-free
-> no-double-booking + real room utilisation. Remaining: recurring edit-this/all + the offline PWA queue.
+> **✅ COMPLETE (2026-06-29).** Real availability (booking reads the persisted org's editable hours + real
+> clash data), **race-free no-double-booking** enforced by GiST `EXCLUDE` constraints, room allocation
+> defaulting from `room_assignments` + real `/hub/rooms` utilisation, **recurring edit-this/all** (series_id +
+> this/all-following on reschedule & cancel, with reason), and a durable **offline send-queue** that syncs on
+> reconnect with a real conflict re-check. 67 unit/integration + E2E green. See
+> `docs/completed/PHASE_11_COMPLETE.md`.
 
 - [x] **Availability engine (2026-06-29):** the pure `availableSlots(org, date, existing, …)` already mirrors
   production (business hours, breaks, buffer, min-notice, clash). Booking now feeds it **real** inputs —
@@ -543,10 +547,16 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 - [x] **Room utilisation rollups (2026-06-29):** `/hub/rooms` overview + detail (`getRoomsOverview`/
   `getRoomDetail`) roll up meetings, booked hours, % utilisation, busiest day, and per-day occupancy from
   **real** appointments + assignments. Proven by E2E (a live booking shows on the room detail).
-- [ ] Recurring-series generation + **edit-this/all** (needs a shared `series_id` on appointments + the edit UI);
-  reschedule + cancel **with reason**; care-state transitions (states already persist via `markProgress`).
-- [ ] **Offline send-queue (PWA):** queued bookings/reschedules sync on reconnect with conflict re-check; the
-  queued-state UI from Phase 8 goes live.
+- [x] **Recurring-series edit-this/all (2026-06-29):** `appointments.series_id` links a weekly series;
+  `rescheduleAppointment`/`cancelAppointment` take a `scope` (`this` | `following`) — "following" acts on this +
+  every later session (the reschedule shift is one statement so the deferred constraints see only final
+  positions). Cancel carries a **reason** (`cancel_reason`). UI: a "Weekly series" badge + a This/All-following
+  toggle on reschedule **and** cancel. Care-state transitions persist via `markProgress`.
+- [x] **Offline send-queue (PWA) (2026-06-29):** durable IndexedDB queue (`lib/pwa/offline-queue.ts`) + a pure
+  `processQueue()`; `flushQueue` replays each item against the real server action, so a slot taken while offline
+  comes back a **conflict**, never a fake "sent". A global honest indicator (`offline-indicator.tsx`)
+  auto-flushes on reconnect; the booking wizard queues when offline. Proven by an E2E (book offline → queued →
+  reconnect → real appointment).
 - [x] Calendar + booking + Hub oversight read real availability (the reads above are all DB-backed).
 
 ---

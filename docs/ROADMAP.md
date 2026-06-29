@@ -484,12 +484,14 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 
 > **🔄 IN PROGRESS (2026-06-29).** Built cluster-by-cluster on the hybrid `dbProvider` (real where migrated,
 > mock fallback elsewhere; the DB is seeded from the same fixtures via `db/seed-all.ts`, so the two always
-> agree). **Done so far:** identity + tenancy (Phase 9), **consent + audit** (persisted), the **directory
-> cluster** (clients, counsellors, services, sites, rooms, demographics — schema + seed + real reads + E2E),
-> and the **appointments cluster** (schema + seed + `listCounsellorSessions`/`listAppointmentsFor*` real +
-> E2E). **Remaining before Phase 10 is DONE:** clinical (notes/care-plans/outcomes/documents), billing
-> (invoices), funders/grants (M&E), payments + comms + AI tables, **RLS (10.2)**, and Storage (10.3). 13
-> migrations on Neon; 11 Playwright E2E + 45 unit green.
+> agree). **Done so far:** identity + tenancy (Phase 9), **consent + audit** (persisted), and four data
+> clusters each with schema + seed + real reads + a DB-write E2E proof: **directory** (clients, counsellors,
+> services, sites, rooms, demographics), **appointments** (`listCounsellorSessions`/`listAppointmentsFor*`),
+> **clinical** (care plans, documents, outcomes — `getCarePlan`/`listClientDocuments`), and **billing**
+> (invoices — `listClientInvoices`/`listOrgInvoices`). **Remaining before Phase 10 is DONE:** funders/grants
+> (M&E + the k-anon composites), the **composite dashboards** (`getHubOverview`/`getCounsellorDashboard`/
+> reporting/caseload still mock-fallback), payments + comms + AI tables, **RLS (10.2)**, and Storage (10.3).
+> 16 migrations on Neon; 14 Playwright E2E + 45 unit green.
 
 ### Task 10.1: Drizzle schema
 - [x] Tenancy + identity (Phase 9): `orgs`, `org_members` (+ `team_role`, `is_supervisor`), Better Auth `user`/`session`/`account`/`two_factor`. **Directory** (2026-06-29): `counsellors` (credential flattened), `clients` (soft-delete), `services`, `demographics`. Still to add: `sessions`/`session_notes`, `recurring_series`, `intake_forms`/`intake_responses`.

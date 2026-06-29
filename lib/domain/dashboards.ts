@@ -9,8 +9,8 @@
  * for both the mock's `+02:00` strings and the DB's UTC strings across business
  * hours (08:00–17:00 SAST → 06:00–15:00 UTC, no midnight crossing).
  */
-import type { HubOverview, AttentionItem } from "@/lib/data-provider";
-import type { Appointment, Client, Counsellor, Invoice, Service } from "@/lib/domain/types";
+import type { HubOverview, AttentionItem, AppointmentView, CounsellorDashboard, OutcomePoint } from "@/lib/data-provider";
+import type { Appointment, Client, Counsellor, Invoice, Org, Service } from "@/lib/domain/types";
 
 function sastDate(nowISO: string): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(nowISO));
@@ -97,5 +97,55 @@ export function computeHubOverview(input: HubOverviewInput): HubOverview {
     income, noShowRate, openIntakes, pendingCredentials,
     outcomesCoverage: { captured: measured, total: clients.length },
     attention,
+  };
+}
+
+function buildAttention(todays: AppointmentView[], week: Appointment[]): AttentionItem[] {
+  const items: AttentionItem[] = [];
+  for (const a of todays) {
+    if (a.state === "risk_flagged") {
+      items.push({ id: `risk_${a.id}`, tone: "rose", title: `Safeguarding flag  ${a.clientName}`, detail: "Review with your supervisor. SADAG crisis line: 0800 567 567 (or SMS 31393).", href: `/app/sessions/${a.id}` });
+    }
+  }
+  const missed = week.find((a) => a.state === "no_show");
+  if (missed) items.push({ id: `missed_${missed.id}`, tone: "amber", title: "Missed session to follow up", detail: "A client did not attend this week  reach out to rebook." });
+  return items;
+}
+
+export interface CounsellorDashboardInput {
+  counsellor: Counsellor;
+  org: Org;
+  appointments: AppointmentView[]; // all the counsellor's appts, names resolved
+  counsellorClients: Client[];
+  measuredClientIds: Set<string>;
+  outcomePoints: OutcomePoint[];
+  now: string;
+}
+
+export function computeCounsellorDashboard(input: CounsellorDashboardInput): CounsellorDashboard {
+  const { counsellor, org, appointments, counsellorClients, measuredClientIds, outcomePoints, now } = input;
+  const today = sastDate(now);
+  const week = isoWeekRange(today);
+  const inWk = (iso: string) => { const d = iso.slice(0, 10); return d >= week.from && d <= week.to; };
+
+  const todays = appointments.filter((a) => a.startsAt.startsWith(today)).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  const weekAppts = appointments.filter((a) => inWk(a.startsAt));
+  const measured = counsellorClients.filter((c) => measuredClientIds.has(c.id)).length;
+  const noShows = weekAppts.filter((a) => a.state === "no_show").length;
+  const heldOrMissed = weekAppts.filter((a) => ["completed", "no_show", "risk_flagged"].includes(a.state)).length;
+
+  return {
+    org,
+    counsellor,
+    today: todays,
+    stats: {
+      clientsToday: new Set(todays.map((a) => a.clientId)).size,
+      completedToday: todays.filter((a) => a.state === "completed").length,
+      sessionsThisWeek: weekAppts.filter((a) => ["scheduled", "completed", "risk_flagged"].includes(a.state)).length,
+      outcomesCoverage: { captured: measured, total: counsellorClients.length },
+      noShowRate: { rate: heldOrMissed === 0 ? 0 : Math.round((noShows / heldOrMissed) * 100), window: "this week" },
+    },
+    outcomes: { tool: "PHQ-9", points: outcomePoints, coverage: { captured: measured, total: counsellorClients.length } },
+    attention: buildAttention(todays, weekAppts),
   };
 }

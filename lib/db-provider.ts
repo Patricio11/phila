@@ -11,8 +11,8 @@
  * as the write paths migrate (docs/SECURITY.md).
  */
 import { and, eq, gte, isNull, lte } from "drizzle-orm";
-import type { AppointmentView, DataProvider, HubOverview } from "@/lib/data-provider";
-import { computeHubOverview } from "@/lib/domain/dashboards";
+import type { AppointmentView, CounsellorDashboard, DataProvider, HubOverview, OutcomePoint } from "@/lib/data-provider";
+import { computeHubOverview, computeCounsellorDashboard } from "@/lib/domain/dashboards";
 import { desc, inArray } from "drizzle-orm";
 import type { Appointment, CarePlan, Client, ClientDocument, ConsentRecord, Counsellor, Funder, Grant, Invoice, Org, Room, Service, Site } from "@/lib/domain/types";
 import type { PaymentStatus } from "@/lib/domain/enums";
@@ -59,6 +59,19 @@ function dayRange(col: typeof appointmentsTable.startsAt, opts?: { from?: string
   if (opts?.from) bounds.push(gte(col, new Date(`${opts.from}T00:00:00+02:00`)));
   if (opts?.to) bounds.push(lte(col, new Date(`${opts.to}T23:59:59+02:00`)));
   return bounds;
+}
+
+/** A counsellor's appointments with client/service/room names resolved (joined). */
+async function counsellorApptViews(counsellorId: string): Promise<AppointmentView[]> {
+  const rows = await getDb()
+    .select({ a: appointmentsTable, clientName: clientsTable.name, serviceName: servicesTable.name, counsellorName: counsellorsTable.name, roomName: roomsTable.name })
+    .from(appointmentsTable)
+    .leftJoin(clientsTable, eq(appointmentsTable.clientId, clientsTable.id))
+    .leftJoin(servicesTable, eq(appointmentsTable.serviceId, servicesTable.id))
+    .leftJoin(counsellorsTable, eq(appointmentsTable.counsellorId, counsellorsTable.id))
+    .leftJoin(roomsTable, eq(appointmentsTable.roomId, roomsTable.id))
+    .where(eq(appointmentsTable.counsellorId, counsellorId));
+  return rows.map((r) => ({ ...toAppt(r.a), clientName: r.clientName ?? "Unknown client", serviceName: r.serviceName ?? "Session", counsellorName: r.counsellorName ?? "", roomName: r.roomName ?? null }));
 }
 
 type OrgRow = typeof orgsTable.$inferSelect;
@@ -164,17 +177,30 @@ export const dbProvider: DataProvider = {
     return rows.map(toAppt);
   },
   listCounsellorSessions: async (counsellorId: string): Promise<AppointmentView[]> => {
-    const rows = await getDb()
-      .select({ a: appointmentsTable, clientName: clientsTable.name, serviceName: servicesTable.name, counsellorName: counsellorsTable.name, roomName: roomsTable.name })
-      .from(appointmentsTable)
-      .leftJoin(clientsTable, eq(appointmentsTable.clientId, clientsTable.id))
-      .leftJoin(servicesTable, eq(appointmentsTable.serviceId, servicesTable.id))
-      .leftJoin(counsellorsTable, eq(appointmentsTable.counsellorId, counsellorsTable.id))
-      .leftJoin(roomsTable, eq(appointmentsTable.roomId, roomsTable.id))
-      .where(eq(appointmentsTable.counsellorId, counsellorId));
-    return rows
-      .map((r) => ({ ...toAppt(r.a), clientName: r.clientName ?? "Unknown client", serviceName: r.serviceName ?? "Session", counsellorName: r.counsellorName ?? "", roomName: r.roomName ?? null }))
-      .sort((a, b) => b.startsAt.localeCompare(a.startsAt));
+    const views = await counsellorApptViews(counsellorId);
+    return views.sort((a, b) => b.startsAt.localeCompare(a.startsAt));
+  },
+
+  // ── Composite dashboard — counsellor home, aggregated from DB rows ─────
+  getCounsellorDashboard: async (counsellorId: string, now: string): Promise<CounsellorDashboard | null> => {
+    const db = getDb();
+    const [cRow] = await db.select().from(counsellorsTable).where(eq(counsellorsTable.id, counsellorId)).limit(1);
+    if (!cRow) return null;
+    const [orgRow] = await db.select().from(orgsTable).where(eq(orgsTable.id, cRow.orgId)).limit(1);
+    if (!orgRow) return null;
+    const [appointments, clientRows] = await Promise.all([
+      counsellorApptViews(counsellorId),
+      db.select().from(clientsTable).where(and(eq(clientsTable.primaryCounsellorId, counsellorId), isNull(clientsTable.deletedAt))),
+    ]);
+    const counsellorClients = clientRows.map(toClient);
+    const clientIds = counsellorClients.map((c) => c.id);
+    const measures = clientIds.length ? await db.select().from(outcomeMeasuresTable).where(inArray(outcomeMeasuresTable.clientId, clientIds)) : [];
+    const measuredClientIds = new Set(measures.map((m) => m.clientId));
+    const outcomePoints: OutcomePoint[] = measures
+      .filter((m) => m.tool === "PHQ-9")
+      .sort((a, b) => a.takenAt.getTime() - b.takenAt.getTime())
+      .map((m) => ({ label: new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", month: "short" }).format(m.takenAt), value: m.score }));
+    return computeCounsellorDashboard({ counsellor: toCounsellor(cRow), org: toOrg(orgRow), appointments, counsellorClients, measuredClientIds, outcomePoints, now });
   },
 
   // ── Clinical cluster — care plan (shared) + documents ─────────────────

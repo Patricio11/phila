@@ -33,11 +33,11 @@ describe("structural conformance", () => {
 
   it("migrated methods are real overrides; the rest delegate to the mock", () => {
     // Migrated to the DB (directory + appointments + clinical + billing + funders).
-    for (const k of ["getOrg", "getOrgBySlug", "getClientConsents", "listClients", "getClient", "listCounsellors", "getCounsellor", "listServices", "listSites", "listRooms", "listCounsellorSessions", "getCarePlan", "listClientDocuments", "listClientInvoices", "listOrgInvoices", "listFunders", "listFunderGrants", "getHubOverview"]) {
+    for (const k of ["getOrg", "getOrgBySlug", "getClientConsents", "listClients", "getClient", "listCounsellors", "getCounsellor", "listServices", "listSites", "listRooms", "listCounsellorSessions", "getCarePlan", "listClientDocuments", "listClientInvoices", "listOrgInvoices", "listFunders", "listFunderGrants", "getHubOverview", "getCounsellorDashboard"]) {
       expect(dbFns[k]).not.toBe(mockFns[k]);
     }
     // Not yet migrated: the exact same function as the mock (consistent fallback).
-    for (const k of ["getReporting", "getCounsellorDashboard", "getFunderGrantView"]) {
+    for (const k of ["getReporting", "getFunderGrantView", "listCaseload"]) {
       expect(dbFns[k]).toBe(mockFns[k]);
     }
   });

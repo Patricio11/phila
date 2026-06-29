@@ -30,3 +30,11 @@ test("hub overview reflects a risk flag set in the DB", async ({ page }) => {
     await sql`UPDATE clients SET risk_flag = false WHERE id = 'cl_johan'`;
   }
 });
+
+test("counsellor home renders from getCounsellorDashboard (DB)", async ({ page }) => {
+  await signIn(page, "nomsa@masizakhe.org.za");
+  await page.waitForURL("**/app", { timeout: 30_000 });
+  await expect(page.getByText(/Good (morning|afternoon|evening), Nomsa/)).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator("main")).not.toBeEmpty();
+  await page.screenshot({ path: "screenshots/counsellor-home-db.png", fullPage: true });
+});

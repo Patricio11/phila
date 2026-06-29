@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq, isNull, or } from "drizzle-orm";
 import { getDb } from "@/db/client";
-import { orgMessagingSettings, whatsappConnections, creditBalances, creditLedger, messageTemplates } from "@/db/schema";
+import { orgMessagingSettings, whatsappConnections, creditBalances, creditLedger, messageTemplates, messageLog, messageOptOuts } from "@/db/schema";
 import { encryptField } from "@/lib/crypto";
 import { CHANNELS, TRIGGERS, DEFAULT_TEMPLATES, type Channel, type MessageTrigger } from "@/lib/messaging/templates";
 
@@ -114,4 +114,57 @@ export async function saveTemplate(orgId: string, channel: Channel, key: Message
 /** Drop the org override so the Phila system default applies again. */
 export async function resetTemplate(orgId: string, channel: Channel, key: MessageTrigger): Promise<void> {
   await getDb().delete(messageTemplates).where(and(eq(messageTemplates.orgId, orgId), eq(messageTemplates.channel, channel), eq(messageTemplates.key, key)));
+}
+
+/* ---- Pipeline primitives (Phase 12.3) -------------------------------- */
+
+/** Raw WhatsApp creds for the transport (includes the ENCRYPTED token). Server-only. */
+export async function getWhatsappCreds(orgId: string): Promise<{ phoneNumberId: string | null; accessTokenEnc: string | null; live: boolean }> {
+  const [row] = await getDb().select().from(whatsappConnections).where(eq(whatsappConnections.orgId, orgId)).limit(1);
+  return { phoneNumberId: row?.phoneNumberId ?? null, accessTokenEnc: row?.accessTokenEnc ?? null, live: Boolean(row && row.status !== "off") };
+}
+
+export async function isOptedOut(orgId: string, channel: Channel, target: string): Promise<boolean> {
+  const [row] = await getDb().select().from(messageOptOuts).where(and(eq(messageOptOuts.orgId, orgId), eq(messageOptOuts.channel, channel), eq(messageOptOuts.target, target))).limit(1);
+  return Boolean(row);
+}
+
+/** Resolved template body for a channel × trigger (org override wins over the system default). */
+export async function getTemplateBody(orgId: string, channel: Channel, key: MessageTrigger): Promise<string> {
+  const rows = await getDb().select().from(messageTemplates).where(and(or(isNull(messageTemplates.orgId), eq(messageTemplates.orgId, orgId)), eq(messageTemplates.channel, channel), eq(messageTemplates.key, key)));
+  const override = rows.find((r) => r.orgId === orgId);
+  const sys = rows.find((r) => r.orgId === null);
+  return override?.body ?? sys?.body ?? DEFAULT_TEMPLATES[channel][key];
+}
+
+/** Idempotent 1-credit debit. ok:false when the balance is exhausted (blocks the send). */
+export async function consumeCredit(orgId: string, channel: "sms" | "email", idempotencyKey: string, ref: string): Promise<{ ok: boolean; balanceAfter: number }> {
+  const db = getDb();
+  const [seen] = await db.select().from(creditLedger).where(eq(creditLedger.idempotencyKey, idempotencyKey)).limit(1);
+  if (seen) return { ok: true, balanceAfter: seen.balanceAfter }; // already charged — no double-count
+  const [bal] = await db.select().from(creditBalances).where(and(eq(creditBalances.orgId, orgId), eq(creditBalances.channel, channel))).limit(1);
+  const current = bal?.balance ?? 0;
+  if (current <= 0) return { ok: false, balanceAfter: 0 };
+  const after = current - 1;
+  await db.update(creditBalances).set({ balance: after }).where(and(eq(creditBalances.orgId, orgId), eq(creditBalances.channel, channel)));
+  await db.insert(creditLedger).values({ orgId, channel, delta: -1, reason: "send", ref, idempotencyKey, balanceAfter: after, createdAt: new Date() });
+  return { ok: true, balanceAfter: after };
+}
+
+/** Record a send with an honest delivery state. `to` is masked before storage. */
+export async function logMessage(input: { orgId: string; channel: Channel; to: string; templateKey: MessageTrigger; trigger: MessageTrigger; status: string; detail?: string; providerMessageId?: string; costCredits?: number }): Promise<void> {
+  await getDb().insert(messageLog).values({
+    orgId: input.orgId, channel: input.channel, toMasked: maskTarget(input.to), templateKey: input.templateKey,
+    trigger: input.trigger, status: input.status, detail: input.detail ?? null, providerMessageId: input.providerMessageId ?? null,
+    costCredits: input.costCredits ?? 0, createdAt: new Date(),
+  });
+}
+
+/** Mask a phone/email for the message log (POPIA — no raw contact in logs). */
+export function maskTarget(target: string): string {
+  if (target.includes("@")) {
+    const [u, d] = target.split("@");
+    return `${(u ?? "").slice(0, 2)}***@${d ?? ""}`;
+  }
+  return target.length > 4 ? `${target.slice(0, 3)}***${target.slice(-2)}` : "***";
 }

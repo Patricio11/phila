@@ -575,6 +575,7 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 
 ### Task 12.2: Org **Notifications** settings (Settings → Notifications)
 - [ ] WhatsApp **BYO credentials card** (the YetoEFT/`payment-connection-card` pattern): provider creds, Test connection, Save (encrypted), "Help me set up". SMS + Email rows: **powered by Phila**, balance + **Buy credits**, email Reply-To. Per-channel enable toggles. Routing + quiet-hours editor.
+- [ ] **Template manager (hub-editable):** the hub views every message (channel × trigger), edits the wording (live token preview, e.g. `{clientName}`/`{date}`), and **resets to the Phila default**. Edits write an org-override row in `message_templates`; the system defaults (org_id null) are the fallback. WhatsApp template-name field for Meta-approved templates (outside the 24h window).
 
 ### Task 12.3: Send pipeline (one chokepoint) + real transports
 - [ ] `lib/messaging/deliver.ts`: resolve recipient + preferred channel → POPIA gate (consent/opt-out/quiet hours) → transport select (org Meta · Phila BulkSMS · Phila email) → **meter** (SMS/Email decrement credits; 0 = block) → transmit (WA 24h-window/template) → record honest `message_log` status → audit. Pure `resolveChannel` / `decideSend` (unit-tested). Transports: Meta Cloud API, BulkSMS, Resend.

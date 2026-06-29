@@ -1,9 +1,25 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { CloudOff, Loader2, CloudUpload, CheckCircle2, AlertTriangle } from "lucide-react";
 import { offlineQueue } from "@/lib/pwa/offline-queue";
 import { flushQueue, onQueueChanged } from "@/lib/pwa/queue-client";
+
+/** Subscribe to the browser's online/offline state (no setState-in-effect). */
+function useOnline(): boolean {
+  return useSyncExternalStore(
+    (cb) => {
+      window.addEventListener("online", cb);
+      window.addEventListener("offline", cb);
+      return () => {
+        window.removeEventListener("online", cb);
+        window.removeEventListener("offline", cb);
+      };
+    },
+    () => navigator.onLine,
+    () => true,
+  );
+}
 
 /**
  * Global offline send-queue indicator. Honest by design: it shows "Offline — N
@@ -12,10 +28,11 @@ import { flushQueue, onQueueChanged } from "@/lib/pwa/queue-client";
  * (no toast dependency) so it can live at the root for every surface.
  */
 export function OfflineIndicator() {
-  const [online, setOnline] = useState(true);
+  const online = useOnline();
   const [pending, setPending] = useState(0);
   const [syncing, setSyncing] = useState(false);
   const [flash, setFlash] = useState<{ tone: "ok" | "warn"; text: string } | null>(null);
+  const wasOnline = useRef(online);
 
   const refresh = useCallback(() => {
     void offlineQueue.pending().then(setPending);
@@ -36,20 +53,18 @@ export function OfflineIndicator() {
     }
   }, [refresh]);
 
+  // Keep the pending count fresh + flush the queue when we come back online.
   useEffect(() => {
-    setOnline(navigator.onLine);
     refresh();
     const offChange = onQueueChanged(refresh);
-    const onOnline = () => { setOnline(true); void sync(); };
-    const onOffline = () => { setOnline(false); setFlash(null); };
-    window.addEventListener("online", onOnline);
-    window.addEventListener("offline", onOffline);
-    return () => {
-      offChange();
-      window.removeEventListener("online", onOnline);
-      window.removeEventListener("offline", onOffline);
-    };
-  }, [refresh, sync]);
+    return offChange;
+  }, [refresh]);
+
+  useEffect(() => {
+    if (online && !wasOnline.current) void sync();
+    if (!online && wasOnline.current) setFlash(null);
+    wasOnline.current = online;
+  }, [online, sync]);
 
   // Auto-clear a success flash after a few seconds.
   useEffect(() => {

@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Bell } from "lucide-react";
 import { notFound } from "next/navigation";
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
@@ -11,7 +13,6 @@ import { BusinessHoursEditor } from "@/components/hub/business-hours-editor";
 import { OrgProfileForm, type OrgProfile } from "@/components/hub/org-profile-form";
 import { InvoiceSettingsForm } from "@/components/hub/invoice-settings-form";
 import { YourPlanCard } from "@/components/hub/your-plan-card";
-import { MessagingChannels } from "@/components/hub/messaging-channels";
 import { SecuritySettings } from "@/components/hub/security-settings";
 import { now as clockNow } from "@/lib/clock";
 
@@ -85,11 +86,14 @@ export default async function HubSettingsPage() {
           </div>
         </Card>
 
-        {/* Messaging channels (BYO) */}
+        {/* Notifications (WhatsApp BYO + SMS/Email Phila-credits + templates) */}
         <Card>
-          <CardHead title="Messaging channels" />
+          <CardHead title="Notifications" />
           <div className="px-[17px] pb-[17px]">
-            <MessagingChannels />
+            <p className="mb-3 text-[12.5px] text-text-2">Booking, reminder and follow-up messages on WhatsApp, SMS and email  routed to each client&apos;s preferred channel. Connect your WhatsApp number, top up SMS/email credits, and edit the wording.</p>
+            <Link href="/hub/settings/notifications" className="inline-flex h-9 items-center gap-1.5 rounded-control border border-border bg-surface px-3.5 text-[13px] font-medium text-text transition-colors hover:bg-surface-hover">
+              <Bell className="size-4" strokeWidth={2} aria-hidden /> Manage notifications
+            </Link>
           </div>
         </Card>
 

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { logAccess } from "@/lib/audit";
 import { APPOINTMENT_STATES } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
+import { setAppointmentState } from "@/db/queries/appointments";
 
 /**
  * Session-editor actions. In Part A they validate + audit and return success
@@ -86,6 +87,7 @@ export async function markProgress(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const parsed = progressInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid state" };
+  if (process.env.DATA_PROVIDER === "db") await setAppointmentState(parsed.data.appointmentId, parsed.data.state);
   await logAccess({
     action: "admin.action",
     actor: { userId: "counsellor", platformRole: null, teamRole: "counsellor" },

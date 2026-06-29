@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { logAccess } from "@/lib/audit";
+import { rescheduleAppointment as persistReschedule } from "@/db/queries/appointments";
 
 /**
  * Reschedule (mock). In Part A this validates + audits and returns success  **no
@@ -19,6 +20,7 @@ export async function rescheduleAppointment(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const parsed = input.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid request" };
+  if (process.env.DATA_PROVIDER === "db") await persistReschedule(parsed.data.appointmentId, parsed.data.newStart);
   await logAccess({
     action: "admin.action",
     actor: { userId: "counsellor", platformRole: null, teamRole: "counsellor" },

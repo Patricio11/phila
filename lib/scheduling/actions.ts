@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { logAccess } from "@/lib/audit";
+import { createAppointment as persistCreateAppointment } from "@/db/queries/appointments";
 
 /**
  * Create an appointment (mock). Validates + audits and returns a confirmation
@@ -34,6 +35,14 @@ export async function createAppointment(
   const data = parsed.data;
   if (data.type === "in_person" && !data.roomId)
     return { ok: false, error: "Pick a room for an in-person session." };
+
+  if (process.env.DATA_PROVIDER === "db") {
+    await persistCreateAppointment({
+      orgId: data.orgId, clientId: data.clientId, serviceId: data.serviceId, counsellorId: data.counsellorId,
+      type: data.type, roomId: data.roomId, date: data.date, time: data.time, durationMin: data.durationMin,
+      recurring: data.recurring, recurringCount: data.recurringCount ?? null,
+    });
+  }
 
   await logAccess({
     action: "admin.action",

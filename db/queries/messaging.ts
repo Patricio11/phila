@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, isNull, or } from "drizzle-orm";
+import { and, desc, eq, isNull, or } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { orgMessagingSettings, whatsappConnections, creditBalances, creditLedger, messageTemplates, messageLog, messageOptOuts } from "@/db/schema";
 import { encryptField } from "@/lib/crypto";
@@ -167,4 +167,39 @@ export function maskTarget(target: string): string {
     return `${(u ?? "").slice(0, 2)}***@${d ?? ""}`;
   }
   return target.length > 4 ? `${target.slice(0, 3)}***${target.slice(-2)}` : "***";
+}
+
+/* ---- Inbound / webhooks (Phase 12.6) --------------------------------- */
+
+export async function addOptOut(orgId: string, channel: Channel, target: string, reason: string): Promise<void> {
+  await getDb().insert(messageOptOuts).values({ orgId, channel, target, reason, createdAt: new Date() }).onConflictDoNothing();
+}
+
+/** Find the org that owns a WhatsApp phone-number-id (routes inbound webhooks). */
+export async function getOrgByWhatsappPhone(phoneNumberId: string): Promise<string | null> {
+  const [row] = await getDb().select({ orgId: whatsappConnections.orgId }).from(whatsappConnections).where(eq(whatsappConnections.phoneNumberId, phoneNumberId)).limit(1);
+  return row?.orgId ?? null;
+}
+
+/** Does any org use this WhatsApp verify token? (webhook GET verification). */
+export async function whatsappVerifyTokenExists(token: string): Promise<boolean> {
+  const [row] = await getDb().select({ orgId: whatsappConnections.orgId }).from(whatsappConnections).where(eq(whatsappConnections.verifyToken, token)).limit(1);
+  return Boolean(row);
+}
+
+/** Update a sent message's delivery state from a provider status webhook. */
+export async function updateMessageStatus(providerMessageId: string, status: string, detail?: string): Promise<void> {
+  await getDb().update(messageLog).set({ status, detail: detail ?? null }).where(eq(messageLog.providerMessageId, providerMessageId));
+}
+
+/** Recent message activity for an org (the Notifications activity view). `to` already masked. */
+export async function listRecentMessages(orgId: string, limit = 20): Promise<{ channel: string; toMasked: string; trigger: string; status: string; createdAt: string }[]> {
+  const rows = await getDb().select().from(messageLog).where(eq(messageLog.orgId, orgId)).orderBy(desc(messageLog.createdAt)).limit(limit);
+  return rows.map((r) => ({ channel: r.channel, toMasked: r.toMasked, trigger: r.trigger, status: r.status, createdAt: r.createdAt.toISOString() }));
+}
+
+/** Org that owns a sent message (for routing email bounce/complaint → opt-out). */
+export async function getMessageOrg(providerMessageId: string): Promise<string | null> {
+  const [row] = await getDb().select({ orgId: messageLog.orgId }).from(messageLog).where(eq(messageLog.providerMessageId, providerMessageId)).limit(1);
+  return row?.orgId ?? null;
 }

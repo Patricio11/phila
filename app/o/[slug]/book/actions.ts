@@ -7,6 +7,7 @@ import { logAccess } from "@/lib/audit";
 import { CONSENT_PURPOSES } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
 import { getAdapters } from "@/lib/adapters";
+import { persistBooking } from "@/db/queries/booking";
 
 /** First active room with no overlapping booking in [start, start+duration). */
 async function assignRoom(orgId: string, date: string, startsAt: string, durationMin: number): Promise<string | null> {
@@ -172,24 +173,37 @@ export async function submitBooking(
     reason: "intake_capture",
   });
 
-  // Part A: no persistence  return an honest confirmation. Phase 9/10 persists
-  // the client account, appointment, intake, and consent records. The room
-  // assignment + video link below are the real logic that carries into Part B.
   const reference = `PH-${shortRef()}`;
   const date = input.startsAt.slice(0, 10);
-
-  // In-person → assign a free consulting room. Online → mint a secure link via
-  // the video adapter (Dormant-by-Default: null until the org turns video on).
   let roomName: string | null = null;
   let joinUrl: string | null = null;
-  if (input.modality === "in_person") {
+
+  // Persist for real (db mode): auto-register the client, allocate a room, create
+  // the scheduled appointment, record consent. Mock mode just resolves a room for
+  // the confirmation. Online always mints a link via the video adapter (dormant
+  // → null until the org turns video on).
+  if (process.env.DATA_PROVIDER === "db") {
+    const res = await persistBooking({
+      orgId: config.org.id,
+      province: config.org.province,
+      serviceId: service.id,
+      counsellorId: counsellor.id,
+      startsAt: input.startsAt,
+      durationMin: service.durationMin,
+      modality: input.modality,
+      intake: input.intake,
+      consents: input.consents,
+    });
+    roomName = res.roomName;
+  } else if (input.modality === "in_person") {
     roomName = await assignRoom(config.org.id, date, input.startsAt, service.durationMin);
-  } else {
+  }
+
+  if (input.modality === "online") {
     try {
-      const room = await getAdapters().video.createRoom({ appointmentId: reference });
-      joinUrl = room.url;
+      joinUrl = (await getAdapters().video.createRoom({ appointmentId: reference })).url;
     } catch {
-      joinUrl = null; // video dormant — the link is issued when it's configured (Phase 14)
+      joinUrl = null;
     }
   }
 

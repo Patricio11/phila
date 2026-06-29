@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CloudUpload, Loader2 } from "lucide-react";
 import type { BookingConfig } from "@/lib/data-provider";
 import { CONSENT_PURPOSES, type ConsentPurpose } from "@/lib/domain/enums";
 import { contrastSafeAccent } from "@/lib/contrast";
 import { submitBooking, type BookingConfirmation } from "@/app/o/[slug]/book/actions";
+import { enqueueBooking } from "@/lib/pwa/queue-client";
 import { BookingShell, type BookingStepMeta } from "@/components/booking/booking-shell";
 import { EMPTY_BOOKING, type BookingState } from "@/components/booking/types";
 import { isIntakeValid, hasRequiredConsents } from "@/components/booking/validation";
@@ -58,6 +59,7 @@ export function BookingWizard({
   const [step, setStep] = useState(0);
   const [showErrors, setShowErrors] = useState(false);
   const [confirmation, setConfirmation] = useState<BookingConfirmation | null>(null);
+  const [queued, setQueued] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, startSubmit] = useTransition();
 
@@ -132,17 +134,28 @@ export function BookingWizard({
     const consents = Object.fromEntries(
       CONSENT_PURPOSES.map((p) => [p, Boolean(state.consents[p])]),
     ) as Record<ConsentPurpose, boolean>;
+    const payload = {
+      slug,
+      serviceId: state.serviceId!,
+      counsellorId: state.slotCounsellorId!,
+      startsAt: state.slotStart!,
+      modality: state.modality ?? ("in_person" as const),
+      intake: state.intake,
+      consents,
+    };
+
+    // Offline: queue it durably and be honest — it sends on reconnect, not now.
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      startSubmit(async () => {
+        await enqueueBooking(payload, `Booking · ${payload.startsAt.slice(0, 10)}`);
+        try { localStorage.removeItem(storageKey(slug)); } catch { /* ignore */ }
+        setQueued(true);
+      });
+      return;
+    }
 
     startSubmit(async () => {
-      const res = await submitBooking({
-        slug,
-        serviceId: state.serviceId!,
-        counsellorId: state.slotCounsellorId!,
-        startsAt: state.slotStart!,
-        modality: state.modality ?? "in_person",
-        intake: state.intake,
-        consents,
-      });
+      const res = await submitBooking(payload);
       if (res.ok) {
         setConfirmation(res.confirmation);
         try {
@@ -154,6 +167,24 @@ export function BookingWizard({
         setSubmitError(res.error);
       }
     });
+  }
+
+  if (queued) {
+    return (
+      <BookingShell orgName={org.name} orgSlug={slug} brand={brand} steps={STEPS} current={STEPS.length - 1}>
+        <div className="mx-auto max-w-md space-y-3 py-6 text-center">
+          <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-warn-soft text-warn">
+            <CloudUpload className="size-6" strokeWidth={2} aria-hidden />
+          </div>
+          <h2 className="text-[19px] font-[680] text-text">Saved on your device</h2>
+          <p className="text-[14px] leading-relaxed text-text-2">
+            You&apos;re offline, so we haven&apos;t sent this yet  nothing was booked. It&apos;s saved here and will
+            send automatically the moment you&apos;re back online, then {org.name} confirms the time.
+          </p>
+          <p className="text-[12.5px] text-text-3">Keep this device online to send it. The badge below shows it&apos;s waiting.</p>
+        </div>
+      </BookingShell>
+    );
   }
 
   if (confirmation) {

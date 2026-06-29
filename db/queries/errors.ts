@@ -12,4 +12,4 @@ export function isSlotTakenError(e: unknown): boolean {
   return code === "23P01" || /no_counsellor_overlap|no_room_overlap|exclusion/i.test(msg);
 }
 
-export const SLOT_TAKEN_MESSAGE = "That time was just taken — please pick another slot.";
+export { SLOT_TAKEN_MESSAGE } from "@/lib/scheduling/messages";

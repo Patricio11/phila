@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeScript } from "@/components/theme/theme-script";
 import { RegisterSW } from "@/components/pwa/register-sw";
+import { OfflineIndicator } from "@/components/pwa/offline-indicator";
 
 /**
  * Inter, self-hosted via next/font (no external request at runtime). Variable
@@ -56,6 +57,7 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col bg-bg text-text" suppressHydrationWarning>
         {children}
         <RegisterSW />
+        <OfflineIndicator />
       </body>
     </html>
   );

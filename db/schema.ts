@@ -233,3 +233,60 @@ export const invoices = pgTable("invoices", {
   issuedAt: timestamp("issued_at", { withTimezone: true }).notNull(),
   dueAt: timestamp("due_at", { withTimezone: true }).notNull(),
 });
+
+/* ── Funders & grants cluster (M&E, Phase 10) ──────────────────────────── */
+
+export const funders = pgTable("funders", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  name: text("name").notNull(),
+  type: text("type").notNull(),
+  contactName: text("contact_name").notNull(),
+  contactEmail: text("contact_email").notNull(),
+});
+
+export const grants = pgTable("grants", {
+  id: text("id").primaryKey(),
+  funderId: text("funder_id").notNull(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  title: text("title").notNull(),
+  periodStart: text("period_start").notNull(),
+  periodEnd: text("period_end").notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  restricted: boolean("restricted").default(false).notNull(),
+  reportingSchedule: text("reporting_schedule").notNull(),
+  status: text("status").notNull(),
+});
+
+export const grantIndicators = pgTable("grant_indicators", {
+  id: text("id").primaryKey(),
+  grantId: text("grant_id").notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull(),
+  metric: text("metric").notNull(),
+  target: integer("target").notNull(),
+  unit: text("unit").notNull(),
+  rule: text("rule").notNull(),
+});
+
+export const grantAllocations = pgTable("grant_allocations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  grantId: text("grant_id").notNull(),
+  clientId: text("client_id").notNull(),
+}, (t) => [uniqueIndex("grant_alloc_uq").on(t.grantId, t.clientId)]);
+
+export const grantNarratives = pgTable("grant_narratives", {
+  id: text("id").primaryKey(),
+  grantId: text("grant_id").notNull(),
+  author: text("author").notNull(),
+  body: text("body").notNull(),
+  postedAt: timestamp("posted_at", { withTimezone: true }).notNull(),
+});
+
+/** Scopes a funder user to specific grant(s) — read-only. */
+export const funderContacts = pgTable("funder_contacts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id").notNull(),
+  funderId: text("funder_id").notNull(),
+  grantIds: jsonb("grant_ids").$type<string[]>().default([]).notNull(),
+}, (t) => [uniqueIndex("funder_contact_uq").on(t.userId, t.funderId)]);

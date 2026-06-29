@@ -12,8 +12,8 @@
  */
 import { and, eq, gte, isNull, lte } from "drizzle-orm";
 import type { AppointmentView, DataProvider } from "@/lib/data-provider";
-import { desc } from "drizzle-orm";
-import type { Appointment, CarePlan, Client, ClientDocument, ConsentRecord, Counsellor, Invoice, Org, Room, Service, Site } from "@/lib/domain/types";
+import { desc, inArray } from "drizzle-orm";
+import type { Appointment, CarePlan, Client, ClientDocument, ConsentRecord, Counsellor, Funder, Grant, Invoice, Org, Room, Service, Site } from "@/lib/domain/types";
 import type { PaymentStatus } from "@/lib/domain/enums";
 import type { AppointmentState, AppointmentType, ConsentPurpose, ConsentState, CredentialBody, CredentialStatus, Province, RoomStatus } from "@/lib/domain/enums";
 import { mockProvider } from "@/lib/mock/provider";
@@ -30,7 +30,14 @@ import {
   carePlans as carePlansTable,
   clientDocuments as clientDocumentsTable,
   invoices as invoicesTable,
+  funders as fundersTable,
+  grants as grantsTable,
+  funderContacts as funderContactsTable,
 } from "@/db/schema";
+
+function toGrant(r: typeof grantsTable.$inferSelect): Grant {
+  return { id: r.id, funderId: r.funderId, orgId: r.orgId, title: r.title, periodStart: r.periodStart, periodEnd: r.periodEnd, amountCents: r.amountCents, restricted: r.restricted, reportingSchedule: r.reportingSchedule as Grant["reportingSchedule"], status: r.status as Grant["status"] };
+}
 
 function toInvoice(r: typeof invoicesTable.$inferSelect): Invoice {
   return { id: r.id, clientId: r.clientId, orgId: r.orgId, number: r.number, serviceName: r.serviceName, amountCents: r.amountCents, status: r.status as PaymentStatus, issuedAt: r.issuedAt.toISOString(), dueAt: r.dueAt.toISOString() };
@@ -186,6 +193,25 @@ export const dbProvider: DataProvider = {
   listOrgInvoices: async (orgId: string): Promise<Invoice[]> => {
     const rows = await getDb().select().from(invoicesTable).where(eq(invoicesTable.orgId, orgId)).orderBy(desc(invoicesTable.issuedAt));
     return rows.map(toInvoice);
+  },
+
+  // ── Funders & grants — funder list + funder-scoped grants ─────────────
+  listFunders: async (orgId: string): Promise<Funder[]> => {
+    const rows = await getDb().select().from(fundersTable).where(eq(fundersTable.orgId, orgId));
+    return rows.map((f) => ({ id: f.id, orgId: f.orgId, name: f.name, type: f.type as Funder["type"], contactName: f.contactName, contactEmail: f.contactEmail }));
+  },
+  listFunderGrants: async (funderUserId: string): Promise<{ grant: Grant; funderName: string; orgName: string }[]> => {
+    const db = getDb();
+    const contacts = await db.select().from(funderContactsTable).where(eq(funderContactsTable.userId, funderUserId));
+    const grantIds = contacts.flatMap((c) => c.grantIds);
+    if (grantIds.length === 0) return [];
+    const rows = await db
+      .select({ grant: grantsTable, funderName: fundersTable.name, orgName: orgsTable.name })
+      .from(grantsTable)
+      .leftJoin(fundersTable, eq(grantsTable.funderId, fundersTable.id))
+      .leftJoin(orgsTable, eq(grantsTable.orgId, orgsTable.id))
+      .where(inArray(grantsTable.id, grantIds));
+    return rows.map((r) => ({ grant: toGrant(r.grant), funderName: r.funderName ?? "", orgName: r.orgName ?? "" }));
   },
 
   // Consent — persisted, versioned, purpose-bound (the lawful basis for reads).

@@ -28,6 +28,12 @@ import {
   clientOutcomes as outcomesFx,
   invoices as invoicesFx,
   orgExtraInvoices as extraInvoicesFx,
+  funders as fundersFx,
+  grants as grantsFx,
+  grantIndicators as indicatorsFx,
+  grantAllocations as allocationsFx,
+  grantNarratives as narrativesFx,
+  funderContacts as funderContactsFx,
 } from "@/lib/mock/fixtures";
 
 /** SAST calendar-day for an instant (fixed +02:00, no DST). */
@@ -174,6 +180,14 @@ async function main() {
     await db.insert(schema.invoices).values({ id: v.id, clientId: v.clientId, orgId: v.orgId, number: v.number, serviceName: v.serviceName, amountCents: v.amountCents, status: v.status, issuedAt: new Date(v.issuedAt), dueAt: new Date(v.dueAt) }).onConflictDoNothing();
   }
 
+  // ── Funders & grants cluster (M&E) ────────────────────────────────────
+  for (const f of fundersFx) await db.insert(schema.funders).values({ id: f.id, orgId: f.orgId, name: f.name, type: f.type, contactName: f.contactName, contactEmail: f.contactEmail }).onConflictDoNothing();
+  for (const g of grantsFx) await db.insert(schema.grants).values({ id: g.id, funderId: g.funderId, orgId: g.orgId, title: g.title, periodStart: g.periodStart, periodEnd: g.periodEnd, amountCents: g.amountCents, restricted: g.restricted, reportingSchedule: g.reportingSchedule, status: g.status }).onConflictDoNothing();
+  for (const i of indicatorsFx) await db.insert(schema.grantIndicators).values({ id: i.id, grantId: i.grantId, name: i.name, type: i.type, metric: i.metric, target: i.target, unit: i.unit, rule: i.rule }).onConflictDoNothing();
+  for (const a of allocationsFx) await db.insert(schema.grantAllocations).values({ grantId: a.grantId, clientId: a.clientId }).onConflictDoNothing();
+  for (const n of narrativesFx) await db.insert(schema.grantNarratives).values({ id: n.id, grantId: n.grantId, author: n.author, body: n.body, postedAt: new Date(n.postedAt) }).onConflictDoNothing();
+  for (const fc of funderContactsFx) await db.insert(schema.funderContacts).values({ userId: fc.userId, funderId: fc.funderId, grantIds: fc.grantIds }).onConflictDoNothing();
+
   const sql = neon(url!);
   const [c] = await sql`select
     (select count(*)::int from orgs) orgs,
@@ -188,7 +202,10 @@ async function main() {
     (select count(*)::int from care_plans) care_plans,
     (select count(*)::int from client_documents) documents,
     (select count(*)::int from outcome_measures) outcomes,
-    (select count(*)::int from invoices) invoices`;
+    (select count(*)::int from invoices) invoices,
+    (select count(*)::int from funders) funders,
+    (select count(*)::int from grants) grants,
+    (select count(*)::int from grant_indicators) indicators`;
   console.log("seeded:", c);
 }
 

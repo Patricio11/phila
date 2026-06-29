@@ -32,12 +32,12 @@ describe("structural conformance", () => {
   });
 
   it("migrated methods are real overrides; the rest delegate to the mock", () => {
-    // Migrated to the DB (identity + directory clusters): real overrides.
-    for (const k of ["getOrg", "getOrgBySlug", "getClientConsents", "listClients", "getClient", "listCounsellors", "getCounsellor", "listServices", "listSites", "listRooms"]) {
+    // Migrated to the DB (directory + appointments + clinical + billing + funders).
+    for (const k of ["getOrg", "getOrgBySlug", "getClientConsents", "listClients", "getClient", "listCounsellors", "getCounsellor", "listServices", "listSites", "listRooms", "listCounsellorSessions", "getCarePlan", "listClientDocuments", "listClientInvoices", "listOrgInvoices", "listFunders", "listFunderGrants"]) {
       expect(dbFns[k]).not.toBe(mockFns[k]);
     }
     // Not yet migrated: the exact same function as the mock (consistent fallback).
-    for (const k of ["getReporting", "listFunderGrants", "getHubOverview", "getCounsellorDashboard"]) {
+    for (const k of ["getReporting", "getHubOverview", "getCounsellorDashboard", "getFunderGrantView"]) {
       expect(dbFns[k]).toBe(mockFns[k]);
     }
   });

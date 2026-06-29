@@ -23,7 +23,6 @@ import { Textarea } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { Avatar } from "@/components/ui/avatar";
 import { SafeguardingPanel } from "@/components/workspace/safeguarding-panel";
-import { VideoRoom } from "@/components/video/video-room";
 import { OutcomeCaptureButton } from "@/components/outcomes/outcome-capture";
 import { cn } from "@/lib/utils";
 import {
@@ -77,7 +76,6 @@ export function SessionEditor({
   const [state, setState] = useState<AppointmentState>(appt.state);
   const [careSummary, setCareSummary] = useState(data.carePlan?.summary ?? "");
   const [extraction, setExtraction] = useState<AiExtraction | null>(null);
-  const [videoOpen, setVideoOpen] = useState(false);
 
   const [generating, startGenerate] = useTransition();
   const [signing, startSign] = useTransition();
@@ -303,8 +301,10 @@ export function SessionEditor({
               <p className="mt-1 text-[12px] text-text-2">
                 {videoEnabled ? "Secure, in-region video room." : "This org uses its own meeting link."}
               </p>
-              <Button className="mt-3 w-full" onClick={() => setVideoOpen(true)}>
-                <Video className="size-4" strokeWidth={2} aria-hidden /> Open video room
+              <Button asChild className="mt-3 w-full">
+                <a href={`/room/${appt.id}`} target="_blank" rel="noopener noreferrer">
+                  <Video className="size-4" strokeWidth={2} aria-hidden /> Open video room
+                </a>
               </Button>
             </Card>
           )}
@@ -362,8 +362,6 @@ export function SessionEditor({
           </Card>
         </div>
       </div>
-
-      <VideoRoom open={videoOpen} onClose={() => setVideoOpen(false)} clientName={client.name} videoEnabled={videoEnabled} />
     </div>
   );
 }

@@ -73,9 +73,11 @@ function startOfDay(ms: number): number {
 export function UpcomingSessionCard({
   appt,
   nowISO,
+  joinUrl,
 }: {
   appt: AppointmentView;
   nowISO: string;
+  joinUrl?: string | null;
 }) {
   const { toast } = useToast();
   const nowMs = new Date(nowISO).getTime();
@@ -116,20 +118,22 @@ export function UpcomingSessionCard({
 
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
           {appt.type === "online" && (
-            <Button
-              className="w-full"
-              disabled={!joinable}
-              onClick={() =>
-                toast({
-                  tone: "default",
-                  title: "The session room opens here",
-                  description: "Your counsellor will start it  you'll join right from this page.",
-                })
-              }
-            >
-              <Video className="size-4" strokeWidth={2} aria-hidden />
-              {joinable ? "Join session" : "Join opens 10 minutes before"}
-            </Button>
+            joinable && joinUrl ? (
+              <Button asChild className="w-full">
+                <a href={joinUrl} target="_blank" rel="noopener noreferrer">
+                  <Video className="size-4" strokeWidth={2} aria-hidden /> Join session
+                </a>
+              </Button>
+            ) : (
+              <Button
+                className="w-full"
+                disabled={!joinable}
+                onClick={() => toast({ tone: "default", title: "Not yet", description: "The room opens 10 minutes before your session." })}
+              >
+                <Video className="size-4" strokeWidth={2} aria-hidden />
+                {joinable ? "Join session" : "Join opens 10 minutes before"}
+              </Button>
+            )
           )}
           <Button variant="ghost" className="w-full sm:w-auto" onClick={() => downloadIcs(appt)}>
             <CalendarPlus className="size-4" strokeWidth={2} aria-hidden /> Add to calendar

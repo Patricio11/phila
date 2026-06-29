@@ -600,11 +600,26 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 
 ---
 
-## 🎥 PHASE 13: VIDEO (LIVEKIT) + PASTE-LINK FALLBACK
+## 🎥 PHASE 13: VIDEO (LIVEKIT) + PASTE-LINK FALLBACK 🔄
 *Goal: real online sessions, owned and in-region, or the org's own link.*
-- [ ] Self-hosted LiveKit (SA region); server-side token minting; pre-join + room wired into the Part-A shell.
-- [ ] **No audio retention** by default; recording only if an org explicitly enables it with consent.
-- [ ] **Paste-link fallback** when org `videoEnabled=false` (org pastes Zoom/Meet/Teams); admin toggle in the switchboard.
+
+> **✅ CORE COMPLETE (2026-06-29).** Real, self-hosted **LiveKit** video — proven end-to-end against a local
+> Docker server (a Playwright test joins the room and connects). Server-side token minting + signed,
+> unguessable join links; a beautiful branded **waiting room** (camera/mic preview, device pickers, calming
+> copy) → a full **call** (camera toggle for audio-only, mic, screen share, chat, leave). Wired into the booking
+> confirmation, the client portal, and the counsellor's session. Self-host setup in `phila_livekit/` + a
+> step-by-step `docs/LIVEKIT_SETUP.md`. See `docs/completed/PHASE_13_COMPLETE.md`.
+
+- [x] **Self-hosted LiveKit; server-side token minting; pre-join + room (2026-06-29).** `phila_livekit/`
+  docker-compose runs the open-source `livekit/livekit-server`; `lib/video/livekit.ts` mints room-scoped JWTs;
+  `app/room/[appointmentId]` + `components/video/video-session.tsx` are the waiting room + call. Verified by a
+  real-call E2E (fake media) + token unit tests.
+- [x] **No audio retention by default (2026-06-29).** LiveKit records nothing without egress configured —
+  recording is a future explicit opt-in with consent.
+- [ ] **Paste-link fallback** when org `videoEnabled=false` (org pastes Zoom/Meet/Teams); admin toggle. *(The
+  only remaining bullet — the in-app LiveKit path is the primary one and is done.)*
+- [ ] **Production hardening:** self-host in an SA region with TLS (`wss://`) + strong keys (config-only, no app
+  change — see `docs/LIVEKIT_SETUP.md`).
 
 ---
 

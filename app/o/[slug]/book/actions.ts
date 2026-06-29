@@ -6,10 +6,10 @@ import { availableSlots, type Slot } from "@/lib/domain/helpers";
 import { logAccess } from "@/lib/audit";
 import { CONSENT_PURPOSES } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
-import { getAdapters } from "@/lib/adapters";
 import { persistBooking } from "@/db/queries/booking";
 import { isSlotTakenError, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
 import { notifyAppointment } from "@/lib/messaging/notify";
+import { videoJoinPath } from "@/lib/video/livekit";
 
 /** First active room with no overlapping booking in [start, start+duration). */
 async function assignRoom(orgId: string, date: string, startsAt: string, durationMin: number): Promise<string | null> {
@@ -198,6 +198,8 @@ export async function submitBooking(
         consents: input.consents,
       });
       roomName = res.roomName;
+      // Online → a real, signed join link to the LiveKit room for this appointment.
+      if (input.modality === "online") joinUrl = videoJoinPath(res.appointmentId);
       await notifyAppointment(res.appointmentId, "booked", input.intake.preferred_contact);
     } catch (e) {
       if (isSlotTakenError(e)) return { ok: false, error: SLOT_TAKEN_MESSAGE };
@@ -205,14 +207,6 @@ export async function submitBooking(
     }
   } else if (input.modality === "in_person") {
     roomName = await assignRoom(config.org.id, date, input.startsAt, service.durationMin);
-  }
-
-  if (input.modality === "online") {
-    try {
-      joinUrl = (await getAdapters().video.createRoom({ appointmentId: reference })).url;
-    } catch {
-      joinUrl = null;
-    }
   }
 
   return {

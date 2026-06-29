@@ -45,6 +45,16 @@ export function SuccessStep({
         />
       </div>
 
+      {confirmation.joinUrl && (
+        <div className="mx-auto mt-5 max-w-sm rounded-control border border-border bg-surface p-4 text-left">
+          <div className="flex items-center gap-2 text-[13.5px] font-[640] text-text"><Video className="size-4 text-accent" strokeWidth={2} aria-hidden /> Your video room</div>
+          <p className="mt-1 text-[12.5px] leading-relaxed text-text-2">Use this link when it&apos;s time  it opens straight into your private, encrypted room. We&apos;ll also send it to you.</p>
+          <a href={confirmation.joinUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex h-10 items-center gap-2 rounded-control border border-border bg-surface px-4 text-[13.5px] font-medium text-text hover:bg-surface-hover">
+            <Video className="size-4" strokeWidth={2} aria-hidden /> Open my video room
+          </a>
+        </div>
+      )}
+
       <div className="mx-auto mt-5 max-w-sm rounded-control border border-accent/25 bg-accent-soft/30 p-4 text-left">
         <div className="text-[13.5px] font-[640] text-text">Your private space is ready</div>
         <p className="mt-1 text-[12.5px] leading-relaxed text-text-2">

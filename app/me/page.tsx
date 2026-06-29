@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { UpcomingSessionCard } from "@/components/client/upcoming-session-card";
 import { SessionTimeline } from "@/components/client/session-timeline";
 import { now as clockNow } from "@/lib/clock";
+import { videoJoinPath } from "@/lib/video/livekit";
 
 export const dynamic = "force-dynamic";
 
@@ -62,7 +63,7 @@ export default async function MeHomePage() {
       />
 
       {upcoming ? (
-        <UpcomingSessionCard appt={upcoming} nowISO={now} />
+        <UpcomingSessionCard appt={upcoming} nowISO={now} joinUrl={upcoming.type === "online" ? videoJoinPath(upcoming.id) : null} />
       ) : (
         <Card className="p-2">
           <EmptyState

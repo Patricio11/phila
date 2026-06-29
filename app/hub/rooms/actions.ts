@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 import { PROVINCES, ROOM_STATUSES } from "@/lib/domain/enums";
+import { saveRoom as persistRoom, saveSites as persistSites } from "@/db/queries/catalogue";
 
 /**
  * Room CRUD (mock). Validates + audits and returns success; Phase 10/11 persist
@@ -25,6 +26,8 @@ export async function saveRoom(
   const { membership } = await requireHub();
   const parsed = input.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the room details." };
+
+  if (process.env.DATA_PROVIDER === "db") await persistRoom(membership.orgId, parsed.data);
 
   await logAccess({
     action: "admin.action",
@@ -55,6 +58,8 @@ export async function saveSites(
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the sites." };
   const names = parsed.data.sites.map((s) => s.name.toLowerCase());
   if (new Set(names).size !== names.length) return { ok: false, error: "Two sites share a name — give each a distinct one." };
+
+  if (process.env.DATA_PROVIDER === "db") await persistSites(membership.orgId, parsed.data.sites);
 
   await logAccess({
     action: "admin.action",

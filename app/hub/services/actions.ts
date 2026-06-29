@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
+import { saveServices as persistServices } from "@/db/queries/catalogue";
 
 /**
  * The service catalogue (mock) — name, duration, price. This is what the booking
@@ -28,6 +29,8 @@ export async function saveServices(
 
   const names = parsed.data.services.map((s) => s.name.toLowerCase());
   if (new Set(names).size !== names.length) return { ok: false, error: "Two services share a name — give each a distinct one." };
+
+  if (process.env.DATA_PROVIDER === "db") await persistServices(membership.orgId, parsed.data.services);
 
   await logAccess({
     action: "admin.action",

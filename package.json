@@ -18,7 +18,7 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "e2e:report": "playwright show-report",
-    "db:seed": "node db/seed.mjs"
+    "db:seed": "tsx db/seed-all.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",

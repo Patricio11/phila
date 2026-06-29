@@ -94,3 +94,69 @@ export const auditLog = pgTable("audit_log", {
   meta: jsonb("meta"),
   at: timestamp("at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+/* ── Directory cluster (Phase 10): people + resources ──────────────────── */
+
+/** Clinical staff. Credential is flattened for honest querying (never default-verified). */
+export const counsellors = pgTable("counsellors", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  name: text("name").notNull(),
+  credentialBody: text("credential_body").notNull(),
+  credentialRegNo: text("credential_reg_no"),
+  credentialStatus: text("credential_status").notNull(),
+  isSupervisor: boolean("is_supervisor").default(false).notNull(),
+  supervisorId: text("supervisor_id"),
+});
+
+export const services = pgTable("services", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  name: text("name").notNull(),
+  durationMin: integer("duration_min").notNull(),
+  /** null = "enquire". */
+  priceCents: integer("price_cents"),
+});
+
+export const sites = pgTable("sites", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  name: text("name").notNull(),
+  province: text("province").notNull(),
+});
+
+export const rooms = pgTable("rooms", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  siteId: text("site_id").notNull().references(() => sites.id),
+  name: text("name").notNull(),
+  capacity: integer("capacity").notNull(),
+  equipment: jsonb("equipment").$type<string[]>().default([]).notNull(),
+  status: text("status").notNull(),
+  colour: text("colour").notNull(),
+});
+
+export const clients = pgTable("clients", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  name: text("name").notNull(),
+  phone: text("phone"),
+  email: text("email"),
+  province: text("province").notNull(),
+  primaryCounsellorId: text("primary_counsellor_id"),
+  riskFlag: boolean("risk_flag").default(false).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  /** Soft-delete — never distorts compiled stats (Outcome-Honesty). */
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+});
+
+/** SPECIAL personal information — only present when `demographics` is consented. */
+export const demographics = pgTable("demographics", {
+  clientId: text("client_id").primaryKey().references(() => clients.id),
+  gender: text("gender").notNull(),
+  populationGroup: text("population_group").notNull(),
+  employmentStatus: text("employment_status").notNull(),
+  ageBand: text("age_band").notNull(),
+  province: text("province").notNull(),
+});

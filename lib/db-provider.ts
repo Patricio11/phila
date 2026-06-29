@@ -10,13 +10,21 @@
  * `org_members` + `user` (lib/auth/session.ts). RLS becomes the tenant boundary
  * as the write paths migrate (docs/SECURITY.md).
  */
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import type { DataProvider } from "@/lib/data-provider";
-import type { ConsentRecord, Org } from "@/lib/domain/types";
-import type { ConsentPurpose, ConsentState } from "@/lib/domain/enums";
+import type { Client, ConsentRecord, Counsellor, Org, Room, Service, Site } from "@/lib/domain/types";
+import type { ConsentPurpose, ConsentState, CredentialBody, CredentialStatus, Province, RoomStatus } from "@/lib/domain/enums";
 import { mockProvider } from "@/lib/mock/provider";
 import { getDb } from "@/db/client";
-import { orgs as orgsTable, consents as consentsTable } from "@/db/schema";
+import {
+  orgs as orgsTable,
+  consents as consentsTable,
+  counsellors as counsellorsTable,
+  services as servicesTable,
+  sites as sitesTable,
+  rooms as roomsTable,
+  clients as clientsTable,
+} from "@/db/schema";
 
 type OrgRow = typeof orgsTable.$inferSelect;
 
@@ -34,6 +42,37 @@ function toOrg(row: OrgRow): Org {
   };
 }
 
+function toCounsellor(r: typeof counsellorsTable.$inferSelect): Counsellor {
+  return {
+    id: r.id,
+    userId: r.userId,
+    orgId: r.orgId,
+    name: r.name,
+    credential: { body: r.credentialBody as CredentialBody, registrationNo: r.credentialRegNo ?? undefined, status: r.credentialStatus as CredentialStatus },
+    isSupervisor: r.isSupervisor,
+    supervisorId: r.supervisorId,
+  };
+}
+
+function toClient(r: typeof clientsTable.$inferSelect): Client {
+  return {
+    id: r.id,
+    orgId: r.orgId,
+    name: r.name,
+    phone: r.phone ?? undefined,
+    email: r.email ?? undefined,
+    province: r.province as Province,
+    primaryCounsellorId: r.primaryCounsellorId,
+    riskFlag: r.riskFlag,
+    createdAt: r.createdAt.toISOString(),
+    deletedAt: r.deletedAt ? r.deletedAt.toISOString() : null,
+  };
+}
+
+function toRoom(r: typeof roomsTable.$inferSelect): Room {
+  return { id: r.id, orgId: r.orgId, siteId: r.siteId, name: r.name, capacity: r.capacity, equipment: r.equipment, status: r.status as RoomStatus, colour: r.colour };
+}
+
 export const dbProvider: DataProvider = {
   ...mockProvider,
 
@@ -48,6 +87,36 @@ export const dbProvider: DataProvider = {
     const db = getDb();
     const [row] = await db.select().from(orgsTable).where(eq(orgsTable.slug, slug)).limit(1);
     return row && !row.deletedAt ? toOrg(row) : null;
+  },
+
+  // ── Directory cluster — single-table reads from the DB ────────────────
+  listCounsellors: async (orgId: string): Promise<Counsellor[]> => {
+    const rows = await getDb().select().from(counsellorsTable).where(eq(counsellorsTable.orgId, orgId));
+    return rows.map(toCounsellor);
+  },
+  getCounsellor: async (counsellorId: string): Promise<Counsellor | null> => {
+    const [r] = await getDb().select().from(counsellorsTable).where(eq(counsellorsTable.id, counsellorId)).limit(1);
+    return r ? toCounsellor(r) : null;
+  },
+  listClients: async (orgId: string): Promise<Client[]> => {
+    const rows = await getDb().select().from(clientsTable).where(and(eq(clientsTable.orgId, orgId), isNull(clientsTable.deletedAt)));
+    return rows.map(toClient);
+  },
+  getClient: async (clientId: string): Promise<Client | null> => {
+    const [r] = await getDb().select().from(clientsTable).where(eq(clientsTable.id, clientId)).limit(1);
+    return r && !r.deletedAt ? toClient(r) : null;
+  },
+  listServices: async (orgId: string): Promise<Service[]> => {
+    const rows = await getDb().select().from(servicesTable).where(eq(servicesTable.orgId, orgId));
+    return rows.map((s) => ({ id: s.id, orgId: s.orgId, name: s.name, durationMin: s.durationMin, priceCents: s.priceCents }));
+  },
+  listSites: async (orgId: string): Promise<Site[]> => {
+    const rows = await getDb().select().from(sitesTable).where(eq(sitesTable.orgId, orgId));
+    return rows.map((s) => ({ id: s.id, orgId: s.orgId, name: s.name, province: s.province as Province }));
+  },
+  listRooms: async (orgId: string): Promise<Room[]> => {
+    const rows = await getDb().select().from(roomsTable).where(eq(roomsTable.orgId, orgId));
+    return rows.map(toRoom);
   },
 
   // Consent — persisted, versioned, purpose-bound (the lawful basis for reads).

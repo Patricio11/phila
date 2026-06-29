@@ -11,7 +11,7 @@
  * as the write paths migrate (docs/SECURITY.md).
  */
 import { and, eq, gte, isNull, lte } from "drizzle-orm";
-import type { AppointmentView, CounsellorDashboard, DataProvider, HubOverview, OutcomePoint } from "@/lib/data-provider";
+import type { AppointmentView, CaseloadRow, CaseloadStatus, CounsellorDashboard, DataProvider, HubOverview, OutcomePoint } from "@/lib/data-provider";
 import { computeHubOverview, computeCounsellorDashboard } from "@/lib/domain/dashboards";
 import { desc, inArray } from "drizzle-orm";
 import type { Appointment, CarePlan, Client, ClientDocument, ConsentRecord, Counsellor, Funder, Grant, Invoice, Org, Room, Service, Site } from "@/lib/domain/types";
@@ -179,6 +179,32 @@ export const dbProvider: DataProvider = {
   listCounsellorSessions: async (counsellorId: string): Promise<AppointmentView[]> => {
     const views = await counsellorApptViews(counsellorId);
     return views.sort((a, b) => b.startsAt.localeCompare(a.startsAt));
+  },
+
+  // ── Counsellor caseload — live clients + their real appointments ──────
+  listCaseload: async (counsellorId: string, now: string): Promise<CaseloadRow[]> => {
+    const [clientRows, views] = await Promise.all([
+      getDb().select().from(clientsTable).where(and(eq(clientsTable.primaryCounsellorId, counsellorId), isNull(clientsTable.deletedAt))),
+      counsellorApptViews(counsellorId),
+    ]);
+    const nowMs = new Date(now).getTime();
+    const HELD = ["completed", "no_show", "risk_flagged", "discharged"];
+    return clientRows.map((cr): CaseloadRow => {
+      const client = toClient(cr);
+      const appts = views.filter((v) => v.clientId === client.id).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+      const past = appts.filter((a) => new Date(a.startsAt).getTime() <= nowMs);
+      const future = appts.filter((a) => new Date(a.startsAt).getTime() > nowMs && a.state === "scheduled");
+      const held = past.filter((a) => HELD.includes(a.state));
+      const lastSession = past[past.length - 1] ?? null;
+      const status: CaseloadStatus = client.riskFlag
+        ? "at_risk"
+        : held.length === 0
+          ? "new"
+          : lastSession && nowMs - new Date(lastSession.startsAt).getTime() > 60 * 86_400_000
+            ? "inactive"
+            : "active";
+      return { client, nextSession: future[0] ?? null, lastSession, sessionCount: held.length, status };
+    });
   },
 
   // ── Composite dashboard — counsellor home, aggregated from DB rows ─────

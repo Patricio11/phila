@@ -43,23 +43,19 @@ describe.skipIf(!APP)("RLS isolation (as phila_app)", () => {
   });
 
   it("sees only the caller's org, never another org's", async () => {
-    const [withinMz, leak] = await app.transaction([
-      app`SELECT set_config('app.org_id', 'org_masizakhe', true)`,
-      app`SELECT count(*)::int AS n FROM clients`,
-    ]).then(() => app.transaction([
+    // Masizakhe context cannot see the probe org's client.
+    const leak = await app.transaction([
       app`SELECT set_config('app.org_id', 'org_masizakhe', true)`,
       app`SELECT count(*)::int AS n FROM clients WHERE id = ${OTHER_CLIENT}`,
-    ]));
-    void withinMz;
-    // Masizakhe context cannot see the probe org's client.
-    expect(leak[0]!.n).toBe(0);
+    ]);
+    expect((leak[1] as { n: number }[])[0]!.n).toBe(0);
 
     // The probe org's own context sees exactly its one client.
     const own = await app.transaction([
       app`SELECT set_config('app.org_id', ${OTHER_ORG}, true)`,
       app`SELECT count(*)::int AS n FROM clients`,
     ]);
-    expect(own[1]![0]!.n).toBe(1);
+    expect((own[1] as { n: number }[])[0]!.n).toBe(1);
   });
 
   it("sees masizakhe rows within masizakhe context", async () => {

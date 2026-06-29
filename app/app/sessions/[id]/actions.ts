@@ -5,6 +5,7 @@ import { logAccess } from "@/lib/audit";
 import { APPOINTMENT_STATES } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
 import { setAppointmentState } from "@/db/queries/appointments";
+import { notifyAppointment } from "@/lib/messaging/notify";
 
 /**
  * Session-editor actions. In Part A they validate + audit and return success
@@ -87,7 +88,10 @@ export async function markProgress(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const parsed = progressInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid state" };
-  if (process.env.DATA_PROVIDER === "db") await setAppointmentState(parsed.data.appointmentId, parsed.data.state);
+  if (process.env.DATA_PROVIDER === "db") {
+    await setAppointmentState(parsed.data.appointmentId, parsed.data.state);
+    if (parsed.data.state === "no_show") await notifyAppointment(parsed.data.appointmentId, "no_show");
+  }
   await logAccess({
     action: "admin.action",
     actor: { userId: "counsellor", platformRole: null, teamRole: "counsellor" },

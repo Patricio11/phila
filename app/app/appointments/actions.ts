@@ -4,6 +4,7 @@ import { z } from "zod";
 import { logAccess } from "@/lib/audit";
 import { rescheduleAppointment as persistReschedule, cancelAppointment as persistCancel } from "@/db/queries/appointments";
 import { isSlotTakenError, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
+import { notifyAppointment } from "@/lib/messaging/notify";
 
 const scope = z.enum(["this", "following"]).default("this");
 
@@ -32,6 +33,7 @@ export async function rescheduleAppointment(
       if (isSlotTakenError(e)) return { ok: false, error: SLOT_TAKEN_MESSAGE };
       throw e;
     }
+    await notifyAppointment(parsed.data.appointmentId, "rescheduled");
   }
   await logAccess({
     action: "admin.action",
@@ -61,6 +63,7 @@ export async function cancelAppointment(
   let cancelled = 1;
   if (process.env.DATA_PROVIDER === "db") {
     cancelled = await persistCancel(parsed.data.appointmentId, parsed.data.reason, parsed.data.scope);
+    await notifyAppointment(parsed.data.appointmentId, "cancelled");
   }
   await logAccess({
     action: "admin.action",

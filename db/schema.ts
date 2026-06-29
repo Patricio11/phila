@@ -219,3 +219,17 @@ export const outcomeMeasures = pgTable("outcome_measures", {
   score: integer("score").notNull(),
   takenAt: timestamp("taken_at", { withTimezone: true }).notNull(),
 });
+
+/* ── Billing cluster (Phase 10) ────────────────────────────────────────── */
+
+export const invoices = pgTable("invoices", {
+  id: text("id").primaryKey(),
+  clientId: text("client_id").notNull(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  number: text("number").notNull(),
+  serviceName: text("service_name").notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  status: text("status").notNull(),
+  issuedAt: timestamp("issued_at", { withTimezone: true }).notNull(),
+  dueAt: timestamp("due_at", { withTimezone: true }).notNull(),
+});

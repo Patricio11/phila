@@ -12,7 +12,9 @@
  */
 import { and, eq, gte, isNull, lte } from "drizzle-orm";
 import type { AppointmentView, DataProvider } from "@/lib/data-provider";
-import type { Appointment, CarePlan, Client, ClientDocument, ConsentRecord, Counsellor, Org, Room, Service, Site } from "@/lib/domain/types";
+import { desc } from "drizzle-orm";
+import type { Appointment, CarePlan, Client, ClientDocument, ConsentRecord, Counsellor, Invoice, Org, Room, Service, Site } from "@/lib/domain/types";
+import type { PaymentStatus } from "@/lib/domain/enums";
 import type { AppointmentState, AppointmentType, ConsentPurpose, ConsentState, CredentialBody, CredentialStatus, Province, RoomStatus } from "@/lib/domain/enums";
 import { mockProvider } from "@/lib/mock/provider";
 import { getDb } from "@/db/client";
@@ -27,7 +29,12 @@ import {
   appointments as appointmentsTable,
   carePlans as carePlansTable,
   clientDocuments as clientDocumentsTable,
+  invoices as invoicesTable,
 } from "@/db/schema";
+
+function toInvoice(r: typeof invoicesTable.$inferSelect): Invoice {
+  return { id: r.id, clientId: r.clientId, orgId: r.orgId, number: r.number, serviceName: r.serviceName, amountCents: r.amountCents, status: r.status as PaymentStatus, issuedAt: r.issuedAt.toISOString(), dueAt: r.dueAt.toISOString() };
+}
 
 type ApptRow = typeof appointmentsTable.$inferSelect;
 function toAppt(r: ApptRow): Appointment {
@@ -169,6 +176,16 @@ export const dbProvider: DataProvider = {
   listClientDocuments: async (clientId: string): Promise<ClientDocument[]> => {
     const rows = await getDb().select().from(clientDocumentsTable).where(eq(clientDocumentsTable.clientId, clientId));
     return rows.map((d) => ({ id: d.id, clientId: d.clientId, orgId: d.orgId, name: d.name, kind: d.kind as ClientDocument["kind"], sizeLabel: d.sizeLabel, sharedBy: d.sharedBy as ClientDocument["sharedBy"], createdAt: d.createdAt.toISOString() }));
+  },
+
+  // ── Billing cluster — invoices ────────────────────────────────────────
+  listClientInvoices: async (clientId: string): Promise<Invoice[]> => {
+    const rows = await getDb().select().from(invoicesTable).where(eq(invoicesTable.clientId, clientId)).orderBy(desc(invoicesTable.issuedAt));
+    return rows.map(toInvoice);
+  },
+  listOrgInvoices: async (orgId: string): Promise<Invoice[]> => {
+    const rows = await getDb().select().from(invoicesTable).where(eq(invoicesTable.orgId, orgId)).orderBy(desc(invoicesTable.issuedAt));
+    return rows.map(toInvoice);
   },
 
   // Consent — persisted, versioned, purpose-bound (the lawful basis for reads).

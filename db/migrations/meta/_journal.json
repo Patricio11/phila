@@ -57,6 +57,13 @@
       "when": 1782711354213,
       "tag": "0007_black_starbolt",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1782712425103,
+      "tag": "0008_previous_killraven",
+      "breakpoints": true
     }
   ]
 }

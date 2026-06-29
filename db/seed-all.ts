@@ -26,6 +26,8 @@ import {
   carePlans as carePlansFx,
   clientDocuments as docsFx,
   clientOutcomes as outcomesFx,
+  invoices as invoicesFx,
+  orgExtraInvoices as extraInvoicesFx,
 } from "@/lib/mock/fixtures";
 
 /** SAST calendar-day for an instant (fixed +02:00, no DST). */
@@ -166,6 +168,12 @@ async function main() {
     }
   }
 
+  // ── Billing cluster (client invoices + org-level extras) ──────────────
+  const allInvoices = [...Object.values(invoicesFx).flat(), ...extraInvoicesFx];
+  for (const v of allInvoices) {
+    await db.insert(schema.invoices).values({ id: v.id, clientId: v.clientId, orgId: v.orgId, number: v.number, serviceName: v.serviceName, amountCents: v.amountCents, status: v.status, issuedAt: new Date(v.issuedAt), dueAt: new Date(v.dueAt) }).onConflictDoNothing();
+  }
+
   const sql = neon(url!);
   const [c] = await sql`select
     (select count(*)::int from orgs) orgs,
@@ -179,7 +187,8 @@ async function main() {
     (select count(*)::int from appointments) appointments,
     (select count(*)::int from care_plans) care_plans,
     (select count(*)::int from client_documents) documents,
-    (select count(*)::int from outcome_measures) outcomes`;
+    (select count(*)::int from outcome_measures) outcomes,
+    (select count(*)::int from invoices) invoices`;
   console.log("seeded:", c);
 }
 

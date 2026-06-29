@@ -11,7 +11,8 @@
  * as the write paths migrate (docs/SECURITY.md).
  */
 import { and, eq, gte, isNull, lte } from "drizzle-orm";
-import type { AppointmentView, DataProvider } from "@/lib/data-provider";
+import type { AppointmentView, DataProvider, HubOverview } from "@/lib/data-provider";
+import { computeHubOverview } from "@/lib/domain/dashboards";
 import { desc, inArray } from "drizzle-orm";
 import type { Appointment, CarePlan, Client, ClientDocument, ConsentRecord, Counsellor, Funder, Grant, Invoice, Org, Room, Service, Site } from "@/lib/domain/types";
 import type { PaymentStatus } from "@/lib/domain/enums";
@@ -33,6 +34,7 @@ import {
   funders as fundersTable,
   grants as grantsTable,
   funderContacts as funderContactsTable,
+  outcomeMeasures as outcomeMeasuresTable,
 } from "@/db/schema";
 
 function toGrant(r: typeof grantsTable.$inferSelect): Grant {
@@ -193,6 +195,30 @@ export const dbProvider: DataProvider = {
   listOrgInvoices: async (orgId: string): Promise<Invoice[]> => {
     const rows = await getDb().select().from(invoicesTable).where(eq(invoicesTable.orgId, orgId)).orderBy(desc(invoicesTable.issuedAt));
     return rows.map(toInvoice);
+  },
+
+  // ── Composite dashboard — Hub overview, aggregated from DB rows ───────
+  getHubOverview: async (orgId: string, now: string): Promise<HubOverview | null> => {
+    const db = getDb();
+    const [org] = await db.select({ id: orgsTable.id }).from(orgsTable).where(eq(orgsTable.id, orgId)).limit(1);
+    if (!org) return null;
+    const [counsellorRows, clientRows, apptRows, invoiceRows, serviceRows, outcomeRows] = await Promise.all([
+      db.select().from(counsellorsTable).where(eq(counsellorsTable.orgId, orgId)),
+      db.select().from(clientsTable).where(and(eq(clientsTable.orgId, orgId), isNull(clientsTable.deletedAt))),
+      db.select().from(appointmentsTable).where(eq(appointmentsTable.orgId, orgId)),
+      db.select().from(invoicesTable).where(eq(invoicesTable.orgId, orgId)),
+      db.select().from(servicesTable).where(eq(servicesTable.orgId, orgId)),
+      db.selectDistinct({ clientId: outcomeMeasuresTable.clientId }).from(outcomeMeasuresTable),
+    ]);
+    return computeHubOverview({
+      counsellors: counsellorRows.map(toCounsellor),
+      clients: clientRows.map(toClient),
+      appointments: apptRows.map(toAppt),
+      invoices: invoiceRows.map(toInvoice),
+      services: serviceRows.map((s) => ({ id: s.id, orgId: s.orgId, name: s.name, durationMin: s.durationMin, priceCents: s.priceCents })),
+      measuredClientIds: new Set(outcomeRows.map((r) => r.clientId)),
+      now,
+    });
   },
 
   // ── Funders & grants — funder list + funder-scoped grants ─────────────

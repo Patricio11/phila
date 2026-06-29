@@ -380,6 +380,14 @@ export const messageTemplates = pgTable("message_templates", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 });
 
+/** Per-org video setting (Phase 13): in-app LiveKit, or the org's own pasted link. */
+export const orgVideoSettings = pgTable("org_video_settings", {
+  orgId: text("org_id").primaryKey().references(() => orgs.id),
+  mode: text("mode").default("livekit").notNull(), // livekit | external
+  externalUrl: text("external_url"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
 /** Recipient opt-outs (POPIA) — always win over any send. */
 export const messageOptOuts = pgTable("message_opt_outs", {
   id: uuid("id").defaultRandom().primaryKey(),

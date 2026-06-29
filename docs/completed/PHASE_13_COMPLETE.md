@@ -1,4 +1,4 @@
-# Phase 13 — Video (LiveKit) ✅ core
+# Phase 13 — Video (LiveKit) ✅
 
 *Shipped: 2026-06-29 · Part B · real, self-hosted, free online video sessions*
 
@@ -44,9 +44,13 @@ Full walkthrough: **`docs/LIVEKIT_SETUP.md`**.
   Screenshots: `screenshots/video-waiting-room.png`, `video-room.png`.
 - Production build clean (LiveKit components SSR fine).
 
-## Deferred
-- **Paste-link fallback** (org pastes Zoom/Meet when it doesn't want in-app video) —
-  a small alternative path; the LiveKit path is the primary one and is done.
+## Paste-link fallback
+Settings → **Video sessions** lets an org choose **Phila video** (in-app LiveKit)
+or **their own link** (Zoom/Meet/Teams). `org_video_settings` (mode + url, RLS'd);
+`resolveVideoJoinUrl` + the `/room` page serve the org's link when mode = external
+(falling back to LiveKit if none is set). Proven by integration tests.
+
+## Deferred (deployment only)
 - **Production self-host hardening** — SA-region VM + TLS (`wss://`) + strong keys.
   Config-only; no app change (`docs/LIVEKIT_SETUP.md`).
 

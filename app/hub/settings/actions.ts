@@ -4,6 +4,28 @@ import { z } from "zod";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 import { saveBusinessHours as persistBusinessHours } from "@/db/queries/settings";
+import { saveVideoSettings } from "@/db/queries/video";
+
+/**
+ * Video mode (Phase 13): in-app LiveKit room, or the org's own pasted meeting
+ * link (paste-link fallback). Validated + audited.
+ */
+const videoInput = z.object({
+  mode: z.enum(["livekit", "external"]),
+  externalUrl: z.string().trim().url("Enter a valid meeting link (https://…).").or(z.literal("")),
+});
+
+export async function saveVideoMode(
+  raw: z.infer<typeof videoInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { membership } = await requireHub();
+  const parsed = videoInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the video settings." };
+  if (parsed.data.mode === "external" && !parsed.data.externalUrl) return { ok: false, error: "Paste your meeting link to use your own video." };
+  await saveVideoSettings(membership.orgId, { mode: parsed.data.mode, externalUrl: parsed.data.externalUrl || null });
+  await logAccess({ action: "admin.action", actor: { userId: "hub", platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `org:${membership.orgId}/video`, reason: `video_${parsed.data.mode}` });
+  return { ok: true };
+}
 
 /**
  * Working hours (mock). Validated + audited; Phase 11 persists them and the

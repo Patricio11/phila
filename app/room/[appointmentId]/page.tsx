@@ -1,9 +1,10 @@
 import { eq } from "drizzle-orm";
-import { VideoOff } from "lucide-react";
+import { VideoOff, Video, ExternalLink } from "lucide-react";
 import { getDb } from "@/db/client";
 import { appointments, clients, counsellors, services, orgs } from "@/db/schema";
 import { getCurrentPrincipal } from "@/lib/auth/session";
 import { livekitConfigured, verifyJoin } from "@/lib/video/livekit";
+import { getVideoSettings } from "@/db/queries/video";
 import { VideoSession } from "@/components/video/video-session";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +36,12 @@ export default async function RoomPage({ params, searchParams }: { params: Promi
     return <Unavailable configured={livekitConfigured()} reason={!row ? "not_found" : row.a.type !== "online" ? "not_online" : "bad_link"} />;
   }
 
+  // Paste-link fallback: the org runs video on its own meeting link.
+  const video = await getVideoSettings(row.a.orgId);
+  if (video.mode === "external") {
+    return <ExternalRoom orgName={row.orgName ?? "Your practice"} url={video.externalUrl} />;
+  }
+
   return (
     <VideoSession
       appointmentId={appointmentId}
@@ -46,6 +53,27 @@ export default async function RoomPage({ params, searchParams }: { params: Promi
       defaultName={isHost ? (principal?.name ?? "") : (row.clientName ?? "")}
       isHost={isHost}
     />
+  );
+}
+
+function ExternalRoom({ orgName, url }: { orgName: string; url: string | null }) {
+  return (
+    <div className="flex min-h-[100dvh] items-center justify-center bg-bg px-4">
+      <div className="max-w-sm space-y-4 text-center">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-accent-soft text-accent"><Video className="size-6" strokeWidth={2} aria-hidden /></div>
+        <h1 className="text-[18px] font-[680] text-text">{orgName} meets on their own link</h1>
+        {url ? (
+          <>
+            <p className="text-[14px] text-text-2">Your session happens on {orgName}&apos;s meeting link. Open it when it&apos;s time.</p>
+            <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-control bg-accent px-4 py-2 text-[14px] font-medium text-white hover:brightness-95">
+              <ExternalLink className="size-4" strokeWidth={2} aria-hidden /> Open meeting link
+            </a>
+          </>
+        ) : (
+          <p className="text-[14px] text-text-2">{orgName} hasn&apos;t added their meeting link yet. They&apos;ll send it to you before your session.</p>
+        )}
+      </div>
+    </div>
   );
 }
 

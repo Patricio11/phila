@@ -600,10 +600,10 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 
 ---
 
-## 🎥 PHASE 13: VIDEO (LIVEKIT) + PASTE-LINK FALLBACK 🔄
+## 🎥 PHASE 13: VIDEO (LIVEKIT) + PASTE-LINK FALLBACK ✅
 *Goal: real online sessions, owned and in-region, or the org's own link.*
 
-> **✅ CORE COMPLETE (2026-06-29).** Real, self-hosted **LiveKit** video — proven end-to-end against a local
+> **✅ COMPLETE (2026-06-29).** Real, self-hosted **LiveKit** video — proven end-to-end against a local
 > Docker server (a Playwright test joins the room and connects). Server-side token minting + signed,
 > unguessable join links; a beautiful branded **waiting room** (camera/mic preview, device pickers, calming
 > copy) → a full **call** (camera toggle for audio-only, mic, screen share, chat, leave). Wired into the booking
@@ -616,8 +616,9 @@ POPIA, test, and launch  **without changing the Part-A UI.***
   real-call E2E (fake media) + token unit tests.
 - [x] **No audio retention by default (2026-06-29).** LiveKit records nothing without egress configured —
   recording is a future explicit opt-in with consent.
-- [ ] **Paste-link fallback** when org `videoEnabled=false` (org pastes Zoom/Meet/Teams); admin toggle. *(The
-  only remaining bullet — the in-app LiveKit path is the primary one and is done.)*
+- [x] **Paste-link fallback (2026-06-29).** Settings → Video lets an org choose **Phila video** or **their own
+  link** (Zoom/Meet/Teams). `org_video_settings` (mode + url, RLS'd); `resolveVideoJoinUrl` + the `/room` page
+  show the org's link when mode = external (falls back to LiveKit if none set). Proven by integration tests.
 - [ ] **Production hardening:** self-host in an SA region with TLS (`wss://`) + strong keys (config-only, no app
   change — see `docs/LIVEKIT_SETUP.md`).
 

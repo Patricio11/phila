@@ -14,6 +14,8 @@ import { OrgProfileForm, type OrgProfile } from "@/components/hub/org-profile-fo
 import { InvoiceSettingsForm } from "@/components/hub/invoice-settings-form";
 import { YourPlanCard } from "@/components/hub/your-plan-card";
 import { SecuritySettings } from "@/components/hub/security-settings";
+import { VideoSettingsCard } from "@/components/hub/video-settings";
+import { getVideoSettings } from "@/db/queries/video";
 import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +32,7 @@ export default async function HubSettingsPage() {
     provider.getOrgSubscription(membership.orgId, clockNow()),
   ]);
   if (!settings || !org) notFound();
+  const videoSettings = await getVideoSettings(membership.orgId);
   const page = await provider.getOrgPublicPage(org.slug);
   const bh: BusinessHours = org.scheduling.businessHours;
 
@@ -94,6 +97,15 @@ export default async function HubSettingsPage() {
             <Link href="/hub/settings/notifications" className="inline-flex h-9 items-center gap-1.5 rounded-control border border-border bg-surface px-3.5 text-[13px] font-medium text-text transition-colors hover:bg-surface-hover">
               <Bell className="size-4" strokeWidth={2} aria-hidden /> Manage notifications
             </Link>
+          </div>
+        </Card>
+
+        {/* Video (in-app LiveKit, or the org's own meeting link) */}
+        <Card>
+          <CardHead title="Video sessions" />
+          <div className="px-[17px] pb-[17px]">
+            <p className="mb-3 text-[12.5px] text-text-2">How online sessions happen  a secure in-region Phila room, or your own meeting link.</p>
+            <VideoSettingsCard initial={videoSettings} />
           </div>
         </Card>
 

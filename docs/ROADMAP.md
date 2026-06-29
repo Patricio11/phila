@@ -525,14 +525,29 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 
 ---
 
-## 🗓️ PHASE 11: SCHEDULING ENGINE
+## 🗓️ PHASE 11: SCHEDULING ENGINE 🔄
 *Goal: real availability, rooms, room-assignments, and recurring series behind the Part-A calendar.*
-- [ ] Business-hours / buffer / break engine; `availableSlots(org, counsellor, date)` real impl mirroring the mock helper.
-- [ ] **Room allocation:** in-person bookings require a room; default from the counsellor's `room_assignments` (day/time), validate the room is free, **prevent double-booking** a room or a counsellor; multi-site aware.
-- [ ] Room utilisation rollups for the Hub (`/hub/rooms`): meetings, booked hours, % utilisation, busiest day.
-- [ ] Recurring-series generation + edit-this/all; reschedule + cancel with reason; care-state transitions.
-- [ ] **Offline send-queue (PWA):** queued bookings/reschedules sync on reconnect with conflict re-check; the queued-state UI from Phase 8 goes live.
-- [ ] Calendar + booking + Hub oversight now read real availability.
+
+> **🔄 IN PROGRESS (2026-06-29).** The engine's **core is in and proven**: real availability + race-free
+> no-double-booking + real room utilisation. Remaining: recurring edit-this/all + the offline PWA queue.
+
+- [x] **Availability engine (2026-06-29):** the pure `availableSlots(org, date, existing, …)` already mirrors
+  production (business hours, breaks, buffer, min-notice, clash). Booking now feeds it **real** inputs —
+  `dbProvider.getBookingConfig` swaps in the persisted org (real, admin-editable business hours), and clash
+  data is the real per-counsellor DB appointments. So changing hours actually moves the slots.
+- [x] **Room allocation (2026-06-29):** in-person bookings allocate a room, **defaulting from the counsellor's
+  `room_assignments`** (day/time window) and falling back to first-free; multi-site aware via the assignment's
+  room→site. **Double-booking is prevented at the DB** — GiST `EXCLUDE` constraints (`db/scheduling.sql`,
+  `npm run db:constraints`) reject any overlapping counsellor *or* room booking, race-free and atomic; the
+  actions surface a friendly "that time was just taken". Proven by 4 integration tests.
+- [x] **Room utilisation rollups (2026-06-29):** `/hub/rooms` overview + detail (`getRoomsOverview`/
+  `getRoomDetail`) roll up meetings, booked hours, % utilisation, busiest day, and per-day occupancy from
+  **real** appointments + assignments. Proven by E2E (a live booking shows on the room detail).
+- [ ] Recurring-series generation + **edit-this/all** (needs a shared `series_id` on appointments + the edit UI);
+  reschedule + cancel **with reason**; care-state transitions (states already persist via `markProgress`).
+- [ ] **Offline send-queue (PWA):** queued bookings/reschedules sync on reconnect with conflict re-check; the
+  queued-state UI from Phase 8 goes live.
+- [x] Calendar + booking + Hub oversight read real availability (the reads above are all DB-backed).
 
 ---
 

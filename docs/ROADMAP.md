@@ -482,12 +482,21 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 ## ⚙️ PHASE 10: THE DATA ENGINE  SCHEMA + RLS + QUERIES + STORAGE
 *Goal: the schema, tenant isolation, and integrity everything stands on. The mock→db swap.*
 
+> **🔄 IN PROGRESS (2026-06-29).** Built cluster-by-cluster on the hybrid `dbProvider` (real where migrated,
+> mock fallback elsewhere; the DB is seeded from the same fixtures via `db/seed-all.ts`, so the two always
+> agree). **Done so far:** identity + tenancy (Phase 9), **consent + audit** (persisted), the **directory
+> cluster** (clients, counsellors, services, sites, rooms, demographics — schema + seed + real reads + E2E),
+> and the **appointments cluster** (schema + seed + `listCounsellorSessions`/`listAppointmentsFor*` real +
+> E2E). **Remaining before Phase 10 is DONE:** clinical (notes/care-plans/outcomes/documents), billing
+> (invoices), funders/grants (M&E), payments + comms + AI tables, **RLS (10.2)**, and Storage (10.3). 13
+> migrations on Neon; 11 Playwright E2E + 45 unit green.
+
 ### Task 10.1: Drizzle schema
-- [ ] Tenancy: `orgs`, `org_members` (**+ `team_role`**: org_admin / counsellor / front_desk / finance / programme_manager, + `is_supervisor`), `app_users`. Care: `counsellors` (credential, supervisor edge), `clients`, `appointments`, `sessions`, `session_notes`, `recurring_series`, `services`, `intake_forms`, `intake_responses`.
-- [ ] **Rooms:** `sites` (venues), `rooms` (name, site, capacity, equipment, status, colour), `room_assignments` (counsellor ↔ room ↔ day-of-week/date ↔ start/end  the schedule), and `appointments.room_id` (in-person). Utilisation is derived.
+- [x] Tenancy + identity (Phase 9): `orgs`, `org_members` (+ `team_role`, `is_supervisor`), Better Auth `user`/`session`/`account`/`two_factor`. **Directory** (2026-06-29): `counsellors` (credential flattened), `clients` (soft-delete), `services`, `demographics`. Still to add: `sessions`/`session_notes`, `recurring_series`, `intake_forms`/`intake_responses`.
+- [x] **Rooms + appointments** (2026-06-29): `sites`, `rooms` (capacity/equipment/status/colour), and `appointments` (org_id, client, counsellor, service, type, `room_id`, startsAt, duration, state, tags). Still to add: `room_assignments` (the recurring schedule); utilisation stays derived.
 - [ ] **Client-shared care:** `care_plans` / `session_summaries` (the shared artifact, distinct from `session_notes`) + `care_plan_tasks` (between-session tasks with done state). Sharing is an explicit, consented action; the private note is never exposed.
 - [ ] **Funders & grants (M&E):** `funders` (name, type, contacts), `funder_contacts` (user ↔ funder, scoped to grants), `grants` (funder, org, period, amount, restricted, reporting schedule, status), `grant_indicators` (name, type `count|percentage|outcome_delta|demographic_proportion`, target, computation rule), `grant_allocations` (client/programme ↔ grant), `grant_narratives`, `grant_reports`.
-- [ ] Sensitive: `demographics` (special personal info), `outcome_measures`, `risk_flags`. POPIA: `consents`, `audit_log`.
+- [x] POPIA: `consents` (persisted, versioned), `audit_log` (persisted) — Phase 9. `demographics` — directory cluster. Still to add: `outcome_measures`, `risk_flags`.
 - [ ] **Payments (two layers):** `subscriptions` (org ↔ Phila plan  platform billing) and `payment_connections` (org's BYO gateway: provider + **encrypted credentials** + status) + `invoices` + `payments`. Comms: `notifications`, `message_templates`. AI: `ai_jobs`, `usage_events`, `ai_providers`. Public: `org_public_pages`.
 - [ ] Enums per Appendix. Indices: btree on `org_id` + FKs + `room_assignments(room_id, day)`; GIN where searched.
 
@@ -495,7 +504,7 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 - [ ] RLS policies on **every** `org_id` table keyed off the authenticated org + role. `super_admin` cross-org access via an explicit, audited path. Tests assert no cross-org leak (Phase 19).
 
 ### Task 10.3: The real `dataProvider` + integrity
-- [ ] `dbProvider` matching the mock interface (`DESIGN.md` §11) **exactly** → UI unchanged.
+- [~] **`dbProvider` matching the mock interface, UI unchanged** — in progress. Built as a **hybrid**: spreads the mock, overrides per cluster. Migrated so far: `getOrg`/`getOrgBySlug`, `getClientConsents`, the directory reads (`listClients`/`getClient`/`listCounsellors`/`getCounsellor`/`listServices`/`listSites`/`listRooms`), and the appointment reads (`listCounsellorSessions`/`listAppointmentsForCounsellor`/`listAppointmentsForOrg`). The composite dashboards + remaining clusters still fall back to mock.
 - [ ] Typed query fns in `db/queries/*` (no raw queries in components); Server Actions + Zod on every mutation; `logAccess()` on every PII path.
 - [ ] **Select-list redaction:** `session_notes.body`, contact, `national_id_enc`, demographics never selected on a shared/cross-role path.
 - [ ] Supabase Storage (private buckets, signed URLs, service-role server-only) for documents / uploads / generated reports; magic-byte sniff + size limits + per-user rate limit; every file access audited.

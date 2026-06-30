@@ -485,7 +485,7 @@ export const aiRailConfig: import("@/lib/domain/types").AiRailConfig = {
 
 export const integrationsCatalogue: import("@/lib/domain/types").IntegrationCatalogItem[] = [
   { key: "whatsapp", name: "WhatsApp (Meta Cloud API)", category: "messaging", status: "mock", description: "Booking, reminder, and follow-up messages  WhatsApp-first." },
-  { key: "sms", name: "SMS (Clickatell)", category: "messaging", status: "off", description: "SMS fallback for clients without WhatsApp." },
+  { key: "sms", name: "SMS (BulkSMS)", category: "messaging", status: "off", description: "Phila-provided SMS credits  reminders + notices for clients without WhatsApp." },
   { key: "livekit", name: "LiveKit video", category: "video", status: "mock", description: "Self-hosted, in-region video rooms for online sessions." },
   { key: "stitch", name: "Stitch", category: "payments", status: "mock", description: "PayShap & pay-by-bank  orgs connect their own account." },
   { key: "ozow", name: "Ozow", category: "payments", status: "off", description: "PayShap & instant EFT." },

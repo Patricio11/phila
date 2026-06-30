@@ -1,11 +1,13 @@
 import "server-only";
 import { decryptField } from "@/lib/crypto";
+import { getPlatformIntegration } from "@/db/queries/platform-integrations";
 
 /**
  * Real-shaped transports, dormant-by-default. Each makes the actual provider call
  * when configured, and returns an HONEST result otherwise ("dormant"  never a
  * fake "sent"). WhatsApp uses the ORG's Meta Cloud API number; SMS (BulkSMS) and
- * email (Resend) use Phila's platform credentials from env (set in Phase 12.5).
+ * email (Resend) use Phila's platform credentials  configured by the super-admin
+ * in /admin/integrations (encrypted), falling back to env vars.
  */
 export interface TransportResult {
   status: "sent" | "failed" | "dormant";
@@ -30,12 +32,29 @@ export async function sendWhatsApp(creds: { phoneNumberId: string | null; access
   }
 }
 
+/** BulkSMS creds: admin-configured (encrypted) first, then env. */
+export async function getBulkSmsCreds(): Promise<{ tokenId: string; tokenSecret: string } | null> {
+  const cfg = await getPlatformIntegration("bulksms");
+  if (cfg?.enabled && cfg.creds.tokenId && cfg.creds.tokenSecret) return { tokenId: cfg.creds.tokenId, tokenSecret: cfg.creds.tokenSecret };
+  const tokenId = process.env.PHILA_BULKSMS_TOKEN_ID;
+  const tokenSecret = process.env.PHILA_BULKSMS_TOKEN_SECRET;
+  return tokenId && tokenSecret ? { tokenId, tokenSecret } : null;
+}
+
+/** Resend creds: admin-configured (encrypted) first, then env. */
+export async function getResendCreds(): Promise<{ apiKey: string; from: string } | null> {
+  const cfg = await getPlatformIntegration("resend");
+  if (cfg?.enabled && cfg.creds.apiKey && cfg.creds.from) return { apiKey: cfg.creds.apiKey, from: cfg.creds.from };
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.PHILA_EMAIL_FROM;
+  return apiKey && from ? { apiKey, from } : null;
+}
+
 export async function sendSms(to: string, body: string): Promise<TransportResult> {
-  const id = process.env.PHILA_BULKSMS_TOKEN_ID;
-  const secret = process.env.PHILA_BULKSMS_TOKEN_SECRET;
-  if (!id || !secret) return { status: "dormant", detail: "Phila SMS not configured" };
+  const creds = await getBulkSmsCreds();
+  if (!creds) return { status: "dormant", detail: "Phila SMS not configured" };
   try {
-    const auth = Buffer.from(`${id}:${secret}`).toString("base64");
+    const auth = Buffer.from(`${creds.tokenId}:${creds.tokenSecret}`).toString("base64");
     const res = await fetch("https://api.bulksms.com/v1/messages", {
       method: "POST",
       headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
@@ -50,14 +69,13 @@ export async function sendSms(to: string, body: string): Promise<TransportResult
 }
 
 export async function sendEmail(to: string, subject: string, body: string, fromName: string, replyTo: string | null): Promise<TransportResult> {
-  const key = process.env.RESEND_API_KEY;
-  const from = process.env.PHILA_EMAIL_FROM; // e.g. notifications@phila.co.za (verified domain)
-  if (!key || !from) return { status: "dormant", detail: "Phila email not configured" };
+  const creds = await getResendCreds();
+  if (!creds) return { status: "dormant", detail: "Phila email not configured" };
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: `${fromName || "Phila"} <${from}>`, to, subject, text: body, reply_to: replyTo || undefined }),
+      headers: { Authorization: `Bearer ${creds.apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: `${fromName || "Phila"} <${creds.from}>`, to, subject, text: body, reply_to: replyTo || undefined }),
     });
     if (!res.ok) return { status: "failed", detail: `Resend HTTP ${res.status}` };
     const json = (await res.json()) as { id?: string };

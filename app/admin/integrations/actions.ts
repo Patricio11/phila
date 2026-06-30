@@ -119,3 +119,70 @@ export async function testStorageConnectionAction(raw: { url: string; serviceKey
   const res = await testStorageConnection(creds);
   return { ok: res.ok, detail: res.detail ?? (res.ok ? "Bucket reachable." : "Could not connect.") };
 }
+
+/**
+ * Phila SMS (BulkSMS) — the platform SMS sender orgs buy credits against. Token
+ * ID + secret encrypted at rest; a blank field keeps the stored one.
+ */
+const smsInput = z.object({ tokenId: z.string().trim().default(""), tokenSecret: z.string().trim().default(""), enabled: z.boolean() });
+async function resolveSmsCreds(raw: { tokenId?: string; tokenSecret?: string }): Promise<{ tokenId: string; tokenSecret: string }> {
+  const existing = await getPlatformIntegration("bulksms");
+  return { tokenId: (raw.tokenId ?? "").trim() || existing?.creds.tokenId || "", tokenSecret: (raw.tokenSecret ?? "").trim() || existing?.creds.tokenSecret || "" };
+}
+export async function saveBulkSmsConfig(raw: z.infer<typeof smsInput>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const principal = await requireSuperAdmin();
+  const parsed = smsInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Check the details." };
+  const creds = await resolveSmsCreds(parsed.data);
+  if (parsed.data.enabled && (!creds.tokenId || !creds.tokenSecret)) return { ok: false, error: "Add the BulkSMS token ID + secret before switching it on." };
+  await savePlatformIntegration("bulksms", creds, parsed.data.enabled);
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: null, target: "platform_integration:bulksms", reason: parsed.data.enabled ? "enable_bulksms" : "save_bulksms" });
+  return { ok: true };
+}
+export async function testBulkSmsConnection(raw: { tokenId: string; tokenSecret: string }): Promise<{ ok: boolean; detail: string }> {
+  await requireSuperAdmin();
+  const creds = await resolveSmsCreds(raw);
+  if (!creds.tokenId || !creds.tokenSecret) return { ok: false, detail: "Enter the token ID and secret." };
+  try {
+    const auth = Buffer.from(`${creds.tokenId}:${creds.tokenSecret}`).toString("base64");
+    const res = await fetch("https://api.bulksms.com/v1/profile", { headers: { Authorization: `Basic ${auth}` } });
+    if (res.ok) return { ok: true, detail: "Connected to BulkSMS." };
+    if (res.status === 401) return { ok: false, detail: "Token rejected — check the ID + secret." };
+    return { ok: false, detail: `BulkSMS returned ${res.status}.` };
+  } catch (e) {
+    return { ok: false, detail: e instanceof Error ? e.message : "Could not reach BulkSMS." };
+  }
+}
+
+/**
+ * Phila email (Resend) — sends from Phila's verified domain with the practice as
+ * display name + reply-to. API key encrypted at rest; a blank key keeps the stored one.
+ */
+const emailInput = z.object({ apiKey: z.string().trim().default(""), from: z.string().trim().max(200), enabled: z.boolean() });
+async function resolveResendCreds(raw: { apiKey?: string; from?: string }): Promise<{ apiKey: string; from: string }> {
+  const existing = await getPlatformIntegration("resend");
+  return { apiKey: (raw.apiKey ?? "").trim() || existing?.creds.apiKey || "", from: (raw.from ?? "").trim() || existing?.creds.from || "" };
+}
+export async function saveResendConfig(raw: z.infer<typeof emailInput>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const principal = await requireSuperAdmin();
+  const parsed = emailInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Check the details." };
+  const creds = await resolveResendCreds({ apiKey: parsed.data.apiKey, from: parsed.data.from });
+  if (parsed.data.enabled && (!creds.apiKey || !creds.from)) return { ok: false, error: "Add the Resend API key + from-address before switching it on." };
+  await savePlatformIntegration("resend", creds, parsed.data.enabled);
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: null, target: "platform_integration:resend", reason: parsed.data.enabled ? "enable_resend" : "save_resend" });
+  return { ok: true };
+}
+export async function testResendConnection(raw: { apiKey: string; from: string }): Promise<{ ok: boolean; detail: string }> {
+  await requireSuperAdmin();
+  const creds = await resolveResendCreds(raw);
+  if (!creds.apiKey) return { ok: false, detail: "Enter the Resend API key." };
+  try {
+    const res = await fetch("https://api.resend.com/domains", { headers: { Authorization: `Bearer ${creds.apiKey}` } });
+    if (res.ok) return { ok: true, detail: "Connected to Resend." };
+    if (res.status === 401) return { ok: false, detail: "API key rejected." };
+    return { ok: false, detail: `Resend returned ${res.status}.` };
+  } catch (e) {
+    return { ok: false, detail: e instanceof Error ? e.message : "Could not reach Resend." };
+  }
+}

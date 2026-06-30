@@ -731,6 +731,10 @@ export interface DataProvider {
   listAppointmentsForClient(clientId: string, now: string): Promise<AppointmentView[]>;
   getCarePlan(clientId: string): Promise<CarePlan | null>;
   listClientDocuments(clientId: string): Promise<ClientDocument[]>;
+  /** Documents shared with the client (assigned + client-visible + clean) — Phase 18. */
+  listClientVisibleDocuments(clientId: string): Promise<Document[]>;
+  /** The client's open upload requests (uploads are request-bound) — Phase 18. */
+  listClientDocumentRequests(clientId: string): Promise<DocumentRequest[]>;
   listClientInvoices(clientId: string): Promise<Invoice[]>;
   getClientConsents(clientId: string): Promise<ConsentRecord[]>;
 

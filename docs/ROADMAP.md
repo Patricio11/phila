@@ -808,8 +808,11 @@ request-gated client uploads, and org→counsellor sharing  all on Phila Storage
   consent/opt-out/quiet-hours/credits honoured) and `client_uploaded_document` (→ the counsellor + Hub).
 
 ### Task 18.4: Client side, made real
-- [ ] `/me/documents`: request-bound upload (persisted, scanned), **real signed-URL download**, a "shared with
-  you" view; the old optimistic-only upload button is replaced by the request flow. Every access audited.
+- [x] **`/me/documents` (2026-06-30):** a **"Requested from you"** section (the client uploads **only** against an
+  open request  no unsolicited uploads), with the real presigned upload flow; **"Your documents"** shows
+  client-visible files with a real **signed-URL download**; the old optimistic-only upload button is gone. Reads
+  are the new client-scoped provider methods (`listClientVisibleDocuments` / `listClientDocumentRequests`); every
+  access audited. *(Counsellor "shared-with-me" lane + dossier integration + delivery notifications still to come.)*
 
 **Done when:** the Hub organises documents in folders and moves/assigns them smoothly; a counsellor sees their
 clients' docs + anything shared to them; a client uploads only what was requested and opens only what was shared;

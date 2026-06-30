@@ -186,6 +186,55 @@ export async function finalizeDocument(orgId: string, documentId: string, bytes:
     .where(and(eq(documents.orgId, orgId), eq(documents.id, documentId)));
 }
 
+/* ── Client-portal reads + request-bound upload ───────────────────────── */
+
+/** Documents a client may see: assigned to them, client-visible, scanned clean. */
+export async function listClientVisibleDocumentsDb(clientId: string): Promise<Document[]> {
+  const rows = await getDb().select().from(documents).where(and(
+    eq(documents.clientId, clientId),
+    eq(documents.visibility, "client_visible"),
+    eq(documents.scanStatus, "clean"),
+    isNull(documents.deletedAt),
+  ));
+  return rows.map(toDocument);
+}
+
+/** A client's OPEN upload requests (the only way a client may upload). */
+export async function listClientRequestsDb(clientId: string): Promise<DocumentRequest[]> {
+  const rows = await getDb().select().from(documentRequests)
+    .where(and(eq(documentRequests.clientId, clientId), eq(documentRequests.status, "pending")));
+  return rows.map(toRequest);
+}
+
+export async function getRequestRow(requestId: string): Promise<DocumentRequest | null> {
+  const [r] = await getDb().select().from(documentRequests).where(eq(documentRequests.id, requestId)).limit(1);
+  return r ? toRequest(r) : null;
+}
+
+export async function getClientDocumentRow(clientId: string, documentId: string): Promise<Document | null> {
+  const [r] = await getDb().select().from(documents)
+    .where(and(eq(documents.clientId, clientId), eq(documents.id, documentId))).limit(1);
+  return r ? toDocument(r) : null;
+}
+
+/** A client's upload against a request — visible to them, awaiting scan. */
+export async function insertClientUpload(input: {
+  id: string; orgId: string; clientId: string; requestId: string; name: string; contentType: string;
+  storageKey: string; uploadedBy: string | null;
+}): Promise<void> {
+  await getDb().insert(documents).values({
+    id: input.id, orgId: input.orgId, clientId: input.clientId, requestId: input.requestId, name: input.name,
+    kind: "upload", visibility: "client_visible", storageProvider: "supabase", storageKey: input.storageKey,
+    contentType: input.contentType, bytes: 0, sizeLabel: "…", scanStatus: "pending",
+    uploadedBy: input.uploadedBy, sharedBy: "client", createdAt: new Date(),
+  });
+}
+
+export async function fulfilRequestDb(requestId: string, documentId: string): Promise<void> {
+  await getDb().update(documentRequests).set({ status: "fulfilled", fulfilledDocumentId: documentId })
+    .where(eq(documentRequests.id, requestId));
+}
+
 /** Maintain the org's storage tally (clamped at zero). */
 export async function addStorageUsage(orgId: string, deltaBytes: number): Promise<void> {
   const db = getDb();

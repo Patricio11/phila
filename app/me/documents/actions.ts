@@ -8,6 +8,7 @@ import { logAccess } from "@/lib/audit";
 import { getStorageProvider, objectKey } from "@/lib/storage";
 import { storageLimitBytes, validateUpload } from "@/lib/documents/quota";
 import { scanObject } from "@/lib/documents/scan";
+import { notifyClientUpload } from "@/lib/messaging/notify-document";
 import {
   addStorageUsage,
   currentStorageBytes,
@@ -75,6 +76,7 @@ export async function confirmClientUpload(raw: z.infer<typeof confirmInput>): Pr
   await finalizeDocument(doc.orgId, doc.id, parsed.data.bytes, scan);
   if (scan === "clean") await addStorageUsage(doc.orgId, parsed.data.bytes);
   if (doc.requestId) await fulfilRequestDb(doc.requestId, doc.id);
+  await notifyClientUpload(doc.id);
   await logAccess({ action: "file.access", actor: { userId: principal.userId, platformRole: "client", teamRole: null }, orgId: doc.orgId, target: `document:${doc.id}`, reason: `client_upload_${scan}` });
   revalidatePath("/me/documents");
   return { ok: true };

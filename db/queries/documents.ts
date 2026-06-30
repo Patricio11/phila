@@ -113,9 +113,11 @@ export async function moveItemsDb(
       .where(and(eq(documentFolders.orgId, orgId), inArray(documentFolders.id, items.folderIds)));
 }
 
+/** Assigning a document to a client puts it on their record AND makes it visible
+ * to them (so the client portal shows it and the share notification is truthful). */
 export async function assignToClientDb(orgId: string, documentIds: string[], clientId: string): Promise<void> {
   if (!documentIds.length) return;
-  await getDb().update(documents).set({ clientId })
+  await getDb().update(documents).set({ clientId, visibility: "client_visible" })
     .where(and(eq(documents.orgId, orgId), inArray(documents.id, documentIds)));
 }
 

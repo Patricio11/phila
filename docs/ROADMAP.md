@@ -808,8 +808,11 @@ request-gated client uploads, and org→counsellor sharing  all on Phila Storage
 - [x] **Document requests (2026-06-30):** the Hub creates a request (`requestDocument`); the client portal's
   "Requested from you" shows it and uploads **against** it (no unsolicited uploads); fulfilment flips the status
   `pending → fulfilled` and links the document. *(A request-from-the-dossier shortcut is a small follow-up.)*
-- [ ] **In-app notifications** + Phase-12 triggers: `document_shared` (org → client, preferred channel,
-  consent/opt-out/quiet-hours/credits honoured) and `client_uploaded_document` (→ the counsellor + Hub).
+- [x] **Phase-12 channel triggers (2026-06-30):** `document_shared` (org → client, on assign-to-client) and
+  `client_uploaded_document` (→ the practice email, on a client fulfilling a request)  both routed through the
+  Phase-12 `deliver` chokepoint (consent / opt-out / quiet-hours / credits honoured; dormant channels never fake a
+  send), both **hub-editable** in the template manager. *(A richer in-app notification feed is a follow-up; the
+  Hub's "Needs review" view already surfaces client uploads.)*
 
 ### Task 18.4: Client side, made real
 - [x] **`/me/documents` (2026-06-30):** a **"Requested from you"** section (the client uploads **only** against an

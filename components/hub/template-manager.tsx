@@ -12,12 +12,13 @@ import { cn } from "@/lib/utils";
 
 const TRIGGER_LABEL: Record<MessageTrigger, string> = {
   booked: "Booking confirmed", rescheduled: "Rescheduled", cancelled: "Cancelled", reminder: "Reminder", no_show: "No-show follow-up",
+  document_shared: "Document shared with client", client_uploaded_document: "Client uploaded a document",
 };
 const CHANNEL_META: Record<Channel, { label: string; icon: typeof Mail }> = {
   whatsapp: { label: "WhatsApp", icon: MessageCircle }, sms: { label: "SMS", icon: Smartphone }, email: { label: "Email", icon: Mail },
 };
-const TOKENS = ["clientName", "practiceName", "serviceName", "counsellorName", "date", "time"];
-const TRIGGERS: MessageTrigger[] = ["booked", "rescheduled", "cancelled", "reminder", "no_show"];
+const TOKENS = ["clientName", "practiceName", "serviceName", "counsellorName", "date", "time", "documentName"];
+const TRIGGERS: MessageTrigger[] = ["booked", "rescheduled", "cancelled", "reminder", "no_show", "document_shared", "client_uploaded_document"];
 const CHANNELS: Channel[] = ["whatsapp", "sms", "email"];
 
 export function TemplateManager({ templates, practiceName }: { templates: TemplateView[]; practiceName: string }) {

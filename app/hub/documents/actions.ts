@@ -22,6 +22,7 @@ import {
 import { getStorageProvider, objectKey } from "@/lib/storage";
 import { storageLimitBytes, validateUpload } from "@/lib/documents/quota";
 import { scanObject } from "@/lib/documents/scan";
+import { notifyDocumentShared } from "@/lib/messaging/notify-document";
 import { randomUUID } from "node:crypto";
 
 /**
@@ -90,7 +91,11 @@ export async function assignToClient(raw: z.infer<typeof assignInput>): Promise<
   const { principal, membership } = await requireHub();
   const parsed = assignInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Pick a client and at least one document." };
-  if (isDb()) await assignToClientDb(membership.orgId, parsed.data.documentIds, parsed.data.clientId);
+  if (isDb()) {
+    await assignToClientDb(membership.orgId, parsed.data.documentIds, parsed.data.clientId);
+    // Notify the client once per shared document (honest: dormant channels don't fake a send).
+    for (const documentId of parsed.data.documentIds) await notifyDocumentShared(documentId);
+  }
   await audit(membership.orgId, principal.userId, `client:${parsed.data.clientId}/documents`, "assign_documents");
   revalidatePath("/hub/documents");
   return { ok: true };

@@ -2,14 +2,14 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { BellRing, Check, FilePlus2 } from "lucide-react";
+import { BellRing, Check, FilePlus2, Link2 } from "lucide-react";
 import type { Invoice } from "@/lib/domain/types";
 import type { PaymentStatus } from "@/lib/domain/enums";
 import type { InvoiceSettings } from "@/lib/data-provider";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { markInvoicePaid, sendInvoiceReminder } from "@/app/hub/invoicing/actions";
+import { getInvoicePayLink, markInvoicePaid, sendInvoiceReminder } from "@/app/hub/invoicing/actions";
 import { InvoicePreview } from "@/components/hub/invoice-preview";
 import { cn } from "@/lib/utils";
 
@@ -60,6 +60,17 @@ export function InvoiceBoard({ rows, nowISO, orgName, province, vatRatePercent, 
     });
   };
 
+  const copyPayLink = (r: InvoiceRow) => {
+    setPendingId(r.invoice.id);
+    start(async () => {
+      const res = await getInvoicePayLink({ invoiceId: r.invoice.id });
+      setPendingId(null);
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      try { await navigator.clipboard.writeText(res.url); } catch { /* clipboard blocked */ }
+      toast({ tone: "success", title: "Pay link copied", description: `Share it with ${r.clientName.split(" ")[0]} — they pay you directly.` });
+    });
+  };
+
   const remind = (r: InvoiceRow) => {
     setPendingId(r.invoice.id);
     start(async () => {
@@ -99,6 +110,11 @@ export function InvoiceBoard({ rows, nowISO, orgName, province, vatRatePercent, 
       render: (r) =>
         effective(r) === "unpaid" ? (
           <div className="flex justify-end gap-1.5">
+            {paymentsEnabled && (
+              <Button variant="mini" disabled={pendingId === r.invoice.id} onClick={() => copyPayLink(r)}>
+                <Link2 className="size-3.5" strokeWidth={2} aria-hidden /> Pay link
+              </Button>
+            )}
             <Button variant="mini" disabled={pendingId === r.invoice.id} onClick={() => remind(r)}>
               <BellRing className="size-3.5" strokeWidth={2} aria-hidden /> Remind
             </Button>

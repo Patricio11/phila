@@ -3,6 +3,7 @@ import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
 import { PageHead } from "@/components/shell/page-head";
 import { InvoiceBoard, type InvoiceRow } from "@/components/hub/invoice-board";
+import { getOrgGatewayStatus } from "@/db/queries/org-gateway";
 import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
@@ -13,12 +14,13 @@ export default async function HubInvoicingPage() {
   const provider = await getDataProvider();
   const now = clockNow();
 
-  const [invoices, clients, org, invoiceSettings, platform] = await Promise.all([
+  const [invoices, clients, org, invoiceSettings, platform, gateway] = await Promise.all([
     provider.listOrgInvoices(membership.orgId),
     provider.listOrgClients(membership.orgId, now),
     provider.getOrg(membership.orgId),
     provider.getInvoiceSettings(membership.orgId),
     provider.getPlatformSettings(),
+    getOrgGatewayStatus(membership.orgId),
   ]);
   const nameOf = new Map(clients.map((c) => [c.client.id, c.client.name]));
   const rows: InvoiceRow[] = invoices.map((invoice) => ({ invoice, clientName: nameOf.get(invoice.clientId) ?? "Client" }));
@@ -44,7 +46,7 @@ export default async function HubInvoicingPage() {
         province={org?.province ?? ""}
         vatRatePercent={platform.vatRatePercent}
         settings={invoiceSettings}
-        paymentsEnabled={Boolean(org?.features.payments)}
+        paymentsEnabled={gateway.enabled && gateway.configured}
       />
     </div>
   );

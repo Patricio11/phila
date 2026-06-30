@@ -655,12 +655,24 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 ## 💳 PHASE 15: PAYMENTS  PLATFORM BILLING + ORG GATEWAYS
 *Goal: two distinct money flows, real. (A) orgs pay Phila; (B) clients pay their org.*
 
-### Task 15A: Platform subscription billing (orgs → Phila)
-- [ ] Orgs subscribe to a plan and pay Phila via Phila's own PSP; trials, upgrade/downgrade, proration, dunning, receipts; entitlements enforced from the `plans` table; super-admin billing views.
+### Task 15A: Platform subscription billing (orgs → Phila) ✅
+- [x] **Subscribe + pay Phila (2026-06-30).** Orgs pick a plan on `/hub/billing/plan` and pay Phila via the
+  **platform gateway** (Paystack, admin-configured in `/admin/integrations` — encrypted, **Test connection**,
+  switch on; never an env var). A paid charge **activates the subscription idempotently** (`subscriptions`
+  table; settle keyed on the payment ref) and sets the next period. `getOrgSubscription`/`listPlans` now read
+  real subscription rows; super-admin MRR/subscriber counts come from them. Masizakhe's subscription is **seeded**
+  (Community, active). Plan catalogue in `lib/billing/plans.ts`. *Trials / proration / dunning / receipts are
+  noted as follow-ups; the core subscribe-and-pay loop is real.*
 
-### Task 15B: Org payments  BYO gateway (clients → org)
-- [ ] Each org connects its **own** gateway (the provider it switched on + credentials it entered in Task 5.5), stored encrypted; a **PSP orchestrator** abstracts Stitch / Ozow (PayShap + pay-by-bank) + Yoco / Paystack (cards) behind one interface so switching providers is a toggle.
-- [ ] Invoices (from the A4 builder) charge through the **org's** connected gateway → funds settle to the org; webhooks + idempotency keys (load-shedding-safe); paid / unpaid / cancelled / refunded tracking; income + **income prediction** from real data; metered where Phila fronts a cost.
+### Task 15B: Org payments  BYO gateway (clients → org) ✅
+- [x] **Org's own gateway + client invoice payments (2026-06-30).** Each org connects its **own** Paystack in
+  Settings → Payments (paste key → **Test connection** → switch on; encrypted at rest; Stitch/Ozow/Yoco shown as
+  "soon"). Every unpaid invoice gets a **signed, unguessable pay-link** ("Pay link" copies it); the client opens
+  the **public `/pay/[token]`** page, pays on Paystack through the **org's** key so **funds settle to the org**,
+  and the invoice is **marked paid idempotently** (webhook routes by payment ref → org key; the redirect-callback
+  is the backstop). If the org hasn't switched payments on, the pay page shows an **honest EFT fallback**. Paid /
+  unpaid tracking flows through the existing board. *PSP orchestrator currently = Paystack; income prediction is a
+  Phase-16 reporting follow-up.*
 
 ### Task 15.1: Phila credit purchase (orgs buy SMS/Email credits → Phila) ✅
 - [x] **Self-serve credit purchase + usage dashboard (2026-06-30).** A beautiful **Billing & usage** page

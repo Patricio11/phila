@@ -214,6 +214,12 @@ async function main() {
     await db.insert(schema.creditLedger).values({ orgId: "org_masizakhe", channel, delta: 100, reason: "grant", ref: "seed", idempotencyKey: `seed_grant_${channel}_org_masizakhe`, balanceAfter: 100, createdAt: msgNow }).onConflictDoNothing();
   }
 
+  // Phila subscription (Phase 15A) — Masizakhe is on the Community plan, billed monthly.
+  const periodEnd = new Date(Date.UTC(msgNow.getUTCFullYear(), msgNow.getUTCMonth() + 1, 1));
+  await db.insert(schema.subscriptions).values({
+    orgId: "org_masizakhe", planId: "p_community", status: "active", currentPeriodEnd: periodEnd, providerRef: "seed", updatedAt: msgNow,
+  }).onConflictDoNothing();
+
   const sql = neon(url!);
   const [c] = await sql`select
     (select count(*)::int from orgs) orgs,

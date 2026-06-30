@@ -11,7 +11,9 @@
  * as the write paths migrate (docs/SECURITY.md).
  */
 import { and, eq, gte, isNull, lte } from "drizzle-orm";
-import type { AppointmentView, CaseloadRow, CaseloadStatus, CounsellorDashboard, DataProvider, HubOverview, OutcomePoint, RoomView, RoomDetail } from "@/lib/data-provider";
+import type { AppointmentView, CaseloadRow, CaseloadStatus, CounsellorDashboard, DataProvider, HubOverview, OutcomePoint, OrgSubscription, PlanWithUsage, RoomView, RoomDetail } from "@/lib/data-provider";
+import { PLANS, planById } from "@/lib/billing/plans";
+import { getSubscriptionRow, listSubscriptions } from "@/db/queries/subscriptions";
 import { computeHubOverview, computeCounsellorDashboard } from "@/lib/domain/dashboards";
 import { desc, inArray } from "drizzle-orm";
 import type { Appointment, CarePlan, Client, ClientDocument, ConsentRecord, Counsellor, Funder, Grant, Invoice, Org, Room, Service, Site } from "@/lib/domain/types";
@@ -166,6 +168,25 @@ export const dbProvider: DataProvider = {
     const db = getDb();
     const [row] = await db.select().from(orgsTable).where(eq(orgsTable.slug, slug)).limit(1);
     return row && !row.deletedAt ? toOrg(row) : null;
+  },
+
+  // Phila subscription (Phase 15A) — read from the subscriptions table.
+  getOrgSubscription: async (orgId: string, now: string): Promise<OrgSubscription | null> => {
+    const sub = await getSubscriptionRow(orgId);
+    if (!sub) return null;
+    const plan = planById(sub.planId);
+    if (!plan || (sub.status !== "active" && sub.status !== "trialing" && sub.status !== "past_due")) return null;
+    const d = new Date(now);
+    const nextBillingAt = sub.currentPeriodEnd ?? new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)).toISOString();
+    return { plan, status: sub.status, nextBillingAt, billedVia: "Phila platform billing" };
+  },
+
+  listPlans: async (): Promise<PlanWithUsage[]> => {
+    const subs = await listSubscriptions();
+    return PLANS.map((plan) => {
+      const active = subs.filter((s) => s.planId === plan.id && s.status === "active");
+      return { plan, subscribers: active.length, mrrCents: active.length * plan.priceCents };
+    });
   },
 
   // The public booking config keeps its mock-sourced settings (booking policy +

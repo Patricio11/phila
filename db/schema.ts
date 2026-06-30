@@ -439,14 +439,35 @@ export const payments = pgTable("payments", {
   orgId: text("org_id").notNull().references(() => orgs.id),
   provider: text("provider").notNull(), // paystack
   providerRef: text("provider_ref").notNull(),
-  purpose: text("purpose").notNull(), // credit_sms | credit_email
+  purpose: text("purpose").notNull(), // credit_sms | credit_email | invoice | subscription
   packId: text("pack_id"),
+  invoiceId: text("invoice_id"),
   creditsAmount: integer("credits_amount").default(0).notNull(),
   amountCents: integer("amount_cents").notNull(),
   status: text("status").default("pending").notNull(), // pending | paid | failed
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
   paidAt: timestamp("paid_at", { withTimezone: true }),
 }, (t) => [uniqueIndex("payment_ref_uq").on(t.providerRef)]);
+
+/** An org's OWN payment gateway (Phase 15B) — clients pay the org directly; funds
+ * settle to the org, not Phila. Credentials encrypted at rest. One row per org. */
+export const orgPaymentConnections = pgTable("org_payment_connections", {
+  orgId: text("org_id").primaryKey().references(() => orgs.id),
+  provider: text("provider").notNull(), // paystack (Stitch/Ozow/Yoco later)
+  credentialsEnc: text("credentials_enc"),
+  enabled: boolean("enabled").default(false).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
+/** An org's Phila subscription (Phase 15A) — what plan they're on + billing state. */
+export const subscriptions = pgTable("subscriptions", {
+  orgId: text("org_id").primaryKey().references(() => orgs.id),
+  planId: text("plan_id").notNull(),
+  status: text("status").default("trialing").notNull(), // trialing | active | past_due | cancelled
+  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  providerRef: text("provider_ref"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
 
 /** Recipient opt-outs (POPIA) — always win over any send. */
 export const messageOptOuts = pgTable("message_opt_outs", {

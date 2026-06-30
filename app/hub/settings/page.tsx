@@ -18,6 +18,7 @@ import { VideoSettingsCard } from "@/components/hub/video-settings";
 import { getVideoSettings } from "@/db/queries/video";
 import { AiSettingsCard } from "@/components/hub/ai-settings";
 import { getAiSettings, getAiSpendThisMonth, getActiveProvider } from "@/db/queries/ai";
+import { getOrgGatewayStatus } from "@/db/queries/org-gateway";
 import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
@@ -35,10 +36,11 @@ export default async function HubSettingsPage() {
   ]);
   if (!settings || !org) notFound();
   const videoSettings = await getVideoSettings(membership.orgId);
-  const [aiSettings, aiSpent, aiProvider] = await Promise.all([
+  const [aiSettings, aiSpent, aiProvider, gateway] = await Promise.all([
     getAiSettings(membership.orgId),
     getAiSpendThisMonth(membership.orgId),
     getActiveProvider(),
+    getOrgGatewayStatus(membership.orgId),
   ]);
   const page = await provider.getOrgPublicPage(org.slug);
   const bh: BusinessHours = org.scheduling.businessHours;
@@ -130,7 +132,7 @@ export default async function HubSettingsPage() {
           <CardHead title="Payments  your own gateway" />
           <div className="px-[17px] pb-[17px]">
             <p className="mb-3 text-[12.5px] text-text-2">Connect your gateway so clients pay your org directly for invoices. Funds settle to you; Phila just orchestrates. Switching providers is one choice.</p>
-            <PaymentConnectionCard />
+            <PaymentConnectionCard initial={gateway} />
           </div>
         </Card>
 

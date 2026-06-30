@@ -18,7 +18,8 @@
   a hosted checkout; the hub picks a pack → pays → returns. A **`charge.success`
   webhook** *and* the redirect-callback both **settle idempotently** (the credit
   ledger is keyed on the payment ref), so a top-up is never missed or double-counted.
-  Dormant + honest until `PHILA_PAYSTACK_SECRET` is set; the Phase-12 super-admin
+  Dormant + honest until the super-admin configures Paystack in `/admin/integrations`
+  (encrypted, Test connection, switch on — not an env var); the Phase-12 super-admin
   manual grant remains as a fallback.
 - **Schema** — `payments` (transaction record, unique on the provider ref;
   migration 0017, RLS'd); credit packs in `lib/payments/packs.ts`.

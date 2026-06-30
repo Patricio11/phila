@@ -1,19 +1,22 @@
 import { NextResponse } from "next/server";
-import { verifyWebhookSignature } from "@/lib/payments/paystack";
-import { settlePayment, failPayment } from "@/db/queries/payments";
+import { verifyWebhookSignature, paystackSignatureValid } from "@/lib/payments/paystack";
+import { settlePayment, failPayment, getPaymentByRef } from "@/db/queries/payments";
+import { settleInvoicePayment } from "@/db/queries/invoice-payments";
+import { settleSubscription } from "@/db/queries/subscriptions";
+import { getOrgGatewaySecret } from "@/db/queries/org-gateway";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Paystack webhook (Phase 15.1). A signed `charge.success` settles the matching
- * payment and tops up the org's credit balance (idempotent). The redirect-back
- * callback also verifies, so a top-up never depends on a single delivery.
+ * Paystack webhook (Phase 15). One endpoint, two payers: platform charges (credits
+ * + subscriptions) are signed with Phila's key; an org's client-invoice charges are
+ * signed with that ORG's key. We look the reference up first to pick the right
+ * secret, verify, then settle — idempotently. The redirect-callback is the backstop.
  */
 export async function POST(req: Request) {
   const raw = await req.text();
-  if (!(await verifyWebhookSignature(raw, req.headers.get("x-paystack-signature")))) {
-    return NextResponse.json({ error: "bad signature" }, { status: 401 });
-  }
+  const sig = req.headers.get("x-paystack-signature");
+
   let event: { event?: string; data?: { reference?: string } };
   try {
     event = JSON.parse(raw) as typeof event;
@@ -21,9 +24,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
   const reference = event.data?.reference;
-  if (reference) {
-    if (event.event === "charge.success") await settlePayment(reference);
-    else if (event.event === "charge.failed") await failPayment(reference);
+  if (!reference) return NextResponse.json({ ok: true });
+
+  const pay = await getPaymentByRef(reference);
+  if (!pay) return NextResponse.json({ ok: true }); // unknown ref — nothing to do
+
+  if (pay.purpose === "invoice") {
+    const gw = await getOrgGatewaySecret(pay.orgId);
+    if (!gw || !paystackSignatureValid(gw.secretKey, raw, sig)) {
+      return NextResponse.json({ error: "bad signature" }, { status: 401 });
+    }
+    if (event.event === "charge.success") await settleInvoicePayment(reference);
+    return NextResponse.json({ ok: true });
+  }
+
+  // Platform charges (credit packs / subscriptions) — Phila's key.
+  if (!(await verifyWebhookSignature(raw, sig))) {
+    return NextResponse.json({ error: "bad signature" }, { status: 401 });
+  }
+  if (event.event === "charge.success") {
+    if (pay.purpose === "subscription") await settleSubscription(reference);
+    else await settlePayment(reference);
+  } else if (event.event === "charge.failed") {
+    await failPayment(reference);
   }
   return NextResponse.json({ ok: true });
 }

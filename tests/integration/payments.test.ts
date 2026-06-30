@@ -44,7 +44,7 @@ describe("credit purchase", () => {
     expect(second.credited).toBe(0);
     expect((await getCreditBalances(ORG)).sms).toBe(before + 500);
 
-    const [row] = await listPayments(ORG, 5);
+    const row = (await listPayments(ORG, 20)).find((r) => r.providerRef === REF);
     expect(row).toMatchObject({ providerRef: REF, status: "paid", channel: "sms", creditsAmount: 500 });
   });
 });

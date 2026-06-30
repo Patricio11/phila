@@ -34,6 +34,12 @@ export async function failPayment(providerRef: string): Promise<void> {
   await getDb().update(payments).set({ status: "failed" }).where(eq(payments.providerRef, providerRef));
 }
 
+/** Minimal lookup so a webhook can pick the right secret + settle path for a ref. */
+export async function getPaymentByRef(providerRef: string): Promise<{ orgId: string; purpose: string; status: string } | null> {
+  const [p] = await getDb().select({ orgId: payments.orgId, purpose: payments.purpose, status: payments.status }).from(payments).where(eq(payments.providerRef, providerRef)).limit(1);
+  return p ?? null;
+}
+
 export interface PaymentRow {
   providerRef: string;
   packId: string | null;

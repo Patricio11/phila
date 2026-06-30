@@ -3,22 +3,21 @@ import { createHmac } from "node:crypto";
 import { getPaystackSecret } from "@/db/queries/platform-integrations";
 
 /**
- * Paystack (Phase 15) — the SA/Africa PSP behind credit purchases + platform
- * subscriptions. The secret key is configured + switched on by the super-admin in
- * /admin/integrations (encrypted at rest), NOT an env var. Dormant until then.
- * Amounts are in the smallest unit (ZAR cents).
+ * Paystack (Phase 15) — the SA/Africa PSP. Two surfaces, same primitives:
+ *  • Platform (credits + plan billing) uses Phila's key, configured in
+ *    /admin/integrations (getPaystackSecret).
+ *  • Each org's OWN gateway (client invoices) uses the org's key (Phase 15B) so
+ *    funds settle to the org. Those callers pass the key explicitly.
+ * Keys are never env vars; all are encrypted at rest. Amounts are in ZAR cents.
  */
-export async function paystackConfigured(): Promise<boolean> {
-  return Boolean(await getPaystackSecret());
-}
 
-export async function initTransaction(opts: { email: string; amountCents: number; reference: string; callbackUrl: string; metadata?: Record<string, unknown> }): Promise<{ ok: boolean; authorizationUrl?: string; error?: string }> {
-  const key = await getPaystackSecret();
-  if (!key) return { ok: false, error: "Payments aren't switched on yet." };
+// ---- Core (explicit key) ----
+export async function paystackInit(secretKey: string, opts: { email: string; amountCents: number; reference: string; callbackUrl: string; metadata?: Record<string, unknown> }): Promise<{ ok: boolean; authorizationUrl?: string; error?: string }> {
+  if (!secretKey) return { ok: false, error: "Payments aren't switched on yet." };
   try {
     const res = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ email: opts.email, amount: opts.amountCents, currency: "ZAR", reference: opts.reference, callback_url: opts.callbackUrl, metadata: opts.metadata }),
     });
     const json = (await res.json()) as { status?: boolean; message?: string; data?: { authorization_url?: string } };
@@ -29,11 +28,10 @@ export async function initTransaction(opts: { email: string; amountCents: number
   }
 }
 
-export async function verifyTransaction(reference: string): Promise<"success" | "failed" | "pending"> {
-  const key = await getPaystackSecret();
-  if (!key) return "pending";
+export async function paystackVerify(secretKey: string, reference: string): Promise<"success" | "failed" | "pending"> {
+  if (!secretKey) return "pending";
   try {
-    const res = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, { headers: { Authorization: `Bearer ${key}` } });
+    const res = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, { headers: { Authorization: `Bearer ${secretKey}` } });
     const json = (await res.json()) as { data?: { status?: string } };
     const s = json?.data?.status;
     return s === "success" ? "success" : s === "failed" ? "failed" : "pending";
@@ -42,13 +40,12 @@ export async function verifyTransaction(reference: string): Promise<"success" | 
   }
 }
 
-export async function verifyWebhookSignature(rawBody: string, signature: string | null): Promise<boolean> {
-  const key = await getPaystackSecret();
-  if (!key || !signature) return false;
-  return createHmac("sha512", key).update(rawBody).digest("hex") === signature;
+export function paystackSignatureValid(secretKey: string, rawBody: string, signature: string | null): boolean {
+  if (!secretKey || !signature) return false;
+  return createHmac("sha512", secretKey).update(rawBody).digest("hex") === signature;
 }
 
-/** Test a candidate key against Paystack — used by the admin "Test connection" button. */
+/** Test a candidate key against Paystack — used by both "Test connection" buttons. */
 export async function testPaystackKey(secretKey: string): Promise<{ ok: boolean; detail: string }> {
   if (!secretKey) return { ok: false, detail: "Enter a secret key first." };
   try {
@@ -62,4 +59,18 @@ export async function testPaystackKey(secretKey: string): Promise<{ ok: boolean;
   } catch {
     return { ok: false, detail: "Couldn't reach Paystack  check the key and try again." };
   }
+}
+
+// ---- Platform wrappers (Phila's own key) ----
+export async function paystackConfigured(): Promise<boolean> {
+  return Boolean(await getPaystackSecret());
+}
+export async function initTransaction(opts: { email: string; amountCents: number; reference: string; callbackUrl: string; metadata?: Record<string, unknown> }) {
+  return paystackInit((await getPaystackSecret()) ?? "", opts);
+}
+export async function verifyTransaction(reference: string) {
+  return paystackVerify((await getPaystackSecret()) ?? "", reference);
+}
+export async function verifyWebhookSignature(rawBody: string, signature: string | null): Promise<boolean> {
+  return paystackSignatureValid((await getPaystackSecret()) ?? "", rawBody, signature);
 }

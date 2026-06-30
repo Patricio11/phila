@@ -134,6 +134,13 @@
       "when": 1782798690482,
       "tag": "0018_uneven_hammerhead",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1782799730422,
+      "tag": "0019_cute_rumiko_fujikawa",
+      "breakpoints": true
     }
   ]
 }

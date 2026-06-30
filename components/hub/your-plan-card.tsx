@@ -1,9 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { Check, Sparkles } from "lucide-react";
 import type { OrgSubscription } from "@/lib/data-provider";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/toast";
 
 function rands(cents: number): string {
   return `R${(cents / 100).toLocaleString("en-ZA")}`;
@@ -24,7 +24,6 @@ const STATUS: Record<OrgSubscription["status"], { label: string; cls: string }> 
  * BYO gateway for client invoices). Two gateways, two purposes.
  */
 export function YourPlanCard({ subscription }: { subscription: OrgSubscription }) {
-  const { toast } = useToast();
   const { plan, status, nextBillingAt, billedVia } = subscription;
   const s = STATUS[status];
 
@@ -66,8 +65,8 @@ export function YourPlanCard({ subscription }: { subscription: OrgSubscription }
           Billed by <span className="font-medium text-text-2">{billedVia}</span> — Phila&apos;s gateway, separate from your own client-payment gateway above.
         </p>
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={() => toast({ tone: "default", title: "Billing history", description: "Your Phila invoices and receipts will open here." })}>Billing history</Button>
-          <Button variant="ghost" size="sm" onClick={() => toast({ tone: "default", title: "Change plan", description: "Compare plans and upgrade or downgrade — takes effect next cycle." })}>Change plan</Button>
+          <Button asChild variant="ghost" size="sm"><Link href="/hub/billing">Billing &amp; usage</Link></Button>
+          <Button asChild size="sm"><Link href="/hub/billing/plan">Change plan</Link></Button>
         </div>
       </div>
     </div>

@@ -4,6 +4,8 @@ import { z } from "zod";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 import { markInvoicePaid as persistMarkPaid } from "@/db/queries/settings";
+import { invoicePayPath } from "@/lib/payments/invoice-link";
+import { getPayableInvoice } from "@/db/queries/invoice-payments";
 
 /**
  * Invoice actions (mock). Validated + audited; Phase 15 settles real payments
@@ -27,6 +29,19 @@ export async function markInvoicePaid(
     reason: "mark_paid",
   });
   return { ok: true };
+}
+
+/** A signed, shareable pay-link for an invoice (Phase 15B). Org-scoped. */
+export async function getInvoicePayLink(
+  raw: z.infer<typeof markInput>,
+): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  const { membership } = await requireHub();
+  const parsed = markInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid request" };
+  const inv = await getPayableInvoice(parsed.data.invoiceId);
+  if (!inv || inv.orgId !== membership.orgId) return { ok: false, error: "Invoice not found." };
+  const base = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
+  return { ok: true, url: `${base}${invoicePayPath(parsed.data.invoiceId)}` };
 }
 
 export async function sendInvoiceReminder(

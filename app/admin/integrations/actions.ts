@@ -6,6 +6,7 @@ import { logAccess } from "@/lib/audit";
 import { getPlatformIntegration, savePlatformIntegration } from "@/db/queries/platform-integrations";
 import { testPaystackKey } from "@/lib/payments/paystack";
 import { testLivekit } from "@/lib/video/livekit";
+import { STORAGE_KEY, testStorageConnection } from "@/lib/storage";
 
 /**
  * Super-admin configures Phila's own payment gateway (Paystack) for credit + plan
@@ -74,4 +75,47 @@ export async function testLivekitConnection(raw: { wsUrl: string; apiKey: string
   await requireSuperAdmin();
   const apiSecret = await resolveLkSecret((raw.apiSecret ?? "").trim());
   return testLivekit((raw.wsUrl ?? "").trim(), (raw.apiKey ?? "").trim(), apiSecret);
+}
+
+/**
+ * Phila Storage (Phase 18) — the platform file store. Super-admin enters the
+ * Supabase project URL + service-role key + (private) bucket, tests, and switches
+ * on. The key is encrypted at rest; a blank key field keeps the stored one. Until
+ * switched on, document uploads stay honestly dormant (Dormant-by-Default).
+ */
+const storageInput = z.object({
+  url: z.string().trim().max(200),
+  serviceKey: z.string().trim().default(""),
+  bucket: z.string().trim().max(100),
+  enabled: z.boolean(),
+});
+
+async function resolveStorageCreds(raw: { url?: string; serviceKey?: string; bucket?: string }): Promise<{ url: string; serviceKey: string; bucket: string }> {
+  const existing = await getPlatformIntegration(STORAGE_KEY);
+  return {
+    url: (raw.url ?? "").trim() || existing?.creds.url || "",
+    serviceKey: (raw.serviceKey ?? "").trim() || existing?.creds.serviceKey || "",
+    bucket: (raw.bucket ?? "").trim() || existing?.creds.bucket || "",
+  };
+}
+
+export async function saveStorageConfig(raw: z.infer<typeof storageInput>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const principal = await requireSuperAdmin();
+  const parsed = storageInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Check the details." };
+  const d = parsed.data;
+  const creds = await resolveStorageCreds({ url: d.url, serviceKey: d.serviceKey, bucket: d.bucket });
+  if (d.enabled && (!creds.url || !creds.serviceKey || !creds.bucket))
+    return { ok: false, error: "Add the project URL, service-role key, and bucket before switching it on." };
+
+  await savePlatformIntegration(STORAGE_KEY, creds, d.enabled);
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: null, target: "platform_integration:phila_storage", reason: d.enabled ? "enable_storage" : "save_storage" });
+  return { ok: true };
+}
+
+export async function testStorageConnectionAction(raw: { url: string; serviceKey: string; bucket: string }): Promise<{ ok: boolean; detail: string }> {
+  await requireSuperAdmin();
+  const creds = await resolveStorageCreds(raw);
+  const res = await testStorageConnection(creds);
+  return { ok: res.ok, detail: res.detail ?? (res.ok ? "Bucket reachable." : "Could not connect.") };
 }

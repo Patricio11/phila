@@ -5,15 +5,24 @@ import { revalidatePath } from "next/cache";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 import {
+  addStorageUsage,
   assignToClientDb,
   createFolderDb,
   createRequestDb,
+  currentStorageBytes,
+  finalizeDocument,
+  getDocumentRow,
+  insertPendingDocument,
   moveItemsDb,
   renameFolderDb,
   setVisibilityDb,
   shareWithCounsellorDb,
   softDeleteItemsDb,
 } from "@/db/queries/documents";
+import { getStorageProvider, objectKey } from "@/lib/storage";
+import { storageLimitBytes, validateUpload } from "@/lib/documents/quota";
+import { scanObject } from "@/lib/documents/scan";
+import { randomUUID } from "node:crypto";
 
 /**
  * The Hub document workspace actions (Phase 18). Folders are virtual, so move /
@@ -143,4 +152,86 @@ export async function requestDocument(raw: z.infer<typeof requestInput>): Promis
   await audit(membership.orgId, principal.userId, `client:${parsed.data.clientId}/documents`, "request_document");
   revalidatePath("/hub/documents");
   return { ok: true, id };
+}
+
+/* ── Upload lifecycle: request → browser PUTs to storage → confirm ─────── */
+
+const uploadInput = z.object({
+  name: z.string().trim().min(1).max(160),
+  contentType: z.string().trim().min(1).max(120),
+  bytes: z.number().int().positive(),
+  folderId: z.string().min(1).nullable().default(null),
+});
+
+/** Mint a presigned upload URL + create a pending row. The browser PUTs the bytes
+ * straight to storage (never through a Server Action), then calls confirmUpload. */
+export async function requestUpload(raw: z.infer<typeof uploadInput>): Promise<{ ok: true; uploadUrl: string; documentId: string } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = uploadInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Check the file." };
+  const v = validateUpload({ contentType: parsed.data.contentType, bytes: parsed.data.bytes });
+  if (!v.ok) return v;
+
+  const storage = await getStorageProvider();
+  if (storage.status !== "live") return { ok: false, error: "Phila Storage isn't switched on yet." };
+
+  const used = await currentStorageBytes(membership.orgId);
+  if (used + parsed.data.bytes > storageLimitBytes())
+    return { ok: false, error: "You've reached your plan's storage. Remove files or upgrade for more." };
+
+  const documentId = `doc_${randomUUID()}`;
+  const key = objectKey(membership.orgId, documentId, parsed.data.name);
+  let uploadUrl: string;
+  try {
+    ({ uploadUrl } = await storage.signedUploadUrl({ key, contentType: parsed.data.contentType }));
+  } catch {
+    return { ok: false, error: "Storage rejected the upload — check the Phila Storage configuration." };
+  }
+  await insertPendingDocument({
+    id: documentId, orgId: membership.orgId, folderId: parsed.data.folderId, name: parsed.data.name,
+    contentType: parsed.data.contentType, storageKey: key, uploadedBy: principal.userId,
+  });
+  await audit(membership.orgId, principal.userId, `document:${documentId}`, "request_upload");
+  return { ok: true, uploadUrl, documentId };
+}
+
+const confirmInput = z.object({ documentId: z.string().min(1), bytes: z.number().int().positive() });
+export async function confirmUpload(raw: z.infer<typeof confirmInput>): Promise<Result> {
+  const { principal, membership } = await requireHub();
+  const parsed = confirmInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Could not finalise the upload." };
+  const doc = await getDocumentRow(membership.orgId, parsed.data.documentId);
+  if (!doc || !doc.storageKey) return { ok: false, error: "Upload not found." };
+
+  const scan = await scanObject(doc.storageKey);
+  await finalizeDocument(membership.orgId, parsed.data.documentId, parsed.data.bytes, scan);
+  if (scan === "clean") await addStorageUsage(membership.orgId, parsed.data.bytes);
+  await audit(membership.orgId, principal.userId, `document:${parsed.data.documentId}`, `upload_${scan}`);
+  revalidatePath("/hub/documents");
+  return { ok: true };
+}
+
+/** A short-TTL signed URL to open a stored file — only when scanned clean. */
+export async function signDownload(raw: { documentId: string }): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const documentId = String(raw?.documentId ?? "");
+  if (!documentId) return { ok: false, error: "Not found." };
+  const doc = await getDocumentRow(membership.orgId, documentId);
+  if (!doc || !doc.storageKey) return { ok: false, error: "That file isn't available to open." };
+  if (doc.scanStatus !== "clean") return { ok: false, error: "This file is still being checked." };
+
+  const storage = await getStorageProvider();
+  if (storage.status !== "live") return { ok: false, error: "Phila Storage isn't switched on." };
+  let url: string;
+  try {
+    url = await storage.signedDownloadUrl(doc.storageKey);
+  } catch {
+    return { ok: false, error: "Could not open the file." };
+  }
+  await logAccess({
+    action: "file.access",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId, target: `document:${doc.id}`, reason: "download",
+  });
+  return { ok: true, url };
 }

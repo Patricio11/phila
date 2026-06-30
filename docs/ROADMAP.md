@@ -779,13 +779,18 @@ request-gated client uploads, and org→counsellor sharing  all on Phila Storage
   counsellor_id?, session_id?, visibility, scan_status, uploaded_by, soft-delete), `document_requests`,
   `document_shares`, `org_storage_usage`  all RLS'd + seeded; migration 0021 applied; legacy `client_documents`
   backfilled into `documents`.
-- [~] **StorageProvider seam + Supabase backend (2026-06-30):** `lib/storage/*`  Supabase over REST (presigned
+- [x] **StorageProvider seam + Supabase backend (2026-06-30):** `lib/storage/*`  Supabase over REST (presigned
   upload, short-TTL signed download, delete, test-connection); private bucket + service-role server-only; resolved
-  from encrypted `platform_integrations` config, **dormant until switched on**. S3 is a later drop-in behind the
-  same interface. *(The admin "Phila Storage" card + the upload/download wiring land next.)*
-- [ ] Upload safety: content-type allowlist + **magic-byte sniff**, size limit, per-user rate limit, **virus
-  scan** (`scan_status: pending → clean | quarantined`; not downloadable until clean). Every action audited.
-- [ ] Per-plan **storage quota** (GB entitlement in `plans`); honest hard cap on upload (never a silent fail).
+  from encrypted `platform_integrations` config, **dormant until switched on**. The **admin "Phila Storage" card**
+  (configure → Test → switch) is in `/admin/integrations`. **Uploads are real:** the manager's Upload button +
+  drag-to-upload do `requestUpload` → **presigned PUT straight to Supabase** → `confirmUpload`; downloads are
+  short-TTL signed URLs (clean files only), audited. S3 is a later drop-in behind the same interface.
+- [~] Upload safety: **content-type allowlist + size cap + per-plan quota enforced server-side (2026-06-30)**;
+  a `scan_status: pending → clean | quarantined` **gate** with a swappable scanner hook (`lib/documents/scan.ts`;
+  not downloadable until clean). *(Real AV scanner + **magic-byte sniff** + per-user rate limit are the documented
+  follow-ups.)* Every action audited.
+- [x] **Per-plan storage quota (2026-06-30):** an honest hard cap on upload (`storageLimitBytes`; never a silent
+  fail), a live usage meter in the manager. *(Plan `storageGb` entitlement + buy-more top-up are the follow-up.)*
 
 ### Task 18.2: The Hub document manager (the beautiful part)
 - [x] **Two-pane workspace (2026-06-30):** folder **tree** + file **grid/list**, breadcrumbs, **drag-to-move**

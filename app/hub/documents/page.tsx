@@ -1,6 +1,7 @@
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
+import { getStorageStatus } from "@/lib/storage";
 import { PageHead } from "@/components/shell/page-head";
 import { DocumentManager } from "@/components/documents/document-manager";
 
@@ -11,13 +12,14 @@ export default async function HubDocumentsPage() {
   const { principal, membership } = await requireHub();
   const provider = await getDataProvider();
 
-  const [folders, documents, clients, counsellors, requests, usage] = await Promise.all([
+  const [folders, documents, clients, counsellors, requests, usage, storage] = await Promise.all([
     provider.listOrgFolders(membership.orgId),
     provider.listOrgDocuments(membership.orgId),
     provider.listClients(membership.orgId),
     provider.listCounsellors(membership.orgId),
     provider.listDocumentRequests(membership.orgId),
     provider.getStorageUsage(membership.orgId),
+    getStorageStatus(),
   ]);
 
   await logAccess({
@@ -41,6 +43,7 @@ export default async function HubDocumentsPage() {
         counsellors={counsellors.map((c) => ({ id: c.id, name: c.name }))}
         requests={requests}
         usage={usage}
+        storageEnabled={storage.enabled}
       />
     </div>
   );

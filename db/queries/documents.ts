@@ -19,7 +19,7 @@ import type {
   ShareTargetType,
   StorageBackend,
 } from "@/lib/domain/enums";
-import { storageLimitBytes } from "@/lib/documents/quota";
+import { sizeLabel, storageLimitBytes } from "@/lib/documents/quota";
 
 /* ── Row → domain mappers ──────────────────────────────────────────────── */
 
@@ -152,4 +152,48 @@ export async function createRequestDb(
     title: input.title, note: input.note ?? null, status: "pending", createdAt: new Date(),
   });
   return id;
+}
+
+/* ── Upload lifecycle (presigned: request → PUT → confirm) ─────────────── */
+
+export async function getDocumentRow(orgId: string, documentId: string): Promise<Document | null> {
+  const [r] = await getDb().select().from(documents)
+    .where(and(eq(documents.orgId, orgId), eq(documents.id, documentId))).limit(1);
+  return r ? toDocument(r) : null;
+}
+
+export async function currentStorageBytes(orgId: string): Promise<number> {
+  const [row] = await getDb().select({ b: orgStorageUsage.bytesUsed }).from(orgStorageUsage)
+    .where(eq(orgStorageUsage.orgId, orgId)).limit(1);
+  return row?.b ?? 0;
+}
+
+/** Insert a `pending` document row (bytes land on confirm; not downloadable until scanned). */
+export async function insertPendingDocument(input: {
+  id: string; orgId: string; folderId: string | null; name: string; contentType: string;
+  storageKey: string; uploadedBy: string | null;
+}): Promise<void> {
+  await getDb().insert(documents).values({
+    id: input.id, orgId: input.orgId, folderId: input.folderId, name: input.name,
+    kind: "upload", visibility: "internal", storageProvider: "supabase", storageKey: input.storageKey,
+    contentType: input.contentType, bytes: 0, sizeLabel: "…", scanStatus: "pending",
+    uploadedBy: input.uploadedBy, sharedBy: "org", createdAt: new Date(),
+  });
+}
+
+export async function finalizeDocument(orgId: string, documentId: string, bytes: number, scanStatus: ScanStatus): Promise<void> {
+  await getDb().update(documents).set({ bytes, sizeLabel: sizeLabel(bytes), scanStatus })
+    .where(and(eq(documents.orgId, orgId), eq(documents.id, documentId)));
+}
+
+/** Maintain the org's storage tally (clamped at zero). */
+export async function addStorageUsage(orgId: string, deltaBytes: number): Promise<void> {
+  const db = getDb();
+  const [row] = await db.select().from(orgStorageUsage).where(eq(orgStorageUsage.orgId, orgId)).limit(1);
+  if (row) {
+    await db.update(orgStorageUsage).set({ bytesUsed: Math.max(0, row.bytesUsed + deltaBytes), updatedAt: new Date() })
+      .where(eq(orgStorageUsage.orgId, orgId));
+  } else {
+    await db.insert(orgStorageUsage).values({ orgId, bytesUsed: Math.max(0, deltaBytes), updatedAt: new Date() });
+  }
 }

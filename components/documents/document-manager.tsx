@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronRight,
+  Download,
   FileText,
   FolderClosed,
   FolderOpen,
@@ -31,12 +32,15 @@ import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import {
   assignToClient,
+  confirmUpload,
   createFolder,
   deleteItems,
   moveItems,
   renameFolder,
   requestDocument,
+  requestUpload,
   shareWithCounsellors,
+  signDownload,
 } from "@/app/hub/documents/actions";
 
 type Named = { id: string; name: string };
@@ -56,6 +60,7 @@ export function DocumentManager({
   counsellors,
   requests,
   usage,
+  storageEnabled,
 }: {
   folders: DocumentFolder[];
   documents: Document[];
@@ -63,9 +68,12 @@ export function DocumentManager({
   counsellors: Named[];
   requests: DocumentRequest[];
   usage: StorageUsage;
+  storageEnabled: boolean;
 }) {
   const router = useRouter();
   const { toast } = useToast();
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(0);
 
   // Optimistic local state, re-synced from the server whenever a refresh delivers
   // new props (the React "adjust state during render" pattern — not an effect).
@@ -250,6 +258,42 @@ export function DocumentManager({
     router.refresh();
   }
 
+  /* ── Upload (presigned → PUT → confirm) + download ───────────────────── */
+  async function uploadFiles(files: FileList | File[]) {
+    const list = Array.from(files);
+    if (!list.length) return;
+    if (!storageEnabled) {
+      toast({ tone: "default", title: "Switch on Phila Storage", description: "An admin enables it in Admin → Integrations before uploads work." });
+      return;
+    }
+    setUploading((n) => n + list.length);
+    let done = 0;
+    for (const file of list) {
+      try {
+        const type = file.type || "application/octet-stream";
+        const req = await requestUpload({ name: file.name, contentType: type, bytes: file.size, folderId: cwd });
+        if (!req.ok) { toast({ tone: "error", title: file.name, description: req.error }); continue; }
+        const put = await fetch(req.uploadUrl, { method: "PUT", headers: { "Content-Type": type }, body: file });
+        if (!put.ok) { toast({ tone: "error", title: file.name, description: "Upload failed." }); continue; }
+        const conf = await confirmUpload({ documentId: req.documentId, bytes: file.size });
+        if (!conf.ok) { toast({ tone: "error", title: file.name, description: conf.error }); continue; }
+        done++;
+      } catch {
+        toast({ tone: "error", title: file.name, description: "Upload failed." });
+      } finally {
+        setUploading((n) => Math.max(0, n - 1));
+      }
+    }
+    if (done) toast({ tone: "success", title: `Uploaded ${done} file${done > 1 ? "s" : ""}` });
+    router.refresh();
+  }
+
+  async function downloadDoc(documentId: string) {
+    const res = await signDownload({ documentId });
+    if (!res.ok) { toast({ tone: "error", title: "Can't open this file", description: res.error }); return; }
+    window.open(res.url, "_blank", "noopener");
+  }
+
   /* ── Derived view data ───────────────────────────────────────────────── */
   const reviewDocs = docs.filter((d) => d.sharedBy === "client" || d.scanStatus === "pending");
   const openRequests = requests.filter((r) => r.status === "pending").length;
@@ -333,11 +377,24 @@ export function DocumentManager({
             <Button variant="subtle" size="sm" onClick={() => setNewFolderOpen(true)}>
               <FolderPlus className="size-4" aria-hidden /> New folder
             </Button>
+            <input
+              ref={fileInput}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => { if (e.target.files) void uploadFiles(e.target.files); e.target.value = ""; }}
+              aria-hidden
+            />
             <Button
               size="sm"
-              onClick={() => toast({ tone: "default", title: "Uploads are nearly here", description: "Switch on Phila Storage to upload files (next in this phase)." })}
+              loading={uploading > 0}
+              onClick={() =>
+                storageEnabled
+                  ? fileInput.current?.click()
+                  : toast({ tone: "default", title: "Switch on Phila Storage", description: "An admin enables it in Admin → Integrations before uploads work." })
+              }
             >
-              <Upload className="size-4" aria-hidden /> Upload
+              <Upload className="size-4" aria-hidden /> {uploading > 0 ? `Uploading ${uploading}…` : "Upload"}
             </Button>
           </div>
         </div>
@@ -345,7 +402,8 @@ export function DocumentManager({
         {view === "folders" && (
           <div
             className={cn("min-h-[300px] rounded-card border border-border bg-surface p-3 transition-colors", dropTarget === "root" && "border-accent/60 bg-accent/5")}
-            onDragOver={(e) => { if (cwd !== null) { e.preventDefault(); } }}
+            onDragOver={(e) => { if (e.dataTransfer.types.includes("Files")) e.preventDefault(); }}
+            onDrop={(e) => { if (e.dataTransfer.files?.length) { e.preventDefault(); void uploadFiles(e.dataTransfer.files); } }}
           >
             {subFolders.length === 0 && folderDocs.length === 0 ? (
               <EmptyState icon={FolderOpen} title="This folder is empty" body="Create a subfolder, or drag files in once uploads are switched on." />
@@ -383,6 +441,7 @@ export function DocumentManager({
                       selected={selected.has(dk(d.id))}
                       onSelect={(additive) => toggle(dk(d.id), additive)}
                       onDragStart={(e) => onDragStart(e, dk(d.id))}
+                      onDownload={() => downloadDoc(d.id)}
                     />
                   ))}
                 </ul>
@@ -398,7 +457,7 @@ export function DocumentManager({
             ) : (
               <ul className="space-y-1.5">
                 {reviewDocs.map((d) => (
-                  <DocRow key={d.id} doc={d} clientName={d.clientId ? clientName.get(d.clientId) : undefined} selected={selected.has(dk(d.id))} onSelect={(additive) => toggle(dk(d.id), additive)} onDragStart={(e) => onDragStart(e, dk(d.id))} />
+                  <DocRow key={d.id} doc={d} clientName={d.clientId ? clientName.get(d.clientId) : undefined} selected={selected.has(dk(d.id))} onSelect={(additive) => toggle(dk(d.id), additive)} onDragStart={(e) => onDragStart(e, dk(d.id))} onDownload={() => downloadDoc(d.id)} />
                 ))}
               </ul>
             )}
@@ -417,7 +476,7 @@ export function DocumentManager({
                     <div className="mb-1.5 px-1 text-[12.5px] font-semibold text-text">{c.name}</div>
                     <ul className="space-y-1.5">
                       {docs.filter((d) => d.clientId === c.id).map((d) => (
-                        <DocRow key={d.id} doc={d} selected={selected.has(dk(d.id))} onSelect={(additive) => toggle(dk(d.id), additive)} onDragStart={(e) => onDragStart(e, dk(d.id))} />
+                        <DocRow key={d.id} doc={d} selected={selected.has(dk(d.id))} onSelect={(additive) => toggle(dk(d.id), additive)} onDragStart={(e) => onDragStart(e, dk(d.id))} onDownload={() => downloadDoc(d.id)} />
                       ))}
                     </ul>
                   </div>
@@ -649,16 +708,18 @@ function FolderCard({ folder, count, selected, dropping, renaming, onOpen, onSel
   );
 }
 
-function DocRow({ doc, clientName, selected, onSelect, onDragStart }: {
-  doc: Document; clientName?: string; selected: boolean; onSelect: (additive: boolean) => void; onDragStart: (e: React.DragEvent) => void;
+function DocRow({ doc, clientName, selected, onSelect, onDragStart, onDownload }: {
+  doc: Document; clientName?: string; selected: boolean; onSelect: (additive: boolean) => void; onDragStart: (e: React.DragEvent) => void; onDownload: () => void;
 }) {
+  const openable = doc.scanStatus === "clean" && Boolean(doc.storageKey);
   return (
     <li
       draggable
       onDragStart={onDragStart}
       onClick={(e) => onSelect(e.metaKey || e.ctrlKey || e.shiftKey)}
+      onDoubleClick={() => openable && onDownload()}
       className={cn(
-        "flex cursor-pointer items-center gap-3 rounded-card border p-2.5 transition-colors",
+        "group flex cursor-pointer items-center gap-3 rounded-card border p-2.5 transition-colors",
         selected ? "border-accent bg-accent/5" : "border-border bg-surface hover:bg-surface-hover",
       )}
     >
@@ -677,6 +738,16 @@ function DocRow({ doc, clientName, selected, onSelect, onDragStart }: {
       {doc.scanStatus === "quarantined" && <Chip tone="danger" icon={ShieldAlert} label="Quarantined" />}
       {doc.sharedBy === "client" && <Chip tone="accent" label="From client" />}
       {doc.visibility === "client_visible" && <Chip tone="muted" label="Visible to client" />}
+      {openable && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onDownload(); }}
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-control text-text-3 opacity-0 transition-opacity hover:bg-surface-hover hover:text-text group-hover:opacity-100"
+          aria-label={`Open ${doc.name}`}
+        >
+          <Download className="size-[17px]" strokeWidth={1.9} aria-hidden />
+        </button>
+      )}
     </li>
   );
 }

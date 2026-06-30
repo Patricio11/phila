@@ -13,6 +13,33 @@ export function storageLimitBytes(): number {
   return DEFAULT_STORAGE_GB * BYTES_PER_GB;
 }
 
+/** Per-file ceiling (the practice uploads documents, not media libraries). */
+export const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25 MB
+
+/** Allowed content types — documents + images a clinic actually handles. */
+export const ALLOWED_CONTENT_TYPES = new Set<string>([
+  "application/pdf",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/heic",
+  "image/gif",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/plain",
+  "text/csv",
+]);
+
+/** Validate an upload's declared type + size before minting a presigned URL. Pure. */
+export function validateUpload(input: { contentType: string; bytes: number }): { ok: true } | { ok: false; error: string } {
+  if (!ALLOWED_CONTENT_TYPES.has(input.contentType)) return { ok: false, error: "That file type isn't supported." };
+  if (input.bytes <= 0) return { ok: false, error: "That file looks empty." };
+  if (input.bytes > MAX_FILE_BYTES) return { ok: false, error: `Files must be under ${Math.round(MAX_FILE_BYTES / 1024 / 1024)} MB.` };
+  return { ok: true };
+}
+
 /** A calm human size label, e.g. "2.4 MB". 0 bytes (metadata-only legacy) → "—". */
 export function sizeLabel(bytes: number): string {
   if (!bytes || bytes <= 0) return "—";
@@ -23,5 +50,6 @@ export function sizeLabel(bytes: number): string {
     n /= 1024;
     i++;
   }
-  return `${n >= 10 || i === 0 ? Math.round(n) : n.toFixed(1)} ${units[i]}`;
+  const value = n >= 10 || i === 0 ? String(Math.round(n)) : n.toFixed(1).replace(/\.0$/, "");
+  return `${value} ${units[i]}`;
 }

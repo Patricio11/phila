@@ -7,7 +7,22 @@ import { FunderStory } from "@/components/marketing/funder-story";
 import { TrustBand } from "@/components/marketing/trust-band";
 import { WhoItsFor } from "@/components/marketing/who-its-for";
 import { Voice } from "@/components/marketing/voice";
+import { Pricing } from "@/components/marketing/pricing";
 import { ClosingCta, SiteFooter } from "@/components/marketing/closing";
+import { getPlatformIntegrationStatus } from "@/db/queries/platform-integrations";
+
+// ISR — the page is static but re-checks the pricing switch periodically; the
+// admin toggle also revalidates "/" for an immediate update.
+export const revalidate = 60;
+
+/** Whether the super-admin has switched the landing pricing on (default: hidden). */
+async function pricingEnabled(): Promise<boolean> {
+  try {
+    return (await getPlatformIntegrationStatus("landing_pricing")).enabled;
+  } catch {
+    return false;
+  }
+}
 
 /** The landing is the public face  it opts back into indexing (the app is noindex). */
 export const metadata: Metadata = {
@@ -26,7 +41,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const showPricing = await pricingEnabled();
   return (
     <>
       <SiteNav />
@@ -38,6 +54,7 @@ export default function LandingPage() {
         <TrustBand />
         <WhoItsFor />
         <Voice />
+        {showPricing && <Pricing />}
         <ClosingCta />
       </main>
       <SiteFooter />

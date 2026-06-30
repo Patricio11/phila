@@ -50,6 +50,9 @@ import type {
   Client,
   Counsellor,
   Demographics,
+  Document,
+  DocumentFolder,
+  DocumentRequest,
   Grant,
   GrantIndicator,
   Invoice,
@@ -58,7 +61,9 @@ import type {
   Room,
   Service,
   SessionNote,
+  StorageUsage,
 } from "@/lib/domain/types";
+import { storageLimitBytes } from "@/lib/documents/quota";
 import {
   aiRailConfig,
   bookingSettings,
@@ -608,6 +613,26 @@ export const mockProvider: DataProvider = {
 
   getCarePlan: (clientId) => ok(carePlans[clientId] ?? null),
   listClientDocuments: (clientId) => ok(clientDocuments[clientId] ?? []),
+
+  // Documents (Phase 18) — derive from the legacy fixtures; folders/requests empty in mock.
+  listOrgDocuments: (orgId) =>
+    ok(
+      Object.values(clientDocuments)
+        .flat()
+        .filter((d) => d.orgId === orgId)
+        .map(
+          (d): Document => ({
+            id: d.id, orgId: d.orgId, folderId: null, clientId: d.clientId, counsellorId: null,
+            sessionId: null, name: d.name, kind: d.kind, visibility: "client_visible",
+            storageProvider: "supabase", storageKey: null, contentType: null, bytes: 0,
+            sizeLabel: d.sizeLabel, scanStatus: "clean", uploadedBy: null, sharedBy: d.sharedBy,
+            requestId: null, createdAt: d.createdAt,
+          }),
+        ),
+    ),
+  listOrgFolders: () => ok([] as DocumentFolder[]),
+  listDocumentRequests: () => ok([] as DocumentRequest[]),
+  getStorageUsage: (orgId) => ok<StorageUsage>({ orgId, bytesUsed: 0, bytesLimit: storageLimitBytes() }),
   listClientInvoices: (clientId) => ok(allInvoices[clientId] ?? []),
   getClientConsents: (clientId) => ok(allConsents.filter((c) => c.clientId === clientId)),
 

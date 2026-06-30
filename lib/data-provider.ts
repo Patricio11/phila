@@ -16,6 +16,9 @@ import type {
   ConsentRecord,
   Counsellor,
   Demographics,
+  Document,
+  DocumentFolder,
+  DocumentRequest,
   Funder,
   Grant,
   GrantIndicator,
@@ -32,6 +35,7 @@ import type {
   Service,
   SessionNote,
   Site,
+  StorageUsage,
 } from "@/lib/domain/types";
 
 /** Everything the booking flow (`/o/[slug]/book`) needs in one fetch. */
@@ -745,6 +749,12 @@ export interface DataProvider {
   listOrgInvoices(orgId: string): Promise<Invoice[]>;
   getReporting(orgId: string, now: string, filters: ReportingFilters): Promise<ReportingResult>;
   getOrgSettings(orgId: string): Promise<OrgSettings | null>;
+
+  // Documents (Phase 18) — the org's document workspace
+  listOrgDocuments(orgId: string): Promise<Document[]>;
+  listOrgFolders(orgId: string): Promise<DocumentFolder[]>;
+  listDocumentRequests(orgId: string): Promise<DocumentRequest[]>;
+  getStorageUsage(orgId: string): Promise<StorageUsage>;
 
   // Funders & grants (M&E)
   listFunders(orgId: string): Promise<Funder[]>;

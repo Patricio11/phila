@@ -662,8 +662,18 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 - [ ] Each org connects its **own** gateway (the provider it switched on + credentials it entered in Task 5.5), stored encrypted; a **PSP orchestrator** abstracts Stitch / Ozow (PayShap + pay-by-bank) + Yoco / Paystack (cards) behind one interface so switching providers is a toggle.
 - [ ] Invoices (from the A4 builder) charge through the **org's** connected gateway → funds settle to the org; webhooks + idempotency keys (load-shedding-safe); paid / unpaid / cancelled / refunded tracking; income + **income prediction** from real data; metered where Phila fronts a cost.
 
-### Task 15.1: Phila credit purchase (orgs buy SMS/Email credits → Phila)
-- [ ] Self-serve checkout for the **notification credit packs** from Phase 12 — orgs buy SMS / email credit packs via the platform system gateway (Task 15A's PSP); a successful payment posts a `purchase` entry to the `credit_ledger` and tops up `credit_balances` (idempotent on the payment ref). Replaces Phase 12's super-admin manual grant. Pack pricing from the platform; receipts + a top-up history; low-balance prompts become real "Buy more".
+### Task 15.1: Phila credit purchase (orgs buy SMS/Email credits → Phila) ✅
+- [x] **Self-serve credit purchase + usage dashboard (2026-06-30).** A beautiful **Billing & usage** page
+  (`/hub/billing`): SMS + email balances with low-credit warnings, **AI spend vs cap** (progress bar), recent
+  message activity, **credit packs** (Buy → Paystack checkout), and a top-up history. A successful payment posts
+  a `purchase` to the `credit_ledger` and tops up `credit_balances` **idempotently on the payment ref** (webhook
+  + redirect-callback both settle, never double-counts). **Low-balance nudges** show on the billing page **and
+  the hub overview** ("top up so messages keep going out"). `payments` table (migration 0017, RLS'd); Paystack
+  (`lib/payments/paystack.ts`) dormant until `PHILA_PAYSTACK_SECRET` set. Replaces the Phase-12 manual grant
+  (still available as a super-admin fallback). Proven by an idempotency integration test.
+
+> **Remaining for Phase 15 (the two larger money flows):** 15A platform subscription billing (orgs → Phila) and
+> 15B org BYO-gateway invoice payments (clients → org). 15.1's PSP + payments table are the foundation both build on.
 
 **Done when:** an org subscribes to Phila (A), connects its own gateway in one switch (B), a client pays an invoice that settles to the org, and an org can **buy notification credits** that top up their balance automatically (15.1).
 

@@ -28,6 +28,7 @@ import {
   UserCog,
   UserRound,
   Users,
+  Wallet,
 } from "lucide-react";
 
 /**
@@ -111,6 +112,7 @@ export const hubNav: NavSection[] = [
       { label: "Booking", href: "/hub/booking", icon: CalendarCheck, ready: true },
       { label: "Intake", href: "/hub/intake", icon: ClipboardList, ready: true },
       { label: "Invoicing", href: "/hub/invoicing", icon: ReceiptText, ready: true },
+      { label: "Billing & usage", href: "/hub/billing", icon: Wallet, ready: true },
     ],
   },
 ];

@@ -421,6 +421,21 @@ export const orgVideoSettings = pgTable("org_video_settings", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 });
 
+/** Payments (Phase 15) — a transaction record per purchase (credit packs now; subscriptions/invoices later). */
+export const payments = pgTable("payments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  provider: text("provider").notNull(), // paystack
+  providerRef: text("provider_ref").notNull(),
+  purpose: text("purpose").notNull(), // credit_sms | credit_email
+  packId: text("pack_id"),
+  creditsAmount: integer("credits_amount").default(0).notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  status: text("status").default("pending").notNull(), // pending | paid | failed
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  paidAt: timestamp("paid_at", { withTimezone: true }),
+}, (t) => [uniqueIndex("payment_ref_uq").on(t.providerRef)]);
+
 /** Recipient opt-outs (POPIA) — always win over any send. */
 export const messageOptOuts = pgTable("message_opt_outs", {
   id: uuid("id").defaultRandom().primaryKey(),

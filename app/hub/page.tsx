@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import {
+  AlertTriangle,
   BadgeCheck,
   CalendarDays,
   ClipboardList,
@@ -10,6 +12,8 @@ import {
 import { now as clockNow } from "@/lib/clock";
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
+import { getCreditBalances } from "@/db/queries/messaging";
+import { LOW_CREDIT_THRESHOLD } from "@/lib/payments/packs";
 import { logAccess } from "@/lib/audit";
 import { coverageNote, isoWeekday } from "@/lib/domain/helpers";
 import { PageHead } from "@/components/shell/page-head";
@@ -40,6 +44,9 @@ export default async function HubOverviewPage() {
   const now = clockNow();
   const overview = await provider.getHubOverview(membership.orgId, now);
   if (!overview) notFound();
+
+  const credits = await getCreditBalances(membership.orgId);
+  const lowCredits = (["sms", "email"] as const).filter((c) => credits[c] < LOW_CREDIT_THRESHOLD);
 
   // Staffing load  who's stretched, who has capacity (this week, Mon–Sun).
   const counsellors = await provider.listCounsellors(membership.orgId);
@@ -72,6 +79,14 @@ export default async function HubOverviewPage() {
         title={`${greeting()}, ${firstName}`}
         summary={`${membership.orgName} at a glance  ${overview.clientsWeek} clients seen this week.`}
       />
+
+      {lowCredits.length > 0 && (
+        <Link href="/hub/billing" className="flex items-center gap-2.5 rounded-card border border-warn/40 bg-warn-soft px-4 py-2.5 text-[13px] text-warn transition-colors hover:bg-warn-soft/70">
+          <AlertTriangle className="size-4 shrink-0" strokeWidth={2} aria-hidden />
+          <span className="flex-1">Low on <b>{lowCredits.join(" & ")}</b> credits  top up so reminders and confirmations keep going out.</span>
+          <span className="shrink-0 font-medium underline-offset-2 hover:underline">Top up →</span>
+        </Link>
+      )}
 
       <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-3">
         <StatCard

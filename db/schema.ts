@@ -10,6 +10,7 @@
  * enforced in Phase 10.
  */
 import {
+  bigint,
   boolean,
   index,
   integer,
@@ -513,3 +514,76 @@ export const messageOptOuts = pgTable("message_opt_outs", {
   reason: text("reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
 }, (t) => [uniqueIndex("opt_out_uq").on(t.orgId, t.channel, t.target)]);
+
+/* ── Documents cluster (Phase 18) ──────────────────────────────────────── */
+
+/** The org's document folder tree. `parent_id` null = a root folder. Virtual —
+ * the tree lives here, so move/assign is a cheap metadata write (backend-agnostic). */
+export const documentFolders = pgTable("document_folders", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  parentId: text("parent_id"),
+  name: text("name").notNull(),
+  scope: text("scope").notNull(), // org | client | counsellor
+  clientId: text("client_id"),
+  createdBy: text("created_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+}, (t) => [index("doc_folders_org_idx").on(t.orgId)]);
+
+/** A document — generalizes `client_documents`. Bytes rest in Phila Storage
+ * (Supabase), reached via a short-TTL signed URL; this row is metadata only. */
+export const documents = pgTable("documents", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  folderId: text("folder_id"),
+  clientId: text("client_id"),
+  counsellorId: text("counsellor_id"),
+  sessionId: text("session_id"),
+  name: text("name").notNull(),
+  kind: text("kind").notNull(),
+  visibility: text("visibility").default("internal").notNull(), // client_visible | internal | clinical
+  storageProvider: text("storage_provider").default("supabase").notNull(),
+  storageKey: text("storage_key"),
+  contentType: text("content_type"),
+  bytes: bigint("bytes", { mode: "number" }).default(0).notNull(),
+  sizeLabel: text("size_label").notNull(),
+  scanStatus: text("scan_status").default("pending").notNull(), // pending | clean | quarantined
+  uploadedBy: text("uploaded_by"),
+  sharedBy: text("shared_by").notNull(), // counsellor | org | client
+  requestId: text("request_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+}, (t) => [index("documents_org_idx").on(t.orgId), index("documents_client_idx").on(t.clientId)]);
+
+/** A document the org asked a client to upload — gates ALL client uploads. */
+export const documentRequests = pgTable("document_requests", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  clientId: text("client_id").notNull(),
+  requestedBy: text("requested_by").notNull(),
+  title: text("title").notNull(),
+  note: text("note"),
+  status: text("status").default("pending").notNull(), // pending | fulfilled | cancelled
+  dueAt: timestamp("due_at", { withTimezone: true }),
+  fulfilledDocumentId: text("fulfilled_document_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+}, (t) => [index("doc_requests_client_idx").on(t.clientId)]);
+
+/** Org → counsellor share of a file or whole folder (folder cascades at read time). */
+export const documentShares = pgTable("document_shares", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  targetType: text("target_type").notNull(), // file | folder
+  targetId: text("target_id").notNull(),
+  sharedWith: text("shared_with").notNull(), // counsellor user id
+  grantedBy: text("granted_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+}, (t) => [uniqueIndex("doc_share_uq").on(t.targetType, t.targetId, t.sharedWith)]);
+
+/** Per-org storage consumption against the plan entitlement (maintained on upload/delete). */
+export const orgStorageUsage = pgTable("org_storage_usage", {
+  orgId: text("org_id").primaryKey().references(() => orgs.id),
+  bytesUsed: bigint("bytes_used", { mode: "number" }).default(0).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});

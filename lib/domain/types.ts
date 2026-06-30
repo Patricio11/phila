@@ -17,13 +17,21 @@ import type {
   ConsentState,
   CredentialBody,
   CredentialStatus,
+  DocumentKind,
+  DocumentRequestStatus,
+  DocumentSharedBy,
+  DocumentVisibility,
   EmploymentStatus,
+  FolderScope,
   Gender,
   OrgFeature,
   OutcomeTool,
   PopulationGroup,
   Province,
   RoomStatus,
+  ScanStatus,
+  ShareTargetType,
+  StorageBackend,
   TeamRole,
 } from "@/lib/domain/enums";
 
@@ -186,6 +194,76 @@ export interface ClientDocument {
   sizeLabel: string;
   sharedBy: "counsellor" | "org" | "client";
   createdAt: ISODateTime;
+}
+
+/* ── Document system (Phase 18) ────────────────────────────────────────── */
+
+/** A folder in the org's document tree. Virtual — the tree lives in the DB, so
+ * move/assign is a cheap metadata write and is backend-agnostic. */
+export interface DocumentFolder {
+  id: string;
+  orgId: string;
+  parentId: string | null;
+  name: string;
+  scope: FolderScope;
+  clientId: string | null;
+  createdAt: ISODateTime;
+}
+
+/** A document — the generalized `ClientDocument`. Metadata only; the bytes rest
+ * in Phila Storage (Supabase) reached via a short-TTL signed URL. */
+export interface Document {
+  id: string;
+  orgId: string;
+  folderId: string | null;
+  clientId: string | null;
+  counsellorId: string | null;
+  sessionId: string | null;
+  name: string;
+  kind: DocumentKind;
+  visibility: DocumentVisibility;
+  storageProvider: StorageBackend;
+  storageKey: string | null;
+  contentType: string | null;
+  bytes: number;
+  sizeLabel: string;
+  scanStatus: ScanStatus;
+  uploadedBy: string | null;
+  sharedBy: DocumentSharedBy;
+  requestId: string | null;
+  createdAt: ISODateTime;
+}
+
+/** A document the org asked a client to upload — gates all client uploads. */
+export interface DocumentRequest {
+  id: string;
+  orgId: string;
+  clientId: string;
+  requestedBy: string;
+  title: string;
+  note: string | null;
+  status: DocumentRequestStatus;
+  dueAt: ISODateTime | null;
+  fulfilledDocumentId: string | null;
+  createdAt: ISODateTime;
+}
+
+/** An org → counsellor grant over a file or a whole folder (cascades). */
+export interface DocumentShare {
+  id: string;
+  orgId: string;
+  targetType: ShareTargetType;
+  targetId: string;
+  sharedWith: string;
+  grantedBy: string;
+  createdAt: ISODateTime;
+}
+
+/** An org's storage consumption against its plan entitlement. */
+export interface StorageUsage {
+  orgId: string;
+  bytesUsed: number;
+  bytesLimit: number;
 }
 
 /** A client invoice (mock; PayShap settlement in Phase 15). */

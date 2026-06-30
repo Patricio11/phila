@@ -148,6 +148,13 @@
       "when": 1782814218980,
       "tag": "0020_curved_roland_deschain",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1782834546845,
+      "tag": "0021_aromatic_mindworm",
+      "breakpoints": true
     }
   ]
 }

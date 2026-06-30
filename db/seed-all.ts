@@ -184,6 +184,34 @@ async function main() {
       await db.insert(schema.clientDocuments).values({ id: d.id, clientId: d.clientId, orgId: d.orgId, name: d.name, kind: d.kind, sizeLabel: d.sizeLabel, sharedBy: d.sharedBy, createdAt: new Date(d.createdAt) }).onConflictDoNothing();
     }
   }
+
+  // ── Documents cluster (Phase 18) ──────────────────────────────────────
+  // Generalized `documents` (mirror legacy client_documents; client-visible + already scanned).
+  for (const docs of Object.values(docsFx)) {
+    for (const d of docs) {
+      await db.insert(schema.documents).values({
+        id: d.id, orgId: d.orgId, clientId: d.clientId, name: d.name, kind: d.kind,
+        visibility: "client_visible", storageProvider: "supabase", sizeLabel: d.sizeLabel,
+        scanStatus: "clean", sharedBy: d.sharedBy, bytes: 0, createdAt: new Date(d.createdAt),
+      }).onConflictDoNothing();
+    }
+  }
+  // Starter folders + a storage-usage row for the demo org.
+  await db.insert(schema.documentFolders).values([
+    { id: "fold_mas_reports", orgId: "org_masizakhe", name: "Reports", scope: "org", createdAt: now },
+    { id: "fold_mas_templates", orgId: "org_masizakhe", name: "Policies & templates", scope: "org", createdAt: now },
+  ]).onConflictDoNothing();
+  await db.insert(schema.orgStorageUsage).values({ orgId: "org_masizakhe", bytesUsed: 0, updatedAt: now }).onConflictDoNothing();
+  // A sample open request from the practice to a client (the gate for client uploads).
+  const firstDocClient = Object.values(docsFx)[0]?.[0]?.clientId;
+  if (firstDocClient) {
+    await db.insert(schema.documentRequests).values({
+      id: "docreq_seed_1", orgId: "org_masizakhe", clientId: firstDocClient, requestedBy: "system",
+      title: "Copy of your ID", note: "A clear photo of your green ID book or smart ID card.",
+      status: "pending", createdAt: now,
+    }).onConflictDoNothing();
+  }
+
   for (const [clientId, measures] of Object.entries(outcomesFx)) {
     for (let i = 0; i < measures.length; i++) {
       const m = measures[i]!;

@@ -140,6 +140,60 @@ export type AiFeature = (typeof AI_FEATURES)[number];
 export const ORG_FEATURES = ["ai", "video", "whatsapp", "sms", "payments"] as const;
 export type OrgFeature = (typeof ORG_FEATURES)[number];
 
+/* ---- Documents (Phase 18) ---------------------------------------------- */
+
+/** What a document is. Drives the icon + the "needs review" grouping. */
+export const DOCUMENT_KINDS = [
+  "report",
+  "resource",
+  "upload",
+  "form",
+  "id",
+  "referral",
+  "consent",
+  "other",
+] as const;
+export type DocumentKind = (typeof DOCUMENT_KINDS)[number];
+
+export const DOCUMENT_KIND_LABELS: Record<DocumentKind, string> = {
+  report: "Report",
+  resource: "Resource",
+  upload: "Upload",
+  form: "Form",
+  id: "ID document",
+  referral: "Referral",
+  consent: "Consent",
+  other: "Document",
+};
+
+/** Who may see a document (drives the redaction matrix, §4 of the plan). */
+export const DOCUMENT_VISIBILITIES = ["client_visible", "internal", "clinical"] as const;
+export type DocumentVisibility = (typeof DOCUMENT_VISIBILITIES)[number];
+
+/** A file is not downloadable until `clean` (virus-scan gate). */
+export const SCAN_STATUSES = ["pending", "clean", "quarantined"] as const;
+export type ScanStatus = (typeof SCAN_STATUSES)[number];
+
+/** What a folder is anchored to. */
+export const FOLDER_SCOPES = ["org", "client", "counsellor"] as const;
+export type FolderScope = (typeof FOLDER_SCOPES)[number];
+
+/** A document the org asked a client to upload. */
+export const DOCUMENT_REQUEST_STATUSES = ["pending", "fulfilled", "cancelled"] as const;
+export type DocumentRequestStatus = (typeof DOCUMENT_REQUEST_STATUSES)[number];
+
+/** Org → counsellor share target. A folder share cascades to its contents. */
+export const SHARE_TARGET_TYPES = ["file", "folder"] as const;
+export type ShareTargetType = (typeof SHARE_TARGET_TYPES)[number];
+
+/** Phila Storage backends. Supabase now; S3 a later drop-in behind the same seam. */
+export const STORAGE_BACKENDS = ["supabase", "s3"] as const;
+export type StorageBackend = (typeof STORAGE_BACKENDS)[number];
+
+/** Document who-shared-it provenance. */
+export const DOCUMENT_SHARED_BY = ["counsellor", "org", "client"] as const;
+export type DocumentSharedBy = (typeof DOCUMENT_SHARED_BY)[number];
+
 /* ---- South African reference data ------------------------------------- */
 
 export const PROVINCES = [

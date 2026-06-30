@@ -11,6 +11,7 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { eq } from "drizzle-orm";
+import { createCipheriv, randomBytes } from "node:crypto";
 import { hashPassword } from "better-auth/crypto";
 import * as schema from "@/db/schema";
 import {
@@ -46,6 +47,15 @@ function addDays(date: string, n: number): string {
   const d = new Date(`${date}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
+}
+
+/** Field encryption matching lib/crypto (server-only, can't be imported in tsx). */
+function encField(plaintext: string): string {
+  const key = Buffer.from(process.env.PHILA_FIELD_KEY ?? "", "base64");
+  const iv = randomBytes(12);
+  const c = createCipheriv("aes-256-gcm", key, iv);
+  const ct = Buffer.concat([c.update(plaintext, "utf8"), c.final()]);
+  return ["v1", iv.toString("base64url"), c.getAuthTag().toString("base64url"), ct.toString("base64url")].join(".");
 }
 
 const url = process.env.DATABASE_URL;
@@ -257,6 +267,17 @@ async function main() {
     seoDescription: "Warm, confidential counselling for individuals, couples and families in Gauteng. In person in Soweto and the JHB CBD, or online. Book a session today.",
     updatedAt: msgNow,
   }).onConflictDoNothing();
+
+  // Video gateway (Phase 17.1) — LiveKit is admin-managed, seeded in Demo (self-host)
+  // mode with the local Docker dev keys. The super-admin can edit or switch to Live.
+  if (process.env.PHILA_FIELD_KEY) {
+    await db.insert(schema.platformIntegrations).values({
+      key: "livekit",
+      credentialsEnc: encField(JSON.stringify({ mode: "demo", wsUrl: "ws://localhost:7880", apiKey: "devkey", apiSecret: "secret" })),
+      enabled: true,
+      updatedAt: msgNow,
+    }).onConflictDoNothing();
+  }
 
   const sql = neon(url!);
   const [c] = await sql`select

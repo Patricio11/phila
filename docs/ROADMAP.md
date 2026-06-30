@@ -609,6 +609,12 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 > copy) → a full **call** (camera toggle for audio-only, mic, screen share, chat, leave). Wired into the booking
 > confirmation, the client portal, and the counsellor's session. Self-host setup in `phila_livekit/` + a
 > step-by-step `docs/LIVEKIT_SETUP.md`. See `docs/completed/PHASE_13_COMPLETE.md`.
+>
+> **17.1 update (2026-06-30):** LiveKit is now **admin-managed** (like the PSP + AI rails), not env vars.
+> The super-admin configures it in `/admin/integrations` with a **Demo (self-host) / Live (Cloud)** mode
+> toggle, ws URL + key + secret (encrypted at rest), and a **Test connection** (lists rooms to validate auth +
+> reachability). Seeded in Demo mode with the local Docker dev keys; the token endpoint hands the client the
+> configured ws URL, so switching Demo↔Live is a console change with no redeploy.
 
 - [x] **Self-hosted LiveKit; server-side token minting; pre-join + room (2026-06-29).** `phila_livekit/`
   docker-compose runs the open-source `livekit/livekit-server`; `lib/video/livekit.ts` mints room-scoped JWTs;

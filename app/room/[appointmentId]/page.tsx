@@ -33,7 +33,7 @@ export default async function RoomPage({ params, searchParams }: { params: Promi
   const allowed = Boolean(row && row.a.type === "online" && (isHost || verifyJoin(appointmentId, t)));
 
   if (!allowed || !row) {
-    return <Unavailable configured={livekitConfigured()} reason={!row ? "not_found" : row.a.type !== "online" ? "not_online" : "bad_link"} />;
+    return <Unavailable configured={await livekitConfigured()} reason={!row ? "not_found" : row.a.type !== "online" ? "not_online" : "bad_link"} />;
   }
 
   // Paste-link fallback: the org runs video on its own meeting link.

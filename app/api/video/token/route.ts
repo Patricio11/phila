@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { appointments } from "@/db/schema";
 import { getCurrentPrincipal } from "@/lib/auth/session";
-import { livekitConfigured, mintToken, roomNameForAppointment, verifyJoin } from "@/lib/video/livekit";
+import { getLivekitConfig, mintToken, roomNameForAppointment, verifyJoin } from "@/lib/video/livekit";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,8 @@ export const dynamic = "force-dynamic";
  * short-lived JWT scoped to this one room.
  */
 export async function POST(req: Request) {
-  if (!livekitConfigured()) {
+  const cfg = await getLivekitConfig();
+  if (!cfg) {
     return NextResponse.json({ error: "Video isn't configured yet." }, { status: 503 });
   }
   const body = (await req.json().catch(() => ({}))) as { appointmentId?: string; name?: string; t?: string };
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
 
   const identity = isHost && principal ? `host_${principal.userId}` : `guest_${crypto.randomUUID().slice(0, 8)}`;
   const name = (isHost && principal ? principal.name : body.name?.trim()) || "Guest";
-  const token = await mintToken({ roomName: roomNameForAppointment(appointmentId), identity, name, canPublish: true });
+  const token = await mintToken(cfg, { roomName: roomNameForAppointment(appointmentId), identity, name, canPublish: true });
 
-  return NextResponse.json({ token, url: process.env.NEXT_PUBLIC_LIVEKIT_URL, identity, name, role: isHost ? "host" : "guest" });
+  return NextResponse.json({ token, url: cfg.wsUrl, identity, name, role: isHost ? "host" : "guest" });
 }

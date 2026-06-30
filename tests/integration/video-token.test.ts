@@ -6,12 +6,11 @@ import { readFileSync } from "node:fs";
  * room-scoped LiveKit JWT is minted server-side (no LiveKit server needed to mint).
  */
 const env = readFileSync(".env.local", "utf8");
-for (const k of ["LIVEKIT_API_KEY", "LIVEKIT_API_SECRET", "NEXT_PUBLIC_LIVEKIT_URL"]) {
-  const v = env.match(new RegExp(`^${k}=(.+)$`, "m"))?.[1]?.trim();
-  if (v) process.env[k] = v;
-}
+process.env.DATABASE_URL = env.match(/^DATABASE_URL=(.+)$/m)?.[1]?.trim();
+const fk = env.match(/^PHILA_FIELD_KEY=(.+)$/m)?.[1]?.trim();
+if (fk) process.env.PHILA_FIELD_KEY = fk;
 
-import { signJoin, verifyJoin, videoJoinPath, roomNameForAppointment, mintToken, livekitConfigured } from "@/lib/video/livekit";
+import { signJoin, verifyJoin, videoJoinPath, roomNameForAppointment, mintToken, livekitConfigured, getLivekitConfig } from "@/lib/video/livekit";
 
 function decodeJwt(jwt: string): Record<string, unknown> {
   const payload = jwt.split(".")[1]!;
@@ -30,9 +29,11 @@ describe("video join links", () => {
 
 describe("mintToken", () => {
   it("issues a JWT scoped to the appointment's room with publish/subscribe", async () => {
-    expect(livekitConfigured()).toBe(true);
+    expect(await livekitConfigured()).toBe(true); // seeded admin-managed (demo) integration
+    const cfg = await getLivekitConfig();
+    expect(cfg?.mode).toBe("demo");
     const room = roomNameForAppointment("appt_x");
-    const jwt = await mintToken({ roomName: room, identity: "host_1", name: "Nomsa", canPublish: true });
+    const jwt = await mintToken(cfg!, { roomName: room, identity: "host_1", name: "Nomsa", canPublish: true });
     expect(typeof jwt).toBe("string");
     expect(jwt.split(".").length).toBe(3);
 

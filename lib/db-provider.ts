@@ -16,6 +16,8 @@ import { PLANS, planById } from "@/lib/billing/plans";
 import { getSubscriptionRow, listSubscriptions } from "@/db/queries/subscriptions";
 import { getReportingDb, getHubInsightsDb } from "@/db/queries/analytics";
 import { listGrantsDb, getGrantViewDb, getFunderGrantViewDb } from "@/db/queries/grants";
+import { getPublicPageContent, defaultContent } from "@/db/queries/public-page";
+import type { OrgPublicPage } from "@/lib/data-provider";
 import { computeHubOverview, computeCounsellorDashboard } from "@/lib/domain/dashboards";
 import { desc, inArray } from "drizzle-orm";
 import type { Appointment, CarePlan, Client, ClientDocument, ConsentRecord, Counsellor, Funder, Grant, Invoice, Org, Room, Service, Site } from "@/lib/domain/types";
@@ -189,6 +191,31 @@ export const dbProvider: DataProvider = {
       const active = subs.filter((s) => s.planId === plan.id && s.status === "active");
       return { plan, subscribers: active.length, mrrCents: active.length * plan.priceCents };
     });
+  },
+
+  // Public micro-site (Phase 17) — real content from org_public_pages (no mock).
+  getOrgPublicPage: async (slug: string): Promise<OrgPublicPage | null> => {
+    const db = getDb();
+    const [orgRow] = await db.select().from(orgsTable).where(eq(orgsTable.slug, slug)).limit(1);
+    if (!orgRow || orgRow.deletedAt) return null;
+    const org = toOrg(orgRow);
+    const [sites, services, counsellors, content] = await Promise.all([
+      db.select().from(sitesTable).where(eq(sitesTable.orgId, org.id)),
+      db.select().from(servicesTable).where(eq(servicesTable.orgId, org.id)),
+      db.select().from(counsellorsTable).where(eq(counsellorsTable.orgId, org.id)),
+      getPublicPageContent(org.id),
+    ]);
+    const c = content ?? defaultContent({ intro: "", about: "" });
+    return {
+      org,
+      intro: c.heroSubtitle,
+      about: c.aboutBody,
+      sites: sites.map((s) => ({ id: s.id, orgId: s.orgId, name: s.name, province: s.province as Province })),
+      offersOnline: c.showOnlineBadge,
+      services: services.map((s) => ({ id: s.id, orgId: s.orgId, name: s.name, durationMin: s.durationMin, priceCents: s.priceCents })),
+      team: counsellors.map(toCounsellor),
+      content: c,
+    };
   },
 
   // Analytics & M&E reporting (Phase 16) — real, computed from the clinical tables.

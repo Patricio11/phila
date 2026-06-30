@@ -7,6 +7,7 @@ import { logAccess } from "@/lib/audit";
 import { CONSENT_PURPOSES } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
 import { persistBooking } from "@/db/queries/booking";
+import { recordPageEvent } from "@/db/queries/public-page";
 import { isSlotTakenError, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
 import { notifyAppointment } from "@/lib/messaging/notify";
 import { videoJoinPath } from "@/lib/video/livekit";
@@ -201,6 +202,7 @@ export async function submitBooking(
       // Online → a real, signed join link to the LiveKit room for this appointment.
       if (input.modality === "online") joinUrl = videoJoinPath(res.appointmentId);
       await notifyAppointment(res.appointmentId, "booked", input.intake.preferred_contact);
+      void recordPageEvent(config.org.id, "booked"); // PII-free conversion (Phase 17)
     } catch (e) {
       if (isSlotTakenError(e)) return { ok: false, error: SLOT_TAKEN_MESSAGE };
       throw e;

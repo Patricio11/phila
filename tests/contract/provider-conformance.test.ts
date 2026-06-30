@@ -34,7 +34,7 @@ describe("structural conformance", () => {
   it("migrated methods are real overrides; the rest delegate to the mock", () => {
     // Migrated to the DB (directory + appointments + clinical + billing + funders).
     // Phase 16 migrated the analytics + M&E reads to real DB computation.
-    for (const k of ["getOrg", "getOrgBySlug", "getClientConsents", "listClients", "getClient", "listCounsellors", "getCounsellor", "listServices", "listSites", "listRooms", "listCounsellorSessions", "listCaseload", "getRoomsOverview", "getRoomDetail", "getCarePlan", "listClientDocuments", "listClientInvoices", "listOrgInvoices", "listFunders", "listFunderGrants", "getHubOverview", "getCounsellorDashboard", "getReporting", "getHubInsights", "listGrants", "getGrantView", "getFunderGrantView"]) {
+    for (const k of ["getOrg", "getOrgBySlug", "getClientConsents", "listClients", "getClient", "listCounsellors", "getCounsellor", "listServices", "listSites", "listRooms", "listCounsellorSessions", "listCaseload", "getRoomsOverview", "getRoomDetail", "getCarePlan", "listClientDocuments", "listClientInvoices", "listOrgInvoices", "listFunders", "listFunderGrants", "getHubOverview", "getCounsellorDashboard", "getReporting", "getHubInsights", "listGrants", "getGrantView", "getFunderGrantView", "getOrgPublicPage"]) {
       expect(dbFns[k]).not.toBe(mockFns[k]);
     }
   });

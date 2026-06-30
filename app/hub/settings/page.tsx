@@ -19,6 +19,7 @@ import { getVideoSettings } from "@/db/queries/video";
 import { AiSettingsCard } from "@/components/hub/ai-settings";
 import { getAiSettings, getAiSpendThisMonth, getActiveProvider } from "@/db/queries/ai";
 import { getOrgGatewayStatus } from "@/db/queries/org-gateway";
+import { getPageStats, defaultContent } from "@/db/queries/public-page";
 import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +44,8 @@ export default async function HubSettingsPage() {
     getOrgGatewayStatus(membership.orgId),
   ]);
   const page = await provider.getOrgPublicPage(org.slug);
+  const pageContent = page?.content ?? defaultContent({ intro: page?.intro, about: page?.about });
+  const pageStats = await getPageStats(membership.orgId);
   const bh: BusinessHours = org.scheduling.businessHours;
 
   // Seeded org profile (Phase 10 reads these from the org row).
@@ -159,7 +162,7 @@ export default async function HubSettingsPage() {
         <Card>
           <CardHead title="Public page" />
           <div className="px-[17px] pb-[17px]">
-            <PublicPageEditor slug={org.slug} initialAccent={org.brandAccent} initialIntro={page?.intro ?? ""} />
+            <PublicPageEditor slug={org.slug} initial={pageContent} stats={pageStats} />
           </div>
         </Card>
       </div>

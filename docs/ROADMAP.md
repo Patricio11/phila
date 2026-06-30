@@ -720,9 +720,29 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 ---
 
 ## 🌐 PHASE 17: ORG PUBLIC PAGE REAL + SEO
-*Goal: org-editable, SEO-ranking public micro-sites, wired.*
-- [ ] Public page + editor wired to `org_public_pages`; SSR/ISR; per-org `generateMetadata` + OG + JSON-LD; per-org sitemap entries; robots; honest non-diagnostic copy.
-- [ ] Booking wired through from the public page; analytics on page → booking conversion (PII-free).
+*Goal: org-editable, SEO-ranking public micro-sites, wired  world-class and fully DB-backed (no mock).*
+
+> **Refined plan (2026-06-30):** a real `org_public_pages` table (seeded), a **section-based
+> editor** where the org manages each block (hero, about, services, team, FAQ, contact, CTA)
+> with show/hide + reorder-free clean defaults, a **beautiful public micro-site** rendered from
+> that data, full **SEO** (per-org metadata + OG + JSON-LD + sitemap + robots), and **booking
+> wired through** with PII-free conversion analytics.
+
+- [x] **`org_public_pages` table (seeded, no mock) — 2026-06-30.** Section model (hero, about, approach,
+  services, team, FAQ, contact) — each with its own copy + a show/hide toggle. `db-provider.getOrgPublicPage`
+  overridden to read it (services/team/sites from the real tables). Masizakhe seeded with rich content.
+- [x] **World-class public micro-site** at `/o/[slug]` (SSG + `revalidate: 3600`): brand-tinted hero with
+  the org's headline + voice, POPIA badge, approach cards, services with real durations/prices, team with
+  verified credentials, native-accordion FAQ, contact (tap-to-call/email) + locations, a final CTA band.
+  Light + dark, mobile-first, honest non-diagnostic copy, org brand-accent (auto-AA).
+- [x] **Section editor in the Hub** — manage each section's content + visibility (eye toggles), add/remove
+  approach + FAQ items, SEO fields, a sticky Save; **persisted** + the live page **revalidated** on save.
+- [x] **SEO**: per-org `generateMetadata` (custom title/description/canonical/OG/Twitter) + **JSON-LD**
+  (`MedicalBusiness` + `Service` + FAQ `Question`s) + dynamic **app/sitemap.ts** (every org) + **app/robots.ts**
+  (public `/o/` indexable; app/hub/admin/funder/api disallowed).
+- [x] **Booking wired** from the public page (deep-linked `?service=`) → the booking flow; **PII-free
+  funnel** (`public_page_events`: view via beacon, book_click + booked server-side) with views / clicks /
+  bookings / **conversion %** shown in the editor.
 - [ ] Custom domains per org  **deferred** (documented extension).
 
 ---

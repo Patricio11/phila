@@ -11,6 +11,7 @@
  */
 import {
   boolean,
+  index,
   integer,
   jsonb,
   pgEnum,
@@ -307,6 +308,40 @@ export const funderContacts = pgTable("funder_contacts", {
 }, (t) => [uniqueIndex("funder_contact_uq").on(t.userId, t.funderId)]);
 
 /* ---- Messaging / notifications (Phase 12) ---------------------------- */
+
+/** The org's public micro-site (Phase 17) — section content + per-section visibility,
+ * managed by the org. One row per org; rendered SSR at /o/[slug]. */
+export const orgPublicPages = pgTable("org_public_pages", {
+  orgId: text("org_id").primaryKey().references(() => orgs.id),
+  heroHeadline: text("hero_headline"),
+  heroSubtitle: text("hero_subtitle"),
+  showOnlineBadge: boolean("show_online_badge").default(true).notNull(),
+  aboutTitle: text("about_title").default("About us").notNull(),
+  aboutBody: text("about_body"),
+  showAbout: boolean("show_about").default(true).notNull(),
+  approachTitle: text("approach_title").default("How we work").notNull(),
+  approachItems: jsonb("approach_items").$type<{ title: string; body: string }[]>().default([]).notNull(),
+  showApproach: boolean("show_approach").default(true).notNull(),
+  showServices: boolean("show_services").default(true).notNull(),
+  showTeam: boolean("show_team").default(true).notNull(),
+  faqItems: jsonb("faq_items").$type<{ question: string; answer: string }[]>().default([]).notNull(),
+  showFaq: boolean("show_faq").default(true).notNull(),
+  showContact: boolean("show_contact").default(true).notNull(),
+  contactEmail: text("contact_email"),
+  contactPhone: text("contact_phone"),
+  ctaText: text("cta_text").default("Book a session").notNull(),
+  seoTitle: text("seo_title"),
+  seoDescription: text("seo_description"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
+/** PII-free public-page analytics (Phase 17) — page views + booking-funnel events. No visitor data. */
+export const publicPageEvents = pgTable("public_page_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  kind: text("kind").notNull(), // view | book_click | booked
+  at: timestamp("at", { withTimezone: true }).notNull(),
+}, (t) => [index("ppe_org_at_idx").on(t.orgId, t.at)]);
 
 /** Per-org channel enablement + routing/quiet-hours. WhatsApp is BYO; SMS+Email are Phila-provided. */
 export const orgMessagingSettings = pgTable("org_messaging_settings", {

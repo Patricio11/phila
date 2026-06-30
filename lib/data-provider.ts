@@ -90,6 +90,29 @@ export interface BookingSettings {
 }
 
 /** The composed payload for an org's public micro-site (`/o/[slug]`). */
+/** Org-managed public micro-site content (Phase 17). One block per section + show/hide. */
+export interface PublicPageContent {
+  heroHeadline: string | null;
+  heroSubtitle: string;
+  showOnlineBadge: boolean;
+  aboutTitle: string;
+  aboutBody: string;
+  showAbout: boolean;
+  approachTitle: string;
+  approachItems: { title: string; body: string }[];
+  showApproach: boolean;
+  showServices: boolean;
+  showTeam: boolean;
+  faqItems: { question: string; answer: string }[];
+  showFaq: boolean;
+  showContact: boolean;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  ctaText: string;
+  seoTitle: string | null;
+  seoDescription: string | null;
+}
+
 export interface OrgPublicPage {
   org: Org;
   intro: string;
@@ -98,6 +121,8 @@ export interface OrgPublicPage {
   offersOnline: boolean;
   services: Service[];
   team: Counsellor[];
+  /** Phase 17 — the org-managed section content; present in DB mode. */
+  content?: PublicPageContent;
 }
 
 /** An appointment enriched with the display fields a row needs (names resolved). */

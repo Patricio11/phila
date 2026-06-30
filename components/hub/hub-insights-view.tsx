@@ -21,6 +21,14 @@ const PERIODS = [
 
 const rands = (cents: number) => `R${Math.round(cents / 100).toLocaleString("en-ZA")}`;
 
+/** Period-over-period delta for a StatCard trend chip (Phase 16). */
+function trend(cur: number, prev: number | undefined, fmt: (n: number) => string = (n) => `${n > 0 ? "+" : ""}${n}`): { direction: "up" | "down" | "flat"; label: string } | undefined {
+  if (prev === undefined) return undefined;
+  const d = cur - prev;
+  if (d === 0) return { direction: "flat", label: "same as last" };
+  return { direction: d > 0 ? "up" : "down", label: `${fmt(d)} vs last` };
+}
+
 export function HubInsightsView({ initial }: { initial: HubInsights }) {
   const [data, setData] = useState<HubInsights>(initial);
   const [filters, setFilters] = useState<InsightsFilters>({ period: initial.period });
@@ -49,12 +57,12 @@ export function HubInsightsView({ initial }: { initial: HubInsights }) {
         <div className="w-44"><Select value={data.period} options={PERIODS} onChange={(v) => update({ period: v as InsightsFilters["period"] })} /></div>
       </div>
 
-      {/* Operational metrics for the period */}
+      {/* Operational metrics for the period — with period-over-period trend chips */}
       <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
-        <StatCard icon={UserRound} label="Sessions completed" value={data.completed} coverage={`${data.upcoming} still upcoming`} />
-        <StatCard icon={CalendarCheck} label="Attendance" value={`${data.attendanceRate}%`} coverage={`${data.noShows} no-show${data.noShows === 1 ? "" : "s"} · ${data.cancelled} cancelled`} />
-        <StatCard icon={UserPlus} label="New clients" value={data.newClients} coverage={`${data.activeClients} active this period`} />
-        <StatCard icon={Coins} label="Revenue (paid)" value={rands(data.revenueActualCents)} coverage="received this period" />
+        <StatCard icon={UserRound} label="Sessions completed" value={data.completed} coverage={`${data.upcoming} still upcoming`} trend={trend(data.completed, data.previous?.completed)} />
+        <StatCard icon={CalendarCheck} label="Attendance" value={`${data.attendanceRate}%`} coverage={`${data.noShows} no-show${data.noShows === 1 ? "" : "s"} · ${data.cancelled} cancelled`} trend={trend(data.attendanceRate, data.previous?.attendanceRate, (n) => `${n > 0 ? "+" : ""}${n}pts`)} />
+        <StatCard icon={UserPlus} label="New clients" value={data.newClients} coverage={`${data.activeClients} active this period`} trend={trend(data.newClients, data.previous?.newClients)} />
+        <StatCard icon={Coins} label="Revenue (paid)" value={rands(data.revenueActualCents)} coverage="received this period" trend={trend(data.revenueActualCents, data.previous?.revenueActualCents, (n) => `${n > 0 ? "+" : ""}${rands(Math.abs(n)).replace("R", n < 0 ? "-R" : "R")}`)} />
       </div>
 
       {/* Trends */}

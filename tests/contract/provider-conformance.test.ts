@@ -33,14 +33,9 @@ describe("structural conformance", () => {
 
   it("migrated methods are real overrides; the rest delegate to the mock", () => {
     // Migrated to the DB (directory + appointments + clinical + billing + funders).
-    for (const k of ["getOrg", "getOrgBySlug", "getClientConsents", "listClients", "getClient", "listCounsellors", "getCounsellor", "listServices", "listSites", "listRooms", "listCounsellorSessions", "listCaseload", "getRoomsOverview", "getRoomDetail", "getCarePlan", "listClientDocuments", "listClientInvoices", "listOrgInvoices", "listFunders", "listFunderGrants", "getHubOverview", "getCounsellorDashboard"]) {
+    // Phase 16 migrated the analytics + M&E reads to real DB computation.
+    for (const k of ["getOrg", "getOrgBySlug", "getClientConsents", "listClients", "getClient", "listCounsellors", "getCounsellor", "listServices", "listSites", "listRooms", "listCounsellorSessions", "listCaseload", "getRoomsOverview", "getRoomDetail", "getCarePlan", "listClientDocuments", "listClientInvoices", "listOrgInvoices", "listFunders", "listFunderGrants", "getHubOverview", "getCounsellorDashboard", "getReporting", "getHubInsights", "listGrants", "getGrantView", "getFunderGrantView"]) {
       expect(dbFns[k]).not.toBe(mockFns[k]);
-    }
-    // Seeded M&E reads nothing writes at runtime — delegate to the mock (the DB is
-    // seeded from the same fixtures, so identical). They migrate with Phase 16's
-    // funder tools, which write grants/indicators/allocations/demographics.
-    for (const k of ["getReporting", "getGrantView", "getFunderGrantView"]) {
-      expect(dbFns[k]).toBe(mockFns[k]);
     }
   });
 });

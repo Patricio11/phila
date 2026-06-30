@@ -72,6 +72,7 @@ export default async function FunderGrantPage({ params }: { params: Promise<{ id
         breakdowns={view.breakdowns}
         outcome={view.outcome}
         narratives={view.narratives}
+        headline={view.headline}
       />
     </div>
   );

@@ -23,6 +23,7 @@ export function GrantDashboard({
   outcome,
   narratives,
   narrativeSlot,
+  headline,
 }: {
   indicators: IndicatorActual[];
   breakdowns: GrantBreakdowns;
@@ -30,9 +31,16 @@ export function GrantDashboard({
   narratives: GrantNarrative[];
   /** The Hub passes a composer here; the funder portal leaves it read-only. */
   narrativeSlot?: React.ReactNode;
+  /** Phase 16 — honest one-line status summary. */
+  headline?: string;
 }) {
   return (
     <div className="space-y-6">
+      {headline && (
+        <div className="rounded-card border border-accent/25 bg-accent-soft/30 px-4 py-3 text-[13px] text-text-2">
+          <span className="font-semibold text-text">At a glance · </span>{headline}
+        </div>
+      )}
       <section>
         <h2 className="mb-3 text-[13px] font-semibold uppercase tracking-wide text-text-3">Indicators vs target</h2>
         <div className="grid gap-3 sm:grid-cols-2">

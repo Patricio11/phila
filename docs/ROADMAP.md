@@ -692,13 +692,30 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 ---
 
 ## 📊 PHASE 16: ANALYTICS & FUNDER / M&E REPORTING + FUNDER PORTAL
-*Goal: the reporting differentiator, real  built from the clinical work, honest, k-anon-safe  and the live funder portal.*
-- [ ] Aggregation layer / scheduled rollups (PII-free) for the Hub `<StatCard>`s + charts.
-- [ ] Consent-gated demographic dashboards (province / gender / age / status / service); **k-anonymity floor + small-cell suppression** on any aggregate/funder export; coverage shown on every figure.
-- [ ] **Grant-indicator engine:** compute each indicator's **actual vs target** from `grant_allocations` + the clinical data per its computation rule (honest de-dup across grants); on-track/at-risk/behind classification.
-- [ ] Outcome-measure analytics (PHQ-9/GAD-7 trends, fed by Phase 14 extraction + manual capture).
-- [ ] **Funder portal wired** (`/funder`): `requireFunderGrant` scoping; every funder view k-anon + audited; the org controls visibility; narrative updates + downloadable period reports.
-- [ ] One-click funder report (CSV/PDF/template), audit-logged, role-gated; suppression-list reuse from Phase 18.
+*Goal: the reporting differentiator, **real (DB-backed, no mock)**  computed from the actual clinical work, honest, k-anon-safe  with richer insights and the live funder portal.*
+
+> **Refined plan (2026-06-30):** the analytics surfaces were mock-only. Phase 16 makes them
+> **real** by extracting the computation into pure domain functions (`lib/domain/reporting.ts`)
+> fed by **DB rows**, then overriding `getReporting` / `getHubInsights` / `getGrantView` /
+> `listFunderGrants` / `getFunderGrantView` / `listGrants` / `listFunders` in `db-provider`. Same
+> pass adds the **richer insights** the surfaces were missing.
+
+- [x] **Real DB analytics layer (2026-06-30)** — `lib/domain/reporting.ts` pure functions + `db/queries/analytics.ts`
+  + `db/queries/grants.ts` row loaders feed the Hub `<StatCard>`s + charts. **`getReporting` / `getHubInsights` /
+  `getGrantView` / `getFunderGrantView` / `listGrants` overridden in `db-provider` — no mock fallback.**
+- [x] Consent-gated demographic dashboards (province / gender / age / status / service); **k-anonymity
+  floor + small-cell suppression** on every aggregate/funder export; coverage on every figure. A **richer cohort
+  is seeded** (39 consented clients) so cells are meaningful and suppression is demonstrable.
+- [x] **Richer insights** — Insights now shows **period-over-period trend chips** (completed, attendance,
+  new clients, revenue vs the previous window); Reporting shows **improvement rate** + a server-computed
+  **key-findings headline**; each grant dashboard carries an **at-a-glance** status line.
+- [x] **Grant-indicator engine (DB):** each indicator's **actual vs target** from `grant_allocations` +
+  clinical data per its rule (de-dup via distinct allocation), **paced expected** marker, on-track / at-risk /
+  behind classification.
+- [x] Outcome-measure analytics — PHQ-9 trend (real `taken_at` → week buckets) + **improvement rate** (first→latest ≥5).
+- [x] **Funder portal wired** (`/funder`): provider-enforced grant scoping (a funder reaches only their grant);
+  every funder view **k-anon + audited**; **narrative updates persist** (`grant_narratives`) and appear on the portal.
+- [x] One-click funder report (**CSV** download, PDF via print), audit-logged (`pii.export`), role-gated.
 
 ---
 

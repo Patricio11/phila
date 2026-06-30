@@ -4,6 +4,9 @@ import { z } from "zod";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 import { now as clockNow } from "@/lib/clock";
+import { getGrantOrgId, postGrantNarrativeDb } from "@/db/queries/grants";
+
+const isDb = () => process.env.DATA_PROVIDER === "db";
 
 /**
  * Grant actions. Narrative updates and the period export are the funder-facing
@@ -29,6 +32,12 @@ export async function postNarrative(
   const { principal, membership } = await requireHub();
   const parsed = narrativeInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Cannot post" };
+
+  if (isDb()) {
+    const owner = await getGrantOrgId(parsed.data.grantId);
+    if (owner !== membership.orgId) return { ok: false, error: "Grant not found." };
+    await postGrantNarrativeDb(parsed.data.grantId, principal.name, parsed.data.body);
+  }
 
   await logAccess({
     action: "admin.action",

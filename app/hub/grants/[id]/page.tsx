@@ -80,6 +80,7 @@ export default async function GrantPage({ params }: { params: Promise<{ id: stri
         breakdowns={view.breakdowns}
         outcome={view.outcome}
         narratives={view.narratives}
+        headline={view.headline}
         narrativeSlot={<NarrativeComposer grantId={grant.id} initial={view.narratives} />}
       />
     </div>

@@ -14,6 +14,8 @@ import { and, eq, gte, isNull, lte } from "drizzle-orm";
 import type { AppointmentView, CaseloadRow, CaseloadStatus, CounsellorDashboard, DataProvider, HubOverview, OutcomePoint, OrgSubscription, PlanWithUsage, RoomView, RoomDetail } from "@/lib/data-provider";
 import { PLANS, planById } from "@/lib/billing/plans";
 import { getSubscriptionRow, listSubscriptions } from "@/db/queries/subscriptions";
+import { getReportingDb, getHubInsightsDb } from "@/db/queries/analytics";
+import { listGrantsDb, getGrantViewDb, getFunderGrantViewDb } from "@/db/queries/grants";
 import { computeHubOverview, computeCounsellorDashboard } from "@/lib/domain/dashboards";
 import { desc, inArray } from "drizzle-orm";
 import type { Appointment, CarePlan, Client, ClientDocument, ConsentRecord, Counsellor, Funder, Grant, Invoice, Org, Room, Service, Site } from "@/lib/domain/types";
@@ -188,6 +190,14 @@ export const dbProvider: DataProvider = {
       return { plan, subscribers: active.length, mrrCents: active.length * plan.priceCents };
     });
   },
+
+  // Analytics & M&E reporting (Phase 16) — real, computed from the clinical tables.
+  // (listFunders + listFunderGrants are already DB-backed below.)
+  getReporting: (orgId, now, filters) => getReportingDb(orgId, now, filters),
+  getHubInsights: (orgId, now, filters) => getHubInsightsDb(orgId, now, filters),
+  listGrants: (orgId) => listGrantsDb(orgId),
+  getGrantView: (grantId, now) => getGrantViewDb(grantId, now),
+  getFunderGrantView: (funderUserId, grantId, now) => getFunderGrantViewDb(funderUserId, grantId, now),
 
   // The public booking config keeps its mock-sourced settings (booking policy +
   // intake form, persisted in later phases) but swaps in the REAL org so the

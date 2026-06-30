@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { Check, Copy, Download, FileText, Loader2, Lock, Sparkles } from "lucide-react";
+import { Check, Copy, Download, FileText, Loader2, Lock, MapPin, Sparkles, TrendingDown, Users } from "lucide-react";
 import type { Breakdown, ReportingFilters, ReportingResult } from "@/lib/data-provider";
 import { AGE_BANDS, EMPLOYMENT_STATUSES, GENDERS, PROVINCES } from "@/lib/domain/enums";
 import { AGE_BAND_LABELS, EMPLOYMENT_LABELS, GENDER_LABELS } from "@/lib/domain/labels";
 import { Card, CardHead } from "@/components/ui/card";
+import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { FilterMenu } from "@/components/ui/filter-menu";
@@ -135,6 +136,13 @@ export function ReportingView({ initial, orgName }: { initial: ReportingResult; 
         </p>
       </div>
 
+      {/* Headline insights — computed from real outcomes (k-anon safe) */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        <StatCard icon={Users} label="Clients reported" value={result.matched} coverage={coverageNote(result.withDemographics, result.totalClients, "consented")} />
+        <StatCard icon={TrendingDown} label="Improved ≥5 on PHQ-9" value={`${result.improvementRate ?? 0}%`} coverage={coverageNote(result.outcome.coverage.captured, result.outcome.coverage.total, "measured")} />
+        <StatCard icon={MapPin} label="Provinces reached" value={result.byProvince.filter((r) => !r.suppressed && (r.count ?? 0) > 0).length} coverage="cells ≥ k shown" />
+      </div>
+
       {/* Filters + period */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="w-44"><Select value={period} onChange={(v) => setPeriod(v ?? "This quarter")} options={PERIODS.map((p) => ({ value: p, label: p }))} /></div>
@@ -158,6 +166,13 @@ export function ReportingView({ initial, orgName }: { initial: ReportingResult; 
           }
         />
         <div className="px-[17px] pb-[17px]">
+          {result.headline && result.headline.length > 0 && (
+            <ul className="mb-3 space-y-1">
+              {result.headline.map((h) => (
+                <li key={h} className="flex items-start gap-2 text-[12.5px] text-text"><Check className="mt-0.5 size-3.5 shrink-0 text-accent" strokeWidth={2.4} aria-hidden /> {h}</li>
+              ))}
+            </ul>
+          )}
           <p className="text-[13.5px] leading-relaxed text-text-2">{narrative}</p>
           <p className="mt-2 text-[11px] text-text-3">Generated from the figures below  edit freely before sending. Nothing identifiable is included.</p>
         </div>

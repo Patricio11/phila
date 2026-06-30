@@ -220,6 +220,10 @@ async function main() {
     orgId: "org_masizakhe", planId: "p_community", status: "active", currentPeriodEnd: periodEnd, providerRef: "seed", updatedAt: msgNow,
   }).onConflictDoNothing();
 
+  // M&E demographic cohort (Phase 16) — a realistic, consented cohort so the funder /
+  // reporting dashboards are meaningful (and cross the k-anonymity floor). Deterministic.
+  await seedCohort(msgNow);
+
   const sql = neon(url!);
   const [c] = await sql`select
     (select count(*)::int from orgs) orgs,
@@ -239,6 +243,46 @@ async function main() {
     (select count(*)::int from grants) grants,
     (select count(*)::int from grant_indicators) indicators`;
   console.log("seeded:", c);
+}
+
+/**
+ * A deterministic, consented M&E cohort (Phase 16). ~30 clients for Masizakhe with
+ * demographics + demographics-consent + an improving PHQ-9 series + grant allocations
+ * — so reporting/grant dashboards are real and meaningful (most cells clear k=5).
+ */
+async function seedCohort(now: Date): Promise<void> {
+  const FIRST = ["Lerato", "Sipho", "Naledi", "Thabang", "Zanele", "Kabelo", "Ayanda", "Tshepo", "Nomvula", "Mpho", "Bongani", "Refilwe", "Lindiwe", "Sibusiso", "Palesa", "Mandla", "Thandiwe", "Kagiso", "Nokuthula", "Lwazi", "Boitumelo", "Andile", "Dimpho", "Katlego", "Nosipho", "Themba", "Zinhle", "Olwethu", "Karabo", "Amahle"];
+  const LAST = ["Mokoena", "Dlamini", "Nkosi", "Khumalo", "Mahlangu", "Sithole", "Zulu", "Ndlovu", "Mthembu", "Tshabalala", "Molefe", "Ngcobo", "Botha", "Pillay", "Naidoo"];
+  const GENDERS: Array<"female" | "male" | "non_binary"> = ["female", "female", "female", "male", "female", "male", "female", "male", "female", "non_binary"];
+  const AGES = ["18_24", "25_34", "18_24", "35_44", "25_34", "18_24", "45_54", "25_34", "under_18", "35_44"];
+  const PROV = ["Gauteng", "Gauteng", "Gauteng", "Gauteng", "Western Cape", "KwaZulu-Natal", "Gauteng", "Limpopo", "Gauteng", "Western Cape"];
+  const POP = ["black_african", "black_african", "black_african", "coloured", "black_african", "indian_asian", "black_african", "white", "black_african", "coloured"];
+  const EMP = ["unemployed", "employed", "student", "employed", "self_employed", "unemployed", "student", "employed", "unemployed", "self_employed"];
+
+  const N = 30;
+  for (let i = 0; i < N; i++) {
+    const id = `cl_demo_${String(i + 1).padStart(3, "0")}`;
+    const name = `${FIRST[i % FIRST.length]} ${LAST[i % LAST.length]}`;
+    const province = PROV[i % PROV.length]!;
+    const createdAt = new Date(now.getTime() - ((i % 6) * 30 + 5) * 86_400_000); // spread over ~6 months
+    await db.insert(schema.clients).values({ id, orgId: ORG, name, province, riskFlag: i % 11 === 0, createdAt }).onConflictDoNothing();
+    await db.insert(schema.demographics).values({ clientId: id, gender: GENDERS[i % GENDERS.length]!, populationGroup: POP[i % POP.length]!, employmentStatus: EMP[i % EMP.length]!, ageBand: AGES[i % AGES.length]!, province }).onConflictDoNothing();
+    await db.insert(schema.consents).values({ orgId: ORG, clientId: id, purpose: "demographics", state: "granted", version: 1, updatedAt: createdAt }).onConflictDoNothing();
+
+    // PHQ-9 trajectory: ~70% improve ≥5 (first−latest), rest plateau. Weeks 8 → 4 → now.
+    const start = 15 + (i % 6); // 15–20
+    const improves = i % 10 < 7;
+    const series = improves ? [start, start - 4, start - 8] : [start, start - 1, start - 1];
+    const weeks = [8, 4, 0];
+    for (let k = 0; k < series.length; k++) {
+      const takenAt = new Date(now.getTime() - weeks[k]! * 7 * 86_400_000);
+      await db.insert(schema.outcomeMeasures).values({ id: `om_${id}_${k}`, clientId: id, tool: "PHQ-9", score: Math.max(0, series[k]!), takenAt }).onConflictDoNothing();
+    }
+
+    // Allocate to grants: ~73% to DSD, every 3rd also to the Lotto youth grant.
+    if (i % 11 !== 0) await db.insert(schema.grantAllocations).values({ grantId: "g_dsd", clientId: id }).onConflictDoNothing();
+    if (i % 3 === 0) await db.insert(schema.grantAllocations).values({ grantId: "g_lotto", clientId: id }).onConflictDoNothing();
+  }
 }
 
 main().then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1); });

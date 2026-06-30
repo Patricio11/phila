@@ -41,8 +41,9 @@ describe("deliver pipeline", () => {
     expect(log!.cost_credits).toBe(0); // dormant never charges
     expect(String(log!.to_masked)).not.toContain("0000123"); // contact is masked
 
-    const [bal] = await sql`SELECT balance FROM credit_balances WHERE org_id=${ORG} AND channel='sms'`;
-    expect(bal!.balance).toBe(100); // unchanged
+    // Dormant created no debit (robust vs. concurrent credit top-ups in other suites).
+    const [debits] = await sql`SELECT count(*)::int n FROM credit_ledger WHERE org_id=${ORG} AND reason='send'`;
+    expect(debits!.n).toBe(0);
   });
 
   it("blocks with no_credit when the balance is exhausted", async () => {

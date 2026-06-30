@@ -407,6 +407,10 @@ export interface ReportingResult {
   byAgeBand: Breakdown[];
   byEmployment: Breakdown[];
   outcome: { points: OutcomePoint[]; coverage: { captured: number; total: number } };
+  /** Phase 16 — % of clients whose first→latest PHQ-9 dropped ≥5 (≥2 measures). */
+  improvementRate?: number;
+  /** Phase 16 — honest plain-language headline lines for the report. */
+  headline?: string[];
 }
 
 /** Platform-wide settings the super admin controls (apply to every org). */
@@ -490,6 +494,8 @@ export interface HubInsights {
   byGender: InsightsMix[];
   byAgeBand: InsightsMix[];
   byProvince: InsightsMix[];
+  /** Phase 16 — same metrics for the previous comparable window (for trend deltas). */
+  previous?: { completed: number; attendanceRate: number; newClients: number; revenueActualCents: number; noShows: number };
 }
 
 export interface OrgSettings {
@@ -527,6 +533,8 @@ export interface GrantView {
   breakdowns: GrantBreakdowns;
   outcome: { points: OutcomePoint[]; coverage: { captured: number; total: number } };
   narratives: GrantNarrative[];
+  /** Phase 16 — honest one-line status summary. */
+  headline?: string;
 }
 
 export interface GrantSummary {
@@ -620,6 +628,8 @@ export interface FunderGrantView {
   breakdowns: GrantBreakdowns;
   outcome: { points: OutcomePoint[]; coverage: { captured: number; total: number } };
   narratives: GrantNarrative[];
+  /** Phase 16 — honest one-line status summary. */
+  headline?: string;
 }
 
 /** The composed payload for the counsellor's Today dashboard. */

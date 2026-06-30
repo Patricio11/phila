@@ -3,6 +3,7 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { getDb } from "@/db/client";
 import {
+  clients,
   documents,
   documentFolders,
   documentRequests,
@@ -184,6 +185,37 @@ export async function insertPendingDocument(input: {
 export async function finalizeDocument(orgId: string, documentId: string, bytes: number, scanStatus: ScanStatus): Promise<void> {
   await getDb().update(documents).set({ bytes, sizeLabel: sizeLabel(bytes), scanStatus })
     .where(and(eq(documents.orgId, orgId), eq(documents.id, documentId)));
+}
+
+/* ── Counsellor lane: own-clients' docs + shared-with-me ──────────────── */
+
+/** A counsellor's visible documents: their own clients' files, plus anything the
+ * Hub shared with them (a file share, or a folder share that cascades to its docs). */
+export async function listCounsellorDocumentsDb(counsellorId: string): Promise<{ own: Document[]; shared: Document[] }> {
+  const db = getDb();
+  const ownRows = await db.select({ d: documents }).from(documents)
+    .innerJoin(clients, eq(documents.clientId, clients.id))
+    .where(and(eq(clients.primaryCounsellorId, counsellorId), isNull(documents.deletedAt)));
+  const own = ownRows.map((r) => toDocument(r.d));
+  const ownIds = new Set(own.map((d) => d.id));
+
+  const shares = await db.select().from(documentShares).where(eq(documentShares.sharedWith, counsellorId));
+  const fileIds = shares.filter((s) => s.targetType === "file").map((s) => s.targetId);
+  const folderIds = shares.filter((s) => s.targetType === "folder").map((s) => s.targetId);
+  const sharedRows: (typeof documents.$inferSelect)[] = [];
+  if (fileIds.length)
+    sharedRows.push(...(await db.select().from(documents).where(and(inArray(documents.id, fileIds), isNull(documents.deletedAt)))));
+  if (folderIds.length)
+    sharedRows.push(...(await db.select().from(documents).where(and(inArray(documents.folderId, folderIds), isNull(documents.deletedAt)))));
+
+  const seen = new Set<string>();
+  const shared: Document[] = [];
+  for (const r of sharedRows.map(toDocument)) {
+    if (ownIds.has(r.id) || seen.has(r.id)) continue;
+    seen.add(r.id);
+    shared.push(r);
+  }
+  return { own, shared };
 }
 
 /* ── Client-portal reads + request-bound upload ───────────────────────── */

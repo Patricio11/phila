@@ -646,6 +646,7 @@ export const mockProvider: DataProvider = {
       ),
     ),
   listClientDocumentRequests: () => ok([] as DocumentRequest[]),
+  listCounsellorDocuments: () => ok({ own: [] as Document[], shared: [] as Document[] }),
   listClientInvoices: (clientId) => ok(allInvoices[clientId] ?? []),
   getClientConsents: (clientId) => ok(allConsents.filter((c) => c.clientId === clientId)),
 

@@ -800,10 +800,14 @@ request-gated client uploads, and org→counsellor sharing  all on Phila Storage
   computed from the row fields; real folders + smart views side by side.
 - [x] **Assign to client** (set `client_id`) and **Share file/folder with a counsellor** (`document_shares`)
   (2026-06-30)  plus a **Request a document** action; all via Zod + audited + org-scoped server actions.
+- [x] **Counsellor lane (2026-06-30):** `/app/documents`  the counsellor sees **their own clients' files**
+  (grouped by client) **+ "Shared with you"** (`listCounsellorDocuments`: own-clients ∪ `document_shares`),
+  read-only with signed-URL download (clean files only), audited. *(Dossier Documents-card going live is a follow-up.)*
 
 ### Task 18.3: Requests + notifications
-- [ ] **Document requests:** the counsellor/Hub creates a request from the dossier ("Copy of your ID"); the client
-  portal shows it and uploads **against** it (no unsolicited uploads). Status `pending → fulfilled → cancelled`.
+- [x] **Document requests (2026-06-30):** the Hub creates a request (`requestDocument`); the client portal's
+  "Requested from you" shows it and uploads **against** it (no unsolicited uploads); fulfilment flips the status
+  `pending → fulfilled` and links the document. *(A request-from-the-dossier shortcut is a small follow-up.)*
 - [ ] **In-app notifications** + Phase-12 triggers: `document_shared` (org → client, preferred channel,
   consent/opt-out/quiet-hours/credits honoured) and `client_uploaded_document` (→ the counsellor + Hub).
 

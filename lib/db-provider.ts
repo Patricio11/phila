@@ -16,7 +16,7 @@ import { PLANS, planById } from "@/lib/billing/plans";
 import { getSubscriptionRow, listSubscriptions } from "@/db/queries/subscriptions";
 import { getReportingDb, getHubInsightsDb } from "@/db/queries/analytics";
 import { listGrantsDb, getGrantViewDb, getFunderGrantViewDb } from "@/db/queries/grants";
-import { listOrgDocumentsDb, listOrgFoldersDb, listDocumentRequestsDb, getStorageUsageDb, listClientVisibleDocumentsDb, listClientRequestsDb } from "@/db/queries/documents";
+import { listOrgDocumentsDb, listOrgFoldersDb, listDocumentRequestsDb, getStorageUsageDb, listClientVisibleDocumentsDb, listClientRequestsDb, listCounsellorDocumentsDb } from "@/db/queries/documents";
 import { getPublicPageContent, defaultContent } from "@/db/queries/public-page";
 import type { OrgPublicPage } from "@/lib/data-provider";
 import { computeHubOverview, computeCounsellorDashboard } from "@/lib/domain/dashboards";
@@ -234,6 +234,7 @@ export const dbProvider: DataProvider = {
   getStorageUsage: (orgId) => getStorageUsageDb(orgId),
   listClientVisibleDocuments: (clientId) => listClientVisibleDocumentsDb(clientId),
   listClientDocumentRequests: (clientId) => listClientRequestsDb(clientId),
+  listCounsellorDocuments: (counsellorId) => listCounsellorDocumentsDb(counsellorId),
 
   // The public booking config keeps its mock-sourced settings (booking policy +
   // intake form, persisted in later phases) but swaps in the REAL org so the

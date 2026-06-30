@@ -1,11 +1,31 @@
 "use server";
 
 import { z } from "zod";
+import { eq } from "drizzle-orm";
 import { logAccess } from "@/lib/audit";
 import { APPOINTMENT_STATES } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
 import { setAppointmentState } from "@/db/queries/appointments";
 import { notifyAppointment } from "@/lib/messaging/notify";
+import { getDb } from "@/db/client";
+import { appointments, clients } from "@/db/schema";
+import { getAiSettings, getAiSpendThisMonth, recordAiUsage } from "@/db/queries/ai";
+import { draftNote, draftCarePlan } from "@/lib/ai/scribe";
+
+/** Resolve the org + client name for an appointment, and gate the AI scribe. */
+async function aiContext(appointmentId: string): Promise<{ ok: true; orgId: string; clientName: string } | { ok: false; error: string }> {
+  const [row] = await getDb()
+    .select({ orgId: appointments.orgId, clientName: clients.name })
+    .from(appointments)
+    .leftJoin(clients, eq(appointments.clientId, clients.id))
+    .where(eq(appointments.id, appointmentId))
+    .limit(1);
+  if (!row) return { ok: false, error: "Session not found." };
+  const ai = await getAiSettings(row.orgId);
+  if (!ai.aiEnabled) return { ok: false, error: "Turn on the AI scribe in Settings first  it needs cross-border processing consent (POPIA)." };
+  if ((await getAiSpendThisMonth(row.orgId)) >= ai.monthlyCapCents) return { ok: false, error: "This month's AI budget is used up. Raise the cap in Settings to continue." };
+  return { ok: true, orgId: row.orgId, clientName: row.clientName ?? "" };
+}
 
 /**
  * Session-editor actions. In Part A they validate + audit and return success
@@ -13,8 +33,6 @@ import { notifyAppointment } from "@/lib/messaging/notify";
  * AI scribe behind the same shapes. The AI never signs, never sends, never
  * advances clinical state  it only returns a labelled draft (AI-Honesty Rule).
  */
-
-const idInput = z.object({ appointmentId: z.string().min(1) });
 
 /** The structured fields the scribe extracts  these feed funder reporting (zero double entry). */
 export interface AiExtraction {
@@ -24,36 +42,53 @@ export interface AiExtraction {
   referral: string;
 }
 
-export async function generateAiDraft(
-  raw: z.infer<typeof idInput>,
-): Promise<{ ok: true; draft: string; extraction: AiExtraction } | { ok: false; error: string }> {
-  const parsed = idInput.safeParse(raw);
-  if (!parsed.success) return { ok: false, error: "Invalid request" };
+const draftInput = z.object({ appointmentId: z.string().min(1), cues: z.string().trim().max(4000) });
 
+export async function generateAiDraft(
+  raw: z.infer<typeof draftInput>,
+): Promise<{ ok: true; draft: string; extraction: AiExtraction } | { ok: false; error: string }> {
+  const parsed = draftInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid request" };
+  if (parsed.data.cues.length < 8) return { ok: false, error: "Jot a few cues in the note first  I'll shape them into a draft you can edit and sign." };
+
+  const ctx = await aiContext(parsed.data.appointmentId);
+  if (!ctx.ok) return { ok: false, error: ctx.error };
+
+  const result = await draftNote({ cues: parsed.data.cues, clientNames: [ctx.clientName] });
+  if (!result.ok || !result.draft || !result.extraction) return { ok: false, error: result.error ?? "The AI draft didn't come back  try again." };
+
+  if (result.usage && result.model) {
+    await recordAiUsage({ orgId: ctx.orgId, kind: "note", model: result.model, ...result.usage });
+  }
   await logAccess({
     action: "admin.action",
     actor: { userId: "counsellor", platformRole: null, teamRole: "counsellor" },
-    orgId: null,
+    orgId: ctx.orgId,
     target: `appointment:${parsed.data.appointmentId}/ai_draft`,
     reason: "ai_note_draft",
   });
+  return { ok: true, draft: result.draft, extraction: result.extraction };
+}
 
-  // Mock draft  non-diagnostic, never names a method. The counsellor edits + signs.
-  const draft = [
-    "Presenting concern: client described feeling stretched between work and home, with low energy in the mornings.",
-    "Session: explored what's been hardest this week; reflected on small routines that already help. Client engaged and open.",
-    "Risk: nothing of concern raised today.",
-    "Plan: continue weekly. Review the morning wind-down routine next session and adjust together.",
-  ].join("\n\n");
+/** AI draft of the CLIENT-FACING care-plan summary (plain language; counsellor edits + shares; never auto-sent). */
+export async function generateCarePlanDraft(
+  raw: z.infer<typeof draftInput>,
+): Promise<{ ok: true; carePlan: string } | { ok: false; error: string }> {
+  const parsed = draftInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid request" };
+  if (parsed.data.cues.length < 8) return { ok: false, error: "Add a couple of session cues first." };
 
-  const extraction: AiExtraction = {
-    presentingIssue: "Work–life stress, low morning energy",
-    risk: "None raised today",
-    outcome: "Engaged; routine helping",
-    referral: "None",
-  };
+  const ctx = await aiContext(parsed.data.appointmentId);
+  if (!ctx.ok) return { ok: false, error: ctx.error };
 
-  return { ok: true, draft, extraction };
+  const result = await draftCarePlan({ cues: parsed.data.cues, clientNames: [ctx.clientName] });
+  if (!result.ok || !result.carePlan) return { ok: false, error: result.error ?? "The AI draft didn't come back  try again." };
+
+  if (result.usage && result.model) {
+    await recordAiUsage({ orgId: ctx.orgId, kind: "care_plan", model: result.model, ...result.usage });
+  }
+  await logAccess({ action: "admin.action", actor: { userId: "counsellor", platformRole: null, teamRole: "counsellor" }, orgId: ctx.orgId, target: `appointment:${parsed.data.appointmentId}/ai_careplan`, reason: "ai_careplan_draft" });
+  return { ok: true, carePlan: result.carePlan };
 }
 
 const signInput = z.object({

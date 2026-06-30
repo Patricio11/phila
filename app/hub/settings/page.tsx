@@ -16,6 +16,8 @@ import { YourPlanCard } from "@/components/hub/your-plan-card";
 import { SecuritySettings } from "@/components/hub/security-settings";
 import { VideoSettingsCard } from "@/components/hub/video-settings";
 import { getVideoSettings } from "@/db/queries/video";
+import { AiSettingsCard } from "@/components/hub/ai-settings";
+import { getAiSettings, getAiSpendThisMonth, getActiveProvider } from "@/db/queries/ai";
 import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +35,11 @@ export default async function HubSettingsPage() {
   ]);
   if (!settings || !org) notFound();
   const videoSettings = await getVideoSettings(membership.orgId);
+  const [aiSettings, aiSpent, aiProvider] = await Promise.all([
+    getAiSettings(membership.orgId),
+    getAiSpendThisMonth(membership.orgId),
+    getActiveProvider(),
+  ]);
   const page = await provider.getOrgPublicPage(org.slug);
   const bh: BusinessHours = org.scheduling.businessHours;
 
@@ -106,6 +113,15 @@ export default async function HubSettingsPage() {
           <div className="px-[17px] pb-[17px]">
             <p className="mb-3 text-[12.5px] text-text-2">How online sessions happen  a secure in-region Phila room, or your own meeting link.</p>
             <VideoSettingsCard initial={videoSettings} />
+          </div>
+        </Card>
+
+        {/* AI scribe (POPIA cross-border consent gate + budget) */}
+        <Card>
+          <CardHead title="AI assistant" />
+          <div className="px-[17px] pb-[17px]">
+            <p className="mb-3 text-[12.5px] text-text-2">A de-identified scribe that drafts the session note and the funder fields  the counsellor edits and signs.</p>
+            <AiSettingsCard initial={aiSettings} spentCents={aiSpent} providerLive={Boolean(aiProvider)} />
           </div>
         </Card>
 

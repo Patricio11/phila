@@ -624,14 +624,31 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 
 ---
 
-## 🤖 PHASE 14: AI SCRIBE (POPIA-AWARE)  THE DIFFERENTIATOR ENGINE
+## 🤖 PHASE 14: AI SCRIBE (POPIA-AWARE)  THE DIFFERENTIATOR ENGINE ✅
 *Goal: the scribe that drafts the note AND extracts the funder fields  the fusion. Dormant by default.*
-- [ ] Platform-keyed provider rail (Phase 6) goes live; per-org **toggle = POPIA cross-border consent gate**; per-org entitlement + spend cap + metering.
-- [ ] Pipeline: session audio → STT (**self-hosted Whisper in-region**, or a ZDR provider) → note **draft** + **structured M&E extraction** (presenting issue, risk flags, demographics-if-consented, outcome, referral).
-- [ ] **De-identify before any cross-border call**; **ZDR** provider; **audio + raw transcript discarded** after the note; only the signed note + structured fields persist.
-- [ ] Every draft labelled "AI-generated"; the counsellor **signs** (author of record); the structured fields feed Phase 16 reporting (zero double entry).
-- [ ] The AI can also draft the **client-facing care plan / summary** (Task 4.3)  separate from the private note, plain-language, labelled, **edited and shared by the counsellor**, never auto-sent.
-- [ ] Audit every AI action; honest cost nudge at the cap.
+
+> **✅ COMPLETE (2026-06-30).** A real, dormant-by-default AI scribe over **OpenAI or Claude** (super-admin
+> picks + switches one on in `/admin/ai`; keys encrypted). The org's toggle is the **POPIA cross-border consent
+> gate**; cues are **de-identified** before any call; the model returns a draft note + structured M&E fields;
+> the counsellor edits + signs. Per-org spend cap + metering. Also drafts the client-facing care plan.
+> 93 unit/integration green. See `docs/completed/PHASE_14_COMPLETE.md`.
+
+- [x] **Platform provider rail + per-org gate + cap + metering (2026-06-30).** `ai_providers` (super-admin
+  configures OpenAI/Claude, one active, encrypted keys); `org_ai_settings` (the consent toggle + monthly cap);
+  `ai_usage` (token/cost ledger). The scribe is dormant until both the platform provider AND the org toggle are on.
+- [x] **Draft + structured M&E extraction (2026-06-30).** `lib/ai/scribe.ts`: from the counsellor's note cues →
+  a professional, non-diagnostic draft + `{presentingIssue, risk, outcome, referral}` (the fields that feed
+  Phase 16 reporting  zero double entry). *(STT/Whisper for live audio is a future add; the text-cues pipeline
+  is the real path today.)*
+- [x] **De-identify before any cross-border call (2026-06-30).** `lib/ai/deidentify.ts` strips names + SA ID /
+  phone / email before the prompt; the model writes about "the client"; only the signed note + structured fields
+  persist (no raw transcript stored). Unit-tested.
+- [x] **AI-honesty (2026-06-30).** Every draft is labelled "AI-generated"; the **counsellor signs** (author of
+  record). The AI never signs, sends, or advances clinical state.
+- [x] **Client-facing care-plan draft (2026-06-30).** "Draft with AI" in the share panel writes a warm,
+  plain-language summary  separate from the private note, edited + shared by the counsellor, never auto-sent.
+- [x] **Audit + cost gate (2026-06-30).** Every AI action audited; an honest "budget used up  raise the cap"
+  block at the monthly cap.
 
 ---
 

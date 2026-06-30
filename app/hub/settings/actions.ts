@@ -5,6 +5,27 @@ import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 import { saveBusinessHours as persistBusinessHours } from "@/db/queries/settings";
 import { saveVideoSettings } from "@/db/queries/video";
+import { saveAiSettings } from "@/db/queries/ai";
+
+/**
+ * AI scribe consent + budget (Phase 14). The `aiEnabled` toggle IS the POPIA
+ * cross-border consent gate — the scribe stays off for this org until it's on.
+ */
+const aiInput = z.object({
+  aiEnabled: z.boolean(),
+  monthlyCapRands: z.number().int().min(0).max(1000000),
+});
+
+export async function saveOrgAiSettings(
+  raw: z.infer<typeof aiInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { membership } = await requireHub();
+  const parsed = aiInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the AI settings." };
+  await saveAiSettings(membership.orgId, { aiEnabled: parsed.data.aiEnabled, monthlyCapCents: parsed.data.monthlyCapRands * 100 });
+  await logAccess({ action: "admin.action", actor: { userId: "hub", platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `org:${membership.orgId}/ai`, reason: parsed.data.aiEnabled ? "ai_consent_on" : "ai_consent_off" });
+  return { ok: true };
+}
 
 /**
  * Video mode (Phase 13): in-app LiveKit room, or the org's own pasted meeting

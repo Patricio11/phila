@@ -380,6 +380,39 @@ export const messageTemplates = pgTable("message_templates", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 });
 
+/** Per-org AI scribe setting (Phase 14). `aiEnabled` IS the POPIA cross-border consent gate. */
+export const orgAiSettings = pgTable("org_ai_settings", {
+  orgId: text("org_id").primaryKey().references(() => orgs.id),
+  aiEnabled: boolean("ai_enabled").default(false).notNull(), // off until s.72 cross-border consent acknowledged
+  monthlyCapCents: integer("monthly_cap_cents").default(100000).notNull(), // spend ceiling (Cost Rule)
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
+/**
+ * Platform AI providers (Phase 14) — super-admin configures OpenAI and/or Claude
+ * (key encrypted, model) and switches one on. The scribe uses the enabled provider.
+ * No org_id: this is a platform secret, managed only in /admin.
+ */
+export const aiProviders = pgTable("ai_providers", {
+  provider: text("provider").primaryKey(), // openai | anthropic
+  apiKeyEnc: text("api_key_enc"),
+  model: text("model"),
+  enabled: boolean("enabled").default(false).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
+/** Append-only AI usage ledger (Phase 14) — tokens + cost per call, for metering + the cap. */
+export const aiUsage = pgTable("ai_usage", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  kind: text("kind").notNull(), // note | care_plan
+  model: text("model").notNull(),
+  inputTokens: integer("input_tokens").default(0).notNull(),
+  outputTokens: integer("output_tokens").default(0).notNull(),
+  costCents: integer("cost_cents").default(0).notNull(),
+  at: timestamp("at", { withTimezone: true }).notNull(),
+});
+
 /** Per-org video setting (Phase 13): in-app LiveKit, or the org's own pasted link. */
 export const orgVideoSettings = pgTable("org_video_settings", {
   orgId: text("org_id").primaryKey().references(() => orgs.id),

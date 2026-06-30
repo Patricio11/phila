@@ -27,6 +27,7 @@ import { OutcomeCaptureButton } from "@/components/outcomes/outcome-capture";
 import { cn } from "@/lib/utils";
 import {
   generateAiDraft,
+  generateCarePlanDraft,
   markProgress,
   shareCarePlan,
   signNote,
@@ -81,6 +82,7 @@ export function SessionEditor({
   const [signing, startSign] = useTransition();
   const [marking, startMark] = useTransition();
   const [sharing, startShare] = useTransition();
+  const [draftingCare, startDraftCare] = useTransition();
   const [attachments, setAttachments] = useState<string[]>([]);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -107,9 +109,11 @@ export function SessionEditor({
 
   const onGenerate = () =>
     startGenerate(async () => {
-      const res = await generateAiDraft({ appointmentId: appt.id });
+      // The current note body is the counsellor's rough cues; the scribe shapes
+      // them into a draft (de-identified before any model call) and replaces them.
+      const res = await generateAiDraft({ appointmentId: appt.id, cues: body });
       if (!res.ok) return toast({ tone: "error", title: res.error });
-      setBody((prev) => (prev.trim() ? `${prev}\n\n${res.draft}` : res.draft));
+      setBody(res.draft);
       setExtraction(res.extraction);
       setAiGenerated(true);
       setSignedAt(null);
@@ -131,6 +135,14 @@ export function SessionEditor({
       if (!res.ok) return toast({ tone: "error", title: res.error });
       setState(next);
       toast({ tone: "success", title: `Marked ${PROGRESS.find((p) => p.state === next)?.label.toLowerCase() ?? next}` });
+    });
+
+  const onDraftCare = () =>
+    startDraftCare(async () => {
+      const res = await generateCarePlanDraft({ appointmentId: appt.id, cues: body });
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      setCareSummary(res.carePlan);
+      toast({ tone: "success", title: "Care-plan draft ready", description: "Plain language for the client  edit before you share." });
     });
 
   const onShare = () =>
@@ -344,10 +356,15 @@ export function SessionEditor({
           <Card>
             <CardHead title="Share with the client" />
             <div className="space-y-3 px-[17px] pb-[17px]">
-              <p className="text-[12px] leading-relaxed text-text-3">
-                A separate care plan the client sees  advice, tasks, next steps. Your private note above
-                is never included.
-              </p>
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-[12px] leading-relaxed text-text-3">
+                  A separate care plan the client sees  advice, tasks, next steps. Your private note above
+                  is never included.
+                </p>
+                <Button variant="mini" onClick={onDraftCare} loading={draftingCare} className="shrink-0">
+                  <Sparkles className="size-3.5" strokeWidth={2} aria-hidden /> Draft with AI
+                </Button>
+              </div>
               <Textarea
                 value={careSummary}
                 onChange={(e) => setCareSummary(e.target.value)}

@@ -11,7 +11,7 @@ export default async function MessagesPage() {
   const { principal, membership } = await requireOrg(["counsellor"]);
   const provider = await getDataProvider();
   const [threads, team] = await Promise.all([
-    provider.listTeamThreads(principal.userId),
+    provider.listTeamThreads(principal.userId, membership.orgId),
     provider.listTeam(membership.orgId),
   ]);
   if (!team) notFound();

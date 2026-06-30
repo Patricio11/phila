@@ -17,6 +17,7 @@ import { getSubscriptionRow, listSubscriptions } from "@/db/queries/subscription
 import { getReportingDb, getHubInsightsDb } from "@/db/queries/analytics";
 import { listGrantsDb, getGrantViewDb, getFunderGrantViewDb } from "@/db/queries/grants";
 import { listOrgDocumentsDb, listOrgFoldersDb, listDocumentRequestsDb, getStorageUsageDb, listClientVisibleDocumentsDb, listClientRequestsDb, listCounsellorDocumentsDb } from "@/db/queries/documents";
+import { listTeamThreadsDb } from "@/db/queries/messages";
 import { getPublicPageContent, defaultContent } from "@/db/queries/public-page";
 import type { OrgPublicPage } from "@/lib/data-provider";
 import { computeHubOverview, computeCounsellorDashboard } from "@/lib/domain/dashboards";
@@ -235,6 +236,7 @@ export const dbProvider: DataProvider = {
   listClientVisibleDocuments: (clientId) => listClientVisibleDocumentsDb(clientId),
   listClientDocumentRequests: (clientId) => listClientRequestsDb(clientId),
   listCounsellorDocuments: (counsellorId) => listCounsellorDocumentsDb(counsellorId),
+  listTeamThreads: (userId, orgId) => listTeamThreadsDb(userId, orgId),
 
   // The public booking config keeps its mock-sourced settings (booking policy +
   // intake form, persisted in later phases) but swaps in the REAL org so the

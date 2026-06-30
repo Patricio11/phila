@@ -721,7 +721,7 @@ export interface DataProvider {
   getSupervisionQueue(supervisorId: string, now: string): Promise<SupervisionItem[]>;
   getSupervisionOverview(supervisorId: string, now: string): Promise<SupervisionOverview>;
   listConversations(counsellorId: string): Promise<Conversation[]>;
-  listTeamThreads(userId: string): Promise<TeamThread[]>;
+  listTeamThreads(userId: string, orgId: string): Promise<TeamThread[]>;
   getCounsellorRooms(counsellorId: string, now: string): Promise<CounsellorRoomsView>;
   listCounsellorInvoices(counsellorId: string): Promise<Invoice[]>;
   /** A counsellor's documents: their own clients' files + anything shared with them — Phase 18. */

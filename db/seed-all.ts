@@ -36,6 +36,7 @@ import {
   grantAllocations as allocationsFx,
   grantNarratives as narrativesFx,
   funderContacts as funderContactsFx,
+  teamThreads as teamThreadsFx,
 } from "@/lib/mock/fixtures";
 import { CHANNELS, TRIGGERS, DEFAULT_TEMPLATES } from "@/lib/messaging/templates";
 
@@ -216,6 +217,28 @@ async function main() {
     for (let i = 0; i < measures.length; i++) {
       const m = measures[i]!;
       await db.insert(schema.outcomeMeasures).values({ id: `om_${clientId}_${i}`, clientId, tool: m.tool, score: m.score, takenAt: new Date(now.getTime() - m.weeksAgo * 7 * 86_400_000) }).onConflictDoNothing();
+    }
+  }
+
+  // ── Team messaging cluster (internal staff chat) ──────────────────────
+  for (const t of teamThreadsFx) {
+    const firstAt = t.messages[0] ? new Date(t.messages[0].at) : now;
+    const last = t.messages[t.messages.length - 1];
+    const lastAt = last ? new Date(last.at) : now;
+    await db.insert(schema.messageThreads).values({
+      id: t.id, orgId: "org_masizakhe", kind: "direct", title: null,
+      createdBy: t.participants[0], createdAt: firstAt, lastMessageAt: lastAt,
+    }).onConflictDoNothing();
+    for (const uid of t.participants) {
+      await db.insert(schema.threadMembers).values({
+        orgId: "org_masizakhe", threadId: t.id, userId: uid,
+        lastReadAt: uid === t.unreadFor ? null : lastAt, joinedAt: firstAt,
+      }).onConflictDoNothing();
+    }
+    for (const m of t.messages) {
+      await db.insert(schema.teamMessages).values({
+        id: m.id, orgId: "org_masizakhe", threadId: t.id, senderUserId: m.from, body: m.text, createdAt: new Date(m.at),
+      }).onConflictDoNothing();
     }
   }
 

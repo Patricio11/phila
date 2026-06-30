@@ -10,7 +10,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { sendTeamMessage } from "@/app/app/messages/actions";
+import { markThreadRead, sendTeamMessage } from "@/app/app/messages/actions";
 import { cn } from "@/lib/utils";
 
 function timeOf(iso: string): string {
@@ -43,6 +43,7 @@ export function TeamMessagesView({ threads: initial, teammates = [] }: { threads
     setActiveId(id);
     setMobileThread(true);
     setThreads((prev) => prev.map((t) => (t.id === id ? { ...t, unread: 0 } : t)));
+    void markThreadRead(id);
   };
 
   const startConversation = () => {

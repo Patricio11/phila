@@ -587,3 +587,41 @@ export const orgStorageUsage = pgTable("org_storage_usage", {
   bytesUsed: bigint("bytes_used", { mode: "number" }).default(0).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 });
+
+/* ── Team messaging cluster (internal staff chat) ─────────────────────── */
+
+/** An internal staff-to-staff conversation — a 1:1 (direct) or a named group. */
+export const messageThreads = pgTable("message_threads", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  kind: text("kind").default("direct").notNull(), // direct | group
+  title: text("title"), // null for direct (derived from the other member)
+  createdBy: text("created_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  lastMessageAt: timestamp("last_message_at", { withTimezone: true }),
+}, (t) => [index("msg_threads_org_idx").on(t.orgId)]);
+
+/** Membership of a thread + each member's read cursor (for unread counts). */
+export const threadMembers = pgTable("thread_members", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  threadId: text("thread_id").notNull(),
+  userId: text("user_id").notNull(),
+  lastReadAt: timestamp("last_read_at", { withTimezone: true }),
+  joinedAt: timestamp("joined_at", { withTimezone: true }).notNull(),
+}, (t) => [uniqueIndex("thread_member_uq").on(t.threadId, t.userId)]);
+
+export const teamMessages = pgTable("team_messages", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  threadId: text("thread_id").notNull(),
+  senderUserId: text("sender_user_id").notNull(),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+}, (t) => [index("team_msgs_thread_idx").on(t.threadId, t.createdAt)]);
+
+/** Last-seen heartbeat for online presence (global per user, not org-scoped). */
+export const userPresence = pgTable("user_presence", {
+  userId: text("user_id").primaryKey(),
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull(),
+});

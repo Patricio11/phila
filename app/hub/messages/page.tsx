@@ -11,7 +11,7 @@ export default async function HubMessagesPage() {
   const { principal, membership } = await requireHub();
   const provider = await getDataProvider();
   const [threads, team] = await Promise.all([
-    provider.listTeamThreads(principal.userId),
+    provider.listTeamThreads(principal.userId, membership.orgId),
     provider.listTeam(membership.orgId),
   ]);
   if (!team) notFound();

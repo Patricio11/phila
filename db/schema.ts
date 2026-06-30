@@ -389,6 +389,18 @@ export const orgAiSettings = pgTable("org_ai_settings", {
 });
 
 /**
+ * Platform integrations (Phase 15) — super-admin-managed platform secrets (e.g.
+ * Phila's own Paystack for credit/subscription billing). Credentials are an
+ * encrypted JSON blob. No org_id: platform-only, configured in /admin/integrations.
+ */
+export const platformIntegrations = pgTable("platform_integrations", {
+  key: text("key").primaryKey(), // paystack
+  credentialsEnc: text("credentials_enc"),
+  enabled: boolean("enabled").default(false).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
+/**
  * Platform AI providers (Phase 14) — super-admin configures OpenAI and/or Claude
  * (key encrypted, model) and switches one on. The scribe uses the enabled provider.
  * No org_id: this is a platform secret, managed only in /admin.

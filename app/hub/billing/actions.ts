@@ -24,7 +24,7 @@ export async function startCreditPurchase(
   if (!parsed.success) return { ok: false, error: "Invalid request" };
   const pack = packById(parsed.data.packId);
   if (!pack) return { ok: false, error: "That pack isn't available." };
-  if (!paystackConfigured()) return { ok: false, error: "Self-serve top-up isn't switched on yet  Phila can add credits for you in the meantime." };
+  if (!(await paystackConfigured())) return { ok: false, error: "Self-serve top-up isn't switched on yet  Phila can add credits for you in the meantime." };
 
   const reference = ref();
   await createPayment(membership.orgId, pack, "paystack", reference);
@@ -39,7 +39,7 @@ export async function startCreditPurchase(
 /** Verify + settle on the redirect back from Paystack (the webhook is the backstop). */
 export async function confirmCreditPurchase(reference: string): Promise<{ credited: number; channel: "sms" | "email" | null }> {
   await requireHub();
-  if (!paystackConfigured()) return { credited: 0, channel: null };
+  if (!(await paystackConfigured())) return { credited: 0, channel: null };
   if ((await verifyTransaction(reference)) !== "success") return { credited: 0, channel: null };
   return settlePayment(reference);
 }

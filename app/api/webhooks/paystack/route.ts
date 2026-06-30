@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(req: Request) {
   const raw = await req.text();
-  if (!verifyWebhookSignature(raw, req.headers.get("x-paystack-signature"))) {
+  if (!(await verifyWebhookSignature(raw, req.headers.get("x-paystack-signature")))) {
     return NextResponse.json({ error: "bad signature" }, { status: 401 });
   }
   let event: { event?: string; data?: { reference?: string } };

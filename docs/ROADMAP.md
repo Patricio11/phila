@@ -779,9 +779,10 @@ request-gated client uploads, and org→counsellor sharing  all on Phila Storage
   counsellor_id?, session_id?, visibility, scan_status, uploaded_by, soft-delete), `document_requests`,
   `document_shares`, `org_storage_usage`  all RLS'd + seeded; migration 0021 applied; legacy `client_documents`
   backfilled into `documents`.
-- [ ] `StorageProvider` strategy behind the dormant `StorageAdapter`; the **Supabase** backend (private bucket,
-  service-role server-only, signed URLs). **Presigned direct-to-storage upload**  never stream bytes through a
-  Server Action. S3 is a later drop-in behind the same interface.
+- [~] **StorageProvider seam + Supabase backend (2026-06-30):** `lib/storage/*`  Supabase over REST (presigned
+  upload, short-TTL signed download, delete, test-connection); private bucket + service-role server-only; resolved
+  from encrypted `platform_integrations` config, **dormant until switched on**. S3 is a later drop-in behind the
+  same interface. *(The admin "Phila Storage" card + the upload/download wiring land next.)*
 - [ ] Upload safety: content-type allowlist + **magic-byte sniff**, size limit, per-user rate limit, **virus
   scan** (`scan_status: pending → clean | quarantined`; not downloadable until clean). Every action audited.
 - [ ] Per-plan **storage quota** (GB entitlement in `plans`); honest hard cap on upload (never a silent fail).

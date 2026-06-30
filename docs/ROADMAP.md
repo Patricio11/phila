@@ -755,7 +755,55 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 
 ---
 
-## 🔒 PHASE 18: TRUST, SECURITY & POPIA HARDENING
+## 📁 PHASE 18: DOCUMENT SYSTEM  HUB-FIRST, SUPABASE-BACKED
+*Goal: a beautiful, smooth document workspace for the org  folders, drag-to-move, assign-to-client,
+request-gated client uploads, and org→counsellor sharing  all on Phila Storage (Supabase), POPIA-safe.*
+
+> **Full plan: `docs/PHASE_18_PLAN.md`.** Real file storage was always staged to land "with the documents
+> feature" (Phase 10 closeout)  this is that feature. **Phila Storage only** (Supabase now; S3 later behind the
+> same `StorageProvider` seam, no interface change); **Google Drive dropped**  clinical special-category PII
+> never leaves Phila's controlled, in-region store. Three honest **access lanes**: the **org owns + organises**,
+> a **counsellor sees own-clients + what's shared to them**, a **client sees only what's assigned + uploads only
+> against a request**. Documents are *shared* artifacts and remain distinct from the private `session_notes`
+> (Rule #1); a per-document **visibility** flag keeps finance/front-desk out of clinical files.
+
+### Task 18.1: Foundations  schema, storage seam, safety
+- [ ] `document_folders` (org-scoped tree via `parent_id`), a generalized `documents` (storage_provider/key,
+  content_type, bytes, checksum, folder_id, client_id?, counsellor_id?, session_id?, visibility, scan_status,
+  uploaded_by, soft-delete), `document_requests`, `document_shares`, `org_storage_usage`  all RLS'd + seeded.
+- [ ] `StorageProvider` strategy behind the dormant `StorageAdapter`; the **Supabase** backend (private bucket,
+  service-role server-only, signed URLs). **Presigned direct-to-storage upload**  never stream bytes through a
+  Server Action. S3 is a later drop-in behind the same interface.
+- [ ] Upload safety: content-type allowlist + **magic-byte sniff**, size limit, per-user rate limit, **virus
+  scan** (`scan_status: pending → clean | quarantined`; not downloadable until clean). Every action audited.
+- [ ] Per-plan **storage quota** (GB entitlement in `plans`); honest hard cap on upload (never a silent fail).
+
+### Task 18.2: The Hub document manager (the beautiful part)
+- [ ] Two-pane workspace: folder **tree** + file **grid/list**, breadcrumbs, **drag-to-upload**, **drag-to-move**,
+  multi-select **bulk move/assign**, inline rename, search, sort/filter. Smooth, optimistic, undoable; motion
+  GPU-cheap + reduced-motion aware; 360px-first; light/dark.
+- [ ] **Smart views** computed from the fields: By client · By counsellor · By session · Shared with client ·
+  **Uploaded by clients (needs review)**  real folders + smart views side by side.
+- [ ] **Assign to client** (set `client_id` + folder) and **Share file/folder with a counsellor**
+  (`document_shares`, folder cascades).
+
+### Task 18.3: Requests + notifications
+- [ ] **Document requests:** the counsellor/Hub creates a request from the dossier ("Copy of your ID"); the client
+  portal shows it and uploads **against** it (no unsolicited uploads). Status `pending → fulfilled → cancelled`.
+- [ ] **In-app notifications** + Phase-12 triggers: `document_shared` (org → client, preferred channel,
+  consent/opt-out/quiet-hours/credits honoured) and `client_uploaded_document` (→ the counsellor + Hub).
+
+### Task 18.4: Client side, made real
+- [ ] `/me/documents`: request-bound upload (persisted, scanned), **real signed-URL download**, a "shared with
+  you" view; the old optimistic-only upload button is replaced by the request flow. Every access audited.
+
+**Done when:** the Hub organises documents in folders and moves/assigns them smoothly; a counsellor sees their
+clients' docs + anything shared to them; a client uploads only what was requested and opens only what was shared;
+every file rests in Phila's private Supabase bucket  scanned, quota-capped, signed-URL-only, and fully audited.
+
+---
+
+## 🔒 PHASE 19: TRUST, SECURITY & POPIA HARDENING
 *Goal: be allowed in the room with the most sensitive data there is.*
 - [ ] **Data residency:** migrate Postgres to an SA region (AWS `af-south-1` / Azure SA North) on the `db/client.ts` swap; confirm storage + AI inference residency posture; document cross-border flows.
 - [ ] Field-level encryption live; security headers; rate limiting (Upstash) on auth/booking/AI/messaging; observability skeleton.
@@ -765,7 +813,7 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 
 ---
 
-## 🧪 PHASE 19: TESTING & QA
+## 🧪 PHASE 20: TESTING & QA
 *Goal: prove the invariants that matter  isolation, redaction, consent, safeguarding.*
 - [ ] Unit (scheduling, freshness, k-anon, contrast, consent state machine).
 - [ ] Integration (Server Actions + Zod + RLS on a real-Postgres harness).
@@ -774,7 +822,7 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 
 ---
 
-## 🚀 PHASE 20: LAUNCH READINESS
+## 🚀 PHASE 21: LAUNCH READINESS
 *Goal: a real first org live (the warm org), priced, onboarded, deployed.*
 - [ ] Plans + entitlements finalised in the `plans` table; pricing framing leads with **total cost** + **POPIA-in-SA** as the wedge; AI tier priced for the metered cost.
 - [ ] **Industry-in-a-box onboarding:** pick "NGO counselling" / "EAP" / "private practice" → services + intake + consent purposes + report templates preconfigure.

@@ -173,8 +173,11 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
 - **Phase 17** (org public page real + SEO)  ✅ **2026-06-30**. `org_public_pages` table; section editor;
   world-class `/o/[slug]` micro-site (SSG, 1h revalidate); per-org metadata + JSON-LD + sitemap + robots; booking
   wired with a PII-free funnel. PHASE_17_COMPLETE.md.
-- **Phase 18** (trust, security & POPIA hardening)  ⏳ **next**. Then Phase 19 (testing & QA incl. the RLS runtime
-  cutover) and Phase 20 (launch readiness). See `ROADMAP.md` §18–20.
+- **Phase 18** (document system  Hub-first, Supabase-backed)  ⏳ **next**. A folders + assign + share +
+  request document workspace on **Phila Storage (Supabase)**, POPIA-safe; **no Google Drive**. Three access lanes
+  (org owns · counsellor sees own-clients+shared · client sees assigned + uploads only on request). Full plan:
+  `docs/PHASE_18_PLAN.md`. Then Phase 19 (trust, security & POPIA hardening incl. the RLS runtime cutover),
+  Phase 20 (testing & QA), Phase 21 (launch readiness). See `ROADMAP.md` §18–21.
 
 > **Honest state of the DB swap:** `DATA_PROVIDER=db` runs the product on Neon; the migrated clusters above read +
 > write real rows. A number of provider methods still **delegate to the mock** (e.g. supervision, intake, team-member

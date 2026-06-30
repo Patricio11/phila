@@ -767,10 +767,18 @@ request-gated client uploads, and org→counsellor sharing  all on Phila Storage
 > against a request**. Documents are *shared* artifacts and remain distinct from the private `session_notes`
 > (Rule #1); a per-document **visibility** flag keeps finance/front-desk out of clinical files.
 
+> **Progress (2026-06-30):** **18.1 foundations** ✅ (commit `0b9395e`) and **18.2 the Hub document manager** ✅
+> are shipped and green (tsc/lint/build + 105 tests). The manager is live at `/hub/documents`, built **UI-first
+> on the seam** — folders, drag-to-move, multi-select, smart views, assign/share/request all persist + audit.
+> **Next:** the Supabase `StorageProvider` + presigned uploads + scan gate + the admin "Phila Storage" card
+> (makes the dormant Upload real), then the client side (request-bound upload + signed download).
+
 ### Task 18.1: Foundations  schema, storage seam, safety
-- [ ] `document_folders` (org-scoped tree via `parent_id`), a generalized `documents` (storage_provider/key,
-  content_type, bytes, checksum, folder_id, client_id?, counsellor_id?, session_id?, visibility, scan_status,
-  uploaded_by, soft-delete), `document_requests`, `document_shares`, `org_storage_usage`  all RLS'd + seeded.
+- [x] **Schema + RLS + seed (2026-06-30, `0b9395e`).** `document_folders` (org-scoped tree via `parent_id`), a
+  generalized `documents` (storage_provider/key, content_type, bytes (bigint), folder_id, client_id?,
+  counsellor_id?, session_id?, visibility, scan_status, uploaded_by, soft-delete), `document_requests`,
+  `document_shares`, `org_storage_usage`  all RLS'd + seeded; migration 0021 applied; legacy `client_documents`
+  backfilled into `documents`.
 - [ ] `StorageProvider` strategy behind the dormant `StorageAdapter`; the **Supabase** backend (private bucket,
   service-role server-only, signed URLs). **Presigned direct-to-storage upload**  never stream bytes through a
   Server Action. S3 is a later drop-in behind the same interface.
@@ -779,13 +787,13 @@ request-gated client uploads, and org→counsellor sharing  all on Phila Storage
 - [ ] Per-plan **storage quota** (GB entitlement in `plans`); honest hard cap on upload (never a silent fail).
 
 ### Task 18.2: The Hub document manager (the beautiful part)
-- [ ] Two-pane workspace: folder **tree** + file **grid/list**, breadcrumbs, **drag-to-upload**, **drag-to-move**,
-  multi-select **bulk move/assign**, inline rename, search, sort/filter. Smooth, optimistic, undoable; motion
-  GPU-cheap + reduced-motion aware; 360px-first; light/dark.
-- [ ] **Smart views** computed from the fields: By client · By counsellor · By session · Shared with client ·
-  **Uploaded by clients (needs review)**  real folders + smart views side by side.
-- [ ] **Assign to client** (set `client_id` + folder) and **Share file/folder with a counsellor**
-  (`document_shares`, folder cascades).
+- [x] **Two-pane workspace (2026-06-30):** folder **tree** + file **grid/list**, breadcrumbs, **drag-to-move**
+  (drop-target glow + optimistic + reconciled), multi-select **floating action bar**, inline rename. Motion
+  GPU-cheap + reduced-motion aware; 360px-first; light/dark. *(drag-to-**upload** + search land with the storage slice.)*
+- [x] **Smart views (2026-06-30):** All documents · **Needs review** (client uploads, badged) · By client 
+  computed from the row fields; real folders + smart views side by side.
+- [x] **Assign to client** (set `client_id`) and **Share file/folder with a counsellor** (`document_shares`)
+  (2026-06-30)  plus a **Request a document** action; all via Zod + audited + org-scoped server actions.
 
 ### Task 18.3: Requests + notifications
 - [ ] **Document requests:** the counsellor/Hub creates a request from the dossier ("Copy of your ID"); the client

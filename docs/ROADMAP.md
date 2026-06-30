@@ -658,7 +658,7 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 
 ---
 
-## 💳 PHASE 15: PAYMENTS  PLATFORM BILLING + ORG GATEWAYS
+## 💳 PHASE 15: PAYMENTS  PLATFORM BILLING + ORG GATEWAYS ✅ (2026-06-30)
 *Goal: two distinct money flows, real. (A) orgs pay Phila; (B) clients pay their org.*
 
 ### Task 15A: Platform subscription billing (orgs → Phila) ✅
@@ -690,14 +690,16 @@ POPIA, test, and launch  **without changing the Part-A UI.***
   (`lib/payments/paystack.ts`) dormant until `PHILA_PAYSTACK_SECRET` set. Replaces the Phase-12 manual grant
   (still available as a super-admin fallback). Proven by an idempotency integration test.
 
-> **Remaining for Phase 15 (the two larger money flows):** 15A platform subscription billing (orgs → Phila) and
-> 15B org BYO-gateway invoice payments (clients → org). 15.1's PSP + payments table are the foundation both build on.
+> **Phase 15 complete (2026-06-30):** all three flows are real — 15A platform subscription billing (orgs → Phila),
+> 15B org BYO-gateway invoice payments (clients → org), and 15.1 self-serve credit purchase, all on the shared PSP +
+> `payments` table. **Follow-ups (not blockers):** trials / proration / dunning / receipts; an income-prediction
+> reporting tie-in (Phase 16); a PSP orchestrator beyond Paystack (Stitch / Ozow / Yoco shown as "soon").
 
 **Done when:** an org subscribes to Phila (A), connects its own gateway in one switch (B), a client pays an invoice that settles to the org, and an org can **buy notification credits** that top up their balance automatically (15.1).
 
 ---
 
-## 📊 PHASE 16: ANALYTICS & FUNDER / M&E REPORTING + FUNDER PORTAL
+## 📊 PHASE 16: ANALYTICS & FUNDER / M&E REPORTING + FUNDER PORTAL ✅ (2026-06-30)
 *Goal: the reporting differentiator, **real (DB-backed, no mock)**  computed from the actual clinical work, honest, k-anon-safe  with richer insights and the live funder portal.*
 
 > **Refined plan (2026-06-30):** the analytics surfaces were mock-only. Phase 16 makes them
@@ -725,7 +727,7 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 
 ---
 
-## 🌐 PHASE 17: ORG PUBLIC PAGE REAL + SEO
+## 🌐 PHASE 17: ORG PUBLIC PAGE REAL + SEO ✅ (2026-06-30)
 *Goal: org-editable, SEO-ranking public micro-sites, wired  world-class and fully DB-backed (no mock).*
 
 > **Refined plan (2026-06-30):** a real `org_public_pages` table (seeded), a **section-based
@@ -887,4 +889,4 @@ shared by an explicit, consented counsellor action  never the private note.
 > trends, session counts, and org-posted narrative. **Never** an individual client, note, care plan,
 > contact, demographic row, or any other grant. Read-only; every view audited.
 
-*Last updated: 2026-06-26 · Version 1.0 · Phila · philasa.com · Stack: Next.js · Neon · Better Auth · Supabase Storage · LiveKit*
+*Last updated: 2026-06-30 · Version 1.0 · Phila · philasa.com · Stack: Next.js · Neon · Better Auth · Supabase Storage · LiveKit*

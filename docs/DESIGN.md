@@ -321,4 +321,4 @@ EAP tomorrow. Part B makes it real behind the seam  the UI doesn't change.
 ---
 
 *Phila · philasa.com · South Africa · English · Direction: a serious tool, made calm · Locked to the
-approved dashboard · Light default, dark companion · Last updated 2026-06-26*
+approved dashboard · Light default, dark companion · Last updated 2026-06-30*

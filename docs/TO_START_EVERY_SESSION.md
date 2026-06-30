@@ -146,8 +146,41 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
   (`lib/clock.ts`); typed dormant **adapters** (`lib/adapters/`). Remaining (small, no UI change):
   Playwright/axe sweep, optional loading/error flag. See `docs/completed/PHASE_A_COMPLETE.md` +
   `docs/PHASE_A_CLOSEOUT.md`.
-- **Phase 9** (Part B begins: Better Auth + consent persistence, mock→real behind the seam)  ⏳ **next** 
-  plan in `docs/PHASE_9_PLAN.md`.
+- **Phase 9** (identity, auth & consent)  ✅ **2026-06-29**. Real accounts for every role (Better Auth +
+  Drizzle/Neon); sign-in routes by role; persisted **consent** (versioned, audited) + persisted **audit_log**;
+  practice **sign-up** (creates org+admin); **TOTP 2FA** (enrol + challenge, gated to enrolled users). See
+  `docs/completed/PHASE_9_COMPLETE.md`; demo accounts in `docs/DEMO_LOGINS.md` (all `phila1234`).
+- **Phase 10** (data engine: schema + RLS + queries + storage)  ✅ **2026-06-29**. Five data clusters
+  (directory, appointments, clinical, billing, funders/M&E) + dashboards with real DB reads **and** four mutation
+  clusters writing real rows; typed `db/queries/*`; RLS **authored + applied + proven** (non-owner `phila_app`,
+  5-test leak proof). RLS *runtime cutover* + select-list redaction deferred to Phase 19. See PHASE_10_COMPLETE.md.
+- **Phase 11** (scheduling engine)  ✅ **2026-06-29**. Real availability, race-free no-double-booking (GiST
+  `EXCLUDE`), room allocation + utilisation, recurring edit-this/all, durable offline send-queue. PHASE_11_COMPLETE.md.
+- **Phase 12** (notifications: WhatsApp + SMS + email)  ✅ **2026-06-29**. BYO WhatsApp (Meta) + Phila SMS/email
+  credits, routed by preferred channel; template manager; one deliver chokepoint (POPIA gate → meter → honest
+  states); all triggers + reminder sweep; opt-out + delivery webhooks. PHASE_12_COMPLETE.md.
+- **Phase 13** (video: LiveKit + paste-link fallback)  ✅ **2026-06-29**. Self-hosted LiveKit, server-side token
+  minting, branded waiting room → call; admin-managed in `/admin/integrations` (Demo/Live). PHASE_13_COMPLETE.md.
+- **Phase 14** (AI scribe, POPIA-aware)  ✅ **2026-06-30**. Dormant-by-default over OpenAI/Claude; org toggle is
+  the cross-border consent gate; de-identify before any call; draft note + structured M&E fields + care-plan draft;
+  per-org cap + metering. PHASE_14_COMPLETE.md.
+- **Phase 15** (payments: platform billing + org gateways)  ✅ **2026-06-30**. 15A orgs subscribe to Phila; 15B
+  org BYO gateway → client invoice pay-links (`/pay/[token]`, funds settle to the org); 15.1 self-serve credit
+  purchase. All idempotent on the payment ref. PHASE_15_COMPLETE.md + PHASE_15_1_COMPLETE.md.
+- **Phase 16** (analytics & funder/M&E reporting, DB-backed)  ✅ **2026-06-30**. Real reporting/insights/grant
+  views from pure domain fns over DB rows (no mock fallback); consent-gated demographics + k-anon floor; funder
+  portal wired + scoped + audited; narratives persist. PHASE_16_COMPLETE.md.
+- **Phase 17** (org public page real + SEO)  ✅ **2026-06-30**. `org_public_pages` table; section editor;
+  world-class `/o/[slug]` micro-site (SSG, 1h revalidate); per-org metadata + JSON-LD + sitemap + robots; booking
+  wired with a PII-free funnel. PHASE_17_COMPLETE.md.
+- **Phase 18** (trust, security & POPIA hardening)  ⏳ **next**. Then Phase 19 (testing & QA incl. the RLS runtime
+  cutover) and Phase 20 (launch readiness). See `ROADMAP.md` §18–20.
+
+> **Honest state of the DB swap:** `DATA_PROVIDER=db` runs the product on Neon; the migrated clusters above read +
+> write real rows. A number of provider methods still **delegate to the mock** (e.g. supervision, intake, team-member
+> detail, the platform-admin console, internal messages) — seeded from the same fixtures so they agree, but not yet
+> DB-backed. "Fully DB-backed app-wide" is not yet true; those surfaces migrate as their phases come up.
+
 - *(Update this block as phases ship. Part A is mock-first; Part B wires real behind the unchanged UI.)*
 
 ---
@@ -256,4 +289,4 @@ the Care-Confidentiality Rule, the AI-Honesty Rule, or the Safeguarding Rule  **
 time.** Prioritise correctness, POPIA compliance, tenant isolation, performance, and accessibility
 over visual flourish  then make it genuinely beautiful within those limits.
 
-*Last updated: 2026-06-26 · Phila · philasa.com · Stack: Next.js · Neon · Better Auth · Supabase Storage · LiveKit*
+*Last updated: 2026-06-30 · Phila · philasa.com · Stack: Next.js · Neon · Better Auth · Supabase Storage · LiveKit*

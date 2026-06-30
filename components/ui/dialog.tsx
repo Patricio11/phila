@@ -35,21 +35,32 @@ export function Dialog({
   const panelRef = React.useRef<HTMLDivElement>(null);
   const titleId = React.useId();
 
-  // Esc to close + body scroll lock while open.
+  // Keep the latest onClose without making it the focus effect's dependency.
+  const onCloseRef = React.useRef(onClose);
+  React.useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // Esc + scroll-lock + initial focus run ONLY when `open` flips — not on every
+  // render. (Depending on `onClose`, which is a fresh function each parent render,
+  // re-ran this on every keystroke and stole focus back to the panel — the
+  // single-character defocus seen across the app's dialogs.)
   React.useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") onCloseRef.current();
     };
     document.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    panelRef.current?.focus();
+    // Land focus on the first field if there is one, else the panel.
+    const field = panelRef.current?.querySelector<HTMLElement>("input, textarea");
+    (field ?? panelRef.current)?.focus();
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!mounted || !open) return null;
 

@@ -36,14 +36,14 @@ export async function POST(req: Request) {
       const phoneNumberId = value.metadata?.phone_number_id;
       const orgId = phoneNumberId ? await getOrgByWhatsappPhone(phoneNumberId) : null;
 
-      // Inbound messages — honour STOP as an opt-out.
+      // Inbound messages  honour STOP as an opt-out.
       for (const msg of value.messages ?? []) {
         const text = (msg.text?.body ?? "").trim().toLowerCase();
         if (orgId && msg.from && OPT_OUT_WORDS.has(text)) {
           await addOptOut(orgId, "whatsapp", `+${msg.from}`, "client replied STOP");
         }
       }
-      // Delivery statuses — keep message_log honest.
+      // Delivery statuses  keep message_log honest.
       for (const st of value.statuses ?? []) {
         if (st.id && st.status) await updateMessageStatus(st.id, st.status === "read" ? "delivered" : st.status);
       }

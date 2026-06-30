@@ -9,7 +9,7 @@ import { useToast } from "@/components/ui/toast";
 import { savePlatformVat } from "@/app/admin/settings/actions";
 
 /**
- * The national VAT rate — one setting, applied to every org's invoices and
+ * The national VAT rate  one setting, applied to every org's invoices and
  * reporting. Changing it here is the single lever for a national rate change.
  */
 export function PlatformVatSettings({ initialRate }: { initialRate: number }) {
@@ -32,7 +32,7 @@ export function PlatformVatSettings({ initialRate }: { initialRate: number }) {
       <CardHead title="VAT rate (national)" />
       <div className="space-y-3 px-[17px] pb-[17px]">
         <p className="text-[12.5px] text-text-2">
-          The South African VAT rate. It applies to every VAT-registered org on the platform — change it once here and all invoices follow.
+          The South African VAT rate. It applies to every VAT-registered org on the platform  change it once here and all invoices follow.
         </p>
         <div className="flex items-end gap-3">
           <div className="space-y-1.5">

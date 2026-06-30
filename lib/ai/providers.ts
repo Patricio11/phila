@@ -31,7 +31,7 @@ export async function complete(p: { provider: AiProviderKey; apiKey: string; mod
   return { text: res.choices[0]?.message?.content ?? "", inputTokens: res.usage?.prompt_tokens ?? 0, outputTokens: res.usage?.completion_tokens ?? 0 };
 }
 
-// Rough ZAR cents per 1,000 tokens (for metering + the cap — not exact billing).
+// Rough ZAR cents per 1,000 tokens (for metering + the cap  not exact billing).
 const RATES: Record<string, { in: number; out: number }> = {
   "claude-sonnet-4-6": { in: 6, out: 28 },
   "claude-haiku-4-5-20251001": { in: 2, out: 8 },

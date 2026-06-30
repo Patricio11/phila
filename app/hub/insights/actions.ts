@@ -14,7 +14,7 @@ const input = z.object({
   ageBand: z.string().optional(),
 });
 
-/** Recompute Hub insights for a filter set. Audited — demographic cuts are PII. */
+/** Recompute Hub insights for a filter set. Audited  demographic cuts are PII. */
 export async function runInsights(raw: z.infer<typeof input>): Promise<HubInsights> {
   const { principal, membership } = await requireHub();
   const filters = input.parse(raw);

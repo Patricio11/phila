@@ -19,7 +19,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
   const { membership } = await requireHub();
   const { ref } = await searchParams;
 
-  // Returning from Paystack — verify + settle (the webhook is the backstop).
+  // Returning from Paystack  verify + settle (the webhook is the backstop).
   let justCredited: { credited: number; channel: string | null } | null = null;
   if (ref && (await verifyTransaction(ref)) === "success") {
     const r = await settlePayment(ref);

@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 /**
  * PII-free public-page analytics sink (Phase 17). Accepts only `view` events from
  * the page beacon (book_click + booked are recorded server-side on those flows).
- * No visitor data is stored — just {orgId, kind, at}.
+ * No visitor data is stored  just {orgId, kind, at}.
  */
 export async function POST(req: Request) {
   let payload: { slug?: string; kind?: string };

@@ -67,7 +67,7 @@ export function InvoiceBoard({ rows, nowISO, orgName, province, vatRatePercent, 
       setPendingId(null);
       if (!res.ok) return toast({ tone: "error", title: res.error });
       try { await navigator.clipboard.writeText(res.url); } catch { /* clipboard blocked */ }
-      toast({ tone: "success", title: "Pay link copied", description: `Share it with ${r.clientName.split(" ")[0]} — they pay you directly.` });
+      toast({ tone: "success", title: "Pay link copied", description: `Share it with ${r.clientName.split(" ")[0]}  they pay you directly.` });
     });
   };
 

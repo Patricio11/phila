@@ -1,5 +1,5 @@
 /**
- * Phase 12 — notification message templates. System defaults live here AND are
+ * Phase 12  notification message templates. System defaults live here AND are
  * seeded into `message_templates` (orgId null); an org row overrides per channel.
  * WhatsApp/SMS are kept short and POPIA-honest (STOP to opt out); email carries a
  * subject. Variables are `{name}` tokens rendered by renderTemplate().

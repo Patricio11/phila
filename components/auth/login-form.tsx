@@ -45,7 +45,7 @@ export function LoginForm() {
   const verifyTwoFactor = () =>
     start(async () => {
       const { error } = await authClient.twoFactor.verifyTotp({ code });
-      if (error) return toast({ tone: "error", title: "That code didn't match — try the next one." });
+      if (error) return toast({ tone: "error", title: "That code didn't match  try the next one." });
       const { redirect } = await homeForCurrentUser();
       router.push(redirect);
     });

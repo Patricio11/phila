@@ -3,7 +3,7 @@ import { decryptField } from "@/lib/crypto";
 
 /**
  * Real-shaped transports, dormant-by-default. Each makes the actual provider call
- * when configured, and returns an HONEST result otherwise ("dormant" — never a
+ * when configured, and returns an HONEST result otherwise ("dormant"  never a
  * fake "sent"). WhatsApp uses the ORG's Meta Cloud API number; SMS (BulkSMS) and
  * email (Resend) use Phila's platform credentials from env (set in Phase 12.5).
  */

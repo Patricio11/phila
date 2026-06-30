@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 10 — listCaseload reads the DB. A client + completed session inserted
+ * Phase 10  listCaseload reads the DB. A client + completed session inserted
  * straight into Postgres (not in the fixtures) shows up on the counsellor's
  * caseload, proving the read is real (not mock-fallback).
  */

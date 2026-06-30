@@ -5,7 +5,7 @@ import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 
 /**
- * Intake form (mock). The Hub owns its own intake — each org's questions differ
+ * Intake form (mock). The Hub owns its own intake  each org's questions differ
  * (a trauma service asks different things than an EAP). Validated + audited here;
  * Phase 11 persists the form to the org and the booking flow renders it live.
  * Nothing is hardcoded: this is the single place the questions are defined.
@@ -36,7 +36,7 @@ export async function saveIntakeForm(
   // A multiple-choice question must offer at least two options.
   for (const f of parsed.data.fields) {
     if (f.type === "radio" && (f.options ?? []).filter((o) => o.trim()).length < 2) {
-      return { ok: false, error: `"${f.label}" is multiple-choice — add at least two options.` };
+      return { ok: false, error: `"${f.label}" is multiple-choice  add at least two options.` };
     }
   }
 

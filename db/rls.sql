@@ -1,4 +1,4 @@
--- Phila — Row-Level Security (Task 10.2). The real tenant boundary, enforced in
+-- Phila  Row-Level Security (Task 10.2). The real tenant boundary, enforced in
 -- Postgres, beneath the app-layer `where org_id = …` checks (defence in depth).
 --
 -- The app's owner role (neondb_owner) has BYPASSRLS, so these policies are inert

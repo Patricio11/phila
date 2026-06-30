@@ -35,7 +35,7 @@ export function NotificationsSettings({
 
   return (
     <div className="space-y-3">
-      {/* WhatsApp — BYO */}
+      {/* WhatsApp  BYO */}
       <ChannelShell
         icon={MessageCircle} title="WhatsApp" enabled={s.whatsappEnabled} onToggle={(v) => set("whatsappEnabled", v)}
         tag={whatsapp.status === "configured" || whatsapp.status === "live" ? "Connected" : "Your own number"}
@@ -43,14 +43,14 @@ export function NotificationsSettings({
         <WhatsappCard whatsapp={whatsapp} />
       </ChannelShell>
 
-      {/* SMS — Phila credits */}
+      {/* SMS  Phila credits */}
       <ChannelShell
         icon={Smartphone} title="SMS" enabled={s.smsEnabled} onToggle={(v) => set("smsEnabled", v)} tag="Powered by Phila"
       >
-        <CreditRow channel="SMS" balance={credits.sms} blurb="Sent via Phila's bulk SMS — no provider account needed." />
+        <CreditRow channel="SMS" balance={credits.sms} blurb="Sent via Phila's bulk SMS  no provider account needed." />
       </ChannelShell>
 
-      {/* Email — Phila credits + reply-to */}
+      {/* Email  Phila credits + reply-to */}
       <ChannelShell
         icon={Mail} title="Email" enabled={s.emailEnabled} onToggle={(v) => set("emailEnabled", v)} tag="Powered by Phila"
       >
@@ -125,7 +125,7 @@ function CreditRow({ channel, balance, blurb }: { channel: string; balance: numb
       </div>
       <Button
         variant="mini"
-        onClick={() => toast({ tone: "default", title: "Self-serve top-ups arrive with billing", description: "For now, ask Phila to add credits — automatic purchase lands in Phase 15." })}
+        onClick={() => toast({ tone: "default", title: "Self-serve top-ups arrive with billing", description: "For now, ask Phila to add credits  automatic purchase lands in Phase 15." })}
       >
         Buy credits
       </Button>

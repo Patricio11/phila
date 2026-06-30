@@ -1,8 +1,8 @@
 /**
- * dbProvider — the Part-B implementation of the `dataProvider` seam, backed by
+ * dbProvider  the Part-B implementation of the `dataProvider` seam, backed by
  * Neon Postgres. It is built as a **hybrid migration layer**: it spreads
  * `mockProvider` as the base, then overrides one method at a time with a real DB
- * read/write. Methods not yet migrated fall back to the mock — and because the DB
+ * read/write. Methods not yet migrated fall back to the mock  and because the DB
  * is seeded from the same fixtures, mock-fallback and real reads return identical
  * data, so the app stays whole while it goes real (Phase 9 → Phase 17).
  *
@@ -175,7 +175,7 @@ export const dbProvider: DataProvider = {
     return row && !row.deletedAt ? toOrg(row) : null;
   },
 
-  // Phila subscription (Phase 15A) — read from the subscriptions table.
+  // Phila subscription (Phase 15A)  read from the subscriptions table.
   getOrgSubscription: async (orgId: string, now: string): Promise<OrgSubscription | null> => {
     const sub = await getSubscriptionRow(orgId);
     if (!sub) return null;
@@ -194,7 +194,7 @@ export const dbProvider: DataProvider = {
     });
   },
 
-  // Public micro-site (Phase 17) — real content from org_public_pages (no mock).
+  // Public micro-site (Phase 17)  real content from org_public_pages (no mock).
   getOrgPublicPage: async (slug: string): Promise<OrgPublicPage | null> => {
     const db = getDb();
     const [orgRow] = await db.select().from(orgsTable).where(eq(orgsTable.slug, slug)).limit(1);
@@ -219,7 +219,7 @@ export const dbProvider: DataProvider = {
     };
   },
 
-  // Analytics & M&E reporting (Phase 16) — real, computed from the clinical tables.
+  // Analytics & M&E reporting (Phase 16)  real, computed from the clinical tables.
   // (listFunders + listFunderGrants are already DB-backed below.)
   getReporting: (orgId, now, filters) => getReportingDb(orgId, now, filters),
   getHubInsights: (orgId, now, filters) => getHubInsightsDb(orgId, now, filters),
@@ -227,7 +227,7 @@ export const dbProvider: DataProvider = {
   getGrantView: (grantId, now) => getGrantViewDb(grantId, now),
   getFunderGrantView: (funderUserId, grantId, now) => getFunderGrantViewDb(funderUserId, grantId, now),
 
-  // Documents (Phase 18) — the org's document workspace, real DB reads.
+  // Documents (Phase 18)  the org's document workspace, real DB reads.
   listOrgDocuments: (orgId) => listOrgDocumentsDb(orgId),
   listOrgFolders: (orgId) => listOrgFoldersDb(orgId),
   listDocumentRequests: (orgId) => listDocumentRequestsDb(orgId),
@@ -245,7 +245,7 @@ export const dbProvider: DataProvider = {
     return row && !row.deletedAt ? { ...base, org: toOrg(row) } : base;
   },
 
-  // ── Directory cluster — single-table reads from the DB ────────────────
+  // ── Directory cluster  single-table reads from the DB ────────────────
   listCounsellors: async (orgId: string): Promise<Counsellor[]> => {
     const rows = await getDb().select().from(counsellorsTable).where(eq(counsellorsTable.orgId, orgId));
     return rows.map(toCounsellor);
@@ -275,7 +275,7 @@ export const dbProvider: DataProvider = {
     return rows.map(toRoom);
   },
 
-  // ── Rooms cluster — utilisation rolled up from REAL appointments ───────
+  // ── Rooms cluster  utilisation rolled up from REAL appointments ───────
   getRoomsOverview: async (orgId: string, now: string): Promise<RoomView[]> => {
     const db = getDb();
     const [[orgRow], roomRows, siteRows, counsellorRows, views, assignmentRows] = await Promise.all([
@@ -344,7 +344,7 @@ export const dbProvider: DataProvider = {
     };
   },
 
-  // ── Scheduling cluster — real appointments from the DB ────────────────
+  // ── Scheduling cluster  real appointments from the DB ────────────────
   listAppointmentsForCounsellor: async (counsellorId: string, opts?: { from?: string; to?: string }): Promise<Appointment[]> => {
     const rows = await getDb().select().from(appointmentsTable).where(and(eq(appointmentsTable.counsellorId, counsellorId), ...dayRange(appointmentsTable.startsAt, opts)));
     return rows.map(toAppt);
@@ -358,7 +358,7 @@ export const dbProvider: DataProvider = {
     return views.sort((a, b) => b.startsAt.localeCompare(a.startsAt));
   },
 
-  // ── Counsellor caseload — live clients + their real appointments ──────
+  // ── Counsellor caseload  live clients + their real appointments ──────
   listCaseload: async (counsellorId: string, now: string): Promise<CaseloadRow[]> => {
     const [clientRows, views] = await Promise.all([
       getDb().select().from(clientsTable).where(and(eq(clientsTable.primaryCounsellorId, counsellorId), isNull(clientsTable.deletedAt))),
@@ -384,7 +384,7 @@ export const dbProvider: DataProvider = {
     });
   },
 
-  // ── Composite dashboard — counsellor home, aggregated from DB rows ─────
+  // ── Composite dashboard  counsellor home, aggregated from DB rows ─────
   getCounsellorDashboard: async (counsellorId: string, now: string): Promise<CounsellorDashboard | null> => {
     const db = getDb();
     const [cRow] = await db.select().from(counsellorsTable).where(eq(counsellorsTable.id, counsellorId)).limit(1);
@@ -406,7 +406,7 @@ export const dbProvider: DataProvider = {
     return computeCounsellorDashboard({ counsellor: toCounsellor(cRow), org: toOrg(orgRow), appointments, counsellorClients, measuredClientIds, outcomePoints, now });
   },
 
-  // ── Clinical cluster — care plan (shared) + documents ─────────────────
+  // ── Clinical cluster  care plan (shared) + documents ─────────────────
   getCarePlan: async (clientId: string): Promise<CarePlan | null> => {
     const [r] = await getDb().select().from(carePlansTable).where(eq(carePlansTable.clientId, clientId)).limit(1);
     return r ? { id: r.id, clientId: r.clientId, authorCounsellorId: r.authorCounsellorId, summary: r.summary, tasks: r.tasks, resources: r.resources, nextStep: r.nextStep, sharedAt: r.sharedAt ? r.sharedAt.toISOString() : null } : null;
@@ -416,7 +416,7 @@ export const dbProvider: DataProvider = {
     return rows.map((d) => ({ id: d.id, clientId: d.clientId, orgId: d.orgId, name: d.name, kind: d.kind as ClientDocument["kind"], sizeLabel: d.sizeLabel, sharedBy: d.sharedBy as ClientDocument["sharedBy"], createdAt: d.createdAt.toISOString() }));
   },
 
-  // ── Billing cluster — invoices ────────────────────────────────────────
+  // ── Billing cluster  invoices ────────────────────────────────────────
   listClientInvoices: async (clientId: string): Promise<Invoice[]> => {
     const rows = await getDb().select().from(invoicesTable).where(eq(invoicesTable.clientId, clientId)).orderBy(desc(invoicesTable.issuedAt));
     return rows.map(toInvoice);
@@ -426,7 +426,7 @@ export const dbProvider: DataProvider = {
     return rows.map(toInvoice);
   },
 
-  // ── Composite dashboard — Hub overview, aggregated from DB rows ───────
+  // ── Composite dashboard  Hub overview, aggregated from DB rows ───────
   getHubOverview: async (orgId: string, now: string): Promise<HubOverview | null> => {
     const db = getDb();
     const [org] = await db.select({ id: orgsTable.id }).from(orgsTable).where(eq(orgsTable.id, orgId)).limit(1);
@@ -450,7 +450,7 @@ export const dbProvider: DataProvider = {
     });
   },
 
-  // ── Funders & grants — funder list + funder-scoped grants ─────────────
+  // ── Funders & grants  funder list + funder-scoped grants ─────────────
   listFunders: async (orgId: string): Promise<Funder[]> => {
     const rows = await getDb().select().from(fundersTable).where(eq(fundersTable.orgId, orgId));
     return rows.map((f) => ({ id: f.id, orgId: f.orgId, name: f.name, type: f.type as Funder["type"], contactName: f.contactName, contactEmail: f.contactEmail }));
@@ -469,7 +469,7 @@ export const dbProvider: DataProvider = {
     return rows.map((r) => ({ grant: toGrant(r.grant), funderName: r.funderName ?? "", orgName: r.orgName ?? "" }));
   },
 
-  // Consent — persisted, versioned, purpose-bound (the lawful basis for reads).
+  // Consent  persisted, versioned, purpose-bound (the lawful basis for reads).
   getClientConsents: async (clientId: string): Promise<ConsentRecord[]> => {
     const db = getDb();
     const rows = await db.select().from(consentsTable).where(eq(consentsTable.clientId, clientId));

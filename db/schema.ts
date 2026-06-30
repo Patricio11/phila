@@ -1,12 +1,12 @@
 /**
- * Drizzle schema — the **POPIA + tenancy spine** (ROADMAP Task 0.2) plus the
+ * Drizzle schema  the **POPIA + tenancy spine** (ROADMAP Task 0.2) plus the
  * Better Auth tables (Phase 9). Identity lives in `user` (db/auth-schema.ts);
  * this file holds tenancy (orgs, org_members), consent, and audit.
  *
  * Ids are **text** and match the mock fixtures (e.g. "org_masizakhe"), so the DB
  * seed mirrors Part A exactly and the hybrid provider's mock fallback returns the
  * same data as a real read. Every tenant-scoped row carries `org_id` and will be
- * bounded by Row-Level Security (the real isolation boundary — docs/SECURITY.md),
+ * bounded by Row-Level Security (the real isolation boundary  docs/SECURITY.md),
  * enforced in Phase 10.
  */
 import {
@@ -51,7 +51,7 @@ export const orgs = pgTable("orgs", {
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 });
 
-/** Org staff membership — a user's role within an org (a user may belong to many). */
+/** Org staff membership  a user's role within an org (a user may belong to many). */
 export const orgMembers = pgTable(
   "org_members",
   {
@@ -68,7 +68,7 @@ export const orgMembers = pgTable(
   (t) => [uniqueIndex("org_members_org_user_uq").on(t.orgId, t.userId)],
 );
 
-/** Versioned, purpose-bound consent — the lawful basis for purpose-bound reads. */
+/** Versioned, purpose-bound consent  the lawful basis for purpose-bound reads. */
 export const consents = pgTable(
   "consents",
   {
@@ -160,11 +160,11 @@ export const clients = pgTable("clients", {
   primaryCounsellorId: text("primary_counsellor_id"),
   riskFlag: boolean("risk_flag").default(false).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
-  /** Soft-delete — never distorts compiled stats (Outcome-Honesty). */
+  /** Soft-delete  never distorts compiled stats (Outcome-Honesty). */
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 });
 
-/** SPECIAL personal information — only present when `demographics` is consented. */
+/** SPECIAL personal information  only present when `demographics` is consented. */
 export const demographics = pgTable("demographics", {
   clientId: text("client_id").primaryKey().references(() => clients.id),
   gender: text("gender").notNull(),
@@ -196,7 +196,7 @@ export const appointments = pgTable("appointments", {
 
 /* ── Clinical cluster (Phase 10) ───────────────────────────────────────── */
 
-/** The PRIVATE clinical note — author + supervisor only; Hub access audited. */
+/** The PRIVATE clinical note  author + supervisor only; Hub access audited. */
 export const sessionNotes = pgTable("session_notes", {
   id: text("id").primaryKey(),
   appointmentId: text("appointment_id").notNull(),
@@ -300,7 +300,7 @@ export const grantNarratives = pgTable("grant_narratives", {
   postedAt: timestamp("posted_at", { withTimezone: true }).notNull(),
 });
 
-/** Scopes a funder user to specific grant(s) — read-only. */
+/** Scopes a funder user to specific grant(s)  read-only. */
 export const funderContacts = pgTable("funder_contacts", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: text("user_id").notNull(),
@@ -310,7 +310,7 @@ export const funderContacts = pgTable("funder_contacts", {
 
 /* ---- Messaging / notifications (Phase 12) ---------------------------- */
 
-/** The org's public micro-site (Phase 17) — section content + per-section visibility,
+/** The org's public micro-site (Phase 17)  section content + per-section visibility,
  * managed by the org. One row per org; rendered SSR at /o/[slug]. */
 export const orgPublicPages = pgTable("org_public_pages", {
   orgId: text("org_id").primaryKey().references(() => orgs.id),
@@ -336,7 +336,7 @@ export const orgPublicPages = pgTable("org_public_pages", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 });
 
-/** PII-free public-page analytics (Phase 17) — page views + booking-funnel events. No visitor data. */
+/** PII-free public-page analytics (Phase 17)  page views + booking-funnel events. No visitor data. */
 export const publicPageEvents = pgTable("public_page_events", {
   id: uuid("id").defaultRandom().primaryKey(),
   orgId: text("org_id").notNull().references(() => orgs.id),
@@ -425,7 +425,7 @@ export const orgAiSettings = pgTable("org_ai_settings", {
 });
 
 /**
- * Platform integrations (Phase 15) — super-admin-managed platform secrets (e.g.
+ * Platform integrations (Phase 15)  super-admin-managed platform secrets (e.g.
  * Phila's own Paystack for credit/subscription billing). Credentials are an
  * encrypted JSON blob. No org_id: platform-only, configured in /admin/integrations.
  */
@@ -437,7 +437,7 @@ export const platformIntegrations = pgTable("platform_integrations", {
 });
 
 /**
- * Platform AI providers (Phase 14) — super-admin configures OpenAI and/or Claude
+ * Platform AI providers (Phase 14)  super-admin configures OpenAI and/or Claude
  * (key encrypted, model) and switches one on. The scribe uses the enabled provider.
  * No org_id: this is a platform secret, managed only in /admin.
  */
@@ -449,7 +449,7 @@ export const aiProviders = pgTable("ai_providers", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 });
 
-/** Append-only AI usage ledger (Phase 14) — tokens + cost per call, for metering + the cap. */
+/** Append-only AI usage ledger (Phase 14)  tokens + cost per call, for metering + the cap. */
 export const aiUsage = pgTable("ai_usage", {
   id: uuid("id").defaultRandom().primaryKey(),
   orgId: text("org_id").notNull().references(() => orgs.id),
@@ -469,7 +469,7 @@ export const orgVideoSettings = pgTable("org_video_settings", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 });
 
-/** Payments (Phase 15) — a transaction record per purchase (credit packs now; subscriptions/invoices later). */
+/** Payments (Phase 15)  a transaction record per purchase (credit packs now; subscriptions/invoices later). */
 export const payments = pgTable("payments", {
   id: uuid("id").defaultRandom().primaryKey(),
   orgId: text("org_id").notNull().references(() => orgs.id),
@@ -485,7 +485,7 @@ export const payments = pgTable("payments", {
   paidAt: timestamp("paid_at", { withTimezone: true }),
 }, (t) => [uniqueIndex("payment_ref_uq").on(t.providerRef)]);
 
-/** An org's OWN payment gateway (Phase 15B) — clients pay the org directly; funds
+/** An org's OWN payment gateway (Phase 15B)  clients pay the org directly; funds
  * settle to the org, not Phila. Credentials encrypted at rest. One row per org. */
 export const orgPaymentConnections = pgTable("org_payment_connections", {
   orgId: text("org_id").primaryKey().references(() => orgs.id),
@@ -495,7 +495,7 @@ export const orgPaymentConnections = pgTable("org_payment_connections", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 });
 
-/** An org's Phila subscription (Phase 15A) — what plan they're on + billing state. */
+/** An org's Phila subscription (Phase 15A)  what plan they're on + billing state. */
 export const subscriptions = pgTable("subscriptions", {
   orgId: text("org_id").primaryKey().references(() => orgs.id),
   planId: text("plan_id").notNull(),
@@ -505,7 +505,7 @@ export const subscriptions = pgTable("subscriptions", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 });
 
-/** Recipient opt-outs (POPIA) — always win over any send. */
+/** Recipient opt-outs (POPIA)  always win over any send. */
 export const messageOptOuts = pgTable("message_opt_outs", {
   id: uuid("id").defaultRandom().primaryKey(),
   orgId: text("org_id").notNull().references(() => orgs.id),
@@ -517,7 +517,7 @@ export const messageOptOuts = pgTable("message_opt_outs", {
 
 /* ── Documents cluster (Phase 18) ──────────────────────────────────────── */
 
-/** The org's document folder tree. `parent_id` null = a root folder. Virtual —
+/** The org's document folder tree. `parent_id` null = a root folder. Virtual 
  * the tree lives here, so move/assign is a cheap metadata write (backend-agnostic). */
 export const documentFolders = pgTable("document_folders", {
   id: text("id").primaryKey(),
@@ -531,7 +531,7 @@ export const documentFolders = pgTable("document_folders", {
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 }, (t) => [index("doc_folders_org_idx").on(t.orgId)]);
 
-/** A document — generalizes `client_documents`. Bytes rest in Phila Storage
+/** A document  generalizes `client_documents`. Bytes rest in Phila Storage
  * (Supabase), reached via a short-TTL signed URL; this row is metadata only. */
 export const documents = pgTable("documents", {
   id: text("id").primaryKey(),
@@ -556,7 +556,7 @@ export const documents = pgTable("documents", {
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 }, (t) => [index("documents_org_idx").on(t.orgId), index("documents_client_idx").on(t.clientId)]);
 
-/** A document the org asked a client to upload — gates ALL client uploads. */
+/** A document the org asked a client to upload  gates ALL client uploads. */
 export const documentRequests = pgTable("document_requests", {
   id: text("id").primaryKey(),
   orgId: text("org_id").notNull().references(() => orgs.id),

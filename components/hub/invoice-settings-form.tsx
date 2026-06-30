@@ -116,7 +116,7 @@ export function InvoiceSettingsForm({
           <Toggle on={s.showPayButton} onClick={() => set({ showPayButton: !s.showPayButton })} disabled={!paymentsEnabled} />
         </div>
         {s.showPayButton && !paymentsEnabled && (
-          <p className="text-[12px] font-medium text-warn">Your payment gateway isn&apos;t connected yet — the button stays hidden until it is.</p>
+          <p className="text-[12px] font-medium text-warn">Your payment gateway isn&apos;t connected yet  the button stays hidden until it is.</p>
         )}
       </Section>
 

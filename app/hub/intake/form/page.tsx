@@ -20,7 +20,7 @@ export default async function HubIntakeFormPage() {
       </Link>
       <PageHead
         title="Intake form"
-        summary="The questions every new client answers before their first session. These are yours to shape — add, reorder, or remove anything to fit how your practice works."
+        summary="The questions every new client answers before their first session. These are yours to shape  add, reorder, or remove anything to fit how your practice works."
       />
       <IntakeFormEditor initial={form} orgId={membership.orgId} />
     </div>

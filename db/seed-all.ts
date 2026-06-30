@@ -1,5 +1,5 @@
 /**
- * Seed EVERYTHING from the fixtures into the live DB (Phase 10) — production-real,
+ * Seed EVERYTHING from the fixtures into the live DB (Phase 10)  production-real,
  * nothing forgotten. Reads the same `lib/mock/fixtures` the mock provider uses, so
  * the DB mirrors Part A exactly and the hybrid provider's mock fallback == real
  * reads. Idempotent (ON CONFLICT DO NOTHING). Grows cluster-by-cluster.
@@ -148,7 +148,7 @@ async function main() {
     await db.insert(schema.consents).values({ orgId: ORG, clientId: c.clientId, purpose: c.purpose, state: c.state, version: c.version, updatedAt: new Date(c.updatedAt) }).onConflictDoNothing();
   }
 
-  // ── Appointments — materialised around NOW from the day templates, so the
+  // ── Appointments  materialised around NOW from the day templates, so the
   //    demo always has a live week. Refreshed each seed (delete the templated
   //    rows; real client bookings are left untouched).
   const durationOf = new Map(servicesFx.map((s) => [s.id, s.durationMin]));
@@ -252,29 +252,29 @@ async function main() {
     await db.insert(schema.creditLedger).values({ orgId: "org_masizakhe", channel, delta: 100, reason: "grant", ref: "seed", idempotencyKey: `seed_grant_${channel}_org_masizakhe`, balanceAfter: 100, createdAt: msgNow }).onConflictDoNothing();
   }
 
-  // Phila subscription (Phase 15A) — Masizakhe is on the Community plan, billed monthly.
+  // Phila subscription (Phase 15A)  Masizakhe is on the Community plan, billed monthly.
   const periodEnd = new Date(Date.UTC(msgNow.getUTCFullYear(), msgNow.getUTCMonth() + 1, 1));
   await db.insert(schema.subscriptions).values({
     orgId: "org_masizakhe", planId: "p_community", status: "active", currentPeriodEnd: periodEnd, providerRef: "seed", updatedAt: msgNow,
   }).onConflictDoNothing();
 
-  // M&E demographic cohort (Phase 16) — a realistic, consented cohort so the funder /
+  // M&E demographic cohort (Phase 16)  a realistic, consented cohort so the funder /
   // reporting dashboards are meaningful (and cross the k-anonymity floor). Deterministic.
   await seedCohort(msgNow);
 
-  // Public micro-site (Phase 17) — rich, ready-to-rank content for Masizakhe.
+  // Public micro-site (Phase 17)  rich, ready-to-rank content for Masizakhe.
   await db.insert(schema.orgPublicPages).values({
     orgId: ORG,
     heroHeadline: "Counselling that meets you where you are",
-    heroSubtitle: "Warm, confidential counselling for individuals, couples, and families across Gauteng — in person in Soweto and the Johannesburg CBD, or online from anywhere.",
+    heroSubtitle: "Warm, confidential counselling for individuals, couples, and families across Gauteng  in person in Soweto and the Johannesburg CBD, or online from anywhere.",
     showOnlineBadge: true,
     aboutTitle: "About Masizakhe",
-    aboutBody: "Masizakhe Counselling is a community-rooted practice. Our registered counsellors and psychologists work with depression, anxiety, trauma, grief, and relationship difficulties — at a pace that suits you, in a space that feels safe. We see clients privately and through funded community programmes, and we keep your information confidential and protected under POPIA.",
+    aboutBody: "Masizakhe Counselling is a community-rooted practice. Our registered counsellors and psychologists work with depression, anxiety, trauma, grief, and relationship difficulties  at a pace that suits you, in a space that feels safe. We see clients privately and through funded community programmes, and we keep your information confidential and protected under POPIA.",
     showAbout: true,
     approachTitle: "How we work",
     approachItems: [
       { title: "Confidential & POPIA-protected", body: "What you share stays private. Your records are encrypted and only seen by your care team." },
-      { title: "Affordable & funded options", body: "Private sessions or funded community programmes — we'll help you find what fits." },
+      { title: "Affordable & funded options", body: "Private sessions or funded community programmes  we'll help you find what fits." },
       { title: "In person or online", body: "Meet us in Soweto or the JHB CBD, or join a secure video room from anywhere." },
     ],
     showApproach: true,
@@ -283,20 +283,20 @@ async function main() {
     faqItems: [
       { question: "How do I book a first session?", answer: "Tap “Book a session”, choose a service and a time that suits you, and complete a short intake. You'll get a confirmation right away." },
       { question: "Is what I share confidential?", answer: "Yes. Sessions are private and your information is protected under POPIA. We only share information with your explicit consent." },
-      { question: "Do you offer online sessions?", answer: "Yes — you can join a secure, in-region video room from any device. Choose “online” when you book." },
-      { question: "What does it cost?", answer: "Fees vary by service and are shown when you book. We also run funded community programmes — ask us if cost is a barrier." },
+      { question: "Do you offer online sessions?", answer: "Yes  you can join a secure, in-region video room from any device. Choose “online” when you book." },
+      { question: "What does it cost?", answer: "Fees vary by service and are shown when you book. We also run funded community programmes  ask us if cost is a barrier." },
     ],
     showFaq: true,
     showContact: true,
     contactEmail: "reception@masizakhe.org.za",
     contactPhone: "+27 11 555 0100",
     ctaText: "Book a session",
-    seoTitle: "Masizakhe Counselling — counselling in Soweto & Johannesburg",
+    seoTitle: "Masizakhe Counselling  counselling in Soweto & Johannesburg",
     seoDescription: "Warm, confidential counselling for individuals, couples and families in Gauteng. In person in Soweto and the JHB CBD, or online. Book a session today.",
     updatedAt: msgNow,
   }).onConflictDoNothing();
 
-  // Video gateway (Phase 17.1) — LiveKit is admin-managed, seeded in Demo (self-host)
+  // Video gateway (Phase 17.1)  LiveKit is admin-managed, seeded in Demo (self-host)
   // mode with the local Docker dev keys. The super-admin can edit or switch to Live.
   if (process.env.PHILA_FIELD_KEY) {
     await db.insert(schema.platformIntegrations).values({
@@ -331,7 +331,7 @@ async function main() {
 /**
  * A deterministic, consented M&E cohort (Phase 16). ~30 clients for Masizakhe with
  * demographics + demographics-consent + an improving PHQ-9 series + grant allocations
- * — so reporting/grant dashboards are real and meaningful (most cells clear k=5).
+ *  so reporting/grant dashboards are real and meaningful (most cells clear k=5).
  */
 async function seedCohort(now: Date): Promise<void> {
   const FIRST = ["Lerato", "Sipho", "Naledi", "Thabang", "Zanele", "Kabelo", "Ayanda", "Tshepo", "Nomvula", "Mpho", "Bongani", "Refilwe", "Lindiwe", "Sibusiso", "Palesa", "Mandla", "Thandiwe", "Kagiso", "Nokuthula", "Lwazi", "Boitumelo", "Andile", "Dimpho", "Katlego", "Nosipho", "Themba", "Zinhle", "Olwethu", "Karabo", "Amahle"];

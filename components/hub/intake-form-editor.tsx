@@ -117,7 +117,7 @@ export function IntakeFormEditor({ initial, orgId }: { initial: IntakeForm | nul
               </div>
 
               <div className="min-w-0 flex-1 space-y-3">
-                <Input value={f.label} onChange={(e) => patch(i, { label: e.target.value })} placeholder={`Question ${i + 1} — e.g. What would you like support with?`} className="font-medium" />
+                <Input value={f.label} onChange={(e) => patch(i, { label: e.target.value })} placeholder={`Question ${i + 1}  e.g. What would you like support with?`} className="font-medium" />
 
                 <div className="flex flex-wrap items-center gap-2.5">
                   <div className="w-44">

@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 11 — recurring series edit-this/all, exercising the REAL query functions
+ * Phase 11  recurring series edit-this/all, exercising the REAL query functions
  * (db/queries/appointments). createAppointment links a weekly series; reschedule/
  * cancel with scope "following" act on this + every later session.
  */

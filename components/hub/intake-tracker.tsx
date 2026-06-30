@@ -79,7 +79,7 @@ export function IntakeTracker({ board }: { board: IntakeBoard }) {
       <div className="flex items-start gap-2.5 rounded-control border border-border bg-surface-2/40 p-3.5">
         <FileText className="mt-0.5 size-4 shrink-0 text-text-3" strokeWidth={2} aria-hidden />
         <p className="text-[12.5px] leading-relaxed text-text-2">
-          The <span className="font-medium text-text">intake form</span> is the few questions a client answers before their first session — contact details and what they&apos;d like support with — so their counsellor can prepare. Send it to a client, and their answers appear here once submitted.
+          The <span className="font-medium text-text">intake form</span> is the few questions a client answers before their first session  contact details and what they&apos;d like support with  so their counsellor can prepare. Send it to a client, and their answers appear here once submitted.
         </p>
       </div>
 

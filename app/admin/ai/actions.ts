@@ -8,7 +8,7 @@ import { saveAiProvider, setAiProviderEnabled } from "@/db/queries/ai";
 /**
  * Super-admin configures the platform AI providers (OpenAI / Claude) and switches
  * one on (Phase 14). Keys are encrypted at rest. Enabling one switches the other
- * off — a single active provider powers the scribe for every org.
+ * off  a single active provider powers the scribe for every org.
  */
 const input = z.object({
   provider: z.enum(["openai", "anthropic"]),

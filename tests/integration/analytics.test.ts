@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 
-/** Phase 16 — the real analytics layer computes from the seeded clinical data. */
+/** Phase 16  the real analytics layer computes from the seeded clinical data. */
 const env = readFileSync(".env.local", "utf8");
 process.env.DATABASE_URL = env.match(/^DATABASE_URL=(.+)$/m)?.[1]?.trim();
 

@@ -1,9 +1,9 @@
-# Phase 14 — AI Scribe (POPIA-aware) ✅
+# Phase 14  AI Scribe (POPIA-aware) ✅
 
-*Shipped: 2026-06-30 · Part B · the differentiator — drafts the note AND the funder fields, dormant by default*
+*Shipped: 2026-06-30 · Part B · the differentiator  drafts the note AND the funder fields, dormant by default*
 
 > Goal: an AI scribe that turns a counsellor's rough cues into a professional note
-> **and** the structured M&E fields in one pass — de-identified, metered, and never
+> **and** the structured M&E fields in one pass  de-identified, metered, and never
 > the author of record.
 
 ---
@@ -17,21 +17,21 @@
   platform provider and the org toggle are on.
 
 ## What shipped
-- **`lib/ai/deidentify.ts`** — strips names + SA ID / phone / email from the cues
+- **`lib/ai/deidentify.ts`**  strips names + SA ID / phone / email from the cues
   **before any model call**; the model writes about "the client". Unit-tested.
-- **`lib/ai/providers.ts`** — one `complete()` across `@anthropic-ai/sdk` + `openai`
+- **`lib/ai/providers.ts`**  one `complete()` across `@anthropic-ai/sdk` + `openai`
   (both asked for a single JSON object) + ZAR-cent cost estimation per model.
-- **`lib/ai/scribe.ts`** — `draftNote` (professional, non-diagnostic note +
+- **`lib/ai/scribe.ts`**  `draftNote` (professional, non-diagnostic note +
   `{presentingIssue, risk, outcome, referral}`) and `draftCarePlan` (warm,
   plain-language client summary). Dormant + honest when no provider is active.
-- **Wiring** — the session editor's **"AI draft"** turns the note cues into a draft
+- **Wiring**  the session editor's **"AI draft"** turns the note cues into a draft
   (replacing them) + fills the extracted fields; **"Draft with AI"** in the share
-  panel writes the client-facing care plan. The counsellor **edits and signs** — the
+  panel writes the client-facing care plan. The counsellor **edits and signs**  the
   AI never signs, sends, or marks a session.
-- **Gate + meter + audit** — `generateAiDraft`/`generateCarePlanDraft` check the org
+- **Gate + meter + audit**  `generateAiDraft`/`generateCarePlanDraft` check the org
   consent toggle + the monthly cap, record `ai_usage` (tokens + cost), and audit
   every call. An honest "budget used up" block at the cap.
-- **Schema** — `ai_providers` (platform), `org_ai_settings` (consent + cap),
+- **Schema**  `ai_providers` (platform), `org_ai_settings` (consent + cap),
   `ai_usage` (ledger). Migrations 0015–0016; org tables RLS'd.
 
 ## Honesty + POPIA
@@ -50,5 +50,5 @@
   is the real path today; audio is an additive front-end.
 
 **Done when (met):** with a provider switched on and an org consenting, a counsellor
-turns rough cues into a de-identified draft note + funder fields, edits, and signs —
+turns rough cues into a de-identified draft note + funder fields, edits, and signs 
 metered, capped, and audited; nothing auto-sent.

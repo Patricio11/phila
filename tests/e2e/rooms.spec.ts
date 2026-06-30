@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 11 — room utilisation reads REAL appointments. A booking inserted into a
+ * Phase 11  room utilisation reads REAL appointments. A booking inserted into a
  * room this week shows on the Hub room detail (getRoomDetail reads the DB, not mock).
  */
 const DATABASE_URL = (readFileSync(".env.local", "utf8").match(/^DATABASE_URL=(.+)$/m)?.[1] ?? "").trim();

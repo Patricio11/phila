@@ -46,7 +46,7 @@ export interface BookingConfig {
   /** Only the counsellors taking public bookings, per the org's booking settings. */
   counsellors: Counsellor[];
   intakeForm: IntakeForm;
-  /** Master switch — false means the org takes bookings by invite only. */
+  /** Master switch  false means the org takes bookings by invite only. */
   enabled: boolean;
   /** Earliest a client may book, in hours from now (enforced by the slot engine). */
   minNoticeHours: number;
@@ -73,7 +73,7 @@ export interface BookingCounsellorPolicy {
 }
 
 /**
- * How an org runs its public booking. The Hub owns this — each practice differs
+ * How an org runs its public booking. The Hub owns this  each practice differs
  * (some are invite-only; some keep assessments internal; some don't list interns).
  * `getBookingConfig` enforces visibility from here; the slot engine + payments
  * enforce notice / horizon / deposit when they go live (Phase 11 / 13).
@@ -125,7 +125,7 @@ export interface OrgPublicPage {
   offersOnline: boolean;
   services: Service[];
   team: Counsellor[];
-  /** Phase 17 — the org-managed section content; present in DB mode. */
+  /** Phase 17  the org-managed section content; present in DB mode. */
   content?: PublicPageContent;
 }
 
@@ -436,9 +436,9 @@ export interface ReportingResult {
   byAgeBand: Breakdown[];
   byEmployment: Breakdown[];
   outcome: { points: OutcomePoint[]; coverage: { captured: number; total: number } };
-  /** Phase 16 — % of clients whose first→latest PHQ-9 dropped ≥5 (≥2 measures). */
+  /** Phase 16  % of clients whose first→latest PHQ-9 dropped ≥5 (≥2 measures). */
   improvementRate?: number;
-  /** Phase 16 — honest plain-language headline lines for the report. */
+  /** Phase 16  honest plain-language headline lines for the report. */
   headline?: string[];
 }
 
@@ -492,14 +492,14 @@ export interface InsightsMix {
 }
 
 /**
- * Internal management analytics for the Hub — how the practice is actually going.
+ * Internal management analytics for the Hub  how the practice is actually going.
  * Real counts (the org's own data), NOT k-anonymised: this is the operator's view,
  * distinct from the funder-facing `ReportingResult`. Demographic cuts still honour
  * consent (POPIA); coverage is stated honestly. Audited on read.
  */
 export interface HubInsights {
   period: InsightsPeriod;
-  /** Session volumes — the at-a-glance "how many sessions" the Hub couldn't see. */
+  /** Session volumes  the at-a-glance "how many sessions" the Hub couldn't see. */
   sessionsToday: number;
   sessionsWeek: number;
   sessionsMonth: number;
@@ -523,7 +523,7 @@ export interface HubInsights {
   byGender: InsightsMix[];
   byAgeBand: InsightsMix[];
   byProvince: InsightsMix[];
-  /** Phase 16 — same metrics for the previous comparable window (for trend deltas). */
+  /** Phase 16  same metrics for the previous comparable window (for trend deltas). */
   previous?: { completed: number; attendanceRate: number; newClients: number; revenueActualCents: number; noShows: number };
 }
 
@@ -562,7 +562,7 @@ export interface GrantView {
   breakdowns: GrantBreakdowns;
   outcome: { points: OutcomePoint[]; coverage: { captured: number; total: number } };
   narratives: GrantNarrative[];
-  /** Phase 16 — honest one-line status summary. */
+  /** Phase 16  honest one-line status summary. */
   headline?: string;
 }
 
@@ -600,7 +600,7 @@ export interface PlanWithUsage {
 }
 
 /**
- * An org's own Phila subscription — what the practice pays *Phila*, billed via the
+ * An org's own Phila subscription  what the practice pays *Phila*, billed via the
  * platform's **system gateway** (distinct from the org's BYO gateway, which is for
  * client invoices). This is the org-facing side of platform billing.
  */
@@ -657,7 +657,7 @@ export interface FunderGrantView {
   breakdowns: GrantBreakdowns;
   outcome: { points: OutcomePoint[]; coverage: { captured: number; total: number } };
   narratives: GrantNarrative[];
-  /** Phase 16 — honest one-line status summary. */
+  /** Phase 16  honest one-line status summary. */
   headline?: string;
 }
 
@@ -731,9 +731,9 @@ export interface DataProvider {
   listAppointmentsForClient(clientId: string, now: string): Promise<AppointmentView[]>;
   getCarePlan(clientId: string): Promise<CarePlan | null>;
   listClientDocuments(clientId: string): Promise<ClientDocument[]>;
-  /** Documents shared with the client (assigned + client-visible + clean) — Phase 18. */
+  /** Documents shared with the client (assigned + client-visible + clean)  Phase 18. */
   listClientVisibleDocuments(clientId: string): Promise<Document[]>;
-  /** The client's open upload requests (uploads are request-bound) — Phase 18. */
+  /** The client's open upload requests (uploads are request-bound)  Phase 18. */
   listClientDocumentRequests(clientId: string): Promise<DocumentRequest[]>;
   listClientInvoices(clientId: string): Promise<Invoice[]>;
   getClientConsents(clientId: string): Promise<ConsentRecord[]>;
@@ -754,7 +754,7 @@ export interface DataProvider {
   getReporting(orgId: string, now: string, filters: ReportingFilters): Promise<ReportingResult>;
   getOrgSettings(orgId: string): Promise<OrgSettings | null>;
 
-  // Documents (Phase 18) — the org's document workspace
+  // Documents (Phase 18)  the org's document workspace
   listOrgDocuments(orgId: string): Promise<Document[]>;
   listOrgFolders(orgId: string): Promise<DocumentFolder[]>;
   listDocumentRequests(orgId: string): Promise<DocumentRequest[]>;

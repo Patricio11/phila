@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 11 — scheduling integrity. The DB exclusion constraints reject any
+ * Phase 11  scheduling integrity. The DB exclusion constraints reject any
  * overlapping booking for the same counsellor or room (race-free, atomic).
  */
 const DATABASE_URL = (readFileSync(".env.local", "utf8").match(/^DATABASE_URL=(.+)$/m)?.[1] ?? "").trim();

@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Email (Resend) delivery webhook (Phase 12.6). Keeps message_log honest
- * (delivered/failed) and treats a bounce or spam-complaint as an opt-out (POPIA —
+ * (delivered/failed) and treats a bounce or spam-complaint as an opt-out (POPIA 
  * stop emailing an address that bounced or complained). Dormant until Phila's
  * Resend webhook is configured.
  */
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       break;
     }
     default:
-      break; // delivery_delayed / sent / opened — no state change
+      break; // delivery_delayed / sent / opened  no state change
   }
   return NextResponse.json({ ok: true });
 }

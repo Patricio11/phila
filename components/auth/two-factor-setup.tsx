@@ -47,7 +47,7 @@ export function TwoFactorSetup({ enabled }: { enabled: boolean }) {
     setBusy(true);
     const { error } = await authClient.twoFactor.verifyTotp({ code });
     setBusy(false);
-    if (error) return setError("That code didn't match — try the next one from your app.");
+    if (error) return setError("That code didn't match  try the next one from your app.");
     setOn(true);
     reset();
     toast({ tone: "success", title: "Two-factor enabled", description: "You'll enter a code from your app at sign-in." });
@@ -82,7 +82,7 @@ export function TwoFactorSetup({ enabled }: { enabled: boolean }) {
         <Button size="sm" onClick={() => setStep("password")} data-testid="enable-2fa">Enable</Button>
       )}
 
-      {/* Enable — step 1: confirm password */}
+      {/* Enable  step 1: confirm password */}
       <Dialog open={step === "password"} onClose={reset} title="Enable two-factor" description="Confirm your password to start."
         footer={<div className="flex justify-end gap-2"><Button variant="ghost" onClick={reset}>Cancel</Button><Button onClick={beginEnable} loading={busy}>Continue</Button></div>}>
         <div className="space-y-1.5">
@@ -92,7 +92,7 @@ export function TwoFactorSetup({ enabled }: { enabled: boolean }) {
         </div>
       </Dialog>
 
-      {/* Enable — step 2: scan + verify */}
+      {/* Enable  step 2: scan + verify */}
       <Dialog open={step === "verify"} onClose={reset} title="Scan & confirm" description="Scan the QR in your authenticator app, then enter the 6-digit code."
         footer={<div className="flex justify-end gap-2"><Button variant="ghost" onClick={reset}>Cancel</Button><Button onClick={confirmEnable} loading={busy} disabled={code.length < 6}>Confirm</Button></div>}>
         <div className="space-y-4">

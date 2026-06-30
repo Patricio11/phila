@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 13 — paste-link fallback. resolveVideoJoinUrl returns the in-app LiveKit
+ * Phase 13  paste-link fallback. resolveVideoJoinUrl returns the in-app LiveKit
  * room by default, or the org's own pasted meeting link when video mode = external.
  */
 const env = readFileSync(".env.local", "utf8");

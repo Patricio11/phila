@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 /**
  * PII-free page-view beacon (Phase 17). Fires once on mount so view counts work
- * even though the page is statically rendered (ISR). Sends only the org slug — no
+ * even though the page is statically rendered (ISR). Sends only the org slug  no
  * visitor data, no cookies.
  */
 export function PageViewBeacon({ slug }: { slug: string }) {

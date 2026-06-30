@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 10 — clinical cluster is DB-backed. A document written straight to
+ * Phase 10  clinical cluster is DB-backed. A document written straight to
  * Postgres for Lerato surfaces on her /me/documents page (which reads
  * `listClientDocuments`). Cleans up after itself.
  */

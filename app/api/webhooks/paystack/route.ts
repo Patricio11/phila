@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
  * Paystack webhook (Phase 15). One endpoint, two payers: platform charges (credits
  * + subscriptions) are signed with Phila's key; an org's client-invoice charges are
  * signed with that ORG's key. We look the reference up first to pick the right
- * secret, verify, then settle — idempotently. The redirect-callback is the backstop.
+ * secret, verify, then settle  idempotently. The redirect-callback is the backstop.
  */
 export async function POST(req: Request) {
   const raw = await req.text();
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   if (!reference) return NextResponse.json({ ok: true });
 
   const pay = await getPaymentByRef(reference);
-  if (!pay) return NextResponse.json({ ok: true }); // unknown ref — nothing to do
+  if (!pay) return NextResponse.json({ ok: true }); // unknown ref  nothing to do
 
   if (pay.purpose === "invoice") {
     const gw = await getOrgGatewaySecret(pay.orgId);
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  // Platform charges (credit packs / subscriptions) — Phila's key.
+  // Platform charges (credit packs / subscriptions)  Phila's key.
   if (!(await verifyWebhookSignature(raw, sig))) {
     return NextResponse.json({ error: "bad signature" }, { status: 401 });
   }

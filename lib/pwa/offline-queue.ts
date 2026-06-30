@@ -2,7 +2,7 @@
  * Offline send-queue (ROADMAP Task 0.3 / Phase 11). Counsellors and field staff
  * on metered or flaky data are first-class: a booking or reschedule created
  * offline is **queued durably** (IndexedDB) with an honest "will send when
- * online" state, then replayed on reconnect — each replay hits the server's real
+ * online" state, then replayed on reconnect  each replay hits the server's real
  * availability check (the exclusion constraints), so a slot taken while offline
  * comes back as a **conflict**, never a fake "sent".
  */

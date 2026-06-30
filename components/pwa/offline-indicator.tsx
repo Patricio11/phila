@@ -22,9 +22,9 @@ function useOnline(): boolean {
 }
 
 /**
- * Global offline send-queue indicator. Honest by design: it shows "Offline — N
+ * Global offline send-queue indicator. Honest by design: it shows "Offline  N
  * queued" while disconnected, "Syncing…" while replaying on reconnect, and the
- * real outcome (sent / needs attention) — never a fake "sent". Self-contained
+ * real outcome (sent / needs attention)  never a fake "sent". Self-contained
  * (no toast dependency) so it can live at the root for every surface.
  */
 export function OfflineIndicator() {
@@ -90,7 +90,7 @@ export function OfflineIndicator() {
     cls = flash.tone === "ok" ? "border-accent/30 bg-accent-soft text-accent" : "border-warn/40 bg-warn-soft text-warn";
   } else if (!online && pending > 0) {
     icon = <CloudUpload className="size-3.5" strokeWidth={2} aria-hidden />;
-    text = `Offline — ${pending} queued`;
+    text = `Offline  ${pending} queued`;
     cls = "border-warn/40 bg-warn-soft text-warn";
   } else if (online && pending > 0) {
     icon = <AlertTriangle className="size-3.5" strokeWidth={2} aria-hidden />;

@@ -41,9 +41,9 @@ export function Dialog({
     onCloseRef.current = onClose;
   }, [onClose]);
 
-  // Esc + scroll-lock + initial focus run ONLY when `open` flips — not on every
+  // Esc + scroll-lock + initial focus run ONLY when `open` flips  not on every
   // render. (Depending on `onClose`, which is a fresh function each parent render,
-  // re-ran this on every keystroke and stole focus back to the panel — the
+  // re-ran this on every keystroke and stole focus back to the panel  the
   // single-character defocus seen across the app's dialogs.)
   React.useEffect(() => {
     if (!open) return;

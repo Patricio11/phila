@@ -58,7 +58,7 @@ export async function signIn(
   return { ok: true, redirect: await homeForUser(res.user.id, res.user.platformRole ?? null) };
 }
 
-/** Resolve the signed-in user's home — used after the 2FA challenge completes. */
+/** Resolve the signed-in user's home  used after the 2FA challenge completes. */
 export async function homeForCurrentUser(): Promise<{ redirect: string }> {
   const p = await getCurrentPrincipal();
   if (!p) return { redirect: "/login" };
@@ -103,7 +103,7 @@ async function uniqueSlug(db: ReturnType<typeof getDb>, base: string): Promise<s
 /**
  * Practice sign-up (Phase 9). Creates the **first org_admin** (Better Auth, which
  * also signs them in) and their **org** + membership, then the form routes to
- * onboarding. The org starts Dormant-by-Default — every paid feature off.
+ * onboarding. The org starts Dormant-by-Default  every paid feature off.
  */
 export async function registerPractice(raw: z.infer<typeof registerInput>): Promise<Result> {
   const parsed = registerInput.safeParse(raw);

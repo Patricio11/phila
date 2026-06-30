@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 13 — video join tokens. Verifies the signed-link guard and that a real,
+ * Phase 13  video join tokens. Verifies the signed-link guard and that a real,
  * room-scoped LiveKit JWT is minted server-side (no LiveKit server needed to mint).
  */
 const env = readFileSync(".env.local", "utf8");

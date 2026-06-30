@@ -42,7 +42,7 @@ export function ServicesManager({ initial }: { initial: Service[] }) {
         <Card key={s.id} className="p-4">
           <div className="flex items-start gap-3">
             <div className="min-w-0 flex-1 space-y-3">
-              <Input value={s.name} onChange={(e) => patch(s.id, { name: e.target.value })} placeholder={`Service ${i + 1} — e.g. Individual counselling`} className="font-medium" />
+              <Input value={s.name} onChange={(e) => patch(s.id, { name: e.target.value })} placeholder={`Service ${i + 1}  e.g. Individual counselling`} className="font-medium" />
 
               <div className="flex flex-wrap items-end gap-3">
                 <div className="space-y-1">
@@ -97,7 +97,7 @@ export function ServicesManager({ initial }: { initial: Service[] }) {
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-card border border-border bg-surface-2/40 p-3">
         <p className="inline-flex items-center gap-1.5 text-[12px] text-text-2">
           <Clock className="size-3.5 text-text-3" strokeWidth={2} aria-hidden />
-          Choose which of these clients can book — and in-person or online — under <Link href="/hub/booking" className="font-medium text-accent hover:underline">Booking</Link>.
+          Choose which of these clients can book  and in-person or online  under <Link href="/hub/booking" className="font-medium text-accent hover:underline">Booking</Link>.
         </p>
         <Button onClick={save} loading={saving}>
           <Save className="size-4" strokeWidth={2} aria-hidden /> Save services

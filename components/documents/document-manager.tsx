@@ -76,7 +76,7 @@ export function DocumentManager({
   const [uploading, setUploading] = useState(0);
 
   // Optimistic local state, re-synced from the server whenever a refresh delivers
-  // new props (the React "adjust state during render" pattern — not an effect).
+  // new props (the React "adjust state during render" pattern  not an effect).
   const [folders, setFolders] = useState(initialFolders);
   const [docs, setDocs] = useState(initialDocs);
   const [seen, setSeen] = useState({ f: initialFolders, d: initialDocs });

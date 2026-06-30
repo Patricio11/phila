@@ -47,7 +47,7 @@ export async function requestClientUpload(raw: z.infer<typeof uploadInput>): Pro
   if (storage.status !== "live") return { ok: false, error: "Uploads aren't switched on yet." };
 
   const used = await currentStorageBytes(req.orgId);
-  if (used + parsed.data.bytes > storageLimitBytes()) return { ok: false, error: "Your practice's storage is full — they'll sort that out." };
+  if (used + parsed.data.bytes > storageLimitBytes()) return { ok: false, error: "Your practice's storage is full  they'll sort that out." };
 
   const documentId = `doc_${randomUUID()}`;
   const key = objectKey(req.orgId, documentId, parsed.data.name);

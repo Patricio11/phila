@@ -1,7 +1,7 @@
 import type { Plan } from "@/lib/domain/types";
 
 /**
- * Phila plan catalogue (Phase 15A) — the product's subscription tiers. This is the
+ * Phila plan catalogue (Phase 15A)  the product's subscription tiers. This is the
  * canonical source (shared client + server); an org's chosen plan lives in the
  * `subscriptions` table. Prices in ZAR cents / month.
  */

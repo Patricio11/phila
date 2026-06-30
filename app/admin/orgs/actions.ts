@@ -6,7 +6,7 @@ import { logAccess } from "@/lib/audit";
 import { applyCredit } from "@/db/queries/messaging";
 
 /**
- * Manually grant notification credits to an org (Phase 12.5) — the bridge until
+ * Manually grant notification credits to an org (Phase 12.5)  the bridge until
  * self-serve purchase lands in Phase 15.1. A super-admin tops up an org's SMS or
  * email balance; the credit_ledger keeps the audit trail.
  */

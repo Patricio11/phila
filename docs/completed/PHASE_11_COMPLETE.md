@@ -1,9 +1,9 @@
-# Phase 11 — Scheduling Engine ✅
+# Phase 11  Scheduling Engine ✅
 
 *Shipped: 2026-06-29 · Part B · real availability, race-free no-double-booking, room utilisation, recurring series, and an offline queue*
 
 > Goal: real availability, rooms, room-assignments, and recurring series behind
-> the Part-A calendar — correct and safe, on real DB data, with no UI churn.
+> the Part-A calendar  correct and safe, on real DB data, with no UI churn.
 
 ---
 
@@ -14,12 +14,12 @@ The pure `availableSlots(org, date, existing, …)` already mirrored production
 (business hours, breaks, buffer, min-notice, clash). Booking now feeds it **real**
 inputs: `dbProvider.getBookingConfig` swaps in the **persisted org** (admin-editable
 business hours / buffer), and the clash data is the real per-counsellor DB
-appointments — so changing the practice's hours actually moves the offered slots.
+appointments  so changing the practice's hours actually moves the offered slots.
 
-### No-double-booking — enforced at the database
+### No-double-booking  enforced at the database
 `db/scheduling.sql` (`npm run db:constraints`): the `btree_gist` extension + GiST
 `EXCLUDE` constraints `appt_no_counsellor_overlap` and `appt_no_room_overlap`
-reject **any** overlapping booking for the same counsellor or room — race-free and
+reject **any** overlapping booking for the same counsellor or room  race-free and
 atomic, so two concurrent requests can't both win. Cancelled sessions don't
 reserve time. The window is wrapped in an `IMMUTABLE appt_window()` (since
 `timestamptz + interval` is only stable). Constraints are `DEFERRABLE INITIALLY
@@ -36,7 +36,7 @@ its appointment loses the race.
   meetings, booked hours, % utilisation, busiest day, and per-day occupancy from
   **real** appointments + assignments (the pure `roomUtilisation` helper).
 
-### Recurring series — edit-this/all
+### Recurring series  edit-this/all
 - `appointments.series_id` links a weekly series (set by `createAppointment`);
   `cancel_reason` keeps a cancellation note on the record.
 - `rescheduleAppointment(id, newStart, scope)` and `cancelAppointment(id, reason,
@@ -48,23 +48,23 @@ its appointment loses the race.
 
 ### Offline send-queue (PWA)
 - `lib/pwa/offline-queue.ts`: durable **IndexedDB** queue (in-memory fallback for
-  SSR/tests) + a pure, unit-tested `processQueue()` — sent items removed,
+  SSR/tests) + a pure, unit-tested `processQueue()`  sent items removed,
   conflicts/failures kept with a surfaced status, failed retried, conflicts not.
 - `lib/pwa/queue-client.ts`: replays each item against the **real** server action,
   so a slot taken while offline returns a **conflict** (never a fake "sent").
-- `components/pwa/offline-indicator.tsx`: global honest pill — "Offline — N queued"
+- `components/pwa/offline-indicator.tsx`: global honest pill  "Offline  N queued"
   → "Syncing…" → "Synced N" / "N need attention"; auto-flushes on reconnect.
 - The booking wizard queues the booking when offline and shows a truthful
-  "Saved on your device — sends when you're online" screen.
+  "Saved on your device  sends when you're online" screen.
 
 ---
 
 ## Tests
-- **67 unit / contract / integration** (Vitest) — incl. 4 GiST-constraint tests
+- **67 unit / contract / integration** (Vitest)  incl. 4 GiST-constraint tests
   (counsellor/room overlap rejected, back-to-back allowed, cancelled frees the
   slot), 3 series tests against the real query fns (link, shift-all, cancel-all),
   and 4 offline-queue tests (sent/conflict/failed, retry, no-retry-on-conflict).
-- **Playwright E2E** — room detail reflects a live booking; **a booking made
+- **Playwright E2E**  room detail reflects a live booking; **a booking made
   offline queues, then syncs to a real appointment on reconnect**; plus the full
   Phase-9/10 suite. Screenshots in `/screenshots`.
 - `tsc` + `eslint` clean. Migrations 0010 (`room_assignments`) + 0011

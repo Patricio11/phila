@@ -10,7 +10,7 @@ import { getDb } from "@/db/client";
 import { consents as consentsTable } from "@/db/schema";
 
 /**
- * Change a consent (Consent-Before-Capture). The client owns this — grant or
+ * Change a consent (Consent-Before-Capture). The client owns this  grant or
  * revoke a single purpose. Persisted to the versioned `consents` table (grant
  * bumps the version; revoke keeps it) and audited. Every purpose-bound read
  * checks the live state, so a revoke takes effect immediately.

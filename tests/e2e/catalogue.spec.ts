@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 10 — catalogue WRITES persist. Editing a service in the Hub UI saves to
+ * Phase 10  catalogue WRITES persist. Editing a service in the Hub UI saves to
  * Postgres (the saveServices action → db/queries/catalogue). Restores afterwards.
  */
 const DATABASE_URL = (readFileSync(".env.local", "utf8").match(/^DATABASE_URL=(.+)$/m)?.[1] ?? "").trim();

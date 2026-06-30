@@ -8,7 +8,7 @@ import { getPlatformIntegration } from "@/db/queries/platform-integrations";
  * server-side so the API secret never reaches the browser; the client only gets a
  * short-lived JWT + the ws URL, scoped to ONE room. The config (Demo self-host or Live
  * Cloud) is configured + switched on by the super-admin in /admin/integrations
- * (encrypted at rest) — NOT env vars. See docs/LIVEKIT_SETUP.md.
+ * (encrypted at rest)  NOT env vars. See docs/LIVEKIT_SETUP.md.
  */
 export interface LivekitConfig {
   mode: "demo" | "live";
@@ -17,7 +17,7 @@ export interface LivekitConfig {
   apiSecret: string;
 }
 
-/** The live LiveKit config — only when configured AND switched on. */
+/** The live LiveKit config  only when configured AND switched on. */
 export async function getLivekitConfig(): Promise<LivekitConfig | null> {
   const it = await getPlatformIntegration("livekit");
   if (!it || !it.enabled) return null;
@@ -47,7 +47,7 @@ export function verifyJoin(appointmentId: string, sig: string | null | undefined
   return Boolean(sig) && sig === signJoin(appointmentId);
 }
 
-/** The Phila room page for an appointment (the "link" — carries a signed token). */
+/** The Phila room page for an appointment (the "link"  carries a signed token). */
 export function videoJoinPath(appointmentId: string): string {
   return `/room/${appointmentId}?t=${signJoin(appointmentId)}`;
 }
@@ -71,6 +71,6 @@ export async function testLivekit(wsUrl: string, apiKey: string, apiSecret: stri
     await client.listRooms();
     return { ok: true, detail: `Connected to LiveKit at ${wsUrl}.` };
   } catch {
-    return { ok: false, detail: "Couldn't reach LiveKit — check the server is running and the key/secret are correct." };
+    return { ok: false, detail: "Couldn't reach LiveKit  check the server is running and the key/secret are correct." };
   }
 }

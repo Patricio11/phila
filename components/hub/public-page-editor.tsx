@@ -91,7 +91,7 @@ export function PublicPageEditor({ slug, initial, stats }: { slug: string; initi
       </SectionCard>
 
       <SectionCard title="Search engine (SEO)" alwaysOn>
-        <Field label="Page title" hint={`${(c.seoTitle ?? "").length}/70`}><Input value={c.seoTitle ?? ""} onChange={(e) => set("seoTitle", e.target.value || null)} placeholder="Masizakhe Counselling — counselling in Soweto & Johannesburg" /></Field>
+        <Field label="Page title" hint={`${(c.seoTitle ?? "").length}/70`}><Input value={c.seoTitle ?? ""} onChange={(e) => set("seoTitle", e.target.value || null)} placeholder="Masizakhe Counselling  counselling in Soweto & Johannesburg" /></Field>
         <Field label="Meta description" hint={`${(c.seoDescription ?? "").length}/180`}><Textarea value={c.seoDescription ?? ""} onChange={(e) => set("seoDescription", e.target.value || null)} className="min-h-[56px]" placeholder="One or two sentences Google shows under your title…" /></Field>
         <p className="text-[12.5px] text-text-3">Leave blank to use sensible defaults from your name, province, and intro.</p>
       </SectionCard>

@@ -1,10 +1,10 @@
-# LiveKit video — setup & how it works (self-hosted, free)
+# LiveKit video  setup & how it works (self-hosted, free)
 
-Phila's online sessions run on **LiveKit** — the open-source WebRTC server
+Phila's online sessions run on **LiveKit**  the open-source WebRTC server
 (<https://github.com/livekit/livekit>). It's **free**: self-host it yourself
 (below) or use LiveKit Cloud's free tier. We self-host. The app only reads
 `LIVEKIT_*` env vars, so the *same code* works against localhost, your own SA
-server, or Cloud — you only change the URL + keys.
+server, or Cloud  you only change the URL + keys.
 
 ---
 
@@ -42,7 +42,7 @@ npm run dev
 2. Open an **online** appointment → **Open session** → **Open video room**
    (opens `/room/<appointmentId>` in a new tab; you're the host).
    (A seeded online one: `/room/appt_couns_nomsa_2`.)
-3. You land in the **waiting room** — preview your camera/mic, then **Start session**.
+3. You land in the **waiting room**  preview your camera/mic, then **Start session**.
 
 **As the client (guest, second window):**
 - Use the client's **join link**. Every online booking produces one
@@ -54,7 +54,7 @@ You'll now see both participants. Try the controls: **camera toggle** (turn vide
 off for an audio-only call), **mic**, **screen share**, and **leave**.
 
 > Tip: to make a fresh link, complete a public **online** booking at
-> `/o/masizakhe/book` — the confirmation shows "Open my video room".
+> `/o/masizakhe/book`  the confirmation shows "Open my video room".
 
 ---
 
@@ -67,7 +67,7 @@ There's no raw LiveKit URL to copy. The flow:
 2. Opening it hits **Phila's server route** `POST /api/video/token`, which:
    - confirms you're either the appointment's **counsellor** (signed-in) or hold a
      **valid signed link** (clients, no account needed),
-   - mints a short-lived **access token** — a JWT scoped to *that one room* — with
+   - mints a short-lived **access token**  a JWT scoped to *that one room*  with
      `livekit-server-sdk`, using the API key/secret (which never leave the server).
 3. The browser connects to `NEXT_PUBLIC_LIVEKIT_URL` with that token and joins.
    The room is created on first join; there are no rooms to manage by hand.
@@ -97,7 +97,7 @@ residency):
    ```
    No app code changes.
 
-**No recording** happens unless you explicitly configure LiveKit **egress** — so
+**No recording** happens unless you explicitly configure LiveKit **egress**  so
 sessions are not retained by default (POPIA-safe). Turn it on later only with
 explicit org + client consent.
 

@@ -3,9 +3,9 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 12.3 — the deliver chokepoint, exercised against the DB. The SMS/email
+ * Phase 12.3  the deliver chokepoint, exercised against the DB. The SMS/email
  * transports are dormant in tests (no provider creds), so we verify the gating +
- * metering + honest message_log states — never a fake "sent", never a wrong charge.
+ * metering + honest message_log states  never a fake "sent", never a wrong charge.
  */
 const DATABASE_URL = (readFileSync(".env.local", "utf8").match(/^DATABASE_URL=(.+)$/m)?.[1] ?? "").trim();
 process.env.DATABASE_URL = DATABASE_URL;
@@ -34,7 +34,7 @@ describe("deliver pipeline", () => {
   it("routes by preference, stays honest when the transport is dormant, and doesn't charge", async () => {
     const out = await deliver({ orgId: ORG, trigger: "booked", ref: "appt_t1", recipient, vars });
     expect(out.channel).toBe("sms"); // "Phone call" → SMS
-    expect(out.status).toBe("dormant"); // no BulkSMS creds in test env — honest, not "sent"
+    expect(out.status).toBe("dormant"); // no BulkSMS creds in test env  honest, not "sent"
 
     const [log] = await sql`SELECT status, cost_credits, to_masked FROM message_log WHERE org_id=${ORG} AND to_masked='+27***23' ORDER BY created_at DESC LIMIT 1`;
     expect(log!.status).toBe("dormant");
@@ -54,7 +54,7 @@ describe("deliver pipeline", () => {
     expect(log!.status).toBe("no_credit");
   });
 
-  it("respects an opt-out (POPIA — always wins)", async () => {
+  it("respects an opt-out (POPIA  always wins)", async () => {
     await sql`INSERT INTO message_opt_outs (org_id, channel, target, created_at) VALUES (${ORG}, 'sms', ${recipient.phone}, now())`;
     const out = await deliver({ orgId: ORG, trigger: "booked", ref: "appt_t3", recipient, vars });
     expect(out.status).toBe("opted_out");

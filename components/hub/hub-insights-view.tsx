@@ -44,7 +44,7 @@ export function HubInsightsView({ initial }: { initial: HubInsights }) {
 
   return (
     <div className={cn("space-y-6 transition-opacity", pending && "opacity-60")}>
-      {/* Session volumes — the at-a-glance the Hub was missing */}
+      {/* Session volumes  the at-a-glance the Hub was missing */}
       <div className="grid grid-cols-3 gap-3.5">
         <StatCard icon={CalendarCheck} label="Sessions today" value={data.sessionsToday} />
         <StatCard icon={CalendarDays} label="This week" value={data.sessionsWeek} />
@@ -57,7 +57,7 @@ export function HubInsightsView({ initial }: { initial: HubInsights }) {
         <div className="w-44"><Select value={data.period} options={PERIODS} onChange={(v) => update({ period: v as InsightsFilters["period"] })} /></div>
       </div>
 
-      {/* Operational metrics for the period — with period-over-period trend chips */}
+      {/* Operational metrics for the period  with period-over-period trend chips */}
       <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
         <StatCard icon={UserRound} label="Sessions completed" value={data.completed} coverage={`${data.upcoming} still upcoming`} trend={trend(data.completed, data.previous?.completed)} />
         <StatCard icon={CalendarCheck} label="Attendance" value={`${data.attendanceRate}%`} coverage={`${data.noShows} no-show${data.noShows === 1 ? "" : "s"} · ${data.cancelled} cancelled`} trend={trend(data.attendanceRate, data.previous?.attendanceRate, (n) => `${n > 0 ? "+" : ""}${n}pts`)} />
@@ -99,7 +99,7 @@ export function HubInsightsView({ initial }: { initial: HubInsights }) {
             <MixBlock title="By location" rows={data.byProvince} />
           </div>
           <p className="border-t border-border pt-3 text-[11.5px] text-text-3">
-            Your own clients, counted from those who consented to share demographics (POPIA). Internal to your practice — funder reports are separately k-anonymised under Reporting.
+            Your own clients, counted from those who consented to share demographics (POPIA). Internal to your practice  funder reports are separately k-anonymised under Reporting.
           </p>
         </div>
       </Card>

@@ -384,7 +384,7 @@ notifications / AI / payments / video. Guards, `logAccess()`, consent utils, `db
 - [ ] **Playwright E2E + axe** sweep (§7).
 - [ ] Optional **loading/error mock flag** (§3)  states already drawn (Phase 8).
 
-**Post-closeout Part-A refinements (2026-06-28) — depth the demo surfaced, all on the seam:**
+**Post-closeout Part-A refinements (2026-06-28)  depth the demo surfaced, all on the seam:**
 - **Intake, end-to-end.** `/hub/intake` reviews what clients *submitted* (each answer + date), not just "send";
   and **the Hub owns its questions** at `/hub/intake/form`  a builder (add / reorder / delete; text · paragraph
   · phone · email · multiple-choice; Required / Confidential; live preview). No more hardcoded intake.
@@ -401,24 +401,24 @@ notifications / AI / payments / video. Guards, `logAccess()`, consent utils, `db
 - **Booking flow polish**  client picks **online vs in-person** when a service offers both (validated
   server-side); the confirm step shows a **deposit** notice when the org requires one (collected Phase 13).
 - **Booking → appointment wiring**  in-person assigns a free consulting room (real availability check);
-  online mints a link via the **video adapter** (Dormant-by-Default — honest "link to follow" until live).
+  online mints a link via the **video adapter** (Dormant-by-Default  honest "link to follow" until live).
 - **VAT, the SA way**  the **rate is national** (super admin → `/admin/settings`, default 15%, one change →
   every org) while **registration is per-org** (Hub → Settings ▸ Invoicing & VAT: registered toggle, VAT
   number, inclusive/exclusive pricing). Applied across the invoice builder + preview via a shared, tested
   `computeVat()`; "TAX INVOICE" only when registered.
 - **Invoicing, fully per-org**  Settings ▸ Invoicing & VAT now also sets the **number prefix + payment
   terms** (invoices number themselves `PREFIX-YEAR-NNNN`, due dates follow), **banking details** (printed for
-  EFT, invoice no. as the reference), and a **"Pay now" button** toggle on sent invoices — gated on the org's
+  EFT, invoice no. as the reference), and a **"Pay now" button** toggle on sent invoices  gated on the org's
   gateway being connected (Dormant-by-Default; collection wires up Phase 13).
 - **Rooms ▸ Manage sites**  rooms already had full CRUD; now branches/sites are manageable too (name +
   province, add/rename/remove; a site with rooms can't be removed).
 - **Client billing parity (`/me/billing`)**  the client now opens the **same A4 invoice** (VAT, banking,
-  reference) the Hub issues, and the **"Pay now" button is gated by the org's toggle + connected gateway** —
+  reference) the Hub issues, and the **"Pay now" button is gated by the org's toggle + connected gateway** 
   consistent with the Hub. When online pay is off but banking is set, the client sees a clear "Pay by EFT" cue.
 - **Two-gateway model, explicit**  the org's **own BYO gateway** (whichever payment integration it enables)
   is for **client invoices**; **Phila's platform PSP** (system gateway) collects the org's **subscription**.
   New org-facing **"Your Phila plan"** card in Settings (plan, price, renewal, billed-by) sits beside
-  "Payments — your own gateway" so the split reads as a pair. Adapter already models `surface:
+  "Payments  your own gateway" so the split reads as a pair. Adapter already models `surface:
   platform | org_gateway`. **Roles stay Hub / counsellor / client.**
 - New seam methods `getIntakeBoard` · `getIntakeForm` · `getBookingSettings` · `getHubInsights` · `saveServices`
   · `getPlatformSettings` · `getInvoiceSettings` · `saveSites` · `saveInvoiceSettings` · `savePlatformVat`;
@@ -468,7 +468,7 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 - [x] **Better Auth + Drizzle adapter; email+password; sessions in Postgres** (2026-06-28). Verification + forgot/reset still to wire (Phase 12 notifications).
 - [x] **Role model + sign-in routes by role** (2026-06-28): platform role on the user (`client | funder | super_admin`, null for org staff) + org `team_role` in `org_members`; the sign-in Server Action routes each role to its home; multi-org membership resolved from the DB. Org switcher still to add.
 - [x] **Guards backed by real identity** (2026-06-28): `requireAuth`/`requireOrg`/`requireHub`/`requireClient`/`requireFunder`/`requireSuperAdmin`/`requireCapability`/`requireOrgFeature` resolve the real session; unauth → `/login`. `requireFunderGrant` scoping already enforced in the provider.
-- [x] **2FA (TOTP)** (2026-06-29) — Better Auth twoFactor: enrol (QR + backup codes + verify) in Security settings; the sign-in challenge appears **only for enrolled users**; disable flow. Tested end-to-end.
+- [x] **2FA (TOTP)** (2026-06-29)  Better Auth twoFactor: enrol (QR + backup codes + verify) in Security settings; the sign-in challenge appears **only for enrolled users**; disable flow. Tested end-to-end.
 
 ### Task 9.2: Sign-up + consent persistence
 - [x] **Practice sign-up (org_admin, org-created)** (2026-06-29): `registerPractice` creates the org + first admin (Better Auth) → onboarding. Other roles arrive via invite/booking activation (those flows exist as shells; full creation lands as their clusters migrate).
@@ -487,11 +487,11 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 > so the two always agree). **Done:** identity + tenancy (Phase 9), **consent + audit** (persisted), and five data
 > clusters each with schema + seed + real reads + a DB-write E2E proof: **directory** (clients, counsellors,
 > services, sites, rooms, demographics), **appointments** (`listCounsellorSessions`/`listAppointmentsFor*`),
-> **clinical** (care plans, documents, outcomes — `getCarePlan`/`listClientDocuments`), **billing**
-> (invoices — `listClientInvoices`/`listOrgInvoices`), and **funders/grants** (M&E tables + `listFunders`/
+> **clinical** (care plans, documents, outcomes  `getCarePlan`/`listClientDocuments`), **billing**
+> (invoices  `listClientInvoices`/`listOrgInvoices`), and **funders/grants** (M&E tables + `listFunders`/
 > `listFunderGrants`). The **home dashboards are now real too**: `getHubOverview` + `getCounsellorDashboard`
 > aggregate DB rows via pure, unit-tested `compute*` functions in `lib/domain/dashboards.ts` (so calendar +
-> home read the SAME appointments). **Writes now persist too** — the `db/queries/*` typed layer is live and
+> home read the SAME appointments). **Writes now persist too**  the `db/queries/*` typed layer is live and
 > four mutation clusters write real rows (each with a DB-write E2E): **bookings** (public booking →
 > client + appointment + consent + room allocation), **catalogue** (services/rooms/sites), **appointment
 > lifecycle** (create/reschedule/mark), and **settings/care/invoicing** (mark-paid, care-step ticks, business
@@ -506,22 +506,22 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 - [x] Tenancy + identity (Phase 9): `orgs`, `org_members` (+ `team_role`, `is_supervisor`), Better Auth `user`/`session`/`account`/`two_factor`. **Directory** (2026-06-29): `counsellors` (credential flattened), `clients` (soft-delete), `services`, `demographics`. Deferred to their feature phases: `session_notes` (table exists; wired with clinical, Phase 14), `recurring_series` + `room_assignments` (Phase 11 scheduling), `intake_forms`/`intake_responses` (with the intake-builder feature).
 - [x] **Rooms + appointments** (2026-06-29): `sites`, `rooms` (capacity/equipment/status/colour), and `appointments` (org_id, client, counsellor, service, type, `room_id`, startsAt, duration, state, tags). `room_assignments` (the recurring schedule) lands with Phase 11; utilisation stays derived.
 - [x] **Client-shared care (2026-06-29):** `care_plans` (the shared artifact, distinct from `session_notes`) with `tasks` (between-session tasks + done state) and `resources` as JSONB; seeded + RLS'd. `getCarePlan` reads it; `toggleStep` writes task done-state.
-- [x] **Funders & grants (M&E) (2026-06-29):** `funders`, `funder_contacts` (user ↔ funder, scoped to grants), `grants`, `grant_indicators`, `grant_allocations`, `grant_narratives` — all seeded + RLS'd. `listFunders`/`listFunderGrants` read the DB; `getGrantView`/`getReporting` aggregate them (mock-delegated until Phase 16 writes them — DB seeded from the same fixtures, so identical).
-- [x] POPIA: `consents` (persisted, versioned), `audit_log` (persisted) — Phase 9. `demographics` + `outcome_measures` — seeded + RLS'd (directory/clinical clusters). `risk_flags` stays a boolean on `clients` until the safeguarding feature needs its own table.
+- [x] **Funders & grants (M&E) (2026-06-29):** `funders`, `funder_contacts` (user ↔ funder, scoped to grants), `grants`, `grant_indicators`, `grant_allocations`, `grant_narratives`  all seeded + RLS'd. `listFunders`/`listFunderGrants` read the DB; `getGrantView`/`getReporting` aggregate them (mock-delegated until Phase 16 writes them  DB seeded from the same fixtures, so identical).
+- [x] POPIA: `consents` (persisted, versioned), `audit_log` (persisted)  Phase 9. `demographics` + `outcome_measures`  seeded + RLS'd (directory/clinical clusters). `risk_flags` stays a boolean on `clients` until the safeguarding feature needs its own table.
 - [ ] **Deferred to each feature's phase (not Phase 10):** Payments `subscriptions`/`payment_connections`/`payments` → **Phase 15**; Comms `notifications`/`message_templates` → **Phase 12**; AI `ai_jobs`/`usage_events`/`ai_providers` → **Phase 14**; `org_public_pages` (editable public content) → with that feature. Creating these as empty tables now (nothing reads/writes them) is busywork; they land when their phase wires them.
-- [~] Enums per Appendix — in use across the schema. Performance indices (btree on `org_id` + FKs, `room_assignments(room_id, day)`, GIN where searched) tuned in **Phase 11** (scheduling engine) / pre-launch, when query shapes are final.
+- [~] Enums per Appendix  in use across the schema. Performance indices (btree on `org_id` + FKs, `room_assignments(room_id, day)`, GIN where searched) tuned in **Phase 11** (scheduling engine) / pre-launch, when query shapes are final.
 
 ### Task 10.2: Row-Level Security (the real isolation boundary)
-- [x] **Policies authored + applied + proven (2026-06-29).** `db/rls.sql` (idempotent, applied via `npm run db:rls`): a non-owner `phila_app` role (no `BYPASSRLS`), `ENABLE`+`FORCE` RLS on **every** org-scoped table — 13 with a direct `org_id` policy (`appointments, audit_log, client_documents, clients, consents, counsellors, funders, grants, invoices, org_members, rooms, services, sites`), `orgs` by `id`, the clinical children (`care_plans, demographics, outcome_measures`) via `clients.org_id`, the M&E children (`grant_allocations/indicators/narratives`) via `grants.org_id`, `session_notes` via `appointments.org_id`, and `funder_contacts` via `funders.org_id`. Policies key off `app_current_org()` / `app_is_super()` (request GUCs). `super_admin` crosses orgs via the explicit `app.is_super='on'` escape (audited at the app layer). **Proof:** `tests/integration/rls.test.ts` (5 tests) connects **as `phila_app`** and asserts deny-by-default (no context → 0 rows), per-org isolation (masizakhe can't see a probe org's client), correct own-org visibility, **cross-org INSERT rejected by `WITH CHECK`**, and super-admin cross-org visibility. The owner (migrations/seed/auth) keeps `BYPASSRLS`, so this is inert for those paths and the 20 E2Es stay green.
-- [ ] **Runtime cutover → deferred to Phase 19 (security hardening).** Point the request path at `DATABASE_URL_APP` (the `phila_app` role) and set the org GUCs per request. Mechanism is **proven**: drizzle's neon-http driver has **no** transaction support, so this needs the neon-serverless **WebSocket Pool** (`drizzle-orm/neon-serverless`, `neonConfig.webSocketConstructor = WebSocket`) + a `withOrgContext(orgId, isSuper, fn)` that opens a tx, `set_config`s the GUCs, and stashes the tx in `AsyncLocalStorage` so each provider method's existing `getDb()` runs under RLS — verified working against Neon (masizakhe ctx → its rows, wrong-org ctx → 0). Public-by-design reads (by slug, no org yet) stay on the owner. **Why deferred:** the app-layer `where org_id = …` is already the primary, in-place boundary; DB RLS is a *proven* second layer that activates on this flip; the cutover is a real refactor (per-method wrapping, org-id threading into id-only writes) better done as a deliberate hardening pass than rushed mid-Phase-10. Not a blocker for anything else.
+- [x] **Policies authored + applied + proven (2026-06-29).** `db/rls.sql` (idempotent, applied via `npm run db:rls`): a non-owner `phila_app` role (no `BYPASSRLS`), `ENABLE`+`FORCE` RLS on **every** org-scoped table  13 with a direct `org_id` policy (`appointments, audit_log, client_documents, clients, consents, counsellors, funders, grants, invoices, org_members, rooms, services, sites`), `orgs` by `id`, the clinical children (`care_plans, demographics, outcome_measures`) via `clients.org_id`, the M&E children (`grant_allocations/indicators/narratives`) via `grants.org_id`, `session_notes` via `appointments.org_id`, and `funder_contacts` via `funders.org_id`. Policies key off `app_current_org()` / `app_is_super()` (request GUCs). `super_admin` crosses orgs via the explicit `app.is_super='on'` escape (audited at the app layer). **Proof:** `tests/integration/rls.test.ts` (5 tests) connects **as `phila_app`** and asserts deny-by-default (no context → 0 rows), per-org isolation (masizakhe can't see a probe org's client), correct own-org visibility, **cross-org INSERT rejected by `WITH CHECK`**, and super-admin cross-org visibility. The owner (migrations/seed/auth) keeps `BYPASSRLS`, so this is inert for those paths and the 20 E2Es stay green.
+- [ ] **Runtime cutover → deferred to Phase 19 (security hardening).** Point the request path at `DATABASE_URL_APP` (the `phila_app` role) and set the org GUCs per request. Mechanism is **proven**: drizzle's neon-http driver has **no** transaction support, so this needs the neon-serverless **WebSocket Pool** (`drizzle-orm/neon-serverless`, `neonConfig.webSocketConstructor = WebSocket`) + a `withOrgContext(orgId, isSuper, fn)` that opens a tx, `set_config`s the GUCs, and stashes the tx in `AsyncLocalStorage` so each provider method's existing `getDb()` runs under RLS  verified working against Neon (masizakhe ctx → its rows, wrong-org ctx → 0). Public-by-design reads (by slug, no org yet) stay on the owner. **Why deferred:** the app-layer `where org_id = …` is already the primary, in-place boundary; DB RLS is a *proven* second layer that activates on this flip; the cutover is a real refactor (per-method wrapping, org-id threading into id-only writes) better done as a deliberate hardening pass than rushed mid-Phase-10. Not a blocker for anything else.
 
 ### Task 10.3: The real `dataProvider` + integrity
-- [x] **`dbProvider` matching the mock interface, UI unchanged (2026-06-29).** Built as a **hybrid**: spreads the mock, overrides per cluster. Migrated: `getOrg`/`getOrgBySlug`, `getClientConsents`, directory (`listClients`/`getClient`/`listCounsellors`/`getCounsellor`/`listServices`/`listSites`/`listRooms`), appointments (`listCounsellorSessions`/`listAppointmentsForCounsellor`/`listAppointmentsForOrg`), clinical (`getCarePlan`/`listClientDocuments`), billing (`listClientInvoices`/`listOrgInvoices`), funders (`listFunders`/`listFunderGrants`), the composite dashboards (`getHubOverview`/`getCounsellorDashboard`), and the caseload (`listCaseload`). The only mock-delegated reads left are the seeded M&E aggregates (`getReporting`/`getGrantView`/`getFunderGrantView`) — they migrate with Phase 16's funder tools that write those tables; until then the shared seed makes them identical.
+- [x] **`dbProvider` matching the mock interface, UI unchanged (2026-06-29).** Built as a **hybrid**: spreads the mock, overrides per cluster. Migrated: `getOrg`/`getOrgBySlug`, `getClientConsents`, directory (`listClients`/`getClient`/`listCounsellors`/`getCounsellor`/`listServices`/`listSites`/`listRooms`), appointments (`listCounsellorSessions`/`listAppointmentsForCounsellor`/`listAppointmentsForOrg`), clinical (`getCarePlan`/`listClientDocuments`), billing (`listClientInvoices`/`listOrgInvoices`), funders (`listFunders`/`listFunderGrants`), the composite dashboards (`getHubOverview`/`getCounsellorDashboard`), and the caseload (`listCaseload`). The only mock-delegated reads left are the seeded M&E aggregates (`getReporting`/`getGrantView`/`getFunderGrantView`)  they migrate with Phase 16's funder tools that write those tables; until then the shared seed makes them identical.
 - [~] Typed query fns in `db/queries/*` (no raw queries in components); Server Actions + Zod on every mutation; `logAccess()` on every PII path. **Live (2026-06-29):** `db/queries/{booking,catalogue,appointments,settings}.ts`; booking, services/rooms/sites, create/reschedule/mark, mark-paid, care-step toggle, and business hours all persist in db mode (each with a DB-write E2E). Remaining mutations to wire: intake-form save, org profile/branding, booking + invoice settings, team/client invites, note signing.
 - [ ] **Select-list redaction → Phase 19 (security hardening, with the RLS cutover):** `session_notes.body`, contact, `national_id_enc`, demographics never selected on a shared/cross-role path. (Reads are already org-scoped + audited; column-level redaction is a hardening pass.)
 - [ ] **Storage → with the documents feature (Phase 14 clinical):** private buckets, signed URLs, service-role server-only, magic-byte sniff + size limits + per-user rate limit, every file access audited. Document *metadata* already persists + reads from `client_documents`; real file upload/serving lands when the clinical document feature goes live, not as bare infra now.
 
-**Done when:** `DATA_PROVIDER=db` runs the whole product on Neon with no UI churn, every cluster's reads + writes persisting. RLS policies are authored, applied, and proven at the DB now; **enforcing** them on the live request path (connecting as `phila_app`) is the Phase 19 hardening cutover — the app-layer `where org_id = …` is the primary boundary until then.
+**Done when:** `DATA_PROVIDER=db` runs the whole product on Neon with no UI churn, every cluster's reads + writes persisting. RLS policies are authored, applied, and proven at the DB now; **enforcing** them on the live request path (connecting as `phila_app`) is the Phase 19 hardening cutover  the app-layer `where org_id = …` is the primary boundary until then.
 
 ---
 
@@ -536,19 +536,19 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 > `docs/completed/PHASE_11_COMPLETE.md`.
 
 - [x] **Availability engine (2026-06-29):** the pure `availableSlots(org, date, existing, …)` already mirrors
-  production (business hours, breaks, buffer, min-notice, clash). Booking now feeds it **real** inputs —
+  production (business hours, breaks, buffer, min-notice, clash). Booking now feeds it **real** inputs 
   `dbProvider.getBookingConfig` swaps in the persisted org (real, admin-editable business hours), and clash
   data is the real per-counsellor DB appointments. So changing hours actually moves the slots.
 - [x] **Room allocation (2026-06-29):** in-person bookings allocate a room, **defaulting from the counsellor's
   `room_assignments`** (day/time window) and falling back to first-free; multi-site aware via the assignment's
-  room→site. **Double-booking is prevented at the DB** — GiST `EXCLUDE` constraints (`db/scheduling.sql`,
+  room→site. **Double-booking is prevented at the DB**  GiST `EXCLUDE` constraints (`db/scheduling.sql`,
   `npm run db:constraints`) reject any overlapping counsellor *or* room booking, race-free and atomic; the
   actions surface a friendly "that time was just taken". Proven by 4 integration tests.
 - [x] **Room utilisation rollups (2026-06-29):** `/hub/rooms` overview + detail (`getRoomsOverview`/
   `getRoomDetail`) roll up meetings, booked hours, % utilisation, busiest day, and per-day occupancy from
   **real** appointments + assignments. Proven by E2E (a live booking shows on the room detail).
 - [x] **Recurring-series edit-this/all (2026-06-29):** `appointments.series_id` links a weekly series;
-  `rescheduleAppointment`/`cancelAppointment` take a `scope` (`this` | `following`) — "following" acts on this +
+  `rescheduleAppointment`/`cancelAppointment` take a `scope` (`this` | `following`)  "following" acts on this +
   every later session (the reschedule shift is one statement so the deferred constraints see only final
   positions). Cancel carries a **reason** (`cancel_reason`). UI: a "Weekly series" badge + a This/All-following
   toggle on reschedule **and** cancel. Care-state transitions persist via `markProgress`.
@@ -572,7 +572,7 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 > See `docs/completed/PHASE_12_COMPLETE.md`.
 
 > **Model (decided 2026-06-29):** the org enables any of **WhatsApp / SMS / Email** per channel; each message routes by the **client's preferred contact** among the enabled channels (Phila already captures `preferredContact`), with a fallback order. **Opt-out + quiet hours always win** (POPIA). Channels are dormant-by-default and never fake a "sent".
-> - **WhatsApp = BYO (Meta Cloud API).** Each org connects its **own** WhatsApp Business number — Meta ties sender identity, templates, and quality to the org's WABA, so one shared number can't work. Org enters Phone Number ID, WABA ID, Access Token, App Secret, Verify Token (encrypted at rest); Configured → Live with a Test Connection; a "Help me set up" path for orgs without a WABA. 24h-window aware (approved templates outside it). Not Phila-metered — the org pays Meta.
+> - **WhatsApp = BYO (Meta Cloud API).** Each org connects its **own** WhatsApp Business number  Meta ties sender identity, templates, and quality to the org's WABA, so one shared number can't work. Org enters Phone Number ID, WABA ID, Access Token, App Secret, Verify Token (encrypted at rest); Configured → Live with a Test Connection; a "Help me set up" path for orgs without a WABA. 24h-window aware (approved templates outside it). Not Phila-metered  the org pays Meta.
 > - **SMS = Phila system bulk + credits.** One platform integration (**BulkSMS.com**) serves every org; orgs buy **Phila SMS credits**. No per-org SMS account. Metered + capped.
 > - **Email = Phila send + practice identity + credits.** Phila sends from its **own verified domain** but with the **practice as the display name and Reply-To = the practice's email** (best deliverability, zero org setup, replies reach the practice). Orgs buy **Phila email credits**. BYO sending domain is a later premium.
 > - **Credits = balances + append-only idempotent ledger + caps.** 0 balance → send blocked with an honest "top up" nudge (never a fake send). WhatsApp (BYO) is uncounted. **Self-serve credit purchase lands in Phase 15.1** (needs the platform gateway); until then, top-ups are a super-admin manual grant with an honest "self-serve purchase arrives with billing" state for orgs.
@@ -588,7 +588,7 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 - [x] `lib/messaging/deliver.ts`: resolve recipient + preferred channel → POPIA gate (consent/opt-out/quiet hours) → transport select (org Meta · Phila BulkSMS · Phila email) → **meter** (SMS/Email decrement credits; 0 = block) → transmit (WA 24h-window/template) → record honest `message_log` status → audit. Pure `resolveChannel` / `decideSend` (unit-tested). Transports: Meta Cloud API, BulkSMS, Resend.
 
 ### Task 12.4: Triggers
-- [x] booked / rescheduled / cancelled / **reminder (T-24h, T-1h)** / no-show — wired into the existing booking/reschedule/cancel/markProgress actions (replacing their "no message sent yet" honesty notes). Reminder sweep endpoint.
+- [x] booked / rescheduled / cancelled / **reminder (T-24h, T-1h)** / no-show  wired into the existing booking/reschedule/cancel/markProgress actions (replacing their "no message sent yet" honesty notes). Reminder sweep endpoint.
 
 ### Task 12.5: Platform side
 - [x] Super-admin: Phila's **BulkSMS + email** provider credentials (system-wide) in `/admin/integrations`; credit pack pricing; **manual credit grant** (until Phase 15.1).
@@ -603,7 +603,7 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 ## 🎥 PHASE 13: VIDEO (LIVEKIT) + PASTE-LINK FALLBACK ✅
 *Goal: real online sessions, owned and in-region, or the org's own link.*
 
-> **✅ COMPLETE (2026-06-29).** Real, self-hosted **LiveKit** video — proven end-to-end against a local
+> **✅ COMPLETE (2026-06-29).** Real, self-hosted **LiveKit** video  proven end-to-end against a local
 > Docker server (a Playwright test joins the room and connects). Server-side token minting + signed,
 > unguessable join links; a beautiful branded **waiting room** (camera/mic preview, device pickers, calming
 > copy) → a full **call** (camera toggle for audio-only, mic, screen share, chat, leave). Wired into the booking
@@ -620,13 +620,13 @@ POPIA, test, and launch  **without changing the Part-A UI.***
   docker-compose runs the open-source `livekit/livekit-server`; `lib/video/livekit.ts` mints room-scoped JWTs;
   `app/room/[appointmentId]` + `components/video/video-session.tsx` are the waiting room + call. Verified by a
   real-call E2E (fake media) + token unit tests.
-- [x] **No audio retention by default (2026-06-29).** LiveKit records nothing without egress configured —
+- [x] **No audio retention by default (2026-06-29).** LiveKit records nothing without egress configured 
   recording is a future explicit opt-in with consent.
 - [x] **Paste-link fallback (2026-06-29).** Settings → Video lets an org choose **Phila video** or **their own
   link** (Zoom/Meet/Teams). `org_video_settings` (mode + url, RLS'd); `resolveVideoJoinUrl` + the `/room` page
   show the org's link when mode = external (falls back to LiveKit if none set). Proven by integration tests.
 - [ ] **Production hardening:** self-host in an SA region with TLS (`wss://`) + strong keys (config-only, no app
-  change — see `docs/LIVEKIT_SETUP.md`).
+  change  see `docs/LIVEKIT_SETUP.md`).
 
 ---
 
@@ -663,7 +663,7 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 
 ### Task 15A: Platform subscription billing (orgs → Phila) ✅
 - [x] **Subscribe + pay Phila (2026-06-30).** Orgs pick a plan on `/hub/billing/plan` and pay Phila via the
-  **platform gateway** (Paystack, admin-configured in `/admin/integrations` — encrypted, **Test connection**,
+  **platform gateway** (Paystack, admin-configured in `/admin/integrations`  encrypted, **Test connection**,
   switch on; never an env var). A paid charge **activates the subscription idempotently** (`subscriptions`
   table; settle keyed on the payment ref) and sets the next period. `getOrgSubscription`/`listPlans` now read
   real subscription rows; super-admin MRR/subscriber counts come from them. Masizakhe's subscription is **seeded**
@@ -690,7 +690,7 @@ POPIA, test, and launch  **without changing the Part-A UI.***
   (`lib/payments/paystack.ts`) dormant until `PHILA_PAYSTACK_SECRET` set. Replaces the Phase-12 manual grant
   (still available as a super-admin fallback). Proven by an idempotency integration test.
 
-> **Phase 15 complete (2026-06-30):** all three flows are real — 15A platform subscription billing (orgs → Phila),
+> **Phase 15 complete (2026-06-30):** all three flows are real  15A platform subscription billing (orgs → Phila),
 > 15B org BYO-gateway invoice payments (clients → org), and 15.1 self-serve credit purchase, all on the shared PSP +
 > `payments` table. **Follow-ups (not blockers):** trials / proration / dunning / receipts; an income-prediction
 > reporting tie-in (Phase 16); a PSP orchestrator beyond Paystack (Stitch / Ozow / Yoco shown as "soon").
@@ -708,19 +708,19 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 > `listFunderGrants` / `getFunderGrantView` / `listGrants` / `listFunders` in `db-provider`. Same
 > pass adds the **richer insights** the surfaces were missing.
 
-- [x] **Real DB analytics layer (2026-06-30)** — `lib/domain/reporting.ts` pure functions + `db/queries/analytics.ts`
+- [x] **Real DB analytics layer (2026-06-30)**  `lib/domain/reporting.ts` pure functions + `db/queries/analytics.ts`
   + `db/queries/grants.ts` row loaders feed the Hub `<StatCard>`s + charts. **`getReporting` / `getHubInsights` /
-  `getGrantView` / `getFunderGrantView` / `listGrants` overridden in `db-provider` — no mock fallback.**
+  `getGrantView` / `getFunderGrantView` / `listGrants` overridden in `db-provider`  no mock fallback.**
 - [x] Consent-gated demographic dashboards (province / gender / age / status / service); **k-anonymity
   floor + small-cell suppression** on every aggregate/funder export; coverage on every figure. A **richer cohort
   is seeded** (39 consented clients) so cells are meaningful and suppression is demonstrable.
-- [x] **Richer insights** — Insights now shows **period-over-period trend chips** (completed, attendance,
+- [x] **Richer insights**  Insights now shows **period-over-period trend chips** (completed, attendance,
   new clients, revenue vs the previous window); Reporting shows **improvement rate** + a server-computed
   **key-findings headline**; each grant dashboard carries an **at-a-glance** status line.
 - [x] **Grant-indicator engine (DB):** each indicator's **actual vs target** from `grant_allocations` +
   clinical data per its rule (de-dup via distinct allocation), **paced expected** marker, on-track / at-risk /
   behind classification.
-- [x] Outcome-measure analytics — PHQ-9 trend (real `taken_at` → week buckets) + **improvement rate** (first→latest ≥5).
+- [x] Outcome-measure analytics  PHQ-9 trend (real `taken_at` → week buckets) + **improvement rate** (first→latest ≥5).
 - [x] **Funder portal wired** (`/funder`): provider-enforced grant scoping (a funder reaches only their grant);
   every funder view **k-anon + audited**; **narrative updates persist** (`grant_narratives`) and appear on the portal.
 - [x] One-click funder report (**CSV** download, PDF via print), audit-logged (`pii.export`), role-gated.
@@ -736,14 +736,14 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 > that data, full **SEO** (per-org metadata + OG + JSON-LD + sitemap + robots), and **booking
 > wired through** with PII-free conversion analytics.
 
-- [x] **`org_public_pages` table (seeded, no mock) — 2026-06-30.** Section model (hero, about, approach,
-  services, team, FAQ, contact) — each with its own copy + a show/hide toggle. `db-provider.getOrgPublicPage`
+- [x] **`org_public_pages` table (seeded, no mock)  2026-06-30.** Section model (hero, about, approach,
+  services, team, FAQ, contact)  each with its own copy + a show/hide toggle. `db-provider.getOrgPublicPage`
   overridden to read it (services/team/sites from the real tables). Masizakhe seeded with rich content.
 - [x] **World-class public micro-site** at `/o/[slug]` (SSG + `revalidate: 3600`): brand-tinted hero with
   the org's headline + voice, POPIA badge, approach cards, services with real durations/prices, team with
   verified credentials, native-accordion FAQ, contact (tap-to-call/email) + locations, a final CTA band.
   Light + dark, mobile-first, honest non-diagnostic copy, org brand-accent (auto-AA).
-- [x] **Section editor in the Hub** — manage each section's content + visibility (eye toggles), add/remove
+- [x] **Section editor in the Hub**  manage each section's content + visibility (eye toggles), add/remove
   approach + FAQ items, SEO fields, a sticky Save; **persisted** + the live page **revalidated** on save.
 - [x] **SEO**: per-org `generateMetadata` (custom title/description/canonical/OG/Twitter) + **JSON-LD**
   (`MedicalBusiness` + `Service` + FAQ `Question`s) + dynamic **app/sitemap.ts** (every org) + **app/robots.ts**
@@ -769,7 +769,7 @@ request-gated client uploads, and org→counsellor sharing  all on Phila Storage
 
 > **Progress (2026-06-30):** **18.1 foundations** ✅ (commit `0b9395e`) and **18.2 the Hub document manager** ✅
 > are shipped and green (tsc/lint/build + 105 tests). The manager is live at `/hub/documents`, built **UI-first
-> on the seam** — folders, drag-to-move, multi-select, smart views, assign/share/request all persist + audit.
+> on the seam**  folders, drag-to-move, multi-select, smart views, assign/share/request all persist + audit.
 > **Next:** the Supabase `StorageProvider` + presigned uploads + scan gate + the admin "Phila Storage" card
 > (makes the dormant Upload real), then the client side (request-bound upload + signed download).
 

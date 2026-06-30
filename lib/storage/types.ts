@@ -1,6 +1,6 @@
 /**
  * The StorageProvider seam (Phase 18). Phila Storage rests files in a private,
- * in-region bucket and only ever hands out short-TTL signed URLs — never a public
+ * in-region bucket and only ever hands out short-TTL signed URLs  never a public
  * URL (Care-Confidentiality + Data-Residency). Supabase is the live backend now;
  * S3 is a later drop-in behind this exact interface, never a bypass.
  *
@@ -28,14 +28,14 @@ export interface StorageProvider {
 
 export class StorageDormantError extends Error {
   constructor() {
-    super("Phila Storage is not switched on — configure it in Admin → Integrations.");
+    super("Phila Storage is not switched on  configure it in Admin → Integrations.");
     this.name = "StorageDormantError";
   }
 }
 
 /** A deterministic, collision-free object key. Org-scoped path; the filename is
  * kept only as a trailing label (safe-charactered), the document id guarantees
- * uniqueness. Pure — unit-tested. */
+ * uniqueness. Pure  unit-tested. */
 export function objectKey(orgId: string, documentId: string, filename: string): string {
   const safe = filename
     .toLowerCase()

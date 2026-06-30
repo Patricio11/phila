@@ -23,7 +23,7 @@ export default async function HubBookingPage() {
     <div className="rise mx-auto max-w-2xl space-y-6">
       <PageHead
         title="Booking"
-        summary="How clients book you online. Everything here shapes your public booking page — what's offered, by whom, and on what terms."
+        summary="How clients book you online. Everything here shapes your public booking page  what's offered, by whom, and on what terms."
       />
       <BookingSettingsForm initial={settings} services={services} counsellors={counsellors} orgSlug={org.slug} />
     </div>

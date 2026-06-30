@@ -8,7 +8,7 @@ import { getMessagingSettings, getWhatsappCreds, getTemplateBody, getCreditBalan
 export interface DeliverInput {
   orgId: string;
   trigger: MessageTrigger;
-  ref: string; // e.g. appointmentId — makes metering idempotent
+  ref: string; // e.g. appointmentId  makes metering idempotent
   recipient: { phone?: string | null; email?: string | null; preferredContact?: string | null };
   vars: RenderVars;
 }
@@ -44,14 +44,14 @@ export async function deliver(input: DeliverInput): Promise<DeliverOutcome> {
     return { channel, status: "blocked" };
   }
 
-  // POPIA — opt-out always wins.
+  // POPIA  opt-out always wins.
   if (await isOptedOut(orgId, channel, to)) {
     await logMessage({ orgId, channel, to, templateKey: trigger, trigger, status: "opted_out" });
     return { channel, status: "opted_out" };
   }
 
   // Quiet hours apply to non-urgent nudges (reminders, follow-ups). Transactional
-  // confirmations (booked/rescheduled/cancelled) answer a client action — send anytime.
+  // confirmations (booked/rescheduled/cancelled) answer a client action  send anytime.
   const respectQuiet = trigger === "reminder" || trigger === "no_show";
   if (respectQuiet && withinQuietHours(sastHHMM(clockNow()), settings.quietStart, settings.quietEnd)) {
     await logMessage({ orgId, channel, to, templateKey: trigger, trigger, status: "quiet_hours" });

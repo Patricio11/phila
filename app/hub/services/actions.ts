@@ -6,7 +6,7 @@ import { logAccess } from "@/lib/audit";
 import { saveServices as persistServices } from "@/db/queries/catalogue";
 
 /**
- * The service catalogue (mock) — name, duration, price. This is what the booking
+ * The service catalogue (mock)  name, duration, price. This is what the booking
  * flow offers, the calendar schedules, and invoicing bills. The Hub owns it here;
  * Phase 10 persists it to the org. Booking *visibility* (which are public, and
  * in-person/online) lives under Booking; this is the services themselves.
@@ -28,7 +28,7 @@ export async function saveServices(
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the services you entered." };
 
   const names = parsed.data.services.map((s) => s.name.toLowerCase());
-  if (new Set(names).size !== names.length) return { ok: false, error: "Two services share a name — give each a distinct one." };
+  if (new Set(names).size !== names.length) return { ok: false, error: "Two services share a name  give each a distinct one." };
 
   if (process.env.DATA_PROVIDER === "db") await persistServices(membership.orgId, parsed.data.services);
 

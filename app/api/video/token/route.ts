@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 /**
  * Mint a LiveKit join token for an appointment's room (Phase 13). Access is granted
  * to an authenticated counsellor/admin of the appointment's org, OR to anyone with
- * the signed join link (HMAC `t`) — so clients without an account can join from
+ * the signed join link (HMAC `t`)  so clients without an account can join from
  * their booking link. The API secret stays server-side; the browser only gets a
  * short-lived JWT scoped to this one room.
  */

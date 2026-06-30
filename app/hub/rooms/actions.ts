@@ -48,7 +48,7 @@ const sitesInput = z.object({
 /**
  * Manage the org's sites/branches (mock). Rooms live at a site, so a practice
  * with more than one location manages them here. Validated + audited; Phase 10
- * persists. A site with rooms can't simply vanish — that guard lands with the DB.
+ * persists. A site with rooms can't simply vanish  that guard lands with the DB.
  */
 export async function saveSites(
   raw: z.infer<typeof sitesInput>,
@@ -57,7 +57,7 @@ export async function saveSites(
   const parsed = sitesInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the sites." };
   const names = parsed.data.sites.map((s) => s.name.toLowerCase());
-  if (new Set(names).size !== names.length) return { ok: false, error: "Two sites share a name — give each a distinct one." };
+  if (new Set(names).size !== names.length) return { ok: false, error: "Two sites share a name  give each a distinct one." };
 
   if (process.env.DATA_PROVIDER === "db") await persistSites(membership.orgId, parsed.data.sites);
 

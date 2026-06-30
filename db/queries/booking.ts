@@ -7,7 +7,7 @@ import { CONSENT_PURPOSES, type ConsentPurpose } from "@/lib/domain/enums";
 import { isoWeekday } from "@/lib/domain/helpers";
 import { now as clockNow } from "@/lib/clock";
 
-/** Server-side id (randomness is fine — not a React render). */
+/** Server-side id (randomness is fine  not a React render). */
 function rid(prefix: string): string {
   return `${prefix}_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
 }
@@ -27,7 +27,7 @@ export interface PersistBookingInput {
 /**
  * Persist a public booking (Phase 10): auto-register the client, allocate a free
  * room for in-person (no double-booking), create the scheduled appointment, and
- * record the versioned consent grants — all real rows. The client *account*
+ * record the versioned consent grants  all real rows. The client *account*
  * (password) is created later via the activation link; this is the client record.
  */
 export async function persistBooking(input: PersistBookingInput): Promise<{ clientId: string; appointmentId: string; roomName: string | null }> {
@@ -47,7 +47,7 @@ export async function persistBooking(input: PersistBookingInput): Promise<{ clie
     createdAt: now,
   });
 
-  // Room allocation for in-person — first active room free at the slot.
+  // Room allocation for in-person  first active room free at the slot.
   let roomId: string | null = null;
   let roomName: string | null = null;
   if (input.modality === "in_person") {

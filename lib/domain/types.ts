@@ -198,7 +198,7 @@ export interface ClientDocument {
 
 /* ── Document system (Phase 18) ────────────────────────────────────────── */
 
-/** A folder in the org's document tree. Virtual — the tree lives in the DB, so
+/** A folder in the org's document tree. Virtual  the tree lives in the DB, so
  * move/assign is a cheap metadata write and is backend-agnostic. */
 export interface DocumentFolder {
   id: string;
@@ -210,7 +210,7 @@ export interface DocumentFolder {
   createdAt: ISODateTime;
 }
 
-/** A document — the generalized `ClientDocument`. Metadata only; the bytes rest
+/** A document  the generalized `ClientDocument`. Metadata only; the bytes rest
  * in Phila Storage (Supabase) reached via a short-TTL signed URL. */
 export interface Document {
   id: string;
@@ -234,7 +234,7 @@ export interface Document {
   createdAt: ISODateTime;
 }
 
-/** A document the org asked a client to upload — gates all client uploads. */
+/** A document the org asked a client to upload  gates all client uploads. */
 export interface DocumentRequest {
   id: string;
   orgId: string;

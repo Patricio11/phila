@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * Phase 9 — real auth end-to-end. Each demo button signs in through Better Auth
+ * Phase 9  real auth end-to-end. Each demo button signs in through Better Auth
  * (real session cookie) and lands on that role's home, resolved from the DB.
  * Screenshots land in ./screenshots as living proof of each verified flow.
  */

@@ -1,9 +1,9 @@
-# Phase 9 — Identity, Auth & Consent ✅
+# Phase 9  Identity, Auth & Consent ✅
 
 *Shipped: 2026-06-29 · Part B · the mock→real swap proven, with real accounts, 2FA, and persisted consent*
 
 > Goal: real accounts for every role, multi-tenant sessions, lawful (persisted)
-> consent, and audit — all **behind the unchanged Part-A UI**. `DATA_PROVIDER=db`
+> consent, and audit  all **behind the unchanged Part-A UI**. `DATA_PROVIDER=db`
 > over Neon Postgres. Identity is the foundation the rest of Part B clips onto.
 
 ---
@@ -29,12 +29,12 @@
 - **`registerPractice`** creates the first **org_admin** (Better Auth signs them in) + their **org** (unique
   slug) + membership, then routes to onboarding. New orgs start Dormant-by-Default.
 
-### Consent — persisted (Consent-Before-Capture)
+### Consent  persisted (Consent-Before-Capture)
 - 32 consents seeded; **`getClientConsents` reads the DB**; the consent centre's toggle calls a real
   **`setConsent`** action that upserts the versioned `consents` row (grant bumps the version; revoke keeps it)
-  and audits. A change survives a reload — proven by E2E.
+  and audits. A change survives a reload  proven by E2E.
 
-### Audit — persisted
+### Audit  persisted
 - `logAccess()` now writes to **`audit_log`** when `DATA_PROVIDER=db` (swappable sink, no call-site change).
   75+ rows accumulated during testing. Never fails the user's action.
 
@@ -46,7 +46,7 @@
 
 ### The seam: hybrid `dbProvider`
 - Spreads `mockProvider`, overrides `getOrg` / `getOrgBySlug` / `getClientConsents` with real DB reads, falls
-  back to mock elsewhere — the app stays whole as it migrates method-by-method.
+  back to mock elsewhere  the app stays whole as it migrates method-by-method.
 
 ## Verification
 - `tsc` clean · `next build` green (`DATA_PROVIDER=db`) · `lint` clean.
@@ -56,8 +56,8 @@
 - DB confirms it's real: 75 `audit_log` rows; sessions + 2FA secrets persisted.
 
 ## Deferred (not blocking Phase 10)
-- Email verification + forgot/reset **delivery** (Phase 12 notifications) — flows exist, sending is dormant.
+- Email verification + forgot/reset **delivery** (Phase 12 notifications)  flows exist, sending is dormant.
 - Org switcher for multi-org users. Backup-code sign-in path (TOTP path is wired + tested).
 
-**Phase 9 is complete. Next: Phase 10 — the full entity schema + seed-everything + RLS, migrating the read
+**Phase 9 is complete. Next: Phase 10  the full entity schema + seed-everything + RLS, migrating the read
 clusters off the mock fallback.**

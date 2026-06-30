@@ -217,7 +217,7 @@ export async function getClientDocumentRow(clientId: string, documentId: string)
   return r ? toDocument(r) : null;
 }
 
-/** A client's upload against a request — visible to them, awaiting scan. */
+/** A client's upload against a request  visible to them, awaiting scan. */
 export async function insertClientUpload(input: {
   id: string; orgId: string; clientId: string; requestId: string; name: string; contentType: string;
   storageKey: string; uploadedBy: string | null;

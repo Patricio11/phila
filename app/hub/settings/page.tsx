@@ -139,7 +139,7 @@ export default async function HubSettingsPage() {
           </div>
         </Card>
 
-        {/* Your Phila plan — billed via the platform's system gateway */}
+        {/* Your Phila plan  billed via the platform's system gateway */}
         {subscription && (
           <Card>
             <CardHead title="Your Phila plan" />

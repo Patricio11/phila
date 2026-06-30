@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 10 — invoicing WRITES persist. Marking an invoice paid in the Hub
+ * Phase 10  invoicing WRITES persist. Marking an invoice paid in the Hub
  * (markInvoicePaid → db/queries/settings) flips its status in Postgres. Restores.
  */
 const DATABASE_URL = (readFileSync(".env.local", "utf8").match(/^DATABASE_URL=(.+)$/m)?.[1] ?? "").trim();

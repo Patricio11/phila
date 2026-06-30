@@ -8,7 +8,7 @@ export * from "@/lib/storage/types";
 /** Platform-integration key under which the super-admin stores Phila Storage config. */
 export const STORAGE_KEY = "phila_storage";
 
-/** The dormant provider — honest "off" until an admin configures + switches on. */
+/** The dormant provider  honest "off" until an admin configures + switches on. */
 const dormantStorage: StorageProvider = {
   status: "off",
   async signedUploadUrl() { throw new StorageDormantError(); },

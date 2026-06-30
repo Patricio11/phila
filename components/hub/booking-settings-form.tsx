@@ -74,7 +74,7 @@ export function BookingSettingsForm({
       <Card className="p-5">
         <Row
           title="Public online booking"
-          desc={s.publicBookingEnabled ? "Clients can book themselves on your public page." : "Booking is invite-only — your public page shows a 'contact us' message."}
+          desc={s.publicBookingEnabled ? "Clients can book themselves on your public page." : "Booking is invite-only  your public page shows a 'contact us' message."}
           on={s.publicBookingEnabled}
           onToggle={() => set({ publicBookingEnabled: !s.publicBookingEnabled })}
         />
@@ -126,7 +126,7 @@ export function BookingSettingsForm({
               );
             })}
           </div>
-          <p className="px-[17px] pb-[15px] pt-1 text-[11.5px] text-text-3">A service that&apos;s off stays available internally — it just isn&apos;t offered for self-booking.</p>
+          <p className="px-[17px] pb-[15px] pt-1 text-[11.5px] text-text-3">A service that&apos;s off stays available internally  it just isn&apos;t offered for self-booking.</p>
         </Card>
 
         {/* Counsellors */}

@@ -4,7 +4,7 @@ import { getDb } from "@/db/client";
 import { orgPublicPages, publicPageEvents } from "@/db/schema";
 import type { PublicPageContent } from "@/lib/data-provider";
 
-/** Org public micro-site content (Phase 17) — real, persisted, no mock. */
+/** Org public micro-site content (Phase 17)  real, persisted, no mock. */
 
 /** Sensible starter content for an org without a saved page yet. */
 export function defaultContent(opts: { intro?: string; about?: string }): PublicPageContent {

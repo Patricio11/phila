@@ -26,7 +26,7 @@ import { randomUUID } from "node:crypto";
 
 /**
  * The Hub document workspace actions (Phase 18). Folders are virtual, so move /
- * assign / rename are cheap metadata writes — the basis for the smooth UI. Each
+ * assign / rename are cheap metadata writes  the basis for the smooth UI. Each
  * action is org-scoped, audited, and persists in db mode. (Real file bytes land
  * with the Supabase StorageProvider slice; these operate on the metadata layer.)
  */
@@ -185,7 +185,7 @@ export async function requestUpload(raw: z.infer<typeof uploadInput>): Promise<{
   try {
     ({ uploadUrl } = await storage.signedUploadUrl({ key, contentType: parsed.data.contentType }));
   } catch {
-    return { ok: false, error: "Storage rejected the upload — check the Phila Storage configuration." };
+    return { ok: false, error: "Storage rejected the upload  check the Phila Storage configuration." };
   }
   await insertPendingDocument({
     id: documentId, orgId: membership.orgId, folderId: parsed.data.folderId, name: parsed.data.name,
@@ -211,7 +211,7 @@ export async function confirmUpload(raw: z.infer<typeof confirmInput>): Promise<
   return { ok: true };
 }
 
-/** A short-TTL signed URL to open a stored file — only when scanned clean. */
+/** A short-TTL signed URL to open a stored file  only when scanned clean. */
 export async function signDownload(raw: { documentId: string }): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
   const { principal, membership } = await requireHub();
   const documentId = String(raw?.documentId ?? "");

@@ -7,7 +7,7 @@ import { getDb } from "@/db/client";
 import * as schema from "@/db/schema";
 
 /**
- * Better Auth — the real identity layer (Phase 9). Email + password over the
+ * Better Auth  the real identity layer (Phase 9). Email + password over the
  * Drizzle/Neon adapter. Phila-specific identity (the platform role and, for
  * clients, their linked client record) rides on the user as additional fields;
  * org membership + team role live in `org_members`. The resolved session is

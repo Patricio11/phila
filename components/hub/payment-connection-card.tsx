@@ -17,7 +17,7 @@ const PROVIDERS: { key: PaymentProvider; name: string; blurb: string; icon: type
 ];
 
 /**
- * PaymentConnectionCard (Phase 15B) — the org connects its **own** gateway so
+ * PaymentConnectionCard (Phase 15B)  the org connects its **own** gateway so
  * clients pay it directly (funds settle to the org, not Phila). Paystack is wired:
  * paste the secret key, Test connection, switch on. Encrypted at rest.
  */

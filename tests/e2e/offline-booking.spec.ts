@@ -3,9 +3,9 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 11 — offline send-queue. A booking completed while offline is queued
+ * Phase 11  offline send-queue. A booking completed while offline is queued
  * durably (IndexedDB) with an honest "saved, not sent" state, then replayed on
- * reconnect — landing a real appointment in Postgres (the server's availability
+ * reconnect  landing a real appointment in Postgres (the server's availability
  * check runs on replay). Nothing fake-"sends".
  */
 const DATABASE_URL = (readFileSync(".env.local", "utf8").match(/^DATABASE_URL=(.+)$/m)?.[1] ?? "").trim();
@@ -35,7 +35,7 @@ test("a booking made offline queues, then syncs to the DB on reconnect", async (
   await context.setOffline(true);
   await page.getByRole("button", { name: "Confirm booking" }).click();
   await expect(page.getByText(/Saved on your device/i)).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText(/Offline — 1 queued/i)).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/Offline  1 queued/i)).toBeVisible({ timeout: 10_000 });
 
   // Nothing in the DB yet.
   expect((await sql`SELECT count(*)::int n FROM clients WHERE name = ${name}`)[0]!.n).toBe(0);

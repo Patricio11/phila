@@ -15,7 +15,7 @@ export default async function HubServicesPage() {
     <div className="rise mx-auto max-w-2xl space-y-6">
       <PageHead
         title="Services"
-        summary="What you offer — name, length, and price. These are the services clients book, the calendar schedules, and you invoice for."
+        summary="What you offer  name, length, and price. These are the services clients book, the calendar schedules, and you invoice for."
       />
       <ServicesManager initial={services} />
     </div>

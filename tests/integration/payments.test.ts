@@ -3,9 +3,9 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 15.1 — credit purchase settles idempotently. A paid pack tops up the
+ * Phase 15.1  credit purchase settles idempotently. A paid pack tops up the
  * balance once (the ledger is keyed on the payment ref); a replayed webhook is a
- * no-op. No Paystack call — we settle the payment record directly.
+ * no-op. No Paystack call  we settle the payment record directly.
  */
 const env = readFileSync(".env.local", "utf8");
 process.env.DATABASE_URL = env.match(/^DATABASE_URL=(.+)$/m)?.[1]?.trim();
@@ -40,7 +40,7 @@ describe("credit purchase", () => {
     expect(first.channel).toBe("email");
     expect((await getCreditBalances(ORG)).email).toBe(before + 1000);
 
-    // Replay (e.g. webhook + callback both fire) — no double top-up.
+    // Replay (e.g. webhook + callback both fire)  no double top-up.
     const second = await settlePayment(REF);
     expect(second.credited).toBe(0);
     expect((await getCreditBalances(ORG)).email).toBe(before + 1000);

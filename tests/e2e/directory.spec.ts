@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 10 — directory cluster is DB-backed. We write a service straight into
+ * Phase 10  directory cluster is DB-backed. We write a service straight into
  * Postgres and confirm it surfaces on /hub/services (which reads `listServices`),
  * proving the read is real (not the mock fixture). Cleans up after itself.
  */

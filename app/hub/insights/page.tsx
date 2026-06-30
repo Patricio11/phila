@@ -27,7 +27,7 @@ export default async function HubInsightsPage() {
     <div className="rise space-y-6">
       <PageHead
         title="Insights"
-        summary="How your practice is going — sessions by day, week, and month, attendance, revenue, and your client mix. Real numbers, for running the practice."
+        summary="How your practice is going  sessions by day, week, and month, attendance, revenue, and your client mix. Real numbers, for running the practice."
       />
       <HubInsightsView initial={initial} />
     </div>

@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 10 — funders cluster is DB-backed. A funder written to Postgres surfaces
+ * Phase 10  funders cluster is DB-backed. A funder written to Postgres surfaces
  * on /hub/funders (which reads `listFunders`). Cleans up after itself.
  */
 const DATABASE_URL = (readFileSync(".env.local", "utf8").match(/^DATABASE_URL=(.+)$/m)?.[1] ?? "").trim();
@@ -25,7 +25,7 @@ test("hub funders page reflects a funder written to the DB", async ({ page }) =>
     await signIn(page, "thandeka@masizakhe.org.za");
     await page.waitForURL("**/hub", { timeout: 30_000 });
     await page.goto("/hub/funders");
-    // The page summarises "{N} funders" from listFunders — 3 seeded + 1 inserted.
+    // The page summarises "{N} funders" from listFunders  3 seeded + 1 inserted.
     await expect(page.getByText(/\b4 funders\b/)).toBeVisible({ timeout: 15_000 });
     await page.screenshot({ path: "screenshots/funders-db.png", fullPage: true });
   } finally {

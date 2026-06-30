@@ -777,7 +777,7 @@ export const intakeForms: Record<string, import("@/lib/domain/types").IntakeForm
 /**
  * How Masizakhe runs public booking. Deliberately not "everything on": trauma
  * debriefing is internal-referral only, and Thabo (credential still pending)
- * isn't listed publicly — so toggling these visibly changes /o/masizakhe/book.
+ * isn't listed publicly  so toggling these visibly changes /o/masizakhe/book.
  * Orgs with no entry fall back to sensible defaults (see provider).
  */
 export type BookingSettingsSeed = {
@@ -791,10 +791,10 @@ export type BookingSettingsSeed = {
   counsellors: Record<string, { publiclyBookable: boolean }>;
 };
 
-/** Platform-wide settings (super admin). VAT is national — one change, all orgs. */
+/** Platform-wide settings (super admin). VAT is national  one change, all orgs. */
 export const platformSettings: { vatRatePercent: number } = { vatRatePercent: 15 };
 
-/** Which Phila plan each org is on — what they pay Phila (the system gateway). */
+/** Which Phila plan each org is on  what they pay Phila (the system gateway). */
 export const orgSubscriptions: Record<string, { planId: string; status: "active" | "trialing" | "past_due" }> = {
   [ORG_ID]: { planId: "p_community", status: "active" },
 };

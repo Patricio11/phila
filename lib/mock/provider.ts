@@ -251,7 +251,7 @@ function consentActiveFor(clientId: string, purpose: ConsentPurpose): boolean {
 
 /**
  * Resolve an org's booking settings: the configured seed if present, else honest
- * defaults — everything in-person, online only where the org has video, and an
+ * defaults  everything in-person, online only where the org has video, and an
  * unverified counsellor is *not* publicly bookable until their credential clears.
  */
 function bookingSettingsFor(orgId: string): BookingSettings {
@@ -466,7 +466,7 @@ export const mockProvider: DataProvider = {
       .filter((i) => i.status === "paid" && inWindow(i.issuedAt))
       .reduce((s, i) => s + i.amountCents, 0);
 
-    // Trends — always day-level (this week) + month-level (last 6 months).
+    // Trends  always day-level (this week) + month-level (last 6 months).
     const shortMonth = (mStr: string) => new Intl.DateTimeFormat("en-ZA", { month: "short" }).format(new Date(`${mStr}-01T12:00:00Z`));
     const shortDay = (d: string) => new Intl.DateTimeFormat("en-ZA", { weekday: "short", timeZone: "UTC" }).format(new Date(`${d}T12:00:00Z`));
     const byDay = Array.from({ length: 7 }, (_, i) => addDays(week.from, i)).map((d) => ({ key: d, label: shortDay(d), count: onDay(d) }));
@@ -476,7 +476,7 @@ export const mockProvider: DataProvider = {
       count: live.filter((a) => a.startsAt.startsWith(mStr)).length,
     }));
 
-    // Client mix — consented demographics, real counts (no k-anon: internal view).
+    // Client mix  consented demographics, real counts (no k-anon: internal view).
     const consentedIds = new Set(clients.filter((c) => consentActiveFor(c.id, "demographics")).map((c) => c.id));
     let demos = allDemographics.filter((d) => consentedIds.has(d.clientId));
     const withDemographics = demos.length;
@@ -614,7 +614,7 @@ export const mockProvider: DataProvider = {
   getCarePlan: (clientId) => ok(carePlans[clientId] ?? null),
   listClientDocuments: (clientId) => ok(clientDocuments[clientId] ?? []),
 
-  // Documents (Phase 18) — derive from the legacy fixtures; folders/requests empty in mock.
+  // Documents (Phase 18)  derive from the legacy fixtures; folders/requests empty in mock.
   listOrgDocuments: (orgId) =>
     ok(
       Object.values(clientDocuments)

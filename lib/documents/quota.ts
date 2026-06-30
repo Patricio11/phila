@@ -1,5 +1,5 @@
 /**
- * Storage quota + human size helpers (Phase 18). Pure — unit-testable, shared by
+ * Storage quota + human size helpers (Phase 18). Pure  unit-testable, shared by
  * the mock + db providers and the document manager UI.
  *
  * Phase 18.1 uses a flat per-plan default; wiring the real `plans.storageGb`
@@ -16,7 +16,7 @@ export function storageLimitBytes(): number {
 /** Per-file ceiling (the practice uploads documents, not media libraries). */
 export const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25 MB
 
-/** Allowed content types — documents + images a clinic actually handles. */
+/** Allowed content types  documents + images a clinic actually handles. */
 export const ALLOWED_CONTENT_TYPES = new Set<string>([
   "application/pdf",
   "image/png",
@@ -40,9 +40,9 @@ export function validateUpload(input: { contentType: string; bytes: number }): {
   return { ok: true };
 }
 
-/** A calm human size label, e.g. "2.4 MB". 0 bytes (metadata-only legacy) → "—". */
+/** A calm human size label, e.g. "2.4 MB". 0 bytes (metadata-only legacy) → "". */
 export function sizeLabel(bytes: number): string {
-  if (!bytes || bytes <= 0) return "—";
+  if (!bytes || bytes <= 0) return "";
   const units = ["B", "KB", "MB", "GB", "TB"] as const;
   let i = 0;
   let n = bytes;

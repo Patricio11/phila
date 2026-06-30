@@ -144,7 +144,7 @@ export function BookingWizard({
       consents,
     };
 
-    // Offline: queue it durably and be honest — it sends on reconnect, not now.
+    // Offline: queue it durably and be honest  it sends on reconnect, not now.
     if (typeof navigator !== "undefined" && !navigator.onLine) {
       startSubmit(async () => {
         await enqueueBooking(payload, `Booking · ${payload.startsAt.slice(0, 10)}`);

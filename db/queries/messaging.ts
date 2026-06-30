@@ -39,7 +39,7 @@ export interface WhatsappConnectionView {
   verifyToken: string | null;
 }
 
-/** Never returns the decrypted token — only whether one is stored. */
+/** Never returns the decrypted token  only whether one is stored. */
 export async function getWhatsappConnection(orgId: string): Promise<WhatsappConnectionView> {
   const [row] = await getDb().select().from(whatsappConnections).where(eq(whatsappConnections.orgId, orgId)).limit(1);
   if (!row) return { status: "off", phoneNumberId: null, wabaId: null, hasToken: false, verifyToken: null };
@@ -70,7 +70,7 @@ export async function getCreditBalances(orgId: string): Promise<{ sms: number; e
 export async function applyCredit(orgId: string, channel: "sms" | "email", delta: number, reason: string, ref: string, idempotencyKey: string): Promise<number> {
   const db = getDb();
   const [seen] = await db.select().from(creditLedger).where(eq(creditLedger.idempotencyKey, idempotencyKey)).limit(1);
-  if (seen) return seen.balanceAfter; // already applied — no double-count
+  if (seen) return seen.balanceAfter; // already applied  no double-count
   const [bal] = await db.select().from(creditBalances).where(and(eq(creditBalances.orgId, orgId), eq(creditBalances.channel, channel))).limit(1);
   const after = Math.max(0, (bal?.balance ?? 0) + delta);
   await db.insert(creditBalances).values({ orgId, channel, balance: after }).onConflictDoUpdate({ target: [creditBalances.orgId, creditBalances.channel], set: { balance: after } });
@@ -141,7 +141,7 @@ export async function getTemplateBody(orgId: string, channel: Channel, key: Mess
 export async function consumeCredit(orgId: string, channel: "sms" | "email", idempotencyKey: string, ref: string): Promise<{ ok: boolean; balanceAfter: number }> {
   const db = getDb();
   const [seen] = await db.select().from(creditLedger).where(eq(creditLedger.idempotencyKey, idempotencyKey)).limit(1);
-  if (seen) return { ok: true, balanceAfter: seen.balanceAfter }; // already charged — no double-count
+  if (seen) return { ok: true, balanceAfter: seen.balanceAfter }; // already charged  no double-count
   const [bal] = await db.select().from(creditBalances).where(and(eq(creditBalances.orgId, orgId), eq(creditBalances.channel, channel))).limit(1);
   const current = bal?.balance ?? 0;
   if (current <= 0) return { ok: false, balanceAfter: 0 };
@@ -160,7 +160,7 @@ export async function logMessage(input: { orgId: string; channel: Channel; to: s
   });
 }
 
-/** Mask a phone/email for the message log (POPIA — no raw contact in logs). */
+/** Mask a phone/email for the message log (POPIA  no raw contact in logs). */
 export function maskTarget(target: string): string {
   if (target.includes("@")) {
     const [u, d] = target.split("@");

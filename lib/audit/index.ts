@@ -65,7 +65,7 @@ class MemoryAuditSink implements AuditSink {
 }
 
 /**
- * Persistent sink — writes to the `audit_log` table (Phase 9). Lazily imports the
+ * Persistent sink  writes to the `audit_log` table (Phase 9). Lazily imports the
  * DB client so this module never forces a server-only import on the client, and
  * never fails the user's action if a log write hiccups (it logs the error instead;
  * fail-strict auditing is a Phase-10 hardening decision).

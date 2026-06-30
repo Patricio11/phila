@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 12 — the hub manages its own message wording. Editing a template in
+ * Phase 12  the hub manages its own message wording. Editing a template in
  * Settings → Notifications writes an org-override row in message_templates
  * (the system default is the fallback). Cleans up after itself.
  */

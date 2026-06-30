@@ -41,7 +41,7 @@ export async function testPaystackConnection(raw: { secretKey: string }): Promis
 }
 
 /**
- * Video gateway (LiveKit) — Demo (self-host) or Live (Cloud). Configured + switched on
+ * Video gateway (LiveKit)  Demo (self-host) or Live (Cloud). Configured + switched on
  * here; key/secret encrypted at rest. A blank secret keeps the stored one.
  */
 const lkInput = z.object({
@@ -78,7 +78,7 @@ export async function testLivekitConnection(raw: { wsUrl: string; apiKey: string
 }
 
 /**
- * Phila Storage (Phase 18) — the platform file store. Super-admin enters the
+ * Phila Storage (Phase 18)  the platform file store. Super-admin enters the
  * Supabase project URL + service-role key + (private) bucket, tests, and switches
  * on. The key is encrypted at rest; a blank key field keeps the stored one. Until
  * switched on, document uploads stay honestly dormant (Dormant-by-Default).

@@ -2,7 +2,7 @@ import { describe, it, expect, afterAll } from "vitest";
 import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
-/** Phase 17 — the public micro-site reads/writes real org_public_pages + records PII-free events. */
+/** Phase 17  the public micro-site reads/writes real org_public_pages + records PII-free events. */
 const env = readFileSync(".env.local", "utf8");
 process.env.DATABASE_URL = env.match(/^DATABASE_URL=(.+)$/m)?.[1]?.trim();
 const sql = neon(process.env.DATABASE_URL!);

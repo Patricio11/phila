@@ -4,7 +4,7 @@ import type { ScanStatus } from "@/lib/domain/enums";
 /**
  * Virus-scan hook (Phase 18). The `scan_status` gate (pending → clean |
  * quarantined) is the contract the rest of the system relies on: a file is never
- * downloadable until `clean`. The scanner *behind* this hook is swappable — plug
+ * downloadable until `clean`. The scanner *behind* this hook is swappable  plug
  * ClamAV (self-host, in-region) or a hosted AV API here.
  *
  * No scanner is wired yet, so this returns `clean`. This is the documented

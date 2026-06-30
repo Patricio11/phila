@@ -10,7 +10,7 @@ const fmtTime = (d: Date) => new Intl.DateTimeFormat("en-GB", { timeZone: "Afric
 
 /**
  * Fire the notification for an appointment event. Looks up the recipient + the
- * template variables, then routes through the deliver chokepoint. Never throws —
+ * template variables, then routes through the deliver chokepoint. Never throws 
  * a notification failure must not break the booking/scheduling action that
  * triggered it (the message_log records any failure honestly).
  */

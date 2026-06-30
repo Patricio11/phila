@@ -49,7 +49,7 @@ export function ConsentCentre({ records }: { records: ConsentRecord[] }) {
   const toggle = (purpose: ConsentPurpose) => {
     const wasOn = states.get(purpose) === "granted";
     const grant = wasOn ? false : true;
-    // Optimistic — flip now, persist, revert on failure.
+    // Optimistic  flip now, persist, revert on failure.
     setStates((prev) => new Map(prev).set(purpose, grant ? "granted" : "revoked"));
     start(async () => {
       const res = await setConsent({ purpose, grant });

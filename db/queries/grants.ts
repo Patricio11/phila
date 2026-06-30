@@ -7,7 +7,7 @@ import type { GrantSummary, GrantView, FunderGrantView, IndicatorActual } from "
 import { loadCohort } from "@/db/queries/analytics";
 import { computeIndicator, grantBreakdowns, outcomeTrend, grantHeadline, periodElapsed, type ApptRow } from "@/lib/domain/reporting";
 
-/** Phase 16 — funder / M&E reads from real grant tables + clinical data (no mock). */
+/** Phase 16  funder / M&E reads from real grant tables + clinical data (no mock). */
 
 const toFunder = (f: typeof funders.$inferSelect): Funder => ({ id: f.id, orgId: f.orgId, name: f.name, type: f.type as Funder["type"], contactName: f.contactName, contactEmail: f.contactEmail });
 const toGrant = (g: typeof grants.$inferSelect): Grant => ({ id: g.id, funderId: g.funderId, orgId: g.orgId, title: g.title, periodStart: g.periodStart, periodEnd: g.periodEnd, amountCents: g.amountCents, restricted: g.restricted, reportingSchedule: g.reportingSchedule as Grant["reportingSchedule"], status: g.status as Grant["status"] });
@@ -107,13 +107,13 @@ export async function getFunderGrantViewDb(funderUserId: string, grantId: string
   return { grant, funderName: f?.name ?? "", orgName: o?.name ?? "", periodElapsedPct: c.periodElapsedPct, indicators: c.indicators, breakdowns: c.breakdowns, outcome: c.outcome, narratives: c.narratives, headline: c.headline };
 }
 
-/** The org that owns a grant — for an ownership check before a write. */
+/** The org that owns a grant  for an ownership check before a write. */
 export async function getGrantOrgId(grantId: string): Promise<string | null> {
   const [g] = await getDb().select({ orgId: grants.orgId }).from(grants).where(eq(grants.id, grantId)).limit(1);
   return g?.orgId ?? null;
 }
 
-/** Post a grant narrative (Phase 16) — persists; org-side authorship checked by the caller. */
+/** Post a grant narrative (Phase 16)  persists; org-side authorship checked by the caller. */
 export async function postGrantNarrativeDb(grantId: string, author: string, body: string): Promise<void> {
   await getDb().insert(grantNarratives).values({ id: `narr_${crypto.randomUUID().slice(0, 12)}`, grantId, author, body, postedAt: new Date() });
 }

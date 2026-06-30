@@ -1,16 +1,16 @@
-# Phase 16 — Analytics & Funder / M&E Reporting + Funder Portal ✅
+# Phase 16  Analytics & Funder / M&E Reporting + Funder Portal ✅
 
 *Shipped: 2026-06-30 · Part B · the reporting differentiator made **real** (DB-backed) + richer*
 
 > The analytics surfaces were mock-only. Phase 16 makes them **real**, computed from the
-> actual clinical tables, with k-anonymity intact — and adds the insights they were missing.
+> actual clinical tables, with k-anonymity intact  and adds the insights they were missing.
 
 ---
 
 ## Real, not mock
 A pure computation layer (`lib/domain/reporting.ts`) is fed **DB rows** by `db/queries/analytics.ts`
 (reporting + insights) and `db/queries/grants.ts` (grant + funder views). `db-provider` overrides
-**`getReporting`, `getHubInsights`, `getGrantView`, `getFunderGrantView`, `listGrants`** — no mock
+**`getReporting`, `getHubInsights`, `getGrantView`, `getFunderGrantView`, `listGrants`**  no mock
 fallback. Outcome measures use the real `taken_at`, bucketed into weeks-ago relative to `now`.
 
 ## Honest aggregation
@@ -23,7 +23,7 @@ fallback. Outcome measures use the real `taken_at`, bucketed into weeks-ago rela
   n=3 and Free State n=1 suppress; women n=22 and Gauteng n=20 show).
 
 ## Richer insights (the "more useful" pass)
-- **Insights:** period-over-period **trend chips** — completed, attendance (±pts), new clients, revenue —
+- **Insights:** period-over-period **trend chips**  completed, attendance (±pts), new clients, revenue 
   computed against the previous comparable window.
 - **Reporting:** an **improvement-rate** stat (% whose first→latest PHQ-9 dropped ≥5) + a **provinces-reached**
   stat + a server-computed **key-findings** headline above the editable narrative.
@@ -36,7 +36,7 @@ de-duped via distinct allocation, with a **paced "expected"** marker for count i
 on-track / at-risk / behind classification.
 
 ## Funder portal (wired, real)
-- `/funder` + `/funder/grants/[id]` read real data with **provider-enforced scoping** — a funder reaches
+- `/funder` + `/funder/grants/[id]` read real data with **provider-enforced scoping**  a funder reaches
   ONLY their grant(s); an out-of-scope id returns null → 404. Every view **k-anon + audited** (`funder.view`).
 - **Narrative updates persist** (`grant_narratives`): the org posts from the Hub (ownership-checked) and the
   funder sees it on their portal. Login: `palesa.mokoena@dsd.example.gov.za` / `phila1234`.
@@ -49,5 +49,5 @@ on-track / at-risk / behind classification.
 
 ## Honest follow-ups
 - GAD-7 trend alongside PHQ-9 (schema + compute ready; seed PHQ-9 only for now).
-- Scheduled PII-free rollups (currently computed on read — fast at this scale).
+- Scheduled PII-free rollups (currently computed on read  fast at this scale).
 - Templated branded PDF (CSV + print cover the need today).

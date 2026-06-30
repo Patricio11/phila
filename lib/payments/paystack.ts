@@ -3,7 +3,7 @@ import { createHmac } from "node:crypto";
 import { getPaystackSecret } from "@/db/queries/platform-integrations";
 
 /**
- * Paystack (Phase 15) — the SA/Africa PSP. Two surfaces, same primitives:
+ * Paystack (Phase 15)  the SA/Africa PSP. Two surfaces, same primitives:
  *  • Platform (credits + plan billing) uses Phila's key, configured in
  *    /admin/integrations (getPaystackSecret).
  *  • Each org's OWN gateway (client invoices) uses the org's key (Phase 15B) so
@@ -45,7 +45,7 @@ export function paystackSignatureValid(secretKey: string, rawBody: string, signa
   return createHmac("sha512", secretKey).update(rawBody).digest("hex") === signature;
 }
 
-/** Test a candidate key against Paystack — used by both "Test connection" buttons. */
+/** Test a candidate key against Paystack  used by both "Test connection" buttons. */
 export async function testPaystackKey(secretKey: string): Promise<{ ok: boolean; detail: string }> {
   if (!secretKey) return { ok: false, detail: "Enter a secret key first." };
   try {

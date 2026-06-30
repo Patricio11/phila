@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 10 — appointment lifecycle persists. Marking a session on the calendar
+ * Phase 10  appointment lifecycle persists. Marking a session on the calendar
  * (markProgress → setAppointmentState) writes the new state to Postgres.
  */
 const DATABASE_URL = (readFileSync(".env.local", "utf8").match(/^DATABASE_URL=(.+)$/m)?.[1] ?? "").trim();

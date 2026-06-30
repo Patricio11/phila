@@ -7,7 +7,7 @@ import { dbProvider } from "@/lib/db-provider";
  * rewrite. Both providers expose the *same* method surface; the mock is
  * real-async; and the consent / k-anon / outcome-honesty invariants the UI relies
  * on hold. `dbProvider` is a **hybrid**: it spreads the mock and overrides one
- * method at a time with a real DB read — so non-migrated methods are the *same
+ * method at a time with a real DB read  so non-migrated methods are the *same
  * function* as the mock (seamless fallback), and migrated ones are real overrides.
  */
 const ORG = "org_masizakhe";

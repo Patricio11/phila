@@ -1,5 +1,5 @@
 /**
- * De-identification (Phase 14, POPIA) — strip direct identifiers from session
+ * De-identification (Phase 14, POPIA)  strip direct identifiers from session
  * cues BEFORE any cross-border model call. Pure + unit-tested. The model writes
  * about "the client"; identity stays in Phila's metadata, never in the prompt.
  */

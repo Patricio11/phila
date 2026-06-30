@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 10.2 — Row-Level Security proof. Connects as the non-owner `phila_app`
+ * Phase 10.2  Row-Level Security proof. Connects as the non-owner `phila_app`
  * role (no BYPASSRLS) and shows the policies are a real, enforced tenant boundary:
  *  - deny-by-default with no org context set
  *  - an org sees only its own rows, never another org's

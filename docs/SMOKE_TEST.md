@@ -1,8 +1,8 @@
-# Phila — End-to-End Smoke Test (Part B)
+# Phila  End-to-End Smoke Test (Part B)
 
 > Run this against your real **Neon** database in **DB mode** after `npm run db:seed` (which also seeds
 > the public page, M&E cohort, subscription, and the LiveKit demo integration). Every box ticked = the
-> Part B build (Phases 9–17.1) is verifiably working end-to-end on real data — no mock.
+> Part B build (Phases 9–17.1) is verifiably working end-to-end on real data  no mock.
 
 ---
 
@@ -11,18 +11,18 @@
 ```bash
 # .env.local must have (at minimum): DATA_PROVIDER=db, DATABASE_URL, PHILA_FIELD_KEY,
 # BETTER_AUTH_SECRET, BETTER_AUTH_URL=http://localhost:3000
-npm run db:seed          # idempotent — seeds everything into Neon
+npm run db:seed          # idempotent  seeds everything into Neon
 npm run dev              # or: npm run build && npm run start  (prod build)
 ```
 
 Open `http://localhost:3000`.
 
-**Optional external services** (each is *dormant + honest* until set — the app never fakes them):
-- **Video** — start the local LiveKit server so online sessions connect: in `phila_livekit/`, `docker compose up -d` (the seed already points the integration at `ws://localhost:7880`).
-- **Payments** — to take a real (test) payment, paste a Paystack **test** key (`sk_test_…`) in `/admin/integrations` → switch on.
-- **AI scribe** — to generate drafts, add an OpenAI **or** Claude key in `/admin/ai` → switch on, then turn the org consent on in Hub → Settings → AI assistant.
+**Optional external services** (each is *dormant + honest* until set  the app never fakes them):
+- **Video**  start the local LiveKit server so online sessions connect: in `phila_livekit/`, `docker compose up -d` (the seed already points the integration at `ws://localhost:7880`).
+- **Payments**  to take a real (test) payment, paste a Paystack **test** key (`sk_test_…`) in `/admin/integrations` → switch on.
+- **AI scribe**  to generate drafts, add an OpenAI **or** Claude key in `/admin/ai` → switch on, then turn the org consent on in Hub → Settings → AI assistant.
 
-The seed password is **`phila1234`** for every seeded account. The `/login` page has **no role chip** — credentials identify the user; the server routes by role.
+The seed password is **`phila1234`** for every seeded account. The `/login` page has **no role chip**  credentials identify the user; the server routes by role.
 
 ---
 
@@ -42,7 +42,7 @@ Visit `http://localhost:3000/login` and try each account. Sign out between accou
 
 ## 2 · Auth guards (signed-out bounce)
 
-While **signed out**, open each URL — every one should redirect to `/login` (the public pages must NOT):
+While **signed out**, open each URL  every one should redirect to `/login` (the public pages must NOT):
 
 | URL | Expected | ✅ |
 |---|---|---|
@@ -80,7 +80,7 @@ Cross-tenant / cross-role checks (signed in):
 
 ---
 
-## 4 · Hub (`/hub`) — the practice console
+## 4 · Hub (`/hub`)  the practice console
 
 Sign in as **Thandeka**.
 
@@ -97,7 +97,7 @@ Sign in as **Thandeka**.
 - ☐ Open an invoice → A4 preview renders
 - ☐ If the org gateway is connected (Settings → Payments), an unpaid invoice shows a **Pay link** button → copies a `/pay/<token>` URL
 
-**Reporting** (`/hub/reporting`) — the M&E differentiator
+**Reporting** (`/hub/reporting`)  the M&E differentiator
 - ☐ Headline stats: **Clients reported**, **Improved ≥5 on PHQ-9 %**, **Provinces reached**
 - ☐ Funder narrative shows **key-findings bullets** + a paragraph generated from real figures
 - ☐ Breakdowns show real counts where cells ≥ 5 and **"too few to report"** where suppressed (k-anonymity)
@@ -123,7 +123,7 @@ Sign in as **Thandeka**.
 - ☐ Click **Save public page** → toast confirms; **View live** opens `/o/masizakhe`
 
 **The live page** (`/o/masizakhe`)
-- ☐ Hero (headline + intro + POPIA badge + dual CTA), How-we-work cards, Services (real durations/prices), Team with **verified credential chips**, FAQ accordion, Contact + locations, final CTA band — all render and reflect your edits
+- ☐ Hero (headline + intro + POPIA badge + dual CTA), How-we-work cards, Services (real durations/prices), Team with **verified credential chips**, FAQ accordion, Contact + locations, final CTA band  all render and reflect your edits
 - ☐ Light/dark toggle works; mobile (360 px) has no horizontal scroll
 
 **Booking** (`/o/masizakhe/book`)
@@ -137,7 +137,7 @@ Sign in as **Thandeka**.
 
 ---
 
-## 6 · Video (LiveKit) — *requires the Docker server running*
+## 6 · Video (LiveKit)  *requires the Docker server running*
 
 1. As **Thandeka** (or the counsellor), open an **online** appointment and copy its room link, **or** book an online session and use the returned link (`/room/<id>?t=…`).
 2. Open the link.
@@ -149,7 +149,7 @@ Sign in as **Thandeka**.
 
 ---
 
-## 7 · Payments (Paystack) — *requires a test key*
+## 7 · Payments (Paystack)  *requires a test key*
 
 After pasting `sk_test_…` in `/admin/integrations` → **Test connection** (should say "Connected") → switch on:
 
@@ -179,12 +179,12 @@ Sign in as a client account (see `docs/DEMO_LOGINS.md` for a seeded client email
 
 ---
 
-## 10 · Admin (`/admin`) — integrations are admin-managed (no env keys)
+## 10 · Admin (`/admin`)  integrations are admin-managed (no env keys)
 
 Sign in as **ops@philasa.com**.
 
 - ☐ Every tab loads: Overview, Organisations, Onboarding, Plans & billing, **AI rail**, **Integrations**, **Audit**
-- ☐ **Integrations** shows the **Phila platform gateways**: **Paystack** (key + Test connection + switch) and **Video · LiveKit** (Demo/Live mode toggle, ws URL/key/secret, **Test connection**, switch — seeded in Demo with `ws://localhost:7880`)
+- ☐ **Integrations** shows the **Phila platform gateways**: **Paystack** (key + Test connection + switch) and **Video · LiveKit** (Demo/Live mode toggle, ws URL/key/secret, **Test connection**, switch  seeded in Demo with `ws://localhost:7880`)
 - ☐ **LiveKit Test connection** → "Connected" when the Docker server is up; a clear error when it's down
 - ☐ **AI rail** lets you configure Claude **or** OpenAI (key + model) and switch one on
 - ☐ **Audit** shows recent cross-org/PII actions (every reporting read, export, payment, edit is logged)
@@ -195,8 +195,8 @@ Sign in as **ops@philasa.com**.
 
 - ☐ `npx tsc --noEmit` clean
 - ☐ `npm run lint` clean
-- ☐ `npx vitest run` — all green (102+ unit/integration)
-- ☐ `npm run build` clean, then `npm run start` — the paths above still work on the production build
+- ☐ `npx vitest run`  all green (102+ unit/integration)
+- ☐ `npm run build` clean, then `npm run start`  the paths above still work on the production build
 - ☐ Dark mode looks right across Hub, the public site, and the funder portal
 - ☐ Mobile (360 px): no horizontal scroll on `/o/masizakhe`, `/hub/reporting`, `/funder`
 
@@ -210,11 +210,11 @@ Tell Claude **"All smoke tests pass"** and I'll record it in `docs/completed/` a
 
 ## If something fails
 
-- **`DATABASE_URL is not set` / "Part A runs on mock"** — `DATA_PROVIDER=db` must be in `.env.local`, and `DATABASE_URL` uncommented. Restart the dev server after editing.
-- **Sign-in fails for a seeded account** — re-run `npm run db:seed` (idempotent). Better Auth needs the account present + verified; the seed sets this.
-- **A reporting/grant page is empty or all "too few to report"** — the M&E cohort didn't seed. Re-run `npm run db:seed`; you should have ~39 consented clients (k-anonymity then shows real counts for the big cells).
-- **Video says "not configured"** — the LiveKit integration is off, or the Docker server isn't running. Check `/admin/integrations` → Video is **switched on** (Demo), and `docker compose up -d` in `phila_livekit/`.
-- **"Payments aren't switched on yet"** — expected until you add a Paystack key in `/admin/integrations` (platform) or Settings → Payments (org gateway). This is the honest dormant state, not a bug.
-- **AI panel stays dormant** — both gates must be on: a provider switched on in `/admin/ai` **and** the org consent toggle on in Hub → Settings → AI assistant.
-- **Public page edits don't show** — the page is ISR-cached; saving calls `revalidatePath`, so a hard refresh should show them. Confirm the save toast appeared.
-- **Encrypted config won't decrypt after a key change** — `PHILA_FIELD_KEY` must be stable. If you regenerated it, re-seed and re-enter any keys (Paystack/AI/LiveKit) in the admin console.
+- **`DATABASE_URL is not set` / "Part A runs on mock"**  `DATA_PROVIDER=db` must be in `.env.local`, and `DATABASE_URL` uncommented. Restart the dev server after editing.
+- **Sign-in fails for a seeded account**  re-run `npm run db:seed` (idempotent). Better Auth needs the account present + verified; the seed sets this.
+- **A reporting/grant page is empty or all "too few to report"**  the M&E cohort didn't seed. Re-run `npm run db:seed`; you should have ~39 consented clients (k-anonymity then shows real counts for the big cells).
+- **Video says "not configured"**  the LiveKit integration is off, or the Docker server isn't running. Check `/admin/integrations` → Video is **switched on** (Demo), and `docker compose up -d` in `phila_livekit/`.
+- **"Payments aren't switched on yet"**  expected until you add a Paystack key in `/admin/integrations` (platform) or Settings → Payments (org gateway). This is the honest dormant state, not a bug.
+- **AI panel stays dormant**  both gates must be on: a provider switched on in `/admin/ai` **and** the org consent toggle on in Hub → Settings → AI assistant.
+- **Public page edits don't show**  the page is ISR-cached; saving calls `revalidatePath`, so a hard refresh should show them. Confirm the save toast appeared.
+- **Encrypted config won't decrypt after a key change**  `PHILA_FIELD_KEY` must be stable. If you regenerated it, re-seed and re-enter any keys (Paystack/AI/LiveKit) in the admin console.

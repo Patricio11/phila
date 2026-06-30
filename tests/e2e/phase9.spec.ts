@@ -2,13 +2,13 @@ import { test, expect, type Page } from "@playwright/test";
 import crypto from "node:crypto";
 
 /**
- * Phase 9 completion — consent persistence, real sign-up, and TOTP 2FA (enrol +
+ * Phase 9 completion  consent persistence, real sign-up, and TOTP 2FA (enrol +
  * the sign-in challenge that ONLY appears for users who enabled it). Screenshots
  * land in ./screenshots. Throwaway practices are used for sign-up/2FA so the
  * seeded demo accounts stay clean.
  */
 
-/** Standard TOTP (SHA1, 6 digits, 30s) — matches Better Auth's default. */
+/** Standard TOTP (SHA1, 6 digits, 30s)  matches Better Auth's default. */
 function totp(secretB32: string): string {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
   let bits = "";
@@ -82,7 +82,7 @@ test("2FA: enrol on a counsellor, then sign-in requires the code (only for enrol
   await signIn(page, email);
   await page.waitForURL("**/app", { timeout: 30_000 });
 
-  // Enrol 2FA in account settings — capture the TOTP secret from the enable response.
+  // Enrol 2FA in account settings  capture the TOTP secret from the enable response.
   await page.goto("/app/settings");
   const enableResp = page.waitForResponse((r) => r.url().includes("/two-factor/enable") && r.request().method() === "POST");
   await page.getByTestId("enable-2fa").click();
@@ -106,7 +106,7 @@ test("2FA: enrol on a counsellor, then sign-in requires the code (only for enrol
   await page.waitForURL("**/app", { timeout: 30_000 });
   await expect(page).toHaveURL(/\/app/);
 
-  // Cleanup — disable 2FA so the demo account stays simple.
+  // Cleanup  disable 2FA so the demo account stays simple.
   await page.goto("/app/settings");
   await page.getByRole("button", { name: "Disable", exact: true }).click();
   await page.getByRole("dialog").locator('input[type="password"]').fill("phila1234");

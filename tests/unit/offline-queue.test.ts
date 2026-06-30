@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { offlineQueue, processQueue, type Dispatch } from "@/lib/pwa/offline-queue";
 
-// In Node there's no IndexedDB, so the queue uses its in-memory fallback — same API.
+// In Node there's no IndexedDB, so the queue uses its in-memory fallback  same API.
 beforeEach(async () => {
   await offlineQueue.clear();
 });

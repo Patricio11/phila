@@ -22,8 +22,8 @@ Authorisation is defence in depth. No single layer is trusted alone.
    tenant from reading another tenant's rows. Every `org_id` table has an RLS policy keyed off the
    authenticated org + role. Even a bug in layers 1–2 cannot leak across orgs, because the database
    itself refuses the row. Policies are **authored, applied, and proven** at the DB in Phase 10 (a non-owner
-   `phila_app` role with a 5-test cross-org leak proof); the **runtime cutover** — pointing the request path at
-   `phila_app` and setting the per-request org GUCs so these policies bind on every live query — is the Phase 19
+   `phila_app` role with a 5-test cross-org leak proof); the **runtime cutover**  pointing the request path at
+   `phila_app` and setting the per-request org GUCs so these policies bind on every live query  is the Phase 19
    hardening pass. Until then the app-layer `where org_id = …` in the DAL is the primary in-place boundary.
 
 > **Rule of thumb:** if removing the route guard would leak data, the design is wrong. The guard is

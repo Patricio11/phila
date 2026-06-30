@@ -31,7 +31,7 @@ export function GrantDashboard({
   narratives: GrantNarrative[];
   /** The Hub passes a composer here; the funder portal leaves it read-only. */
   narrativeSlot?: React.ReactNode;
-  /** Phase 16 — honest one-line status summary. */
+  /** Phase 16  honest one-line status summary. */
   headline?: string;
 }) {
   return (

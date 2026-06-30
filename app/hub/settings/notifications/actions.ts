@@ -84,7 +84,7 @@ export async function resetMessageTemplate(
   return { ok: true };
 }
 
-/** "Help me set up WhatsApp" — logs a setup-assist request for the platform team. */
+/** "Help me set up WhatsApp"  logs a setup-assist request for the platform team. */
 export async function requestWhatsappSetup(): Promise<{ ok: true }> {
   const { membership } = await requireHub();
   await logAccess({ action: "admin.action", actor: { userId: "hub", platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `org:${membership.orgId}/whatsapp`, reason: "request_setup_help" });

@@ -6,7 +6,7 @@ import type { Demographics } from "@/lib/domain/types";
 import type { ReportingResult, ReportingFilters, HubInsights, InsightsFilters } from "@/lib/data-provider";
 import { computeReporting, computeInsights, type OutcomeRow, type ApptRow, type InvoiceRow, type ClientRow, type InsightsExtras } from "@/lib/domain/reporting";
 
-/** Phase 16 — real analytics from the clinical tables (no mock fallback). */
+/** Phase 16  real analytics from the clinical tables (no mock fallback). */
 
 export async function loadCohort(orgId: string): Promise<{ clientRows: ClientRow[]; consentedIds: Set<string>; demos: Demographics[]; outcomes: OutcomeRow[] }> {
   const db = getDb();

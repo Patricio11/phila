@@ -1,16 +1,16 @@
-# Phase 17 — Org public page real + SEO ✅
+# Phase 17  Org public page real + SEO ✅
 
 *Shipped: 2026-06-30 · Part B · org-editable, SEO-ranking public micro-sites, fully DB-backed (no mock)*
 
 > Goal: a world-class public micro-site per org, where the org **manages every section**,
-> wired to booking, with real SEO — and all of it **seeded + read from the DB**.
+> wired to booking, with real SEO  and all of it **seeded + read from the DB**.
 
 ---
 
 ## Real, section-based content (no mock)
 - New **`org_public_pages`** table (migration 0020, RLS'd): hero (headline/intro/CTA/online badge),
   about, **approach** (list), services + team (visibility), **FAQ** (list), contact (phone/email),
-  SEO (title/description) — each section with its own **show/hide** flag.
+  SEO (title/description)  each section with its own **show/hide** flag.
 - `db-provider.getOrgPublicPage` is **overridden** to read it, with services / team / sites from the real
   tables. Masizakhe is **seeded** with rich, ready-to-rank content (3 approach points, 4 FAQs, contact).
 - `db/queries/public-page.ts`: `getPublicPageContent`, `savePublicPageContent`, `recordPageEvent`,
@@ -46,6 +46,6 @@ book page) → **booked** (server-side on a successful booking). The editor surf
   tsc + lint clean. Screenshots in `/screenshots`.
 
 ## Honest follow-ups
-- Dynamic OG image (`opengraph-image.tsx`) — metadata OG is wired; a generated image is a nice next step.
-- Custom domains per org — **deferred** (documented extension); `/o/[slug]` is the canonical home for now.
-- Drag-reorder of sections — sections render in a clean fixed order today; reordering is a future nicety.
+- Dynamic OG image (`opengraph-image.tsx`)  metadata OG is wired; a generated image is a nice next step.
+- Custom domains per org  **deferred** (documented extension); `/o/[slug]` is the canonical home for now.
+- Drag-reorder of sections  sections render in a clean fixed order today; reordering is a future nicety.

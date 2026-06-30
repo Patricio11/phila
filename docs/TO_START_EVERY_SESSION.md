@@ -181,7 +181,7 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
 
 > **Honest state of the DB swap:** `DATA_PROVIDER=db` runs the product on Neon; the migrated clusters above read +
 > write real rows. A number of provider methods still **delegate to the mock** (e.g. supervision, intake, team-member
-> detail, the platform-admin console, internal messages) — seeded from the same fixtures so they agree, but not yet
+> detail, the platform-admin console, internal messages)  seeded from the same fixtures so they agree, but not yet
 > DB-backed. "Fully DB-backed app-wide" is not yet true; those surfaces migrate as their phases come up.
 
 - *(Update this block as phases ship. Part A is mock-first; Part B wires real behind the unchanged UI.)*

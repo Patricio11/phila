@@ -9,7 +9,7 @@ import { saveAiSettings } from "@/db/queries/ai";
 
 /**
  * AI scribe consent + budget (Phase 14). The `aiEnabled` toggle IS the POPIA
- * cross-border consent gate — the scribe stays off for this org until it's on.
+ * cross-border consent gate  the scribe stays off for this org until it's on.
  */
 const aiInput = z.object({
   aiEnabled: z.boolean(),

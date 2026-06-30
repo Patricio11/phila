@@ -80,7 +80,7 @@ export function InvoiceList({
                   </Button>
                 ) : unpaid && hasBanking ? (
                   <span className="inline-flex items-center gap-1.5 text-[12px] text-text-2">
-                    <Landmark className="size-3.5 text-text-3" strokeWidth={2} aria-hidden /> Pay by EFT — details on the invoice
+                    <Landmark className="size-3.5 text-text-3" strokeWidth={2} aria-hidden /> Pay by EFT  details on the invoice
                   </span>
                 ) : null}
               </div>

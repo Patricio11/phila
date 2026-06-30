@@ -12,7 +12,7 @@ function fullDate(iso: string): string {
 }
 
 /**
- * Intake detail — what the form *asks*, and (when completed) what the client
+ * Intake detail  what the form *asks*, and (when completed) what the client
  * *answered*. This is the "outcome" of an intake: the counsellor reads it to
  * prepare for the first session. Form-only mode is the blank-form preview.
  */
@@ -49,7 +49,7 @@ export function IntakeDetail({
       footer={
         clientName && !completed ? (
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[12px] text-text-3">{status === "sent" ? "Sent — awaiting their answers" : "Not sent yet"}</span>
+            <span className="text-[12px] text-text-3">{status === "sent" ? "Sent  awaiting their answers" : "Not sent yet"}</span>
             <Button onClick={onSend} loading={sending}>
               <Send className="size-4" strokeWidth={2} aria-hidden /> {status === "sent" ? "Resend form" : "Send form"}
             </Button>

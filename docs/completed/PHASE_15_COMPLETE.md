@@ -1,15 +1,15 @@
-# Phase 15 — Payments ✅
+# Phase 15  Payments ✅
 
 *Shipped: 2026-06-30 · Part B · two real money flows + self-serve credits, all on one PSP seam*
 
 > Goal: (A) orgs pay Phila, (B) clients pay their org, (15.1) orgs buy notification
-> credits — real, idempotent, and load-shedding-safe.
+> credits  real, idempotent, and load-shedding-safe.
 
 ---
 
 ## The integration model (the correction)
 Every gateway key is **configured in-app, encrypted at rest, switched on with a Test
-connection** — never an env var:
+connection**  never an env var:
 - **Platform gateway** (Phila's own Paystack, for credits + subscriptions) → super-admin
   in **`/admin/integrations`** (`platform_integrations` table).
 - **Each org's own gateway** (for client invoices) → the org in **Settings → Payments**
@@ -18,17 +18,17 @@ connection** — never an env var:
 `lib/payments/paystack.ts` has key-explicit primitives (`paystackInit/Verify/
 SignatureValid`) so the same code serves both the platform key and each org's key.
 
-## 15.1 — Credit purchase + Billing & usage
+## 15.1  Credit purchase + Billing & usage
 `/hub/billing`: balances, AI spend vs cap, activity, **credit packs → Paystack**, top-up
 history, **low-balance nudges** (billing + overview). Settles idempotently on the payment ref.
 
-## 15A — Platform subscription billing (orgs → Phila)
+## 15A  Platform subscription billing (orgs → Phila)
 `/hub/billing/plan`: pick a plan → pay Phila via the **platform** gateway → the
 **`subscriptions`** row activates **idempotently** (settle keyed on the ref) with the next
 period set. `getOrgSubscription`/`listPlans` read real rows; super-admin MRR comes from them.
 Plan catalogue in `lib/billing/plans.ts`; Masizakhe's subscription is **seeded** (Community).
 
-## 15B — Org gateway + client invoice payments (clients → org)
+## 15B  Org gateway + client invoice payments (clients → org)
 Org connects its **own** Paystack (Test connection, encrypted). Every unpaid invoice gets a
 **signed, unguessable pay-link** ("Pay link" copies it); the client pays on the public
 **`/pay/[token]`** page through the **org's** key (funds settle to the **org**), and the

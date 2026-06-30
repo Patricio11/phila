@@ -4,9 +4,9 @@ import { getDb } from "@/db/client";
 import { orgPaymentConnections } from "@/db/schema";
 import { encryptField, decryptField } from "@/lib/crypto";
 
-/** Org's own payment gateway (Phase 15B) — clients pay the org directly. */
+/** Org's own payment gateway (Phase 15B)  clients pay the org directly. */
 
-/** Safe status for the UI — provider + flags, never the secret. */
+/** Safe status for the UI  provider + flags, never the secret. */
 export async function getOrgGatewayStatus(orgId: string): Promise<{ provider: string | null; enabled: boolean; configured: boolean }> {
   const [row] = await getDb().select({ provider: orgPaymentConnections.provider, enabled: orgPaymentConnections.enabled, enc: orgPaymentConnections.credentialsEnc }).from(orgPaymentConnections).where(eq(orgPaymentConnections.orgId, orgId)).limit(1);
   if (!row) return { provider: null, enabled: false, configured: false };
@@ -24,7 +24,7 @@ export async function getOrgGatewayCreds(orgId: string): Promise<Record<string, 
   return decodeCreds(row?.enc ?? null);
 }
 
-/** The live secret for charging — only when configured AND switched on. */
+/** The live secret for charging  only when configured AND switched on. */
 export async function getOrgGatewaySecret(orgId: string): Promise<{ provider: string; secretKey: string } | null> {
   const [row] = await getDb().select().from(orgPaymentConnections).where(eq(orgPaymentConnections.orgId, orgId)).limit(1);
   if (!row || !row.enabled) return null;

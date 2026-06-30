@@ -1,5 +1,5 @@
 /**
- * Pure analytics (Phase 16) — the M&E / reporting computation, extracted so the DB
+ * Pure analytics (Phase 16)  the M&E / reporting computation, extracted so the DB
  * provider can feed it REAL rows (no mock). Funder-facing aggregates are k-anon'd;
  * the Hub's own operational view keeps honest counts. Outcome measures arrive with a
  * real `takenAt`, bucketed into weeks-ago relative to `now`.
@@ -77,7 +77,7 @@ export function computeReporting(input: ReportingInput, now: string, filters: Re
   const outcome = outcomeTrend(input.outcomes, input.consentedIds, now);
   const improvementRate = pctImprovedPhq9(input.outcomes, input.consentedIds);
 
-  // Honest headline — the "what does this say" line funders actually want.
+  // Honest headline  the "what does this say" line funders actually want.
   const headline: string[] = [];
   const femaleShare = pct(consentedDemos.filter((d) => d.gender === "female").length, consentedDemos.length);
   const youthShare = pct(consentedDemos.filter((d) => ["under_18", "18_24"].includes(d.ageBand)).length, consentedDemos.length);

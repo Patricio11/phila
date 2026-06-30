@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 10 — the Hub overview is computed from the DB (getHubOverview). We flip
+ * Phase 10  the Hub overview is computed from the DB (getHubOverview). We flip
  * Johan's risk flag in Postgres (the mock fixture has him NOT flagged), so his
  * safeguarding item in "Needs attention" can only have come from the DB
  * aggregation. Restored afterwards.

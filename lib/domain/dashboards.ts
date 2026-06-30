@@ -1,6 +1,6 @@
 /**
  * Pure dashboard aggregations (Phase 10). Extracted so the mock and DB providers
- * compute the *same* numbers from the same primitives — the mock passes
+ * compute the *same* numbers from the same primitives  the mock passes
  * fixture/materialised data, `dbProvider` passes rows from Postgres. Both call
  * these, so the Hub/counsellor home pages are identical whichever source is live,
  * and the maths is unit-tested directly (deterministic in, deterministic out).

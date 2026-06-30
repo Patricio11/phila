@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Build the next open business days from today (SAST), honouring closed days and
- * the org's booking horizon — the calendar never opens further than `maxDaysAhead`.
+ * the org's booking horizon  the calendar never opens further than `maxDaysAhead`.
  */
 function upcomingOpenDays(businessHours: BusinessHours, count: number, maxDaysAhead: number): string[] {
   const today = new Intl.DateTimeFormat("en-CA", {

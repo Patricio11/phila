@@ -7,11 +7,11 @@ import { getDb } from "@/db/client";
 import { orgMembers, orgs } from "@/db/schema";
 
 /**
- * The authenticated principal — resolved from the real Better Auth session
+ * The authenticated principal  resolved from the real Better Auth session
  * (Phase 9). The *shape* is unchanged from Part A, so every guard and call site
  * is untouched: only the resolver swapped from a fixed mock to a real session.
  *
- * Org staff (counsellor, org_admin, …) carry no platform role — their authority
+ * Org staff (counsellor, org_admin, …) carry no platform role  their authority
  * comes from an org membership. `client`, `funder`, and `super_admin` are
  * platform roles. A user may belong to several orgs with a different role in each.
  */

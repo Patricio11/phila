@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 10 — billing cluster is DB-backed. An invoice written to Postgres for
+ * Phase 10  billing cluster is DB-backed. An invoice written to Postgres for
  * Lerato surfaces on her /me/billing page (which reads `listClientInvoices`).
  */
 const DATABASE_URL = (readFileSync(".env.local", "utf8").match(/^DATABASE_URL=(.+)$/m)?.[1] ?? "").trim();

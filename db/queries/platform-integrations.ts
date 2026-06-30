@@ -4,7 +4,7 @@ import { getDb } from "@/db/client";
 import { platformIntegrations } from "@/db/schema";
 import { encryptField, decryptField } from "@/lib/crypto";
 
-/** Platform integrations (Phase 15) — super-admin-managed secrets (Phila's own PSP). */
+/** Platform integrations (Phase 15)  super-admin-managed secrets (Phila's own PSP). */
 
 /** Decrypted credentials + enabled flag. Server-only; never sent to the client. */
 export async function getPlatformIntegration(key: string): Promise<{ enabled: boolean; creds: Record<string, string> } | null> {
@@ -17,7 +17,7 @@ export async function getPlatformIntegration(key: string): Promise<{ enabled: bo
   return { enabled: row.enabled, creds };
 }
 
-/** Safe status for the UI — whether it's configured + on, without exposing the key. */
+/** Safe status for the UI  whether it's configured + on, without exposing the key. */
 export async function getPlatformIntegrationStatus(key: string): Promise<{ enabled: boolean; configured: boolean }> {
   const [row] = await getDb().select({ enabled: platformIntegrations.enabled, enc: platformIntegrations.credentialsEnc }).from(platformIntegrations).where(eq(platformIntegrations.key, key)).limit(1);
   if (!row) return { enabled: false, configured: false };
@@ -35,7 +35,7 @@ export async function setPlatformIntegrationEnabled(key: string, enabled: boolea
   await getDb().update(platformIntegrations).set({ enabled, updatedAt: new Date() }).where(eq(platformIntegrations.key, key));
 }
 
-/** The live Paystack secret — only when configured AND switched on. Used by lib/payments. */
+/** The live Paystack secret  only when configured AND switched on. Used by lib/payments. */
 export async function getPaystackSecret(): Promise<string | null> {
   const it = await getPlatformIntegration("paystack");
   if (!it || !it.enabled) return null;

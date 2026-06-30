@@ -21,8 +21,8 @@ describe("upload validation (Phase 18)", () => {
 });
 
 describe("sizeLabel", () => {
-  it("formats bytes calmly and shows — for empty", () => {
-    expect(sizeLabel(0)).toBe("—");
+  it("formats bytes calmly and shows  for empty", () => {
+    expect(sizeLabel(0)).toBe("");
     expect(sizeLabel(512)).toBe("512 B");
     expect(sizeLabel(2 * 1024 * 1024)).toBe("2 MB");
   });

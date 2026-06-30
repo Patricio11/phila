@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 15A/15B — invoice payments + subscriptions settle idempotently, and an
+ * Phase 15A/15B  invoice payments + subscriptions settle idempotently, and an
  * org gateway round-trips through encryption. No Paystack calls; we drive the
  * settle/persistence layer directly.
  */
@@ -29,7 +29,7 @@ afterAll(async () => {
   await sql`DELETE FROM org_payment_connections WHERE org_id = ${ORG}`;
 });
 
-describe("15B — client invoice payment", () => {
+describe("15B  client invoice payment", () => {
   it("marks the invoice paid once; replays no-op", async () => {
     await sql`DELETE FROM payments WHERE provider_ref = ${IREF}`;
     await sql`UPDATE invoices SET status = 'unpaid' WHERE id = ${INVOICE}`;
@@ -44,7 +44,7 @@ describe("15B — client invoice payment", () => {
   });
 });
 
-describe("15A — plan subscription", () => {
+describe("15A  plan subscription", () => {
   it("activates the paid plan once; replays no-op", async () => {
     await sql`DELETE FROM payments WHERE provider_ref = ${SREF}`;
     await sql`INSERT INTO payments (org_id, provider, provider_ref, purpose, pack_id, amount_cents, status, created_at)
@@ -60,7 +60,7 @@ describe("15A — plan subscription", () => {
   });
 });
 
-describe("15B — org gateway credentials", () => {
+describe("15B  org gateway credentials", () => {
   it("round-trips the secret through encryption and gates on enabled", async () => {
     await saveOrgGateway(ORG, "paystack", { secretKey: "sk_test_roundtrip" }, true);
     const status = await getOrgGatewayStatus(ORG);

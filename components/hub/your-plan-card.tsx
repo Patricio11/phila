@@ -19,8 +19,8 @@ const STATUS: Record<OrgSubscription["status"], { label: string; cls: string }> 
 };
 
 /**
- * The org's own Phila subscription — billed by Phila via the *system* gateway.
- * Deliberately separate from "Payments — your own gateway" (which is the org's
+ * The org's own Phila subscription  billed by Phila via the *system* gateway.
+ * Deliberately separate from "Payments  your own gateway" (which is the org's
  * BYO gateway for client invoices). Two gateways, two purposes.
  */
 export function YourPlanCard({ subscription }: { subscription: OrgSubscription }) {
@@ -62,7 +62,7 @@ export function YourPlanCard({ subscription }: { subscription: OrgSubscription }
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
         <p className="text-[12px] text-text-3">
-          Billed by <span className="font-medium text-text-2">{billedVia}</span> — Phila&apos;s gateway, separate from your own client-payment gateway above.
+          Billed by <span className="font-medium text-text-2">{billedVia}</span>  Phila&apos;s gateway, separate from your own client-payment gateway above.
         </p>
         <div className="flex gap-2">
           <Button asChild variant="ghost" size="sm"><Link href="/hub/billing">Billing &amp; usage</Link></Button>

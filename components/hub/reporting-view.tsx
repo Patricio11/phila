@@ -136,7 +136,7 @@ export function ReportingView({ initial, orgName }: { initial: ReportingResult; 
         </p>
       </div>
 
-      {/* Headline insights — computed from real outcomes (k-anon safe) */}
+      {/* Headline insights  computed from real outcomes (k-anon safe) */}
       <div className="grid gap-3 sm:grid-cols-3">
         <StatCard icon={Users} label="Clients reported" value={result.matched} coverage={coverageNote(result.withDemographics, result.totalClients, "consented")} />
         <StatCard icon={TrendingDown} label="Improved ≥5 on PHQ-9" value={`${result.improvementRate ?? 0}%`} coverage={coverageNote(result.outcome.coverage.captured, result.outcome.coverage.total, "measured")} />

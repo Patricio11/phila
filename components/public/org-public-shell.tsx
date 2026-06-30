@@ -10,10 +10,10 @@ import { Reveal } from "@/components/marketing/reveal";
 import { initials } from "@/lib/utils";
 
 /**
- * OrgPublicShell (Phase 17) — an org's editable, SEO-built micro-site. Every section
+ * OrgPublicShell (Phase 17)  an org's editable, SEO-built micro-site. Every section
  * is driven by `page.content` (org-managed, persisted) and can be shown/hidden. The
  * org's `--brand-accent` recolours only the primary actions + brand tile (auto-darkened
- * to stay AA). No PII — services, team (honest credentials), approach, FAQ, contact only.
+ * to stay AA). No PII  services, team (honest credentials), approach, FAQ, contact only.
  */
 export function OrgPublicShell({ page }: { page: OrgPublicPage }) {
   const { org } = page;
@@ -192,7 +192,7 @@ export function OrgPublicShell({ page }: { page: OrgPublicPage }) {
           <div className="flex flex-col items-start gap-4 rounded-card border border-border p-7 sm:flex-row sm:items-center sm:justify-between" style={{ background: "color-mix(in srgb, var(--brand) 9%, var(--surface))" }}>
             <div>
               <h2 className="text-[20px] font-[680] tracking-[-0.02em] text-text">Ready when you are.</h2>
-              <p className="mt-1 text-[14px] text-text-2">Booking takes a couple of minutes — confidential, no apps to install.</p>
+              <p className="mt-1 text-[14px] text-text-2">Booking takes a couple of minutes  confidential, no apps to install.</p>
             </div>
             <Link href={bookHref} className="inline-flex h-12 shrink-0 items-center gap-2 rounded-control px-6 text-[15px] font-medium text-white shadow-sm transition-[filter] hover:brightness-95" style={{ backgroundColor: "var(--brand)" }}>
               {ctaText} <ArrowRight className="size-4" strokeWidth={2.2} aria-hidden />

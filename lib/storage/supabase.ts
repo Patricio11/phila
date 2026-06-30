@@ -64,13 +64,13 @@ export function supabaseStorage(cfg: SupabaseStorageConfig): StorageProvider {
   };
 }
 
-/** Test connection — true when the bucket is reachable + the key authorises. */
+/** Test connection  true when the bucket is reachable + the key authorises. */
 export async function testSupabaseConnection(cfg: SupabaseStorageConfig): Promise<{ ok: boolean; detail?: string }> {
   try {
     const res = await fetch(`${base(cfg.url)}/bucket/${encodeURIComponent(cfg.bucket)}`, { headers: headers(cfg.serviceKey) });
     if (res.ok) return { ok: true };
-    if (res.status === 404) return { ok: false, detail: "Bucket not found — create it (private) in Supabase." };
-    if (res.status === 401 || res.status === 403) return { ok: false, detail: "Key rejected — check the service-role key." };
+    if (res.status === 404) return { ok: false, detail: "Bucket not found  create it (private) in Supabase." };
+    if (res.status === 401 || res.status === 403) return { ok: false, detail: "Key rejected  check the service-role key." };
     return { ok: false, detail: `Supabase returned ${res.status}.` };
   } catch (e) {
     return { ok: false, detail: e instanceof Error ? e.message : "Could not reach Supabase." };

@@ -34,7 +34,7 @@ export default async function HubDocumentsPage() {
     <div className="rise space-y-6">
       <PageHead
         title="Documents"
-        summary="Your practice's files, organised in folders. Move, assign to a client, share with a counsellor — everything in one calm place."
+        summary="Your practice's files, organised in folders. Move, assign to a client, share with a counsellor  everything in one calm place."
       />
       <DocumentManager
         folders={folders}

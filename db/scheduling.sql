@@ -1,4 +1,4 @@
--- Phila — scheduling integrity (Phase 11). DB-enforced no-double-booking via
+-- Phila  scheduling integrity (Phase 11). DB-enforced no-double-booking via
 -- GiST exclusion constraints: race-free and atomic, the backbone the engine
 -- trusts so two concurrent bookings can never claim the same counsellor or room.
 -- A booking's window is [starts_at, starts_at + duration). Cancelled sessions

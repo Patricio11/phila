@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 12.4 — appointment events fire notifications. notifyAppointment looks up
+ * Phase 12.4  appointment events fire notifications. notifyAppointment looks up
  * the recipient + vars and routes through deliver, recording an honest message_log
  * entry (dormant in tests, since the transports have no creds).
  */
@@ -39,6 +39,6 @@ describe("notifyAppointment", () => {
     expect(log!.trigger).toBe("booked");
     // masizakhe has SMS+Email on (WhatsApp off); no stated preference → fallback to SMS.
     expect(log!.channel).toBe("sms");
-    expect(log!.status).toBe("dormant"); // honest — no provider creds in test env
+    expect(log!.status).toBe("dormant"); // honest  no provider creds in test env
   });
 });

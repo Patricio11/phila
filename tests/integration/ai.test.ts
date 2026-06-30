@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 14 — AI scribe plumbing (no paid model calls). Verifies the platform
+ * Phase 14  AI scribe plumbing (no paid model calls). Verifies the platform
  * provider config (encrypted key, single active, decrypt for the scribe), the
  * dormant path, the org consent gate + spend cap, and cost metering.
  */

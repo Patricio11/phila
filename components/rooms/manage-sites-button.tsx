@@ -73,7 +73,7 @@ export function ManageSitesButton({ sites, roomCounts }: { sites: SiteRow[]; roo
                   type="button"
                   onClick={() => remove(s.id)}
                   disabled={rows.length === 1 || count > 0}
-                  title={count > 0 ? `${count} room${count === 1 ? "" : "s"} here — move them first` : "Remove site"}
+                  title={count > 0 ? `${count} room${count === 1 ? "" : "s"} here  move them first` : "Remove site"}
                   className="text-text-3 hover:text-danger disabled:opacity-30"
                   aria-label="Remove site"
                 >
@@ -83,7 +83,7 @@ export function ManageSitesButton({ sites, roomCounts }: { sites: SiteRow[]; roo
             );
           })}
           <FieldError>{error}</FieldError>
-          <p className="text-[11.5px] text-text-3">A site with rooms can&apos;t be removed until its rooms move — that keeps the schedule honest.</p>
+          <p className="text-[11.5px] text-text-3">A site with rooms can&apos;t be removed until its rooms move  that keeps the schedule honest.</p>
         </div>
       </Dialog>
     </>

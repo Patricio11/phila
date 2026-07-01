@@ -903,8 +903,14 @@ Intake becomes one form kind, still driving booking. Full plan + living checklis
   action → `sendFormToClients`; Responses tab (stats + list + View answers via the shared dialog) with a Send button;
   `form_sent` notification (templates + Zod enum + template-manager) + `lib/messaging/notify-form.ts` (dormant-by-default,
   builds the `/f/<token>` link). Re-seeded `form_sent` templates into Neon.
-- [ ] **Commit 4 — client fill:** public `app/f/[token]` route + submit + confirmation, `/me` Forms surface + `clientNav`.
-- [ ] **Commit 5 — polish + docs:** optional booking-intake→assignment, refresh `docs/SMOKE_TEST.md` /
+- [x] **Commit 4 — client fill:** public `app/f/[token]` route (no login) → `FormFillView` (shared renderer +
+  reused validation) → `submitForm` (server re-validates required fields against the snapshot); calm confirmation +
+  invalid/already-submitted states; SADAG crisis line. `/me/forms` portal surface + `clientNav` entry.
+- [ ] **Commit 5 — Form Designer + share link:** a **Design** tab in the builder — form-only vs form + hero panel
+  (stacks on mobile), editable hero copy, background (gradient / solid colour / uploaded image counting against org
+  storage, with cover/contain fit + colour overlay & opacity); themed two-pane rendering on `/f/<token>`; an **open
+  share link** anyone can fill.
+- [ ] **Commit 6 — polish + docs:** optional booking-intake→assignment, refresh `docs/SMOKE_TEST.md` /
   `docs/DEMO_LOGINS.md`, mark 18.6 done.
 
 ---

@@ -84,6 +84,7 @@ export const clientNav: NavSection[] = [
       { label: "Your steps", href: "/me/steps", icon: Sprout, ready: true },
       { label: "Sessions", href: "/me/sessions", icon: CalendarHeart, ready: true },
       { label: "Documents", href: "/me/documents", icon: FileText, ready: true },
+      { label: "Forms", href: "/me/forms", icon: ClipboardList, ready: true },
       { label: "Billing", href: "/me/billing", icon: CreditCard, ready: true },
       { label: "Consent", href: "/me/consent", icon: ShieldCheck, ready: true },
       { label: "Profile", href: "/me/profile", icon: UserRound, ready: true },

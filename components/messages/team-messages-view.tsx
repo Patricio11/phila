@@ -1,16 +1,17 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowLeft, Lock, MessagesSquare, PenSquare, Search, Send } from "lucide-react";
+import { ArrowLeft, Check, Lock, MessagesSquare, PenSquare, Search, Send, UsersRound } from "lucide-react";
 import type { TeamThread } from "@/lib/data-provider";
 import { TEAM_ROLE_LABELS, type TeamRole } from "@/lib/domain/enums";
 import { Avatar } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Dialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { markThreadRead, sendTeamMessage } from "@/app/app/messages/actions";
+import { createGroup, markThreadRead, sendTeamMessage } from "@/app/app/messages/actions";
 import { cn } from "@/lib/utils";
 
 function timeOf(iso: string): string {
@@ -31,6 +32,10 @@ export function TeamMessagesView({ threads: initial, teammates = [] }: { threads
   const [query, setQuery] = useState("");
   const [newOpen, setNewOpen] = useState(false);
   const [newUserId, setNewUserId] = useState<string | null>(null);
+  const [groupOpen, setGroupOpen] = useState(false);
+  const [groupTitle, setGroupTitle] = useState("");
+  const [groupMembers, setGroupMembers] = useState<Set<string>>(new Set());
+  const [creating, setCreating] = useState(false);
 
   const active = threads.find((t) => t.id === activeId) ?? null;
   const visible = useMemo(
@@ -51,7 +56,7 @@ export function TeamMessagesView({ threads: initial, teammates = [] }: { threads
     if (!mate) return;
     const id = `local_${mate.userId}`;
     if (!threads.some((t) => t.otherUserId === mate.userId)) {
-      setThreads((prev) => [{ id, otherUserId: mate.userId, otherName: mate.name, otherRole: mate.role, unread: 0, lastAt: "", messages: [] }, ...prev]);
+      setThreads((prev) => [{ id, kind: "direct", otherUserId: mate.userId, otherName: mate.name, otherRole: mate.role, unread: 0, lastAt: "", messages: [] }, ...prev]);
     }
     setNewOpen(false);
     setNewUserId(null);
@@ -65,8 +70,42 @@ export function TeamMessagesView({ threads: initial, teammates = [] }: { threads
     const msg = { id: `local_${active.messages.length}_${active.id}`, from: "me" as const, text, at: new Date().toISOString() };
     setThreads((prev) => prev.map((t) => (t.id === active.id ? { ...t, messages: [...t.messages, msg], lastAt: msg.at } : t)));
     setDraft("");
-    void sendTeamMessage({ toUserId: active.otherUserId, text }).then((res) => {
+    void sendTeamMessage({
+      threadId: active.id.startsWith("local_") ? undefined : active.id,
+      toUserId: active.otherUserId || undefined,
+      text,
+    }).then((res) => {
       if (!res.ok) toast({ tone: "error", title: res.error });
+    });
+  };
+
+  const toggleGroupMember = (userId: string) =>
+    setGroupMembers((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+
+  const createGroupNow = () => {
+    const title = groupTitle.trim();
+    const memberUserIds = [...groupMembers];
+    if (title.length < 2 || memberUserIds.length === 0) return;
+    setCreating(true);
+    void createGroup({ title, memberUserIds }).then((res) => {
+      setCreating(false);
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      const thread: TeamThread = {
+        id: res.threadId, kind: "group", otherUserId: "", otherName: title, otherRole: "counsellor",
+        memberCount: memberUserIds.length + 1, unread: 0, lastAt: new Date().toISOString(), messages: [],
+      };
+      setThreads((prev) => [thread, ...prev]);
+      setActiveId(res.threadId);
+      setMobileThread(true);
+      setGroupOpen(false);
+      setGroupTitle("");
+      setGroupMembers(new Set());
+      toast({ tone: "success", title: "Group created", description: title });
     });
   };
 
@@ -84,6 +123,11 @@ export function TeamMessagesView({ threads: initial, teammates = [] }: { threads
               <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-3" strokeWidth={2} aria-hidden />
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search team…" className="h-8 w-full rounded-control border border-border bg-surface pl-8 pr-2 text-[12.5px] text-text placeholder:text-text-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50" />
             </div>
+            {teammates.length > 0 && (
+              <button type="button" onClick={() => setGroupOpen(true)} aria-label="New group" className="inline-flex size-8 shrink-0 items-center justify-center rounded-control border border-border text-text-2 transition-colors hover:bg-surface-hover hover:text-text">
+                <UsersRound className="size-4" strokeWidth={2} aria-hidden />
+              </button>
+            )}
             {startable.length > 0 && (
               <button type="button" onClick={() => setNewOpen(true)} aria-label="New message" className="inline-flex size-8 shrink-0 items-center justify-center rounded-control border border-border text-text-2 transition-colors hover:bg-surface-hover hover:text-text">
                 <PenSquare className="size-4" strokeWidth={2} aria-hidden />
@@ -96,14 +140,14 @@ export function TeamMessagesView({ threads: initial, teammates = [] }: { threads
             ) : visible.map((t) => (
               <li key={t.id}>
                 <button type="button" onClick={() => openThread(t.id)} className={cn("flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors hover:bg-surface-hover", activeId === t.id && "bg-accent-soft/40")}>
-                  <Avatar name={t.otherName} size="md" />
+                  <ThreadAvatar thread={t} size="md" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
                       <span className="truncate text-[13.5px] font-medium text-text">{t.otherName}</span>
                       <span className="shrink-0 text-[11px] text-text-3">{t.lastAt ? timeOf(t.lastAt) : ""}</span>
                     </div>
                     <div className="mt-0.5 flex items-center justify-between gap-2">
-                      <span className="truncate text-[12px] text-text-2">{t.messages[t.messages.length - 1]?.text ?? `${TEAM_ROLE_LABELS[t.otherRole]}`}</span>
+                      <span className="truncate text-[12px] text-text-2">{t.messages[t.messages.length - 1]?.text ?? (t.kind === "group" ? `${t.memberCount ?? 0} members` : TEAM_ROLE_LABELS[t.otherRole])}</span>
                       {t.unread > 0 && <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-accent text-[10px] font-semibold text-accent-ink">{t.unread}</span>}
                     </div>
                   </div>
@@ -119,10 +163,10 @@ export function TeamMessagesView({ threads: initial, teammates = [] }: { threads
             <>
               <div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
                 <button type="button" onClick={() => setMobileThread(false)} className="lg:hidden" aria-label="Back to conversations"><ArrowLeft className="size-5 text-text-2" aria-hidden /></button>
-                <Avatar name={active.otherName} size="sm" />
+                <ThreadAvatar thread={active} size="sm" />
                 <div className="min-w-0">
                   <div className="text-[14px] font-[600] leading-tight text-text">{active.otherName}</div>
-                  <div className="text-[11px] text-text-3">{TEAM_ROLE_LABELS[active.otherRole]}</div>
+                  <div className="text-[11px] text-text-3">{active.kind === "group" ? `${active.memberCount ?? 0} members` : TEAM_ROLE_LABELS[active.otherRole]}</div>
                 </div>
               </div>
 
@@ -135,6 +179,7 @@ export function TeamMessagesView({ threads: initial, teammates = [] }: { threads
                       {showDay && <div className="my-2 text-center text-[11px] text-text-3">{dayOf(m.at)}</div>}
                       <div className={cn("flex", m.from === "me" ? "justify-end" : "justify-start")}>
                         <div className={cn("max-w-[78%] rounded-2xl px-3.5 py-2 text-[13.5px] leading-relaxed", m.from === "me" ? "bg-accent text-accent-ink" : "bg-surface text-text shadow-sm")}>
+                          {m.from === "them" && m.senderName && <div className="mb-0.5 text-[11px] font-semibold text-accent">{m.senderName}</div>}
                           {m.text}
                           <div className={cn("mt-1 text-[10px]", m.from === "me" ? "text-accent-ink/70" : "text-text-3")}>{timeOf(m.at)}</div>
                         </div>
@@ -183,6 +228,57 @@ export function TeamMessagesView({ threads: initial, teammates = [] }: { threads
       >
         <Select value={newUserId} onChange={setNewUserId} placeholder="Choose a colleague" options={startable.map((m) => ({ value: m.userId, label: `${m.name} · ${TEAM_ROLE_LABELS[m.role]}` }))} />
       </Dialog>
+
+      <Dialog
+        open={groupOpen}
+        onClose={() => setGroupOpen(false)}
+        title="New group"
+        description="Name it and add the teammates who should be in it."
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setGroupOpen(false)}>Cancel</Button>
+            <Button onClick={createGroupNow} loading={creating} disabled={groupTitle.trim().length < 2 || groupMembers.size === 0}>Create group</Button>
+          </div>
+        }
+      >
+        <div className="space-y-3">
+          <Input placeholder="Group name — e.g. Intake team" value={groupTitle} onChange={(e) => setGroupTitle(e.target.value)} />
+          <div className="text-[12px] font-medium text-text-2">Members{groupMembers.size > 0 ? ` · ${groupMembers.size} selected` : ""}</div>
+          <div className="max-h-60 space-y-1 overflow-y-auto">
+            {teammates.map((m) => {
+              const on = groupMembers.has(m.userId);
+              return (
+                <button
+                  key={m.userId}
+                  type="button"
+                  onClick={() => toggleGroupMember(m.userId)}
+                  className={cn("flex w-full items-center gap-3 rounded-control px-2.5 py-2 text-left transition-colors", on ? "bg-accent/10" : "hover:bg-surface-hover")}
+                >
+                  <Avatar name={m.name} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[13px] font-medium text-text">{m.name}</div>
+                    <div className="text-[11px] text-text-3">{TEAM_ROLE_LABELS[m.role]}</div>
+                  </div>
+                  <span className={cn("inline-flex size-4 shrink-0 items-center justify-center rounded-[5px] border", on ? "border-accent bg-accent text-white" : "border-border")}>
+                    {on && <Check className="size-3" strokeWidth={3} aria-hidden />}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </Dialog>
     </div>
   );
+}
+
+function ThreadAvatar({ thread, size }: { thread: TeamThread; size: "sm" | "md" }) {
+  if (thread.kind === "group") {
+    return (
+      <span className={cn(size === "md" ? "size-9" : "size-8", "inline-flex shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent")}>
+        <UsersRound className="size-[18px]" strokeWidth={1.9} aria-hidden />
+      </span>
+    );
+  }
+  return <Avatar name={thread.otherName} size={size} />;
 }

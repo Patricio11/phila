@@ -228,14 +228,22 @@ export interface TeamMessage {
   from: "me" | "them";
   text: string;
   at: string;
+  /** Group threads only: the sender's name (so you know who said what). */
+  senderName?: string;
 }
 
 /** An internal staff-to-staff thread (hub ↔ counsellor, counsellor ↔ counsellor). */
 export interface TeamThread {
   id: string;
+  /** A 1:1 conversation, or a named group. */
+  kind: "direct" | "group";
+  /** Direct: the other member's id. Group: "" (no single other). */
   otherUserId: string;
+  /** Direct: the other member's name. Group: the group title. */
   otherName: string;
   otherRole: import("@/lib/domain/enums").TeamRole;
+  /** Group only: how many members. */
+  memberCount?: number;
   unread: number;
   lastAt: string;
   messages: TeamMessage[];

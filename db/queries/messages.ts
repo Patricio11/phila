@@ -43,6 +43,7 @@ export async function listTeamThreadsDb(userId: string, orgId: string): Promise<
     if (arr) arr.push({ userId: mm.userId, name: mm.name });
     else membersByThread.set(mm.threadId, [{ userId: mm.userId, name: mm.name }]);
   }
+  const nameByUser = new Map(members.map((mm) => [mm.userId, mm.name]));
 
   const result: TeamThread[] = threads.map((t) => {
     const tMsgs = msgsByThread.get(t.id) ?? [];
@@ -50,14 +51,18 @@ export async function listTeamThreadsDb(userId: string, orgId: string): Promise<
     const other = tMembers.find((m) => m.userId !== userId);
     const lastRead = lastReadByThread.get(t.id) ?? null;
     const unread = tMsgs.filter((m) => m.senderUserId !== userId && (!lastRead || m.createdAt > lastRead)).length;
+    const isGroup = t.kind === "group";
     const messages: TeamMessage[] = tMsgs.map((m) => ({
       id: m.id, from: m.senderUserId === userId ? "me" : "them", text: m.body, at: m.createdAt.toISOString(),
+      senderName: isGroup && m.senderUserId !== userId ? nameByUser.get(m.senderUserId) : undefined,
     }));
     return {
       id: t.id,
-      otherUserId: other?.userId ?? "",
+      kind: (t.kind === "group" ? "group" : "direct") as "direct" | "group",
+      otherUserId: t.kind === "group" ? "" : other?.userId ?? "",
       otherName: t.kind === "group" ? t.title ?? "Group" : other?.name ?? "Team member",
       otherRole: (other ? roleByUser.get(other.userId) : undefined) ?? "counsellor",
+      memberCount: t.kind === "group" ? tMembers.length : undefined,
       unread,
       lastAt: (t.lastMessageAt ?? t.createdAt).toISOString(),
       messages,
@@ -94,6 +99,38 @@ export interface SentMessage { threadId: string; messageId: string; createdAt: s
 export async function sendTeamMessageDb(orgId: string, fromUserId: string, toUserId: string, text: string): Promise<SentMessage> {
   const db = getDb();
   const threadId = await findOrCreateDirectThread(db, orgId, fromUserId, toUserId);
+  const messageId = `tm_${randomUUID()}`;
+  const createdAt = new Date();
+  await db.insert(teamMessages).values({ id: messageId, orgId, threadId, senderUserId: fromUserId, body: text, createdAt });
+  await db.update(messageThreads).set({ lastMessageAt: createdAt }).where(eq(messageThreads.id, threadId));
+  await db.update(threadMembers).set({ lastReadAt: createdAt }).where(and(eq(threadMembers.threadId, threadId), eq(threadMembers.userId, fromUserId)));
+  return { threadId, messageId, createdAt: createdAt.toISOString() };
+}
+
+/** Create a named group thread with the creator + invited members. */
+export async function createGroupThreadDb(orgId: string, createdBy: string, title: string, memberUserIds: string[]): Promise<string> {
+  const db = getDb();
+  const threadId = `mt_${randomUUID()}`;
+  const now = new Date();
+  await db.insert(messageThreads).values({ id: threadId, orgId, kind: "group", title, createdBy, createdAt: now, lastMessageAt: now });
+  const ids = Array.from(new Set([createdBy, ...memberUserIds]));
+  await db.insert(threadMembers).values(
+    ids.map((userId) => ({ orgId, threadId, userId, lastReadAt: userId === createdBy ? now : null, joinedAt: now })),
+  );
+  return threadId;
+}
+
+/** True if the user is a member of the thread (in this org). */
+async function isThreadMember(db: Db, orgId: string, threadId: string, userId: string): Promise<boolean> {
+  const [row] = await db.select({ id: threadMembers.id }).from(threadMembers)
+    .where(and(eq(threadMembers.threadId, threadId), eq(threadMembers.userId, userId), eq(threadMembers.orgId, orgId))).limit(1);
+  return Boolean(row);
+}
+
+/** Persist a message to an existing thread (group or direct) — sender must be a member. */
+export async function sendToThreadDb(orgId: string, fromUserId: string, threadId: string, text: string): Promise<SentMessage | null> {
+  const db = getDb();
+  if (!(await isThreadMember(db, orgId, threadId, fromUserId))) return null;
   const messageId = `tm_${randomUUID()}`;
   const createdAt = new Date();
   await db.insert(teamMessages).values({ id: messageId, orgId, threadId, senderUserId: fromUserId, body: text, createdAt });

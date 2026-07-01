@@ -765,6 +765,7 @@ export const mockProvider: DataProvider = {
           const other = teamMembers.find((m) => m.userId === otherId);
           return {
             id: t.id,
+            kind: "direct" as const,
             otherUserId: otherId,
             otherName: other?.name ?? "Team member",
             otherRole: other?.teamRole ?? "counsellor",

@@ -3,8 +3,8 @@
 import { z } from "zod";
 import { requireOrg } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
-import { sendTeamMessageDb, sendToThreadDb, createGroupThreadDb, markThreadReadDb, getUserName } from "@/db/queries/messages";
-import { broadcastToThread, broadcastThreadAdded } from "@/lib/messaging/realtime";
+import { sendTeamMessageDb, sendToThreadDb, createGroupThreadDb, markThreadReadDb, getUserName, editMessageDb, deleteMessageDb } from "@/db/queries/messages";
+import { broadcastToThread, broadcastThreadAdded, broadcastMessageUpdate } from "@/lib/messaging/realtime";
 
 /**
  * Internal team messaging  staff-to-staff (hub ↔ counsellor, counsellor ↔
@@ -86,5 +86,32 @@ export async function createGroup(
 export async function markThreadRead(threadId: string): Promise<{ ok: boolean }> {
   const { principal } = await requireOrg();
   if (isDb() && threadId && !threadId.startsWith("local_")) await markThreadReadDb(threadId, principal.userId);
+  return { ok: true };
+}
+
+const editInput = z.object({ messageId: z.string().min(1), text: z.string().trim().min(1, "Message can't be empty.").max(4000) });
+export async function editMessage(raw: z.infer<typeof editInput>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg();
+  const parsed = editInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the message." };
+  if (isDb()) {
+    const threadId = await editMessageDb(parsed.data.messageId, principal.userId, parsed.data.text);
+    if (!threadId) return { ok: false, error: "You can only edit your own message." };
+    await broadcastMessageUpdate(threadId, { messageId: parsed.data.messageId, text: parsed.data.text, edited: true, deleted: false });
+  }
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole }, orgId: membership.orgId, target: `team_message:${parsed.data.messageId}`, reason: "edit_message" });
+  return { ok: true };
+}
+
+export async function deleteMessage(messageId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg();
+  const id = String(messageId ?? "");
+  if (!id || id.startsWith("local_")) return { ok: true };
+  if (isDb()) {
+    const threadId = await deleteMessageDb(id, principal.userId);
+    if (!threadId) return { ok: false, error: "You can only delete your own message." };
+    await broadcastMessageUpdate(threadId, { messageId: id, text: "", edited: false, deleted: true });
+  }
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole }, orgId: membership.orgId, target: `team_message:${id}`, reason: "delete_message" });
   return { ok: true };
 }

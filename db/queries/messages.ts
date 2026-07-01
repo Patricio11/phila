@@ -53,8 +53,10 @@ export async function listTeamThreadsDb(userId: string, orgId: string): Promise<
     const unread = tMsgs.filter((m) => m.senderUserId !== userId && (!lastRead || m.createdAt > lastRead)).length;
     const isGroup = t.kind === "group";
     const messages: TeamMessage[] = tMsgs.map((m) => ({
-      id: m.id, from: m.senderUserId === userId ? "me" : "them", text: m.body, at: m.createdAt.toISOString(),
+      id: m.id, from: m.senderUserId === userId ? "me" : "them",
+      text: m.deletedAt ? "" : m.body, at: m.createdAt.toISOString(),
       senderName: isGroup && m.senderUserId !== userId ? nameByUser.get(m.senderUserId) : undefined,
+      edited: Boolean(m.editedAt), deleted: Boolean(m.deletedAt),
     }));
     return {
       id: t.id,
@@ -149,4 +151,24 @@ export async function markThreadReadDb(threadId: string, userId: string): Promis
 export async function getUserName(userId: string): Promise<string> {
   const [row] = await getDb().select({ name: user.name }).from(user).where(eq(user.id, userId)).limit(1);
   return row?.name ?? "Someone";
+}
+
+/** Edit one's own message (author-only). Returns the thread id for the live update, or null. */
+export async function editMessageDb(messageId: string, userId: string, text: string): Promise<string | null> {
+  const db = getDb();
+  const [row] = await db.select({ threadId: teamMessages.threadId, sender: teamMessages.senderUserId, deletedAt: teamMessages.deletedAt })
+    .from(teamMessages).where(eq(teamMessages.id, messageId)).limit(1);
+  if (!row || row.sender !== userId || row.deletedAt) return null;
+  await db.update(teamMessages).set({ body: text, editedAt: new Date() }).where(eq(teamMessages.id, messageId));
+  return row.threadId;
+}
+
+/** Soft-delete one's own message (author-only). Returns the thread id, or null. */
+export async function deleteMessageDb(messageId: string, userId: string): Promise<string | null> {
+  const db = getDb();
+  const [row] = await db.select({ threadId: teamMessages.threadId, sender: teamMessages.senderUserId })
+    .from(teamMessages).where(eq(teamMessages.id, messageId)).limit(1);
+  if (!row || row.sender !== userId) return null;
+  await db.update(teamMessages).set({ deletedAt: new Date() }).where(eq(teamMessages.id, messageId));
+  return row.threadId;
 }

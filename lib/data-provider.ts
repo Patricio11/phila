@@ -230,6 +230,8 @@ export interface TeamMessage {
   at: string;
   /** Group threads only: the sender's name (so you know who said what). */
   senderName?: string;
+  edited?: boolean;
+  deleted?: boolean;
 }
 
 /** An internal staff-to-staff thread (hub ↔ counsellor, counsellor ↔ counsellor). */

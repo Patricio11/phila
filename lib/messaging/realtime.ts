@@ -63,6 +63,21 @@ export async function broadcastThreadAdded(memberUserIds: string[], thread: { id
   }
 }
 
+/** Push an edit/delete to a thread's channel so open clients update in place. */
+export async function broadcastMessageUpdate(threadId: string, payload: { messageId: string; text: string; edited: boolean; deleted: boolean }): Promise<void> {
+  try {
+    const creds = await getCreds();
+    if (!creds) return;
+    await fetch(`${creds.url.replace(/\/$/, "")}/realtime/v1/api/broadcast`, {
+      method: "POST",
+      headers: { apikey: creds.serviceKey, Authorization: `Bearer ${creds.serviceKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: [{ topic: `thread:${threadId}`, event: "update", payload }] }),
+    });
+  } catch {
+    /* best-effort */
+  }
+}
+
 /** Public config the browser needs to subscribe (url + anon key). Null = dormant. */
 export async function getRealtimePublicConfig(): Promise<{ url: string; anonKey: string } | null> {
   const creds = await getCreds();

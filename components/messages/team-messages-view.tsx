@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient, type RealtimeChannel } from "@supabase/supabase-js";
-import { ArrowLeft, Check, Lock, MessagesSquare, PenSquare, Search, Send, UsersRound } from "lucide-react";
+import { ArrowLeft, Check, Lock, MessagesSquare, Pencil, PenSquare, Search, Send, Trash2, UsersRound, X } from "lucide-react";
 import type { TeamThread } from "@/lib/data-provider";
 import { TEAM_ROLE_LABELS, type TeamRole } from "@/lib/domain/enums";
 import { Avatar } from "@/components/ui/avatar";
@@ -11,7 +11,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { createGroup, markThreadRead, sendTeamMessage } from "@/app/app/messages/actions";
+import { createGroup, deleteMessage, editMessage, markThreadRead, sendTeamMessage } from "@/app/app/messages/actions";
 import { cn } from "@/lib/utils";
 
 function timeOf(iso: string): string {
@@ -45,6 +45,8 @@ export function TeamMessagesView({
   const [query, setQuery] = useState("");
   const [online, setOnline] = useState<Set<string>>(new Set());
   const [typing, setTyping] = useState<{ threadId: string; name: string } | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState("");
   const activeIdRef = useRef(activeId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelsRef = useRef<Map<string, RealtimeChannel>>(new Map());
@@ -122,6 +124,10 @@ export function TeamMessagesView({
         if (typingTimer.current) clearTimeout(typingTimer.current);
         typingTimer.current = setTimeout(() => setTyping(null), 3500);
       });
+      ch.on("broadcast", { event: "update" }, ({ payload }) => {
+        const u = payload as { messageId: string; text: string; edited: boolean; deleted: boolean };
+        setThreads((prev) => prev.map((t) => (t.id !== id ? t : { ...t, messages: t.messages.map((m) => (m.id === u.messageId ? { ...m, text: u.deleted ? "" : u.text, edited: u.edited, deleted: u.deleted } : m)) })));
+      });
       ch.subscribe();
       channels.set(id, ch);
       return ch;
@@ -150,6 +156,24 @@ export function TeamMessagesView({
     if (now - lastTypingSent.current < 2000) return;
     lastTypingSent.current = now;
     void channelsRef.current.get(threadId)?.send({ type: "broadcast", event: "typing", payload: { userId: myUserId } });
+  };
+
+  const patchMessage = (threadId: string, messageId: string, patch: Partial<{ text: string; edited: boolean; deleted: boolean }>) =>
+    setThreads((prev) => prev.map((t) => (t.id !== threadId ? t : { ...t, messages: t.messages.map((m) => (m.id === messageId ? { ...m, ...patch } : m)) })));
+
+  const saveEdit = () => {
+    const text = editDraft.trim();
+    const id = editingId;
+    if (!id || !active || !text) return;
+    patchMessage(active.id, id, { text, edited: true });
+    setEditingId(null);
+    void editMessage({ messageId: id, text }).then((res) => { if (!res.ok) toast({ tone: "error", title: res.error }); });
+  };
+
+  const doDelete = (messageId: string) => {
+    if (!active) return;
+    patchMessage(active.id, messageId, { deleted: true, text: "" });
+    void deleteMessage(messageId).then((res) => { if (!res.ok) toast({ tone: "error", title: res.error }); });
   };
 
   // Open an existing 1:1 with a colleague, or start a fresh one.
@@ -290,12 +314,39 @@ export function TeamMessagesView({
                   return (
                     <div key={m.id}>
                       {showDay && <div className="my-2 text-center text-[11px] text-text-3">{dayOf(m.at)}</div>}
-                      <div className={cn("flex", m.from === "me" ? "justify-end" : "justify-start")}>
-                        <div className={cn("max-w-[78%] rounded-2xl px-3.5 py-2 text-[13.5px] leading-relaxed", m.from === "me" ? "bg-accent text-accent-ink" : "bg-surface text-text shadow-sm")}>
-                          {m.from === "them" && m.senderName && <div className="mb-0.5 text-[11px] font-semibold text-accent">{m.senderName}</div>}
-                          {m.text}
-                          <div className={cn("mt-1 text-[10px]", m.from === "me" ? "text-accent-ink/70" : "text-text-3")}>{timeOf(m.at)}</div>
-                        </div>
+                      <div className={cn("group flex items-end gap-1.5", m.from === "me" ? "justify-end" : "justify-start")}>
+                        {editingId === m.id ? (
+                          <div className="flex w-full max-w-[80%] items-end justify-end gap-1.5">
+                            <textarea
+                              autoFocus
+                              rows={1}
+                              value={editDraft}
+                              onChange={(e) => setEditDraft(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveEdit(); } if (e.key === "Escape") setEditingId(null); }}
+                              className="max-h-32 min-h-[38px] flex-1 resize-none rounded-2xl border border-accent/50 bg-surface px-3 py-2 text-[13.5px] text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                            />
+                            <button type="button" onClick={saveEdit} aria-label="Save" className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink"><Check className="size-4" aria-hidden /></button>
+                            <button type="button" onClick={() => setEditingId(null)} aria-label="Cancel" className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-text-3 hover:bg-surface-hover"><X className="size-4" aria-hidden /></button>
+                          </div>
+                        ) : (
+                          <>
+                            {m.from === "me" && !m.deleted && !m.id.startsWith("local_") && (
+                              <div className="mb-1 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                                <button type="button" onClick={() => { setEditingId(m.id); setEditDraft(m.text); }} aria-label="Edit message" className="inline-flex size-7 items-center justify-center rounded-control text-text-3 hover:bg-surface-hover hover:text-text"><Pencil className="size-3.5" aria-hidden /></button>
+                                <button type="button" onClick={() => doDelete(m.id)} aria-label="Delete message" className="inline-flex size-7 items-center justify-center rounded-control text-text-3 hover:bg-surface-hover hover:text-danger"><Trash2 className="size-3.5" aria-hidden /></button>
+                              </div>
+                            )}
+                            <div className={cn("max-w-[78%] rounded-2xl px-3.5 py-2 text-[13.5px] leading-relaxed", m.deleted ? "bg-surface-2 italic text-text-3" : m.from === "me" ? "bg-accent text-accent-ink" : "bg-surface text-text shadow-sm")}>
+                              {m.from === "them" && m.senderName && !m.deleted && <div className="mb-0.5 text-[11px] font-semibold text-accent">{m.senderName}</div>}
+                              {m.deleted ? "This message was deleted" : m.text}
+                              {!m.deleted && (
+                                <div className={cn("mt-1 flex items-center gap-1 text-[10px]", m.from === "me" ? "text-accent-ink/70" : "text-text-3")}>
+                                  {timeOf(m.at)}{m.edited && <span>· edited</span>}
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   );

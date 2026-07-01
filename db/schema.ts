@@ -618,6 +618,8 @@ export const teamMessages = pgTable("team_messages", {
   senderUserId: text("sender_user_id").notNull(),
   body: text("body").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  editedAt: timestamp("edited_at", { withTimezone: true }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
 }, (t) => [index("team_msgs_thread_idx").on(t.threadId, t.createdAt)]);
 
 /** Last-seen heartbeat for online presence (global per user, not org-scoped). */

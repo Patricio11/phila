@@ -127,7 +127,7 @@ suite can target later.
 - [ ] Write `docs/completed/PHASE_A_COMPLETE.md` (what shipped + verification).
 - [x] Tick **Phase 8** ✅ + date in `ROADMAP.md`.
 - [ ] Update **Current State** in `TO_START_EVERY_SESSION.md`.
-- [ ] Open `docs/PHASE_9_PLAN.md` (auth + consent recheck).
+- [ ] Open `docs/completed/PHASE_9_PLAN.md` (auth + consent recheck).
 - [ ] Commit `Part A complete + Phase 9 opens` and **tag** the Part-A-complete commit.
 
 ---

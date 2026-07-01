@@ -145,7 +145,7 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
   conformance suite**; **38 unit+contract tests green in CI** (tsc+lint+test+build); injectable clock
   (`lib/clock.ts`); typed dormant **adapters** (`lib/adapters/`). Remaining (small, no UI change):
   Playwright/axe sweep, optional loading/error flag. See `docs/completed/PHASE_A_COMPLETE.md` +
-  `docs/PHASE_A_CLOSEOUT.md`.
+  `docs/completed/PHASE_A_CLOSEOUT.md`.
 - **Phase 9** (identity, auth & consent)  ✅ **2026-06-29**. Real accounts for every role (Better Auth +
   Drizzle/Neon); sign-in routes by role; persisted **consent** (versioned, audited) + persisted **audit_log**;
   practice **sign-up** (creates org+admin); **TOTP 2FA** (enrol + challenge, gated to enrolled users). See

@@ -61,4 +61,4 @@
 
 ## Next  Phase 1
 Phila landing (`/`) + the org public page (`/o/[slug]`) with SEO scaffolding. See
-`docs/PHASE_1_PLAN.md`.
+`docs/completed/PHASE_1_PLAN.md`.

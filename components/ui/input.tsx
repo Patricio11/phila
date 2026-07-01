@@ -85,11 +85,14 @@ export function RadioGroup({
   value,
   onChange,
   invalid,
+  readOnly,
 }: {
   options: string[];
   value: string;
   onChange: (value: string) => void;
   invalid?: boolean;
+  /** Preview mode  the cards render exactly as a client sees them, but don't select. */
+  readOnly?: boolean;
 }) {
   return (
     <div role="radiogroup" className="flex flex-wrap gap-2">
@@ -101,14 +104,18 @@ export function RadioGroup({
             type="button"
             role="radio"
             aria-checked={selected}
+            disabled={readOnly}
             onClick={() => onChange(opt)}
             className={cn(
               "inline-flex min-h-11 items-center rounded-control border px-3.5 text-[13.5px] font-medium transition-colors",
+              readOnly && "cursor-default",
               selected
                 ? "border-accent bg-accent-soft text-accent"
                 : invalid
                   ? "border-danger text-text-2 hover:bg-surface-hover"
-                  : "border-border bg-surface text-text-2 hover:bg-surface-hover hover:text-text",
+                  : readOnly
+                    ? "border-border bg-surface text-text-2"
+                    : "border-border bg-surface text-text-2 hover:bg-surface-hover hover:text-text",
             )}
           >
             {opt}

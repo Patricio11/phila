@@ -1,10 +1,10 @@
 "use client";
 
-import { CheckCircle2, FileText, Send } from "lucide-react";
+import { CheckCircle2, Send } from "lucide-react";
 import type { IntakeForm } from "@/lib/domain/types";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Tag } from "@/components/ui/tag";
+import { FieldHint, Input, Label, RadioGroup, Textarea } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 function fullDate(iso: string): string {
@@ -67,7 +67,7 @@ export function IntakeDetail({
 
       {!form ? (
         <p className="text-[13px] text-text-3">No intake form is set up for this practice yet.</p>
-      ) : (
+      ) : completed ? (
         <ol className="space-y-3.5">
           {form.fields.map((f) => {
             const answer = answers?.[f.id];
@@ -75,25 +75,42 @@ export function IntakeDetail({
               <li key={f.id}>
                 <div className="flex items-center gap-1.5 text-[12.5px] font-medium text-text-2">
                   {f.label}{f.required && <span className="text-danger">*</span>}
-                  {f.sensitive && <Tag tone="neutral">Confidential</Tag>}
                 </div>
-                {completed ? (
-                  <div className={cn("mt-1 rounded-control border border-border bg-surface-2/40 px-3 py-2 text-[13.5px]", answer ? "text-text" : "italic text-text-3")}>
-                    {answer || "Left blank"}
-                  </div>
-                ) : (
-                  <div className="mt-1 text-[12px] text-text-3">
-                    {f.type === "radio" && f.options ? (
-                      <span className="flex flex-wrap gap-1.5">{f.options.map((o) => <span key={o} className="rounded-chip border border-border px-2 py-0.5">{o}</span>)}</span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5"><FileText className="size-3.5" strokeWidth={2} aria-hidden /> {f.type === "textarea" ? "Free text" : f.type === "tel" ? "Phone number" : f.type === "email" ? "Email" : "Short text"}{f.help ? ` · ${f.help}` : ""}</span>
-                    )}
-                  </div>
-                )}
+                <div className={cn("mt-1 rounded-control border border-border bg-surface-2/40 px-3 py-2 text-[13.5px]", answer ? "text-text" : "italic text-text-3")}>
+                  {answer || "Left blank"}
+                </div>
               </li>
             );
           })}
         </ol>
+      ) : (
+        // Blank-form preview  rendered exactly as a client sees it (read-only).
+        <div className="space-y-5">
+          {form.fields.map((f) => {
+            const id = `preview-${f.id}`;
+            return (
+              <div key={f.id} className="space-y-1.5">
+                <Label htmlFor={id} required={f.required} optional={!f.required}>
+                  {f.label}
+                </Label>
+                {f.type === "textarea" ? (
+                  <Textarea id={id} readOnly placeholder={f.placeholder} />
+                ) : f.type === "radio" ? (
+                  <RadioGroup readOnly options={f.options ?? []} value="" onChange={() => {}} />
+                ) : (
+                  <Input
+                    id={id}
+                    readOnly
+                    type={f.type === "tel" ? "tel" : f.type === "email" ? "email" : "text"}
+                    inputMode={f.type === "tel" ? "tel" : undefined}
+                    placeholder={f.placeholder}
+                  />
+                )}
+                {f.help ? <FieldHint>{f.help}</FieldHint> : null}
+              </div>
+            );
+          })}
+        </div>
       )}
     </Dialog>
   );

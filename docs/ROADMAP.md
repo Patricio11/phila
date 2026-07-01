@@ -899,8 +899,10 @@ Intake becomes one form kind, still driving booking. Full plan + living checklis
   `/hub/forms/[id]` (`FormDetail` — Questions/Preview tabs); shared `components/forms/form-fields.tsx` (one renderer
   now powering booking intake + hub preview + client fill); `saveForm`/`duplicateForm`/`setFormArchived`;
   `/hub/intake` redirects to `/hub/forms`; removed superseded intake-tracker/editor/actions.
-- [ ] **Commit 3 — send + responses:** `SendFormModal` (client multi-select), `sendFormToClients`, Responses tab +
-  response detail, `form_sent` notification + `lib/messaging/notify-form.ts` (dormant-by-default).
+- [x] **Commit 3 — send + responses:** `SendFormModal` (searchable client multi-select + select-all) → `sendForm`
+  action → `sendFormToClients`; Responses tab (stats + list + View answers via the shared dialog) with a Send button;
+  `form_sent` notification (templates + Zod enum + template-manager) + `lib/messaging/notify-form.ts` (dormant-by-default,
+  builds the `/f/<token>` link). Re-seeded `form_sent` templates into Neon.
 - [ ] **Commit 4 — client fill:** public `app/f/[token]` route + submit + confirmation, `/me` Forms surface + `clientNav`.
 - [ ] **Commit 5 — polish + docs:** optional booking-intake→assignment, refresh `docs/SMOKE_TEST.md` /
   `docs/DEMO_LOGINS.md`, mark 18.6 done.

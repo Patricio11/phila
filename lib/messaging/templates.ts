@@ -12,10 +12,11 @@ export type MessageTrigger =
   | "reminder"
   | "no_show"
   | "document_shared"
-  | "client_uploaded_document";
+  | "client_uploaded_document"
+  | "form_sent";
 
 export const CHANNELS: Channel[] = ["whatsapp", "sms", "email"];
-export const TRIGGERS: MessageTrigger[] = ["booked", "rescheduled", "cancelled", "reminder", "no_show", "document_shared", "client_uploaded_document"];
+export const TRIGGERS: MessageTrigger[] = ["booked", "rescheduled", "cancelled", "reminder", "no_show", "document_shared", "client_uploaded_document", "form_sent"];
 
 export interface RenderVars {
   clientName: string;
@@ -25,6 +26,8 @@ export interface RenderVars {
   date: string;
   time: string;
   documentName?: string;
+  formName?: string;
+  formLink?: string;
 }
 
 export const DEFAULT_TEMPLATES: Record<Channel, Record<MessageTrigger, string>> = {
@@ -36,6 +39,7 @@ export const DEFAULT_TEMPLATES: Record<Channel, Record<MessageTrigger, string>> 
     no_show: "Hi {clientName}, we missed you today at {practiceName}. Reply when you'd like to rebook  we're here.",
     document_shared: "Hi {clientName}, {practiceName} shared a document with you: {documentName}. Open it in your private portal. Reply STOP to opt out.",
     client_uploaded_document: "{clientName} uploaded a document ({documentName}) at {practiceName}.",
+    form_sent: "Hi {clientName}, {practiceName} would like you to fill in a quick form: {formName}. Open it here: {formLink}  it only takes a few minutes. Reply STOP to opt out.",
   },
   sms: {
     booked: "{practiceName}: your session is booked for {date} at {time}. Reply STOP to opt out.",
@@ -45,6 +49,7 @@ export const DEFAULT_TEMPLATES: Record<Channel, Record<MessageTrigger, string>> 
     no_show: "{practiceName}: we missed you today. Call us to rebook.",
     document_shared: "{practiceName}: a new document ({documentName}) is in your portal.",
     client_uploaded_document: "{practiceName}: {clientName} uploaded {documentName}.",
+    form_sent: "{practiceName}: please fill in this form ({formName}): {formLink}",
   },
   email: {
     booked: "Hi {clientName},\n\nYour {serviceName} with {counsellorName} at {practiceName} is confirmed for {date} at {time}.\n\nIf you need to change it, just reply to this email.\n\nWarmly,\n{practiceName}",
@@ -54,6 +59,7 @@ export const DEFAULT_TEMPLATES: Record<Channel, Record<MessageTrigger, string>> 
     no_show: "Hi {clientName},\n\nWe missed you at {practiceName} today  no judgement at all. Reply whenever you're ready to rebook.\n\nWarmly,\n{practiceName}",
     document_shared: "Hi {clientName},\n\n{practiceName} has shared a document with you: {documentName}. You can view it anytime in your private portal.\n\nWarmly,\n{practiceName}",
     client_uploaded_document: "{clientName} has uploaded a document ({documentName}). You can review it in the practice console.\n\n{practiceName}",
+    form_sent: "Hi {clientName},\n\n{practiceName} would like you to complete a short form: {formName}.\n\nYou can fill it in whenever suits you:\n{formLink}\n\nIt only takes a few minutes, and your answers are kept confidential.\n\nWarmly,\n{practiceName}",
   },
 };
 
@@ -65,6 +71,7 @@ export const EMAIL_SUBJECTS: Record<MessageTrigger, string> = {
   no_show: "We missed you  rebook whenever you're ready",
   document_shared: "A document was shared with you",
   client_uploaded_document: "A client uploaded a document",
+  form_sent: "A form to fill in",
 };
 
 /** Substitute `{token}` placeholders; unknown tokens render empty. */

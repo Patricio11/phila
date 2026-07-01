@@ -61,9 +61,11 @@ intake form from `forms` in DB mode (mock fallback if unseeded).
   (now also powers booking intake + the hub preview); `saveForm`/`duplicateForm`/
   `setFormArchived` actions; `/hub/intake` + `/hub/intake/form` redirect to `/hub/forms`;
   removed the superseded `intake-tracker`/`intake-form-editor`/intake actions.
-- [ ] **3 · Send + responses** — `SendFormModal` (client multi-select),
-  `sendFormToClients`, Responses tab + response detail, `form_sent` notification +
-  `lib/messaging/notify-form.ts`.
+- [x] **3 · Send + responses** — `SendFormModal` (searchable client multi-select +
+  select-all), `sendForm` action → `sendFormToClients`, Responses tab (stats + list +
+  View answers via the shared response dialog) with a Send button, `form_sent`
+  notification (templates + Zod + template-manager) + `lib/messaging/notify-form.ts`
+  (dormant-by-default; builds the `/f/<token>` link). Re-seeded the `form_sent` templates.
 - [ ] **4 · Client fill** — `app/f/[token]` route + submit + confirmation,
   `/me` Forms surface + `clientNav`.
 - [ ] **5 · Polish + docs** — optional booking-intake→assignment, refresh

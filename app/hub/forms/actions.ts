@@ -6,6 +6,7 @@ import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
 import { now as clockNow } from "@/lib/clock";
+import { notifyFormSent } from "@/lib/messaging/notify-form";
 import { FORM_KINDS, FORM_FIELD_TYPES } from "@/lib/domain/enums";
 
 /**
@@ -94,6 +95,30 @@ export async function duplicateForm(formId: string): Promise<{ ok: true; id: str
   await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `form:${res.id}`, reason: "duplicate_form" });
   revalidatePath("/hub/forms");
   return { ok: true, id: res.id };
+}
+
+const sendInput = z.object({
+  formId: z.string().min(1),
+  clientIds: z.array(z.string().min(1)).min(1, "Pick at least one client."),
+});
+
+export async function sendForm(raw: z.infer<typeof sendInput>): Promise<{ ok: true; sent: number } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = sendInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Pick at least one client." };
+  const { formId, clientIds } = parsed.data;
+
+  const provider = await getDataProvider();
+  const form = await provider.getForm(membership.orgId, formId);
+  if (!form) return { ok: false, error: "That form couldn't be found." };
+
+  const res = await provider.sendFormToClients(membership.orgId, formId, clientIds, principal.userId, clockNow());
+  // Best-effort notify (real transports only when DB-backed + messaging configured).
+  if (process.env.DATA_PROVIDER === "db") await notifyFormSent(membership.orgId, form.title, res.assignments);
+
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `form:${formId}`, reason: "send_form" });
+  revalidatePath(`/hub/forms/${formId}`);
+  return { ok: true, sent: res.sent };
 }
 
 export async function setFormArchived(formId: string, archived: boolean): Promise<{ ok: true } | { ok: false; error: string }> {

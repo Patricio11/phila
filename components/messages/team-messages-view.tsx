@@ -100,15 +100,38 @@ export function TeamMessagesView({
     presence.on("presence", { event: "sync" }, () => setOnline(new Set(Object.keys(presence.presenceState()))));
     presence.subscribe((status) => { if (status === "SUBSCRIBED") void presence.track({ userId: myUserId }); });
 
-    // Per-user channel: "you were added to a group" arrives live.
+    // Per-user channel: a thread just appeared for me  a new group I was added to,
+    // or a brand-new DM whose first message I'd otherwise miss (I'm not subscribed
+    // to its channel yet). A direct payload carries that first message inline.
     const userCh = supabase.channel(`user:${myUserId}`, chanConfig);
     userCh.on("broadcast", { event: "thread_added" }, ({ payload }) => {
-      const p = payload as { id: string; title: string; memberCount: number };
-      setThreads((prev) =>
-        prev.some((t) => t.id === p.id)
-          ? prev
-          : [{ id: p.id, kind: "group", otherUserId: "", otherName: p.title, otherRole: "counsellor", memberCount: p.memberCount, unread: 0, lastAt: new Date().toISOString(), messages: [] }, ...prev],
-      );
+      const p = payload as {
+        id: string; kind?: "direct" | "group"; title?: string; otherUserId?: string; otherName?: string; otherRole?: TeamRole; memberCount?: number;
+        message?: { id: string; senderId: string; text: string; at: string; senderName?: string; attachment?: { name: string; contentType: string; bytes: number } };
+      };
+      const incoming = p.message && p.message.senderId !== myUserId
+        ? { id: p.message.id, from: "them" as const, text: p.message.text, at: p.message.at, senderName: p.message.senderName, attachment: p.message.attachment }
+        : null;
+      setThreads((prev) => {
+        const existing = prev.find((t) => t.id === p.id);
+        if (existing) {
+          // Already known (a race, or a resend)  just append the message if it's new.
+          if (!incoming || existing.messages.some((m) => m.id === incoming.id)) return prev;
+          return prev.map((t) => (t.id !== p.id ? t : { ...t, messages: [...t.messages, incoming], lastAt: incoming.at, unread: activeIdRef.current === p.id ? 0 : t.unread + 1 }));
+        }
+        const added: TeamThread = {
+          id: p.id,
+          kind: p.kind ?? "group",
+          otherUserId: p.otherUserId ?? "",
+          otherName: p.otherName ?? p.title ?? "Team member",
+          otherRole: p.otherRole ?? "counsellor",
+          memberCount: p.memberCount,
+          unread: incoming && activeIdRef.current !== p.id ? 1 : 0,
+          lastAt: incoming?.at ?? new Date().toISOString(),
+          messages: incoming ? [incoming] : [],
+        };
+        return [added, ...prev];
+      });
     });
     userCh.subscribe();
 

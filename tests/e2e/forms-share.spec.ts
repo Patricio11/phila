@@ -44,10 +44,10 @@ test("open share link submits a real, anonymous response into the DB", async ({ 
   expect(rows[0]!.helpful).toBe("Very helpful");
 
   // It also surfaces in the Hub's Responses view for that form.
-  const [{ count }] = await sql`
+  const counted = await sql`
     SELECT count(*)::int AS count FROM form_assignments
     WHERE form_id = ${FEEDBACK_FORM} AND status = 'completed' AND client_id IS NULL AND answers->>'comments' = ${marker}`;
-  expect(count).toBe(1);
+  expect(counted[0]!.count).toBe(1);
 
   // Cleanup.
   await sql`DELETE FROM form_assignments WHERE id = ${rows[0]!.id as string}`;

@@ -49,8 +49,25 @@ export async function broadcastToThread(threadId: string, payload: RealtimeMessa
   }
 }
 
-/** Tell members (via their per-user channel) they've been added to a new group. */
-export async function broadcastThreadAdded(memberUserIds: string[], thread: { id: string; title: string; memberCount: number }): Promise<void> {
+/**
+ * Tell members (via their per-user channel) about a thread that just appeared for
+ * them  a new group they were added to, or a brand-new **direct** thread whose
+ * first message they'd otherwise miss (they aren't subscribed to its channel yet).
+ * For a direct thread we carry the first `message` so it renders immediately; the
+ * client then subscribes to the thread channel for everything after.
+ */
+export interface ThreadAddedPayload {
+  id: string;
+  kind: "direct" | "group";
+  title?: string;
+  otherUserId?: string;
+  otherName?: string;
+  otherRole?: string;
+  memberCount?: number;
+  message?: RealtimeMessagePayload;
+}
+
+export async function broadcastThreadAdded(memberUserIds: string[], thread: ThreadAddedPayload): Promise<void> {
   try {
     const creds = await getCreds();
     if (!creds || memberUserIds.length === 0) return;

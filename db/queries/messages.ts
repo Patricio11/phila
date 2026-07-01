@@ -77,8 +77,10 @@ export async function listTeamThreadsDb(userId: string, orgId: string): Promise<
   return result;
 }
 
-/** A direct thread shared by both users, or a freshly-created one. */
-async function findOrCreateDirectThread(db: Db, orgId: string, a: string, b: string): Promise<string> {
+/** A direct thread shared by both users, or a freshly-created one. `created` is
+ *  true only when a new thread was made  the recipient isn't subscribed to its
+ *  realtime channel yet, so the caller must push them a `thread_added`. */
+async function findOrCreateDirectThread(db: Db, orgId: string, a: string, b: string): Promise<{ threadId: string; created: boolean }> {
   const aThreads = await db.select({ threadId: threadMembers.threadId }).from(threadMembers)
     .where(and(eq(threadMembers.userId, a), eq(threadMembers.orgId, orgId)));
   const ids = aThreads.map((x) => x.threadId);
@@ -86,7 +88,7 @@ async function findOrCreateDirectThread(db: Db, orgId: string, a: string, b: str
     const shared = await db.select({ threadId: threadMembers.threadId }).from(threadMembers)
       .innerJoin(messageThreads, eq(threadMembers.threadId, messageThreads.id))
       .where(and(eq(threadMembers.userId, b), inArray(threadMembers.threadId, ids), eq(messageThreads.kind, "direct")));
-    if (shared[0]) return shared[0].threadId;
+    if (shared[0]) return { threadId: shared[0].threadId, created: false };
   }
   const threadId = `mt_${randomUUID()}`;
   const now = new Date();
@@ -95,10 +97,10 @@ async function findOrCreateDirectThread(db: Db, orgId: string, a: string, b: str
     { orgId, threadId, userId: a, lastReadAt: now, joinedAt: now },
     { orgId, threadId, userId: b, lastReadAt: null, joinedAt: now },
   ]);
-  return threadId;
+  return { threadId, created: true };
 }
 
-export interface SentMessage { threadId: string; messageId: string; createdAt: string }
+export interface SentMessage { threadId: string; messageId: string; createdAt: string; created?: boolean }
 export interface ChatAttachment { key: string; name: string; contentType: string; bytes: number }
 
 function attachmentCols(a?: ChatAttachment) {
@@ -113,13 +115,13 @@ function attachmentCols(a?: ChatAttachment) {
 /** Persist a direct message (find-or-create the 1:1 thread); returns the new row. */
 export async function sendTeamMessageDb(orgId: string, fromUserId: string, toUserId: string, text: string, attachment?: ChatAttachment): Promise<SentMessage> {
   const db = getDb();
-  const threadId = await findOrCreateDirectThread(db, orgId, fromUserId, toUserId);
+  const { threadId, created } = await findOrCreateDirectThread(db, orgId, fromUserId, toUserId);
   const messageId = `tm_${randomUUID()}`;
   const createdAt = new Date();
   await db.insert(teamMessages).values({ id: messageId, orgId, threadId, senderUserId: fromUserId, body: text, createdAt, ...attachmentCols(attachment) });
   await db.update(messageThreads).set({ lastMessageAt: createdAt }).where(eq(messageThreads.id, threadId));
   await db.update(threadMembers).set({ lastReadAt: createdAt }).where(and(eq(threadMembers.threadId, threadId), eq(threadMembers.userId, fromUserId)));
-  return { threadId, messageId, createdAt: createdAt.toISOString() };
+  return { threadId, messageId, createdAt: createdAt.toISOString(), created };
 }
 
 /** Create a named group thread with the creator + invited members. */

@@ -62,10 +62,21 @@ export async function sendTeamMessage(
     if (attachment) await addStorageUsage(membership.orgId, attachment.bytes);
     // Live delivery (Supabase Realtime)  best-effort, dormant if not configured.
     const senderName = await getUserName(principal.userId);
-    await broadcastToThread(sent.threadId, {
+    const msgPayload = {
       threadId: sent.threadId, id: sent.messageId, senderId: principal.userId, text: d.text, at: sent.createdAt, senderName,
       attachment: attachment ? { name: attachment.name, contentType: attachment.contentType, bytes: attachment.bytes } : undefined,
-    });
+    };
+    await broadcastToThread(sent.threadId, msgPayload);
+    // A brand-new direct thread: the recipient isn't subscribed to its channel yet,
+    // so push them a `thread_added` carrying this first message  otherwise they'd
+    // miss it until a reload. (Existing threads: they're already subscribed.)
+    if (sent.created && d.toUserId) {
+      await broadcastThreadAdded([d.toUserId], {
+        id: sent.threadId, kind: "direct",
+        otherUserId: principal.userId, otherName: senderName, otherRole: membership.teamRole,
+        message: msgPayload,
+      });
+    }
   }
 
   await logAccess({
@@ -150,7 +161,7 @@ export async function createGroup(
   if (!isDb()) return { ok: false, error: "Groups need the database." };
 
   const threadId = await createGroupThreadDb(membership.orgId, principal.userId, parsed.data.title, parsed.data.memberUserIds);
-  await broadcastThreadAdded(parsed.data.memberUserIds, { id: threadId, title: parsed.data.title, memberCount: parsed.data.memberUserIds.length + 1 });
+  await broadcastThreadAdded(parsed.data.memberUserIds, { id: threadId, kind: "group", title: parsed.data.title, memberCount: parsed.data.memberUserIds.length + 1 });
   await logAccess({
     action: "admin.action",
     actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },

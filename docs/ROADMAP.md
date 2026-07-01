@@ -827,6 +827,46 @@ every file rests in Phila's private Supabase bucket  scanned, quota-capped, sign
 
 ---
 
+## 💬 PHASE 18.5: TEAM MESSAGING  REAL-TIME STAFF CHAT ✅ (2026-07-01)
+*Goal: make the internal staff chat real, add group conversations, and light it up with **live delivery +
+presence**  world-class (push), not polling.*
+
+> Was 100% mock (the send only logged; threads came from fixtures). Now **Neon is the source of truth** with
+> **Supabase Realtime** for live delivery + presence  reusing the Phila Storage · Supabase integration (url +
+> service-role + **anon key**). The chat is **Dormant-by-Default**: without the anon key it falls back to
+> load-on-refresh; nothing is ever lost (messages persist regardless of the socket).
+
+- [x] **Real persistence (2026-07-01):** `message_threads` · `thread_members` (+ read cursor for unread) ·
+  `team_messages` · `user_presence` (migration 0022, RLS on the three org-scoped tables, seeded from the fixture
+  threads). `db/queries/messages.ts`  list threads (messages + unread + names/roles), send (find-or-create the 1:1
+  thread), mark-read. Provider `listTeamThreads(userId, orgId)` DB-backed; `sendTeamMessage` persists; `markThreadRead`.
+- [x] **Group chat (2026-07-01):** create a named group + invite teammates (`createGroup`), group threads with a
+  member count + group avatar, **per-message sender names**; unified send (by `threadId` for a group/existing
+  thread, or by `toUserId` for a new 1:1).
+- [x] **Supabase Realtime  live + presence (2026-07-01):** `lib/messaging/realtime.ts` broadcasts each new message
+  to its **per-thread channel** (keyed by the unguessable `mt_<uuid>` id) on send; the client subscribes via
+  `@supabase/supabase-js` for **instant delivery** (dedup + unread bump; own messages skipped) and joins an **org
+  Presence channel** for real **online dots** + "Active now"; smooth **auto-scroll**. The super-admin pastes the
+  Supabase **anon (public) key** in Admin → Integrations → Phila Storage.
+- [ ] **Follow-ups (not blockers):** a live "you were added to a group" push (new-group members currently see it on
+  next load, then it's live); **private channels + Supabase RLS authorization** (mint a Supabase-compatible JWT from
+  the Better Auth session) as the security hardening; typing indicators; message edit/delete + attachments.
+
+**Done when:** staff chat persists, groups work, and messages + presence are live across sessions  proven with two
+roles side-by-side. ✅ **Met** (tsc/lint/build + 119 tests green throughout the four commits).
+
+### Platform refinements (same pass, 2026-06-30 → 07-01)
+- **Admin Integrations console reworked:** **tabs** (Phila platform vs Org connections), beautiful summary cards +
+  **per-integration config pages** (`/admin/integrations/[slug]`, back-linked), and **SMS · BulkSMS + Email · Resend**
+  added as **admin-managed** system integrations (were env-only; transports read DB creds first, fall back to env).
+  Fixed the catalogue mislabel (SMS "Clickatell" → **BulkSMS**).
+- **Landing pricing switch:** a super-admin toggle (Plans & billing) shows/hides the pricing tiers on the public
+  landing  **default hidden** while pricing is finalised; a new marketing **Pricing** section reads `lib/billing/plans.ts`.
+- **Global dialog fix:** the single-character-defocus bug in **every** dialog (the focus effect depended on a fresh
+  `onClose` each render, refocusing the panel on every keystroke).
+
+---
+
 ## 🔒 PHASE 19: TRUST, SECURITY & POPIA HARDENING
 *Goal: be allowed in the room with the most sensitive data there is.*
 - [ ] **Data residency:** migrate Postgres to an SA region (AWS `af-south-1` / Azure SA North) on the `db/client.ts` swap; confirm storage + AI inference residency posture; document cross-border flows.

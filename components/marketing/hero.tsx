@@ -34,9 +34,9 @@ export function Hero() {
           </h1>
 
           <p className="mt-5 max-w-md text-[15.5px] leading-relaxed text-text-2">
-            Phila is the calm operating system for counselling teams  the daily clinical loop,
-            programme-grade oversight, and funder reporting that falls out of the work instead of
-            being a second job.
+            The calm operating system for counselling teams  booking, sessions, the team and its
+            documents, invoicing, and funder reporting in one place. The reporting falls out of the
+            work instead of being a second job.
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-3">

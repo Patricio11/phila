@@ -8,16 +8,17 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const LINKS = [
+const BASE_LINKS = [
   { label: "How it works", href: "#how" },
   { label: "For funders", href: "#funders" },
   { label: "Trust", href: "#trust" },
   { label: "Who it's for", href: "#who" },
 ];
 
-export function SiteNav() {
+export function SiteNav({ showPricing = false }: { showPricing?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const LINKS = showPricing ? [...BASE_LINKS, { label: "Pricing", href: "#pricing" }] : BASE_LINKS;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);

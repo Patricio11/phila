@@ -3,6 +3,8 @@ import { SiteNav } from "@/components/marketing/site-nav";
 import { Hero } from "@/components/marketing/hero";
 import { DailyLoop } from "@/components/marketing/daily-loop";
 import { Pillars } from "@/components/marketing/pillars";
+import { OnePlace } from "@/components/marketing/one-place";
+import { ClientExperience } from "@/components/marketing/client-experience";
 import { FunderStory } from "@/components/marketing/funder-story";
 import { TrustBand } from "@/components/marketing/trust-band";
 import { WhoItsFor } from "@/components/marketing/who-its-for";
@@ -45,11 +47,13 @@ export default async function LandingPage() {
   const showPricing = await pricingEnabled();
   return (
     <>
-      <SiteNav />
+      <SiteNav showPricing={showPricing} />
       <main>
         <Hero />
         <DailyLoop />
         <Pillars />
+        <OnePlace />
+        <ClientExperience />
         <FunderStory />
         <TrustBand />
         <WhoItsFor />

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronLeft, Settings } from "lucide-react";
-import { BrandMark } from "@/components/brand/aloe-mark";
+import { BrandMark } from "@/components/brand/logo";
 import type { NavSection } from "@/components/shell/nav-config";
 import { cn } from "@/lib/utils";
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Building2, CalendarClock, Check, FileCheck2, PartyPopper, ShieldCheck, Upload } from "lucide-react";
 import type { OnboardingRequirement } from "@/lib/data-provider";
-import { BrandMark } from "@/components/brand/aloe-mark";
+import { BrandMark } from "@/components/brand/logo";
 import { Input, Label } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { completeOnboarding } from "@/app/(auth)/actions";

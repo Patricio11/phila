@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Lock, MapPin, ShieldCheck } from "lucide-react";
-import { BrandMark } from "@/components/brand/aloe-mark";
+import { BrandMark } from "@/components/brand/logo";
 
 /**
  * AuthShell  the calm, branded frame for sign-in / sign-up / reset. A warm

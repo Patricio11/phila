@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Phone, Sprout } from "lucide-react";
+import { CheckCircle2, Phone } from "lucide-react";
 import type { FormSnapshot, FormTheme } from "@/lib/domain/types";
 import { Button } from "@/components/ui/button";
+import { BrandMark } from "@/components/brand/logo";
 import { FormFields } from "@/components/forms/form-fields";
 import { HeroPanel } from "@/components/forms/form-theme";
 import { intakeErrors } from "@/components/booking/validation";
@@ -81,7 +82,7 @@ export function FormFillView({
     <main className="flex min-h-dvh flex-col items-center justify-center bg-surface-2 px-4 py-10">
       <div className="w-full max-w-lg">
         <div className="mb-5 flex items-center justify-center gap-2 text-text-2">
-          <span className="flex size-7 items-center justify-center rounded-lg bg-accent text-white"><Sprout className="size-4" strokeWidth={2} aria-hidden /></span>
+          <BrandMark size={28} />
           <span className="text-[15px] font-[680] tracking-[-0.01em] text-text">Phila</span>
         </div>
         <div className="overflow-hidden rounded-card border border-border bg-surface shadow-e2">

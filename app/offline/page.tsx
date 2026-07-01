@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CloudOff } from "lucide-react";
-import { BrandMark } from "@/components/brand/aloe-mark";
+import { BrandMark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 
 export const metadata = { title: "Offline" };

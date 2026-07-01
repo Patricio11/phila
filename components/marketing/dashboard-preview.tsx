@@ -8,7 +8,7 @@ import {
   UserX,
   Video,
 } from "lucide-react";
-import { BrandMark } from "@/components/brand/aloe-mark";
+import { BrandMark } from "@/components/brand/logo";
 import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardHead } from "@/components/ui/card";
 import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";

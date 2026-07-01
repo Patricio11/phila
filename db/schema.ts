@@ -596,10 +596,14 @@ export const messageThreads = pgTable("message_threads", {
   orgId: text("org_id").notNull().references(() => orgs.id),
   kind: text("kind").default("direct").notNull(), // direct | group
   title: text("title"), // null for direct (derived from the other member)
+  // For direct threads only: `<orgId>:<sorted member ids>`  a unique key that
+  // makes "one 1:1 thread per pair" a DB guarantee (no find-then-create race).
+  // Null for groups; Postgres treats NULLs as distinct, so many groups coexist.
+  pairKey: text("pair_key"),
   createdBy: text("created_by"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
   lastMessageAt: timestamp("last_message_at", { withTimezone: true }),
-}, (t) => [index("msg_threads_org_idx").on(t.orgId)]);
+}, (t) => [index("msg_threads_org_idx").on(t.orgId), uniqueIndex("thread_pair_uq").on(t.pairKey)]);
 
 /** Membership of a thread + each member's read cursor (for unread counts). */
 export const threadMembers = pgTable("thread_members", {

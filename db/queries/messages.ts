@@ -77,22 +77,36 @@ export async function listTeamThreadsDb(userId: string, orgId: string): Promise<
   return result;
 }
 
+/** The stable key for a 1:1 thread: org-scoped, member-order-independent. */
+export function directPairKey(orgId: string, a: string, b: string): string {
+  return `${orgId}:${[a, b].sort().join(":")}`;
+}
+
 /** A direct thread shared by both users, or a freshly-created one. `created` is
  *  true only when a new thread was made  the recipient isn't subscribed to its
- *  realtime channel yet, so the caller must push them a `thread_added`. */
+ *  realtime channel yet, so the caller must push them a `thread_added`.
+ *
+ *  One thread per pair is a DB guarantee via the unique `pair_key`: if two first
+ *  messages race, the second insert hits the conflict and reuses the winner's
+ *  thread (never a duplicate). */
 async function findOrCreateDirectThread(db: Db, orgId: string, a: string, b: string): Promise<{ threadId: string; created: boolean }> {
-  const aThreads = await db.select({ threadId: threadMembers.threadId }).from(threadMembers)
-    .where(and(eq(threadMembers.userId, a), eq(threadMembers.orgId, orgId)));
-  const ids = aThreads.map((x) => x.threadId);
-  if (ids.length) {
-    const shared = await db.select({ threadId: threadMembers.threadId }).from(threadMembers)
-      .innerJoin(messageThreads, eq(threadMembers.threadId, messageThreads.id))
-      .where(and(eq(threadMembers.userId, b), inArray(threadMembers.threadId, ids), eq(messageThreads.kind, "direct")));
-    if (shared[0]) return { threadId: shared[0].threadId, created: false };
-  }
+  const pairKey = directPairKey(orgId, a, b);
+  const [existing] = await db.select({ threadId: messageThreads.id }).from(messageThreads)
+    .where(eq(messageThreads.pairKey, pairKey)).limit(1);
+  if (existing) return { threadId: existing.threadId, created: false };
+
   const threadId = `mt_${randomUUID()}`;
   const now = new Date();
-  await db.insert(messageThreads).values({ id: threadId, orgId, kind: "direct", title: null, createdBy: a, createdAt: now, lastMessageAt: now });
+  const inserted = await db.insert(messageThreads)
+    .values({ id: threadId, orgId, kind: "direct", title: null, pairKey, createdBy: a, createdAt: now, lastMessageAt: now })
+    .onConflictDoNothing({ target: messageThreads.pairKey })
+    .returning({ id: messageThreads.id });
+  if (!inserted.length) {
+    // Lost the create race  another request just made this thread. Reuse it.
+    const [row] = await db.select({ threadId: messageThreads.id }).from(messageThreads)
+      .where(eq(messageThreads.pairKey, pairKey)).limit(1);
+    return { threadId: row?.threadId ?? threadId, created: false };
+  }
   await db.insert(threadMembers).values([
     { orgId, threadId, userId: a, lastReadAt: now, joinedAt: now },
     { orgId, threadId, userId: b, lastReadAt: null, joinedAt: now },

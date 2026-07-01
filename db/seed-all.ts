@@ -258,6 +258,7 @@ async function main() {
     const lastAt = last ? new Date(last.at) : now;
     await db.insert(schema.messageThreads).values({
       id: t.id, orgId: "org_masizakhe", kind: "direct", title: null,
+      pairKey: `org_masizakhe:${[...t.participants].sort().join(":")}`,
       createdBy: t.participants[0], createdAt: firstAt, lastMessageAt: lastAt,
     }).onConflictDoNothing();
     for (const uid of t.participants) {

@@ -8,7 +8,6 @@ import { TEAM_ROLE_LABELS, type TeamRole } from "@/lib/domain/enums";
 import { Avatar } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Dialog } from "@/components/ui/dialog";
-import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
@@ -48,9 +47,10 @@ export function TeamMessagesView({
   const activeIdRef = useRef(activeId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [newOpen, setNewOpen] = useState(false);
-  const [newUserId, setNewUserId] = useState<string | null>(null);
+  const [newQuery, setNewQuery] = useState("");
   const [groupOpen, setGroupOpen] = useState(false);
   const [groupTitle, setGroupTitle] = useState("");
+  const [groupQuery, setGroupQuery] = useState("");
   const [groupMembers, setGroupMembers] = useState<Set<string>>(new Set());
   const [creating, setCreating] = useState(false);
 
@@ -59,7 +59,7 @@ export function TeamMessagesView({
     () => threads.filter((t) => t.otherName.toLowerCase().includes(query.trim().toLowerCase())),
     [threads, query],
   );
-  const startable = teammates.filter((m) => !threads.some((t) => t.otherUserId === m.userId));
+  const matchName = (q: string) => (m: Teammate) => m.name.toLowerCase().includes(q.trim().toLowerCase());
 
   // Keep the active thread readable inside the (stable) realtime handler.
   useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
@@ -112,17 +112,19 @@ export function TeamMessagesView({
     void markThreadRead(id);
   };
 
-  const startConversation = () => {
-    const mate = teammates.find((m) => m.userId === newUserId);
-    if (!mate) return;
-    const id = `local_${mate.userId}`;
-    if (!threads.some((t) => t.otherUserId === mate.userId)) {
+  // Open an existing 1:1 with a colleague, or start a fresh one.
+  const startWith = (mate: Teammate) => {
+    const existing = threads.find((t) => t.kind === "direct" && t.otherUserId === mate.userId);
+    if (existing) {
+      setActiveId(existing.id);
+    } else {
+      const id = `local_${mate.userId}`;
       setThreads((prev) => [{ id, kind: "direct", otherUserId: mate.userId, otherName: mate.name, otherRole: mate.role, unread: 0, lastAt: "", messages: [] }, ...prev]);
+      setActiveId(id);
     }
-    setNewOpen(false);
-    setNewUserId(null);
-    setActiveId(id);
     setMobileThread(true);
+    setNewOpen(false);
+    setNewQuery("");
   };
 
   const send = () => {
@@ -170,7 +172,7 @@ export function TeamMessagesView({
     });
   };
 
-  if (threads.length === 0 && startable.length === 0) {
+  if (threads.length === 0 && teammates.length === 0) {
     return <EmptyState icon={MessagesSquare} title="No team messages yet" body="Messages with your colleagues will appear here." />;
   }
 
@@ -178,7 +180,7 @@ export function TeamMessagesView({
     <div className="overflow-hidden rounded-card border border-border bg-surface shadow-sm">
       <div className="grid h-[calc(100dvh-220px)] min-h-[420px] grid-cols-1 lg:grid-cols-[300px_1fr]">
         {/* Thread list */}
-        <div className={cn("flex flex-col border-r border-border", mobileThread && "hidden lg:flex")}>
+        <div className={cn("flex min-h-0 flex-col border-r border-border", mobileThread && "hidden lg:flex")}>
           <div className="flex items-center gap-2 border-b border-border p-2.5">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-3" strokeWidth={2} aria-hidden />
@@ -189,13 +191,13 @@ export function TeamMessagesView({
                 <UsersRound className="size-4" strokeWidth={2} aria-hidden />
               </button>
             )}
-            {startable.length > 0 && (
+            {teammates.length > 0 && (
               <button type="button" onClick={() => setNewOpen(true)} aria-label="New message" className="inline-flex size-8 shrink-0 items-center justify-center rounded-control border border-border text-text-2 transition-colors hover:bg-surface-hover hover:text-text">
                 <PenSquare className="size-4" strokeWidth={2} aria-hidden />
               </button>
             )}
           </div>
-          <ul className="flex-1 divide-y divide-border overflow-y-auto">
+          <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">
             {visible.length === 0 ? (
               <li className="px-3.5 py-6 text-center text-[12.5px] text-text-3">No matches.</li>
             ) : visible.map((t) => (
@@ -219,7 +221,7 @@ export function TeamMessagesView({
         </div>
 
         {/* Thread */}
-        <div className={cn("flex flex-col", !mobileThread && "hidden lg:flex")}>
+        <div className={cn("flex min-h-0 flex-col", !mobileThread && "hidden lg:flex")}>
           {active ? (
             <>
               <div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
@@ -237,7 +239,7 @@ export function TeamMessagesView({
                 </div>
               </div>
 
-              <div className="flex-1 space-y-2.5 overflow-y-auto bg-surface-2/40 p-4">
+              <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto bg-surface-2/40 p-4">
                 {active.messages.length === 0 && <p className="pt-8 text-center text-[12.5px] text-text-3">Start the conversation with {active.otherName.split(" ")[0]}.</p>}
                 {active.messages.map((m, i) => {
                   const showDay = i === 0 || dayOf(m.at) !== dayOf(active.messages[i - 1]!.at);
@@ -284,22 +286,39 @@ export function TeamMessagesView({
 
       <Dialog
         open={newOpen}
-        onClose={() => setNewOpen(false)}
+        onClose={() => { setNewOpen(false); setNewQuery(""); }}
         title="New message"
-        description="Start a conversation with a colleague."
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setNewOpen(false)}>Cancel</Button>
-            <Button onClick={startConversation} disabled={!newUserId}>Start</Button>
-          </div>
-        }
+        description="Search your team and tap someone to start."
       >
-        <Select value={newUserId} onChange={setNewUserId} placeholder="Choose a colleague" options={startable.map((m) => ({ value: m.userId, label: `${m.name} · ${TEAM_ROLE_LABELS[m.role]}` }))} />
+        <MemberSearch query={newQuery} onQuery={setNewQuery} placeholder="Search colleagues…" />
+        <div className="mt-2 max-h-72 space-y-0.5 overflow-y-auto">
+          {teammates.filter(matchName(newQuery)).length === 0 ? (
+            <p className="py-8 text-center text-[12.5px] text-text-3">No colleagues found.</p>
+          ) : (
+            teammates.filter(matchName(newQuery)).map((m) => (
+              <button
+                key={m.userId}
+                type="button"
+                onClick={() => startWith(m)}
+                className="flex w-full items-center gap-3 rounded-control px-2.5 py-2.5 text-left transition-colors hover:bg-surface-hover"
+              >
+                <span className="relative inline-flex shrink-0">
+                  <Avatar name={m.name} size="sm" />
+                  {online.has(m.userId) && <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-surface bg-emerald-500" />}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[13.5px] font-medium text-text">{m.name}</div>
+                  <div className="text-[11px] text-text-3">{online.has(m.userId) ? <span className="text-emerald-600">Active now</span> : TEAM_ROLE_LABELS[m.role]}</div>
+                </div>
+              </button>
+            ))
+          )}
+        </div>
       </Dialog>
 
       <Dialog
         open={groupOpen}
-        onClose={() => setGroupOpen(false)}
+        onClose={() => { setGroupOpen(false); setGroupQuery(""); }}
         title="New group"
         description="Name it and add the teammates who should be in it."
         footer={
@@ -312,8 +331,9 @@ export function TeamMessagesView({
         <div className="space-y-3">
           <Input placeholder="Group name — e.g. Intake team" value={groupTitle} onChange={(e) => setGroupTitle(e.target.value)} />
           <div className="text-[12px] font-medium text-text-2">Members{groupMembers.size > 0 ? ` · ${groupMembers.size} selected` : ""}</div>
-          <div className="max-h-60 space-y-1 overflow-y-auto">
-            {teammates.map((m) => {
+          <MemberSearch query={groupQuery} onQuery={setGroupQuery} placeholder="Search colleagues…" />
+          <div className="max-h-56 space-y-1 overflow-y-auto">
+            {teammates.filter(matchName(groupQuery)).map((m) => {
               const on = groupMembers.has(m.userId);
               return (
                 <button
@@ -356,5 +376,14 @@ function ThreadAvatar({ thread, size, online }: { thread: TeamThread; size: "sm"
         <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-surface bg-emerald-500" aria-label="Online" />
       )}
     </span>
+  );
+}
+
+function MemberSearch({ query, onQuery, placeholder }: { query: string; onQuery: (v: string) => void; placeholder: string }) {
+  return (
+    <div className="relative">
+      <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-3" strokeWidth={2} aria-hidden />
+      <Input placeholder={placeholder} value={query} onChange={(e) => onQuery(e.target.value)} className="pl-9" />
+    </div>
   );
 }

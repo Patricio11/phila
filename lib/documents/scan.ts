@@ -8,7 +8,7 @@ import type { ScanStatus } from "@/lib/domain/enums";
  * ClamAV (self-host, in-region) or a hosted AV API here.
  *
  * No scanner is wired yet, so this returns `clean`. This is the documented
- * follow-up before public launch (docs/PHASE_18_PLAN.md §13). Until then, uploads
+ * follow-up before public launch (docs/completed/PHASE_18_PLAN.md §13). Until then, uploads
  * are trusted; the gate + this single chokepoint mean wiring a real scanner is a
  * one-file change with no call-site churn.
  */

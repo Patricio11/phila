@@ -3,7 +3,7 @@
  * the mock + db providers and the document manager UI.
  *
  * Phase 18.1 uses a flat per-plan default; wiring the real `plans.storageGb`
- * entitlement is a deliberate follow-up (see docs/PHASE_18_PLAN.md §7).
+ * entitlement is a deliberate follow-up (see docs/completed/PHASE_18_PLAN.md §7).
  */
 export const DEFAULT_STORAGE_GB = 5;
 export const BYTES_PER_GB = 1024 ** 3;

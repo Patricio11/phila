@@ -759,7 +759,7 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 *Goal: a beautiful, smooth document workspace for the org  folders, drag-to-move, assign-to-client,
 request-gated client uploads, and org→counsellor sharing  all on Phila Storage (Supabase), POPIA-safe.*
 
-> **Full plan: `docs/PHASE_18_PLAN.md`.** Real file storage was always staged to land "with the documents
+> **Full write-up: `docs/completed/PHASE_18_COMPLETE.md`** (plan: `docs/completed/PHASE_18_PLAN.md`). Real file storage was always staged to land "with the documents
 > feature" (Phase 10 closeout)  this is that feature. **Phila Storage only** (Supabase now; S3 later behind the
 > same `StorageProvider` seam, no interface change); **Google Drive dropped**  clinical special-category PII
 > never leaves Phila's controlled, in-region store. Three honest **access lanes**: the **org owns + organises**,

@@ -60,7 +60,7 @@ export async function sendTeamMessage(
     messageId = sent.messageId;
     // The attachment's bytes count against the org's storage.
     if (attachment) await addStorageUsage(membership.orgId, attachment.bytes);
-    // Live delivery (Supabase Realtime) — best-effort, dormant if not configured.
+    // Live delivery (Supabase Realtime)  best-effort, dormant if not configured.
     const senderName = await getUserName(principal.userId);
     await broadcastToThread(sent.threadId, {
       threadId: sent.threadId, id: sent.messageId, senderId: principal.userId, text: d.text, at: sent.createdAt, senderName,
@@ -96,7 +96,7 @@ export async function requestChatUpload(raw: z.infer<typeof chatUploadInput>): P
   if (storage.status !== "live") return { ok: false, error: "Attachments aren't switched on yet." };
   const used = await currentStorageBytes(membership.orgId);
   if (used + parsed.data.bytes > storageLimitBytes())
-    return { ok: false, error: "Your practice's storage is full — free up space or upgrade." };
+    return { ok: false, error: "Your practice's storage is full  free up space or upgrade." };
 
   const key = objectKey(membership.orgId, `chat_${randomUUID()}`, parsed.data.name);
   try {
@@ -117,7 +117,7 @@ export async function getRealtimeToken(): Promise<{ token: string } | null> {
   return { token: signRealtimeToken(principal.userId, topics, secret) };
 }
 
-/** A short-TTL signed URL to open a chat attachment — members only. */
+/** A short-TTL signed URL to open a chat attachment  members only. */
 export async function signChatAttachment(raw: { messageId: string }): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
   const { principal, membership } = await requireOrg();
   const messageId = String(raw?.messageId ?? "");

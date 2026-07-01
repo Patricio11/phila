@@ -4,10 +4,10 @@ import { ProductFrame } from "@/components/marketing/product-frame";
 import { Card, CardHead } from "@/components/ui/card";
 
 const POINTS = [
-  { icon: Video, title: "Book in a couple of taps", body: "From your public page, on a phone, on metered data — service, time, consent, done." },
-  { icon: MessageCircle, title: "Reminders on WhatsApp", body: "Booked, reminded, rescheduled — on the channel they already use every day." },
+  { icon: Video, title: "Book in a couple of taps", body: "From your public page, on a phone, on metered data  service, time, consent, done." },
+  { icon: MessageCircle, title: "Reminders on WhatsApp", body: "Booked, reminded, rescheduled  on the channel they already use every day." },
   { icon: Sprout, title: "A private space of their own", body: "Their sessions, documents, invoices, and the next steps their counsellor chooses to share." },
-  { icon: ShieldCheck, title: "Crisis help, one tap away", body: "SADAG front and centre — a person in distress is never left to hunt for support." },
+  { icon: ShieldCheck, title: "Crisis help, one tap away", body: "SADAG front and centre  a person in distress is never left to hunt for support." },
 ];
 
 const STEPS = [
@@ -16,7 +16,7 @@ const STEPS = [
   { text: "Read the worksheet Nomsa shared", done: false },
 ];
 
-/** The client / human side — what the people you serve actually experience. */
+/** The client / human side  what the people you serve actually experience. */
 export function ClientExperience() {
   return (
     <section className="bg-surface-2/40 py-16 sm:py-24">
@@ -24,11 +24,11 @@ export function ClientExperience() {
         <Reveal>
           <span className="text-[12.5px] font-semibold uppercase tracking-[0.08em] text-accent">For the people you serve</span>
           <h2 className="mt-3 text-[clamp(1.6rem,3.2vw,2.3rem)] font-[680] leading-[1.14] tracking-[-0.03em] text-text">
-            Your clients get a calm, private space — not a portal they dread.
+            Your clients get a calm, private space  not a portal they dread.
           </h2>
           <p className="mt-4 text-[15.5px] leading-relaxed text-text-2">
             Booking that takes two taps, reminders where they already are, and a private home for their whole
-            journey. The care is yours — Phila just makes it feel effortless for them.
+            journey. The care is yours  Phila just makes it feel effortless for them.
           </p>
 
           <ul className="mt-6 space-y-4">
@@ -81,7 +81,7 @@ export function ClientExperience() {
                   <Phone className="size-3.5 text-accent" strokeWidth={2} aria-hidden /> If you need to talk now
                 </div>
                 <p className="mt-1 text-[12px] leading-relaxed text-text-2">
-                  SADAG · <span className="font-semibold text-text">0800 567 567</span> — free, any time. You never have to hunt for help.
+                  SADAG · <span className="font-semibold text-text">0800 567 567</span>  free, any time. You never have to hunt for help.
                 </p>
               </div>
             </div>

@@ -8,7 +8,7 @@ import { getMessagingSettings } from "@/db/queries/messaging";
 /**
  * Document notifications (Phase 18), routed through the Phase-12 deliver chokepoint
  * (consent / opt-out / quiet-hours / credits all honoured; dormant channels never
- * fake a send). Never throws — a notification failure must not break the action.
+ * fake a send). Never throws  a notification failure must not break the action.
  */
 async function loadDoc(documentId: string) {
   const [row] = await getDb()
@@ -52,7 +52,7 @@ export async function notifyClientUpload(documentId: string): Promise<void> {
     if (!row) return;
     const settings = await getMessagingSettings(row.orgId);
     const practiceEmail = settings.emailReplyTo;
-    if (!practiceEmail) return; // no staff address to notify — the Hub's "Needs review" view still surfaces it
+    if (!practiceEmail) return; // no staff address to notify  the Hub's "Needs review" view still surfaces it
     await deliver({
       orgId: row.orgId,
       trigger: "client_uploaded_document",

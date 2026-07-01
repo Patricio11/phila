@@ -26,7 +26,7 @@ export function IntegrationsTabs({ statuses, catalogue }: { statuses: Record<str
 
       {tab === "platform" ? (
         <>
-          <p className="text-[12.5px] text-text-3">Phila&apos;s own gateways — payments, video, storage, and messaging. Configure, test, then switch on. Encrypted at rest; never env vars.</p>
+          <p className="text-[12.5px] text-text-3">Phila&apos;s own gateways  payments, video, storage, and messaging. Configure, test, then switch on. Encrypted at rest; never env vars.</p>
           <div className="grid gap-2.5 sm:grid-cols-2">
             {PLATFORM_INTEGRATIONS.map((m) => {
               const st = statuses[m.slug] ?? { enabled: false, configured: false };
@@ -58,7 +58,7 @@ export function IntegrationsTabs({ statuses, catalogue }: { statuses: Record<str
         </>
       ) : (
         <>
-          <p className="text-[12.5px] text-text-3">What each org may connect or use for itself — WhatsApp (their own number), the payment gateways for client invoices, and the providers available platform-wide. Set each off · mock · live.</p>
+          <p className="text-[12.5px] text-text-3">What each org may connect or use for itself  WhatsApp (their own number), the payment gateways for client invoices, and the providers available platform-wide. Set each off · mock · live.</p>
           <IntegrationsCatalogue initial={catalogue} />
         </>
       )}

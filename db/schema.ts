@@ -590,7 +590,7 @@ export const orgStorageUsage = pgTable("org_storage_usage", {
 
 /* ── Team messaging cluster (internal staff chat) ─────────────────────── */
 
-/** An internal staff-to-staff conversation — a 1:1 (direct) or a named group. */
+/** An internal staff-to-staff conversation  a 1:1 (direct) or a named group. */
 export const messageThreads = pgTable("message_threads", {
   id: text("id").primaryKey(),
   orgId: text("org_id").notNull().references(() => orgs.id),

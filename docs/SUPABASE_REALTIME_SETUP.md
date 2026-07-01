@@ -1,14 +1,14 @@
-# Supabase Realtime — private channels (chat security hardening)
+# Supabase Realtime  private channels (chat security hardening)
 
 The team chat's **live delivery + presence** run on Supabase Realtime. Out of the
 box, Phila uses **per-thread channels keyed by an unguessable `mt_<uuid>` id**, so
-a channel isn't enumerable — but it is not yet RLS-enforced. This guide switches on
+a channel isn't enumerable  but it is not yet RLS-enforced. This guide switches on
 **private, RLS-authorized channels**, so only a thread's members can ever subscribe.
 
 > **This is opt-in and off by default.** Neon stays the source of truth; this only
 > governs *who may subscribe* to a realtime channel. If anything goes quiet after
 > enabling, switch **Private realtime channels** back off in Admin → Integrations →
-> Phila Storage — the chat falls straight back to the working public-channel mode.
+> Phila Storage  the chat falls straight back to the working public-channel mode.
 
 ## How it works
 
@@ -64,6 +64,6 @@ with check (
 ## Rollback
 
 Switch **Private realtime channels** off (or clear the JWT secret) and Save. The
-client reverts to public channels immediately — no data is affected.
+client reverts to public channels immediately  no data is affected.
 
 *Phila · philasa.com · Team messaging · Supabase Realtime hardening*

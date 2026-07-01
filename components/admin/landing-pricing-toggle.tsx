@@ -32,7 +32,7 @@ export function LandingPricingToggle({ initial }: { initial: boolean }) {
         <div>
           <div className="text-[13.5px] font-[640] text-text">Show pricing on the landing page</div>
           <p className="mt-0.5 text-[12px] text-text-2">
-            {on ? "Visitors see these plans at the public landing page (#pricing)." : "Hidden while you finalise pricing — the public page shows no plans."}
+            {on ? "Visitors see these plans at the public landing page (#pricing)." : "Hidden while you finalise pricing  the public page shows no plans."}
           </p>
         </div>
       </div>

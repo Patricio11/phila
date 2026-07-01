@@ -26,7 +26,7 @@ export function CounsellorDocuments({ own, shared, clients }: { own: Document[];
   // Group own documents by client.
   const byClient = new Map<string, Document[]>();
   for (const d of own) {
-    const key = d.clientId ?? "—";
+    const key = d.clientId ?? "";
     const arr = byClient.get(key);
     if (arr) arr.push(d);
     else byClient.set(key, [d]);

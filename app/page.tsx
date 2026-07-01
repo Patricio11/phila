@@ -13,7 +13,7 @@ import { Pricing } from "@/components/marketing/pricing";
 import { ClosingCta, SiteFooter } from "@/components/marketing/closing";
 import { getPlatformIntegrationStatus } from "@/db/queries/platform-integrations";
 
-// ISR — the page is static but re-checks the pricing switch periodically; the
+// ISR  the page is static but re-checks the pricing switch periodically; the
 // admin toggle also revalidates "/" for an immediate update.
 export const revalidate = 60;
 

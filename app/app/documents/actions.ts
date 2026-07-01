@@ -7,7 +7,7 @@ import { getStorageProvider } from "@/lib/storage";
 
 /**
  * Counsellor document download (Phase 18). A counsellor may open a file only if
- * it's in their visible set — their own clients' documents, or something the Hub
+ * it's in their visible set  their own clients' documents, or something the Hub
  * shared with them. Verified by re-deriving the set; clean files only; audited.
  */
 export async function signCounsellorDownload(raw: { documentId: string }): Promise<{ ok: true; url: string } | { ok: false; error: string }> {

@@ -9,7 +9,7 @@ import type { TeamRole } from "@/lib/domain/enums";
 
 type Db = ReturnType<typeof getDb>;
 
-/** The user's threads in an org — direct + group — with messages, unread, and the
+/** The user's threads in an org  direct + group  with messages, unread, and the
  * other member's name/role (direct). Sorted by most-recent activity. */
 export async function listTeamThreadsDb(userId: string, orgId: string): Promise<TeamThread[]> {
   const db = getDb();
@@ -142,7 +142,7 @@ async function isThreadMember(db: Db, orgId: string, threadId: string, userId: s
   return Boolean(row);
 }
 
-/** Persist a message to an existing thread (group or direct) — sender must be a member. */
+/** Persist a message to an existing thread (group or direct)  sender must be a member. */
 export async function sendToThreadDb(orgId: string, fromUserId: string, threadId: string, text: string, attachment?: ChatAttachment): Promise<SentMessage | null> {
   const db = getDb();
   if (!(await isThreadMember(db, orgId, threadId, fromUserId))) return null;

@@ -508,7 +508,7 @@ export function TeamMessagesView({
         }
       >
         <div className="space-y-3">
-          <Input placeholder="Group name — e.g. Intake team" value={groupTitle} onChange={(e) => setGroupTitle(e.target.value)} />
+          <Input placeholder="Group name  e.g. Intake team" value={groupTitle} onChange={(e) => setGroupTitle(e.target.value)} />
           <div className="text-[12px] font-medium text-text-2">Members{groupMembers.size > 0 ? ` · ${groupMembers.size} selected` : ""}</div>
           <MemberSearch query={groupQuery} onQuery={setGroupQuery} placeholder="Search colleagues…" />
           <div className="max-h-56 space-y-1 overflow-y-auto">

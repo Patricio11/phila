@@ -83,7 +83,7 @@ export async function broadcastMessageUpdate(threadId: string, payload: { messag
 /**
  * Private-channel authorization (opt-in security hardening). When the super-admin
  * has pasted the Supabase **JWT secret** AND switched **private channels** on
- * (having run the RLS SQL — docs/SUPABASE_REALTIME_SETUP.md), we mint a short-lived
+ * (having run the RLS SQL  docs/SUPABASE_REALTIME_SETUP.md), we mint a short-lived
  * Supabase-compatible JWT scoping the user to exactly their channels via a `topics`
  * claim, and the client uses private channels. Off by default → public channels.
  */

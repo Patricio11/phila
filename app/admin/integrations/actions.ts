@@ -87,9 +87,9 @@ const storageInput = z.object({
   url: z.string().trim().max(200),
   serviceKey: z.string().trim().default(""),
   bucket: z.string().trim().max(100),
-  /** Public anon key — used by the browser for Supabase Realtime (chat live + presence). */
+  /** Public anon key  used by the browser for Supabase Realtime (chat live + presence). */
   anonKey: z.string().trim().max(400).default(""),
-  /** Supabase JWT secret — signs scoped realtime tokens for private channels (opt-in). */
+  /** Supabase JWT secret  signs scoped realtime tokens for private channels (opt-in). */
   jwtSecret: z.string().trim().max(400).default(""),
   /** Enable RLS-authorized private realtime channels (requires the setup SQL). */
   realtimePrivate: z.boolean().default(false),
@@ -132,7 +132,7 @@ export async function testStorageConnectionAction(raw: { url: string; serviceKey
 }
 
 /**
- * Phila SMS (BulkSMS) — the platform SMS sender orgs buy credits against. Token
+ * Phila SMS (BulkSMS)  the platform SMS sender orgs buy credits against. Token
  * ID + secret encrypted at rest; a blank field keeps the stored one.
  */
 const smsInput = z.object({ tokenId: z.string().trim().default(""), tokenSecret: z.string().trim().default(""), enabled: z.boolean() });
@@ -158,7 +158,7 @@ export async function testBulkSmsConnection(raw: { tokenId: string; tokenSecret:
     const auth = Buffer.from(`${creds.tokenId}:${creds.tokenSecret}`).toString("base64");
     const res = await fetch("https://api.bulksms.com/v1/profile", { headers: { Authorization: `Basic ${auth}` } });
     if (res.ok) return { ok: true, detail: "Connected to BulkSMS." };
-    if (res.status === 401) return { ok: false, detail: "Token rejected — check the ID + secret." };
+    if (res.status === 401) return { ok: false, detail: "Token rejected  check the ID + secret." };
     return { ok: false, detail: `BulkSMS returned ${res.status}.` };
   } catch (e) {
     return { ok: false, detail: e instanceof Error ? e.message : "Could not reach BulkSMS." };
@@ -166,7 +166,7 @@ export async function testBulkSmsConnection(raw: { tokenId: string; tokenSecret:
 }
 
 /**
- * Phila email (Resend) — sends from Phila's verified domain with the practice as
+ * Phila email (Resend)  sends from Phila's verified domain with the practice as
  * display name + reply-to. API key encrypted at rest; a blank key keeps the stored one.
  */
 const emailInput = z.object({ apiKey: z.string().trim().default(""), from: z.string().trim().max(200), enabled: z.boolean() });

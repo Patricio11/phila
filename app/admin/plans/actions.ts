@@ -13,7 +13,7 @@ import { savePlatformIntegration } from "@/db/queries/platform-integrations";
  */
 export async function setLandingPricing(on: boolean): Promise<{ ok: true } | { ok: false; error: string }> {
   const principal = await requireSuperAdmin();
-  // Empty creds — this key is purely a switch; `enabled` carries the state.
+  // Empty creds  this key is purely a switch; `enabled` carries the state.
   await savePlatformIntegration("landing_pricing", {}, on);
   await logAccess({
     action: "admin.action",

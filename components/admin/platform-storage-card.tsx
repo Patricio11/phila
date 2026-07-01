@@ -81,7 +81,7 @@ export function PlatformStorageCard({ initial }: { initial: { enabled: boolean; 
       </div>
       <div className="mt-3 space-y-1">
         <Label>Anon (public) key</Label>
-        <Input value={anonKey} onChange={(e) => setAnonKey(e.target.value)} placeholder="eyJ… (public — used by the chat for live delivery + presence)" />
+        <Input value={anonKey} onChange={(e) => setAnonKey(e.target.value)} placeholder="eyJ… (public  used by the chat for live delivery + presence)" />
         <p className="text-[11px] text-text-3">Supabase → Project Settings → API → <strong>anon public</strong>. Safe in the browser; powers real-time messaging &amp; online presence.</p>
       </div>
 

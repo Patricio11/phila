@@ -17,7 +17,7 @@ function features(p: (typeof PLANS)[number]): string[] {
   ];
 }
 
-/** Pricing — the subscription tiers (Phase 15A catalogue). Visibility is gated by a
+/** Pricing  the subscription tiers (Phase 15A catalogue). Visibility is gated by a
  * super-admin switch (Plans & billing), so it stays hidden until pricing is final. */
 export function Pricing() {
   return (

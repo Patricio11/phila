@@ -870,6 +870,13 @@ roles side-by-side. ✅ **Met** (tsc/lint/build + 119 tests green throughout the
   Fixed the catalogue mislabel (SMS "Clickatell" → **BulkSMS**).
 - **Landing pricing switch:** a super-admin toggle (Plans & billing) shows/hides the pricing tiers on the public
   landing  **default hidden** while pricing is finalised; a new marketing **Pricing** section reads `lib/billing/plans.ts`.
+- **`/marketing` conversion funnel (2026-07-01):** a copy-led 10-section funnel (Hero → Problem → Who → What changes
+  → How it works → Proof → Why → Pricing → Final CTA → Footer) in `components/marketing/funnel.tsx` +
+  `app/marketing/page.tsx` (SSG+ISR, SEO, reuses `SiteNav`/`ClosingCta`/`SiteFooter`; pricing gated by the same
+  `landing_pricing` switch, else a `PricingTeaser`); added to `app/sitemap.ts`. The editable **copy-of-record** lives
+  in `docs/marketing_page/MARKETING_PAGE_COPY.md` (honours the rules: no competitor names, no fabricated
+  stats/testimonials, no medical-aid claims, prices from the `plans` table). `/` stays the visual product-led landing;
+  `/marketing` is the copy-led funnel.
 - **Global dialog fix:** the single-character-defocus bug in **every** dialog (the focus effect depended on a fresh
   `onClose` each render, refocusing the panel on every keystroke).
 

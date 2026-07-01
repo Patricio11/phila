@@ -171,6 +171,13 @@ export async function getAttachmentAccess(messageId: string, userId: string): Pr
   return { key: row.key, name: row.name ?? "file", contentType: row.type ?? "application/octet-stream" };
 }
 
+/** The thread ids a user is a member of (for scoping their realtime token's topics). */
+export async function listMemberThreadIds(userId: string, orgId: string): Promise<string[]> {
+  const rows = await getDb().select({ threadId: threadMembers.threadId }).from(threadMembers)
+    .where(and(eq(threadMembers.userId, userId), eq(threadMembers.orgId, orgId)));
+  return rows.map((r) => r.threadId);
+}
+
 /** A user's display name (for the realtime broadcast's senderName). */
 export async function getUserName(userId: string): Promise<string> {
   const [row] = await getDb().select({ name: user.name }).from(user).where(eq(user.id, userId)).limit(1);

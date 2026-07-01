@@ -3,9 +3,9 @@
 import { z } from "zod";
 import { requireOrg } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
-import { sendTeamMessageDb, sendToThreadDb, createGroupThreadDb, markThreadReadDb, getUserName, editMessageDb, deleteMessageDb, getAttachmentAccess } from "@/db/queries/messages";
+import { sendTeamMessageDb, sendToThreadDb, createGroupThreadDb, markThreadReadDb, getUserName, editMessageDb, deleteMessageDb, getAttachmentAccess, listMemberThreadIds } from "@/db/queries/messages";
 import { currentStorageBytes, addStorageUsage } from "@/db/queries/documents";
-import { broadcastToThread, broadcastThreadAdded, broadcastMessageUpdate } from "@/lib/messaging/realtime";
+import { broadcastToThread, broadcastThreadAdded, broadcastMessageUpdate, getRealtimeAuthSecret, signRealtimeToken } from "@/lib/messaging/realtime";
 import { getStorageProvider, objectKey } from "@/lib/storage";
 import { validateUpload, storageLimitBytes } from "@/lib/documents/quota";
 import { randomUUID } from "node:crypto";
@@ -105,6 +105,16 @@ export async function requestChatUpload(raw: z.infer<typeof chatUploadInput>): P
   } catch {
     return { ok: false, error: "Storage rejected the upload. Please try again." };
   }
+}
+
+/** Mint the caller's Supabase Realtime token (private-channel mode). Null = public mode. */
+export async function getRealtimeToken(): Promise<{ token: string } | null> {
+  const { principal, membership } = await requireOrg();
+  const secret = await getRealtimeAuthSecret();
+  if (!secret) return null;
+  const threadIds = await listMemberThreadIds(principal.userId, membership.orgId);
+  const topics = [...threadIds.map((id) => `thread:${id}`), `user:${principal.userId}`, `presence:org:${membership.orgId}`];
+  return { token: signRealtimeToken(principal.userId, topics, secret) };
 }
 
 /** A short-TTL signed URL to open a chat attachment — members only. */

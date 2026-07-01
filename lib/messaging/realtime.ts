@@ -1,4 +1,5 @@
 import "server-only";
+import { createHmac } from "node:crypto";
 import { getPlatformIntegration } from "@/db/queries/platform-integrations";
 
 /**
@@ -79,8 +80,35 @@ export async function broadcastMessageUpdate(threadId: string, payload: { messag
   }
 }
 
-/** Public config the browser needs to subscribe (url + anon key). Null = dormant. */
-export async function getRealtimePublicConfig(): Promise<{ url: string; anonKey: string } | null> {
+/**
+ * Private-channel authorization (opt-in security hardening). When the super-admin
+ * has pasted the Supabase **JWT secret** AND switched **private channels** on
+ * (having run the RLS SQL — docs/SUPABASE_REALTIME_SETUP.md), we mint a short-lived
+ * Supabase-compatible JWT scoping the user to exactly their channels via a `topics`
+ * claim, and the client uses private channels. Off by default → public channels.
+ */
+export async function getRealtimeAuthSecret(): Promise<string | null> {
+  const it = await getPlatformIntegration("phila_storage");
+  if (it?.creds.realtimePrivate !== "true") return null;
+  const jwtSecret = it.creds.jwtSecret?.trim();
+  return jwtSecret ? jwtSecret : null;
+}
+
+/** Mint a Supabase-compatible HS256 JWT scoped to the user's channels (1h). */
+export function signRealtimeToken(sub: string, topics: string[], secret: string): string {
+  const now = Math.floor(Date.now() / 1000);
+  const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+  const body = Buffer.from(JSON.stringify({ sub, role: "authenticated", iat: now, exp: now + 3600, topics })).toString("base64url");
+  const data = `${header}.${body}`;
+  const sig = createHmac("sha256", secret).update(data).digest("base64url");
+  return `${data}.${sig}`;
+}
+
+/** Public config the browser needs to subscribe (url + anon key + private mode). Null = dormant. */
+export async function getRealtimePublicConfig(): Promise<{ url: string; anonKey: string; private: boolean } | null> {
   const creds = await getCreds();
-  return creds ? { url: creds.url, anonKey: creds.anonKey } : null;
+  if (!creds) return null;
+  const it = await getPlatformIntegration("phila_storage");
+  const isPrivate = it?.creds.realtimePrivate === "true" && Boolean(it?.creds.jwtSecret);
+  return { url: creds.url, anonKey: creds.anonKey, private: isPrivate };
 }

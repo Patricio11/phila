@@ -8,7 +8,7 @@ import { useToast } from "@/components/ui/toast";
 import { saveStorageConfig, testStorageConnectionAction } from "@/app/admin/integrations/actions";
 import { cn } from "@/lib/utils";
 
-export function PlatformStorageCard({ initial }: { initial: { enabled: boolean; configured: boolean; url: string; bucket: string; anonKey: string } }) {
+export function PlatformStorageCard({ initial }: { initial: { enabled: boolean; configured: boolean; url: string; bucket: string; anonKey: string; jwtConfigured: boolean; realtimePrivate: boolean } }) {
   const { toast } = useToast();
   const [pending, start] = useTransition();
   const [testing, startTest] = useTransition();
@@ -16,17 +16,22 @@ export function PlatformStorageCard({ initial }: { initial: { enabled: boolean; 
   const [bucket, setBucket] = useState(initial.bucket);
   const [serviceKey, setServiceKey] = useState("");
   const [anonKey, setAnonKey] = useState(initial.anonKey);
+  const [jwtSecret, setJwtSecret] = useState("");
+  const [jwtConfigured, setJwtConfigured] = useState(initial.jwtConfigured);
+  const [realtimePrivate, setRealtimePrivate] = useState(initial.realtimePrivate);
   const [enabled, setEnabled] = useState(initial.enabled);
   const [configured, setConfigured] = useState(initial.configured);
   const [test, setTest] = useState<{ ok: boolean; detail: string } | null>(null);
 
   const save = (nextEnabled: boolean) =>
     start(async () => {
-      const res = await saveStorageConfig({ url, bucket, serviceKey, anonKey, enabled: nextEnabled });
+      const res = await saveStorageConfig({ url, bucket, serviceKey, anonKey, jwtSecret, realtimePrivate, enabled: nextEnabled });
       if (!res.ok) return toast({ tone: "error", title: res.error });
       setEnabled(nextEnabled);
       if (serviceKey) setConfigured(true);
+      if (jwtSecret) setJwtConfigured(true);
       setServiceKey("");
+      setJwtSecret("");
       toast({ tone: "success", title: nextEnabled ? "Phila Storage switched on" : "Saved" });
     });
 
@@ -78,6 +83,29 @@ export function PlatformStorageCard({ initial }: { initial: { enabled: boolean; 
         <Label>Anon (public) key</Label>
         <Input value={anonKey} onChange={(e) => setAnonKey(e.target.value)} placeholder="eyJ… (public — used by the chat for live delivery + presence)" />
         <p className="text-[11px] text-text-3">Supabase → Project Settings → API → <strong>anon public</strong>. Safe in the browser; powers real-time messaging &amp; online presence.</p>
+      </div>
+
+      <div className="mt-4 rounded-control border border-border bg-surface-2/40 p-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[12.5px] font-[640] text-text">Private realtime channels (RLS)</div>
+            <p className="mt-0.5 text-[11px] text-text-3">Hardening: only thread members can subscribe. <strong>First run the setup SQL</strong> (docs/SUPABASE_REALTIME_SETUP.md) + paste the JWT secret, then switch on. If chat goes quiet after enabling, switch it off.</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={realtimePrivate}
+            aria-label="Private realtime channels"
+            onClick={() => setRealtimePrivate((v) => !v)}
+            className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors", realtimePrivate ? "bg-accent" : "bg-surface-2")}
+          >
+            <span className={cn("absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform", realtimePrivate ? "translate-x-[22px]" : "translate-x-0.5")} />
+          </button>
+        </div>
+        <div className="mt-2 space-y-1">
+          <Label>Supabase JWT secret</Label>
+          <Input type="password" value={jwtSecret} onChange={(e) => setJwtSecret(e.target.value)} placeholder={jwtConfigured ? "•••••• (leave blank to keep)" : "Project Settings → API → JWT Secret"} />
+        </div>
       </div>
 
       {test && (

@@ -39,7 +39,15 @@ export default async function IntegrationConfigPage({ params }: { params: Promis
     const raw = await getPlatformIntegration("phila_storage");
     card = (
       <PlatformStorageCard
-        initial={{ enabled: raw?.enabled ?? false, configured: Boolean(raw?.creds.serviceKey), url: raw?.creds.url ?? "", bucket: raw?.creds.bucket ?? "", anonKey: raw?.creds.anonKey ?? "" }}
+        initial={{
+          enabled: raw?.enabled ?? false,
+          configured: Boolean(raw?.creds.serviceKey),
+          url: raw?.creds.url ?? "",
+          bucket: raw?.creds.bucket ?? "",
+          anonKey: raw?.creds.anonKey ?? "",
+          jwtConfigured: Boolean(raw?.creds.jwtSecret),
+          realtimePrivate: raw?.creds.realtimePrivate === "true",
+        }}
       />
     );
   } else if (slug === "bulksms") {

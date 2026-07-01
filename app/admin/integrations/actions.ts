@@ -89,6 +89,10 @@ const storageInput = z.object({
   bucket: z.string().trim().max(100),
   /** Public anon key — used by the browser for Supabase Realtime (chat live + presence). */
   anonKey: z.string().trim().max(400).default(""),
+  /** Supabase JWT secret — signs scoped realtime tokens for private channels (opt-in). */
+  jwtSecret: z.string().trim().max(400).default(""),
+  /** Enable RLS-authorized private realtime channels (requires the setup SQL). */
+  realtimePrivate: z.boolean().default(false),
   enabled: z.boolean(),
 });
 
@@ -109,10 +113,13 @@ export async function saveStorageConfig(raw: z.infer<typeof storageInput>): Prom
   const creds = await resolveStorageCreds({ url: d.url, serviceKey: d.serviceKey, bucket: d.bucket });
   const existing = await getPlatformIntegration(STORAGE_KEY);
   const anonKey = d.anonKey.trim() || existing?.creds.anonKey || "";
+  const jwtSecret = d.jwtSecret.trim() || existing?.creds.jwtSecret || "";
   if (d.enabled && (!creds.url || !creds.serviceKey || !creds.bucket))
     return { ok: false, error: "Add the project URL, service-role key, and bucket before switching it on." };
+  if (d.realtimePrivate && !jwtSecret)
+    return { ok: false, error: "Add the Supabase JWT secret before enabling private channels." };
 
-  await savePlatformIntegration(STORAGE_KEY, { ...creds, anonKey }, d.enabled);
+  await savePlatformIntegration(STORAGE_KEY, { ...creds, anonKey, jwtSecret, realtimePrivate: d.realtimePrivate ? "true" : "false" }, d.enabled);
   await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: null, target: "platform_integration:phila_storage", reason: d.enabled ? "enable_storage" : "save_storage" });
   return { ok: true };
 }

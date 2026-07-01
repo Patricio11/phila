@@ -11,7 +11,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { createGroup, deleteMessage, editMessage, markThreadRead, requestChatUpload, sendTeamMessage, signChatAttachment } from "@/app/app/messages/actions";
+import { createGroup, deleteMessage, editMessage, getRealtimeToken, markThreadRead, requestChatUpload, sendTeamMessage, signChatAttachment } from "@/app/app/messages/actions";
 import { sizeLabel } from "@/lib/documents/quota";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +23,7 @@ function dayOf(iso: string): string {
 }
 
 interface Teammate { userId: string; name: string; role: TeamRole }
-type RealtimeConfig = { url: string; anonKey: string } | null;
+type RealtimeConfig = { url: string; anonKey: string; private: boolean } | null;
 
 export function TeamMessagesView({
   threads: initial,
@@ -84,18 +84,24 @@ export function TeamMessagesView({
   // Supabase Realtime: live message delivery (per-thread channels) + org presence.
   const rtUrl = realtime?.url;
   const rtKey = realtime?.anonKey;
+  const rtPrivate = realtime?.private ?? false;
   const threadKey = threads.map((t) => t.id).filter((id) => !id.startsWith("local_")).sort().join(",");
   useEffect(() => {
     if (!rtUrl || !rtKey || !myUserId) return;
-    const supabase = createClient(rtUrl, rtKey, { realtime: { params: { eventsPerSecond: 10 } } });
+    const supabase = createClient(rtUrl, rtKey, {
+      realtime: { params: { eventsPerSecond: 10 } },
+      // Private mode: authenticate realtime with a scoped, RLS-checked JWT.
+      ...(rtPrivate ? { accessToken: async () => (await getRealtimeToken())?.token ?? rtKey } : {}),
+    });
     const channels = channelsRef.current;
+    const chanConfig = { config: { private: rtPrivate } };
 
-    const presence = supabase.channel(`presence:org:${orgId}`, { config: { presence: { key: myUserId } } });
+    const presence = supabase.channel(`presence:org:${orgId}`, { config: { private: rtPrivate, presence: { key: myUserId } } });
     presence.on("presence", { event: "sync" }, () => setOnline(new Set(Object.keys(presence.presenceState()))));
     presence.subscribe((status) => { if (status === "SUBSCRIBED") void presence.track({ userId: myUserId }); });
 
     // Per-user channel: "you were added to a group" arrives live.
-    const userCh = supabase.channel(`user:${myUserId}`);
+    const userCh = supabase.channel(`user:${myUserId}`, chanConfig);
     userCh.on("broadcast", { event: "thread_added" }, ({ payload }) => {
       const p = payload as { id: string; title: string; memberCount: number };
       setThreads((prev) =>
@@ -108,7 +114,7 @@ export function TeamMessagesView({
 
     const ids = threadKey ? threadKey.split(",") : [];
     const chans = ids.map((id) => {
-      const ch = supabase.channel(`thread:${id}`);
+      const ch = supabase.channel(`thread:${id}`, chanConfig);
       ch.on("broadcast", { event: "message" }, ({ payload }) => {
         const p = payload as { threadId: string; id: string; senderId: string; text: string; at: string; senderName?: string; attachment?: { name: string; contentType: string; bytes: number } };
         if (p.senderId === myUserId) return; // our own message is already shown optimistically
@@ -144,7 +150,7 @@ export function TeamMessagesView({
       channels.clear();
       void supabase.removeAllChannels();
     };
-  }, [rtUrl, rtKey, myUserId, orgId, threadKey]);
+  }, [rtUrl, rtKey, rtPrivate, myUserId, orgId, threadKey]);
 
   const openThread = (id: string) => {
     setActiveId(id);

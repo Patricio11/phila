@@ -12,10 +12,16 @@ const COLLAPSE_EVENT = "phila:sidebar";
 const EXPANDED_W = 248;
 const COLLAPSED_W = 72;
 
-/** The collapse preference is an external store (localStorage), read flash-free. */
+/** The collapse preference is an external store (localStorage), read flash-free.
+ *  With no saved preference yet, start **collapsed on smaller screens** (tablets,
+ *  small laptops, landscape phones) and expanded only on wide desktops  so the
+ *  sidebar never dominates a small viewport on first login. Once the user toggles,
+ *  their choice is saved and wins. */
 function readCollapsed(): boolean {
   try {
-    return localStorage.getItem(COLLAPSE_KEY) === "1";
+    const saved = localStorage.getItem(COLLAPSE_KEY);
+    if (saved !== null) return saved === "1";
+    return window.matchMedia("(max-width: 1279px)").matches;
   } catch {
     return false;
   }

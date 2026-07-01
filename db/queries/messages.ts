@@ -57,6 +57,9 @@ export async function listTeamThreadsDb(userId: string, orgId: string): Promise<
       text: m.deletedAt ? "" : m.body, at: m.createdAt.toISOString(),
       senderName: isGroup && m.senderUserId !== userId ? nameByUser.get(m.senderUserId) : undefined,
       edited: Boolean(m.editedAt), deleted: Boolean(m.deletedAt),
+      attachment: m.attachmentKey && !m.deletedAt
+        ? { name: m.attachmentName ?? "file", contentType: m.attachmentType ?? "application/octet-stream", bytes: m.attachmentBytes ?? 0 }
+        : undefined,
     }));
     return {
       id: t.id,
@@ -96,14 +99,24 @@ async function findOrCreateDirectThread(db: Db, orgId: string, a: string, b: str
 }
 
 export interface SentMessage { threadId: string; messageId: string; createdAt: string }
+export interface ChatAttachment { key: string; name: string; contentType: string; bytes: number }
+
+function attachmentCols(a?: ChatAttachment) {
+  return {
+    attachmentKey: a?.key ?? null,
+    attachmentName: a?.name ?? null,
+    attachmentType: a?.contentType ?? null,
+    attachmentBytes: a?.bytes ?? null,
+  };
+}
 
 /** Persist a direct message (find-or-create the 1:1 thread); returns the new row. */
-export async function sendTeamMessageDb(orgId: string, fromUserId: string, toUserId: string, text: string): Promise<SentMessage> {
+export async function sendTeamMessageDb(orgId: string, fromUserId: string, toUserId: string, text: string, attachment?: ChatAttachment): Promise<SentMessage> {
   const db = getDb();
   const threadId = await findOrCreateDirectThread(db, orgId, fromUserId, toUserId);
   const messageId = `tm_${randomUUID()}`;
   const createdAt = new Date();
-  await db.insert(teamMessages).values({ id: messageId, orgId, threadId, senderUserId: fromUserId, body: text, createdAt });
+  await db.insert(teamMessages).values({ id: messageId, orgId, threadId, senderUserId: fromUserId, body: text, createdAt, ...attachmentCols(attachment) });
   await db.update(messageThreads).set({ lastMessageAt: createdAt }).where(eq(messageThreads.id, threadId));
   await db.update(threadMembers).set({ lastReadAt: createdAt }).where(and(eq(threadMembers.threadId, threadId), eq(threadMembers.userId, fromUserId)));
   return { threadId, messageId, createdAt: createdAt.toISOString() };
@@ -130,12 +143,12 @@ async function isThreadMember(db: Db, orgId: string, threadId: string, userId: s
 }
 
 /** Persist a message to an existing thread (group or direct) — sender must be a member. */
-export async function sendToThreadDb(orgId: string, fromUserId: string, threadId: string, text: string): Promise<SentMessage | null> {
+export async function sendToThreadDb(orgId: string, fromUserId: string, threadId: string, text: string, attachment?: ChatAttachment): Promise<SentMessage | null> {
   const db = getDb();
   if (!(await isThreadMember(db, orgId, threadId, fromUserId))) return null;
   const messageId = `tm_${randomUUID()}`;
   const createdAt = new Date();
-  await db.insert(teamMessages).values({ id: messageId, orgId, threadId, senderUserId: fromUserId, body: text, createdAt });
+  await db.insert(teamMessages).values({ id: messageId, orgId, threadId, senderUserId: fromUserId, body: text, createdAt, ...attachmentCols(attachment) });
   await db.update(messageThreads).set({ lastMessageAt: createdAt }).where(eq(messageThreads.id, threadId));
   await db.update(threadMembers).set({ lastReadAt: createdAt }).where(and(eq(threadMembers.threadId, threadId), eq(threadMembers.userId, fromUserId)));
   return { threadId, messageId, createdAt: createdAt.toISOString() };
@@ -145,6 +158,17 @@ export async function sendToThreadDb(orgId: string, fromUserId: string, threadId
 export async function markThreadReadDb(threadId: string, userId: string): Promise<void> {
   await getDb().update(threadMembers).set({ lastReadAt: new Date() })
     .where(and(eq(threadMembers.threadId, threadId), eq(threadMembers.userId, userId)));
+}
+
+/** The attachment's storage key + meta, but only if the user is a member of its thread. */
+export async function getAttachmentAccess(messageId: string, userId: string): Promise<{ key: string; name: string; contentType: string } | null> {
+  const db = getDb();
+  const [row] = await db
+    .select({ threadId: teamMessages.threadId, orgId: teamMessages.orgId, key: teamMessages.attachmentKey, name: teamMessages.attachmentName, type: teamMessages.attachmentType, deletedAt: teamMessages.deletedAt })
+    .from(teamMessages).where(eq(teamMessages.id, messageId)).limit(1);
+  if (!row || !row.key || row.deletedAt) return null;
+  if (!(await isThreadMember(db, row.orgId, row.threadId, userId))) return null;
+  return { key: row.key, name: row.name ?? "file", contentType: row.type ?? "application/octet-stream" };
 }
 
 /** A user's display name (for the realtime broadcast's senderName). */

@@ -169,6 +169,13 @@
       "when": 1782882783647,
       "tag": "0023_modern_lockjaw",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1782890817278,
+      "tag": "0024_abnormal_makkari",
+      "breakpoints": true
     }
   ]
 }

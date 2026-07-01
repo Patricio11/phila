@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient, type RealtimeChannel } from "@supabase/supabase-js";
-import { ArrowLeft, Check, Lock, MessagesSquare, Pencil, PenSquare, Search, Send, Trash2, UsersRound, X } from "lucide-react";
+import { ArrowLeft, Check, Download, FileText, Lock, MessagesSquare, Paperclip, Pencil, PenSquare, Search, Send, Trash2, UsersRound, X } from "lucide-react";
 import type { TeamThread } from "@/lib/data-provider";
 import { TEAM_ROLE_LABELS, type TeamRole } from "@/lib/domain/enums";
 import { Avatar } from "@/components/ui/avatar";
@@ -11,7 +11,8 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { createGroup, deleteMessage, editMessage, markThreadRead, sendTeamMessage } from "@/app/app/messages/actions";
+import { createGroup, deleteMessage, editMessage, markThreadRead, requestChatUpload, sendTeamMessage, signChatAttachment } from "@/app/app/messages/actions";
+import { sizeLabel } from "@/lib/documents/quota";
 import { cn } from "@/lib/utils";
 
 function timeOf(iso: string): string {
@@ -47,6 +48,9 @@ export function TeamMessagesView({
   const [typing, setTyping] = useState<{ threadId: string; name: string } | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
+  const [uploading, setUploading] = useState(0);
+  const attachInput = useRef<HTMLInputElement>(null);
+  const localSeq = useRef(0);
   const activeIdRef = useRef(activeId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelsRef = useRef<Map<string, RealtimeChannel>>(new Map());
@@ -106,11 +110,11 @@ export function TeamMessagesView({
     const chans = ids.map((id) => {
       const ch = supabase.channel(`thread:${id}`);
       ch.on("broadcast", { event: "message" }, ({ payload }) => {
-        const p = payload as { threadId: string; id: string; senderId: string; text: string; at: string; senderName?: string };
+        const p = payload as { threadId: string; id: string; senderId: string; text: string; at: string; senderName?: string; attachment?: { name: string; contentType: string; bytes: number } };
         if (p.senderId === myUserId) return; // our own message is already shown optimistically
         setThreads((prev) => prev.map((t) => {
           if (t.id !== p.threadId || t.messages.some((m) => m.id === p.id)) return t;
-          const msg = { id: p.id, from: "them" as const, text: p.text, at: p.at, senderName: p.senderName };
+          const msg = { id: p.id, from: "them" as const, text: p.text, at: p.at, senderName: p.senderName, attachment: p.attachment };
           return { ...t, messages: [...t.messages, msg], lastAt: p.at, unread: activeIdRef.current === p.threadId ? 0 : t.unread + 1 };
         }));
         if (activeIdRef.current === p.threadId) void markThreadRead(p.threadId);
@@ -191,19 +195,58 @@ export function TeamMessagesView({
     setNewQuery("");
   };
 
-  const send = () => {
-    const text = draft.trim();
-    if (!text || !active) return;
-    const msg = { id: `local_${active.messages.length}_${active.id}`, from: "me" as const, text, at: new Date().toISOString() };
-    setThreads((prev) => prev.map((t) => (t.id === active.id ? { ...t, messages: [...t.messages, msg], lastAt: msg.at } : t)));
-    setDraft("");
+  // Send text and/or a file; optimistic, then reconcile the local ids with the real ones.
+  const dispatch = (text: string, attachment?: { key: string; name: string; contentType: string; bytes: number }) => {
+    if (!active || (!text && !attachment)) return;
+    const wasThreadId = active.id;
+    const localId = `local_${(localSeq.current += 1)}`;
+    const optimistic = { id: localId, from: "me" as const, text, at: new Date().toISOString(), attachment: attachment ? { name: attachment.name, contentType: attachment.contentType, bytes: attachment.bytes } : undefined };
+    setThreads((prev) => prev.map((t) => (t.id === wasThreadId ? { ...t, messages: [...t.messages, optimistic], lastAt: optimistic.at } : t)));
     void sendTeamMessage({
-      threadId: active.id.startsWith("local_") ? undefined : active.id,
+      threadId: wasThreadId.startsWith("local_") ? undefined : wasThreadId,
       toUserId: active.otherUserId || undefined,
       text,
+      attachment,
     }).then((res) => {
-      if (!res.ok) toast({ tone: "error", title: res.error });
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      const realThreadId = res.threadId;
+      setThreads((prev) => prev.map((t) => (t.id !== wasThreadId ? t : {
+        ...t,
+        id: realThreadId ?? t.id,
+        messages: t.messages.map((m) => (m.id === localId && res.messageId ? { ...m, id: res.messageId } : m)),
+      })));
+      if (realThreadId && wasThreadId.startsWith("local_")) setActiveId(realThreadId);
     });
+  };
+
+  const send = () => {
+    const text = draft.trim();
+    if (!text) return;
+    setDraft("");
+    dispatch(text);
+  };
+
+  const uploadAndSend = async (file: File) => {
+    if (!active) return;
+    setUploading((u) => u + 1);
+    try {
+      const type = file.type || "application/octet-stream";
+      const req = await requestChatUpload({ name: file.name, contentType: type, bytes: file.size });
+      if (!req.ok) return toast({ tone: "error", title: "Couldn't attach", description: req.error });
+      const put = await fetch(req.uploadUrl, { method: "PUT", headers: { "Content-Type": type }, body: file });
+      if (!put.ok) return toast({ tone: "error", title: "Upload failed", description: "Please try again." });
+      dispatch(draft.trim(), { key: req.key, name: file.name, contentType: type, bytes: file.size });
+      setDraft("");
+    } finally {
+      setUploading((u) => Math.max(0, u - 1));
+    }
+  };
+
+  const openAttachment = async (messageId: string) => {
+    if (messageId.startsWith("local_")) return toast({ tone: "default", title: "Still sending…", description: "It'll be ready in a moment." });
+    const res = await signChatAttachment({ messageId });
+    if (!res.ok) return toast({ tone: "error", title: "Can't open", description: res.error });
+    window.open(res.url, "_blank", "noopener");
   };
 
   const toggleGroupMember = (userId: string) =>
@@ -274,7 +317,15 @@ export function TeamMessagesView({
                       <span className="shrink-0 text-[11px] text-text-3">{t.lastAt ? timeOf(t.lastAt) : ""}</span>
                     </div>
                     <div className="mt-0.5 flex items-center justify-between gap-2">
-                      <span className="truncate text-[12px] text-text-2">{t.messages[t.messages.length - 1]?.text ?? (t.kind === "group" ? `${t.memberCount ?? 0} members` : TEAM_ROLE_LABELS[t.otherRole])}</span>
+                      <span className="truncate text-[12px] text-text-2">
+                        {(() => {
+                          const last = t.messages[t.messages.length - 1];
+                          if (last?.deleted) return "Message deleted";
+                          if (last?.text) return last.text;
+                          if (last?.attachment) return `📎 ${last.attachment.name}`;
+                          return t.kind === "group" ? `${t.memberCount ?? 0} members` : TEAM_ROLE_LABELS[t.otherRole];
+                        })()}
+                      </span>
                       {t.unread > 0 && <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-accent text-[10px] font-semibold text-accent-ink">{t.unread}</span>}
                     </div>
                   </div>
@@ -338,6 +389,22 @@ export function TeamMessagesView({
                             )}
                             <div className={cn("max-w-[78%] rounded-2xl px-3.5 py-2 text-[13.5px] leading-relaxed", m.deleted ? "bg-surface-2 italic text-text-3" : m.from === "me" ? "bg-accent text-accent-ink" : "bg-surface text-text shadow-sm")}>
                               {m.from === "them" && m.senderName && !m.deleted && <div className="mb-0.5 text-[11px] font-semibold text-accent">{m.senderName}</div>}
+                              {!m.deleted && m.attachment && (
+                                <button
+                                  type="button"
+                                  onClick={() => openAttachment(m.id)}
+                                  className={cn("mb-1 flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors", m.from === "me" ? "bg-white/15 hover:bg-white/25" : "bg-surface-2 hover:bg-surface-hover")}
+                                >
+                                  <span className={cn("inline-flex size-8 shrink-0 items-center justify-center rounded-lg", m.from === "me" ? "bg-white/20" : "bg-surface text-text-3")}>
+                                    <FileText className="size-4" strokeWidth={1.9} aria-hidden />
+                                  </span>
+                                  <span className="min-w-0 flex-1">
+                                    <span className="block truncate text-[12.5px] font-medium">{m.attachment.name}</span>
+                                    <span className={cn("block text-[10.5px]", m.from === "me" ? "text-accent-ink/70" : "text-text-3")}>{sizeLabel(m.attachment.bytes)}</span>
+                                  </span>
+                                  <Download className={cn("size-4 shrink-0", m.from === "me" ? "text-accent-ink/80" : "text-text-3")} aria-hidden />
+                                </button>
+                              )}
                               {m.deleted ? "This message was deleted" : m.text}
                               {!m.deleted && (
                                 <div className={cn("mt-1 flex items-center gap-1 text-[10px]", m.from === "me" ? "text-accent-ink/70" : "text-text-3")}>
@@ -359,11 +426,22 @@ export function TeamMessagesView({
                   <Lock className="size-3.5 shrink-0" strokeWidth={2} aria-hidden /> Internal  private to your team. Client reminders go out by SMS/WhatsApp, not here.
                 </div>
                 <div className="flex items-end gap-2">
+                  <input ref={attachInput} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadAndSend(f); e.target.value = ""; }} aria-hidden />
+                  <button
+                    type="button"
+                    onClick={() => attachInput.current?.click()}
+                    disabled={uploading > 0}
+                    aria-label="Attach a file"
+                    title="Attach a file"
+                    className="inline-flex size-10 shrink-0 items-center justify-center rounded-control text-text-2 transition-colors hover:bg-surface-hover hover:text-text disabled:opacity-40"
+                  >
+                    <Paperclip className={cn("size-[18px]", uploading > 0 && "animate-pulse")} strokeWidth={2} aria-hidden />
+                  </button>
                   <textarea
                     value={draft}
                     onChange={(e) => { setDraft(e.target.value); emitTyping(active.id); }}
                     onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-                    placeholder={`Message ${active.otherName.split(" ")[0]}…`}
+                    placeholder={uploading > 0 ? "Uploading…" : `Message ${active.otherName.split(" ")[0]}…`}
                     rows={1}
                     className="max-h-32 min-h-[40px] flex-1 resize-none rounded-control border border-border bg-surface px-3 py-2 text-[14px] text-text placeholder:text-text-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
                   />

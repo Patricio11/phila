@@ -232,6 +232,8 @@ export interface TeamMessage {
   senderName?: string;
   edited?: boolean;
   deleted?: boolean;
+  /** A file attached to the message (opened via a signed URL by message id). */
+  attachment?: { name: string; contentType: string; bytes: number };
 }
 
 /** An internal staff-to-staff thread (hub ↔ counsellor, counsellor ↔ counsellor). */

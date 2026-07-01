@@ -620,6 +620,10 @@ export const teamMessages = pgTable("team_messages", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
   editedAt: timestamp("edited_at", { withTimezone: true }),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  attachmentKey: text("attachment_key"),
+  attachmentName: text("attachment_name"),
+  attachmentType: text("attachment_type"),
+  attachmentBytes: bigint("attachment_bytes", { mode: "number" }),
 }, (t) => [index("team_msgs_thread_idx").on(t.threadId, t.createdAt)]);
 
 /** Last-seen heartbeat for online presence (global per user, not org-scoped). */

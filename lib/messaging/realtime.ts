@@ -30,6 +30,7 @@ export interface RealtimeMessagePayload {
   text: string;
   at: string;
   senderName?: string;
+  attachment?: { name: string; contentType: string; bytes: number };
 }
 
 /** Push a new message to a thread's channel. Best-effort; never throws. */

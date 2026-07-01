@@ -7,11 +7,13 @@ import { ChevronDown, LogOut, Moon, Settings, Sun, UserRound } from "lucide-reac
 import { Avatar } from "@/components/ui/avatar";
 import { useTheme } from "@/components/theme/use-theme";
 import { useToast } from "@/components/ui/toast";
+import { authClient } from "@/lib/auth/client";
 import { cn } from "@/lib/utils";
 
 /**
- * Account menu  name/email, switch theme, settings, and sign out. Sign out is
- * mock in Part A (returns to the landing); Phase 9 calls Better Auth signOut.
+ * Account menu  name/email, switch theme, settings, and sign out. Sign out calls
+ * Better Auth to actually revoke the session + clear the cookie, then lands on
+ * /login  so a signed-out browser can't reach an app surface by typing the URL.
  */
 export function AccountMenu({
   name,
@@ -41,10 +43,17 @@ export function AccountMenu({
   }, [open]);
 
   const signOut = () =>
-    start(() => {
-      toast({ tone: "default", title: "Signed out" });
+    start(async () => {
       setOpen(false);
-      router.push("/");
+      try {
+        await authClient.signOut();
+      } catch {
+        // Even if the revoke call fails, still leave for /login  the guard
+        // fails closed there, and the user can retry.
+      }
+      toast({ tone: "default", title: "Signed out" });
+      router.replace("/login");
+      router.refresh(); // drop any cached RSC payload for the old session
     });
 
   return (

@@ -16,5 +16,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "weekly",
     priority: 0.8,
   }));
-  return [{ url: BASE, changeFrequency: "monthly", priority: 1 }, ...orgPages];
+  return [
+    { url: BASE, changeFrequency: "monthly", priority: 1 },
+    { url: `${BASE}/marketing`, changeFrequency: "monthly", priority: 0.9 },
+    ...orgPages,
+  ];
 }

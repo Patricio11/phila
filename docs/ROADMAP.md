@@ -882,7 +882,7 @@ roles side-by-side. ✅ **Met** (tsc/lint/build + 119 tests green throughout the
 
 ---
 
-## 📝 PHASE 18.6: FORMS — ORG FORMS LIBRARY (in progress, 2026-07-01)
+## 📝 PHASE 18.6: FORMS — ORG FORMS LIBRARY ✅ (2026-07-01)
 *Goal: evolve the single, mock intake form into a real, DB-backed forms library — many forms per org (intake,
 feedback, screening, consent, custom), sent to one or many clients, with responses collected and reviewable.
 Intake becomes one form kind, still driving booking. Full plan + living checklist: `docs/PHASE_18.6_FORMS_PLAN.md`.*
@@ -912,8 +912,13 @@ Intake becomes one form kind, still driving booking. Full plan + living checklis
   `/f/<token>` (`form-theme.tsx`, server-signed image URL); an **open share link** anyone can fill (`FormShare`),
   each share submission a fresh response row. Migration `0026` (theme + share on `forms`, nullable client +
   respondent on `form_assignments`); seeded a themed split feedback form + share link.
-- [ ] **Commit 6 — polish + docs:** optional booking-intake→assignment, refresh `docs/SMOKE_TEST.md` /
-  `docs/DEMO_LOGINS.md`, mark 18.6 done.
+- [x] **Commit 6 — polish + docs:** refreshed `docs/DEMO_LOGINS.md` (Forms + share link; fixed the stale
+  one-click-buttons note), marked 18.6 done. Deferred as a future nicety: mirroring a completed booking intake into a
+  `form_assignments` row (booking + the intake board are unaffected either way).
+
+**Done when:** an org can build a library of forms, send them to one or many clients, collect + review responses, and
+share an open, themeable link  all DB-backed and RLS-scoped. ✅ **Met** (tsc/lint/build + 119 tests green across the
+six commits; migrations 0025–0026 + seed applied to Neon).
 
 ---
 

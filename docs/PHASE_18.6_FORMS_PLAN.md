@@ -1,6 +1,6 @@
 # Phase 18.6 — Forms: the org forms library
 
-**Status:** in progress · **Started:** 2026-07-01 · sits after 18.5 (Team Messaging), before 19.
+**Status:** ✅ done · **2026-07-01** · sits after 18.5 (Team Messaging), before 19.
 
 ## Why
 
@@ -80,8 +80,11 @@ intake form from `forms` in DB mode (mock fallback if unseeded).
   creates a fresh response row (no client). Migration `0026`: `theme` jsonb +
   `share_token`/`share_enabled` on `forms`, nullable `client_id` + `respondent_name`
   on `form_assignments`. Seeded a themed split feedback form + its share link.
-- [ ] **6 · Polish + docs** — optional booking-intake→assignment, refresh
-  `docs/SMOKE_TEST.md` / `docs/DEMO_LOGINS.md`, final ROADMAP + this doc marking 18.6 done.
+- [x] **6 · Polish + docs** — refreshed `docs/DEMO_LOGINS.md` (Forms + share link,
+  corrected the removed one-click buttons note); marked 18.6 done in the ROADMAP + this
+  doc. *Deferred (future nicety):* mirroring a completed booking intake into a
+  `form_assignments` row so booking intake shows in the Responses view  the intake
+  board still works and booking is unaffected, so this is optional.
 
 ## Verification
 

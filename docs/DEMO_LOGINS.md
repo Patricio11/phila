@@ -1,7 +1,7 @@
 # Demo logins
 
 Real accounts seeded into the database (`npm run db:seed`) for **Masizakhe Counselling**.
-All sign in at **`/login`**  or use the one-click role buttons on that page.
+All sign in at **`/login`** with the password below.
 
 > **Password for every account: `phila1234`**
 
@@ -15,6 +15,12 @@ All sign in at **`/login`**  or use the one-click role buttons on that page.
 | Client | `lerato.m@example.co.za` | `/me` | Lerato Mahlangu · client portal |
 | Funder | `palesa.mokoena@dsd.example.gov.za` | `/funder` | Palesa Mokoena · DSD · read-only, scoped |
 | Super admin | `ops@philasa.com` | `/admin` | Sizwe Ndlovu · platform console |
+
+## Forms (Phase 18.6)
+- The Hub's **Forms** library (`/hub/forms`) is seeded with an **Intake** form and a themed **"After your session"**
+  feedback form. Open the feedback form → **Responses** to see the open **share link**, or visit it directly (no login):
+  **`/f/s_feedback_masizakhe`** (a two-pane themed page). Per-client fill links look like `/f/<token>`; a signed-in
+  client sees their assigned forms at **`/me/forms`**.
 
 ## Notes
 - These are **development credentials** for the seeded demo org. They are not for production; real users set

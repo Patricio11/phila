@@ -47,3 +47,40 @@ export function BrandMark({ className, size = 32 }: { className?: string; size?:
     </span>
   );
 }
+
+/**
+ * Alternative mark under review  a **monogram "P"** as one confident stroke,
+ * cradling a **seed** in its bowl (growth held within Phila). Ownable and crisp
+ * at any size. Currently previewed in the sidebar header only.
+ */
+export function PhilaMonogram({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 512 512" className={className} aria-hidden>
+      <g transform="translate(-16 -18)">
+        <path
+          d="M204 392 L204 156 C304 148 350 188 350 230 C350 274 300 296 204 288"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={50}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle cx="278" cy="222" r="21" fill="currentColor" />
+      </g>
+    </svg>
+  );
+}
+
+export function MonogramMark({ className, size = 32 }: { className?: string; size?: number }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-br from-accent to-[#34bc83] text-white shadow-sm",
+        className,
+      )}
+      style={{ width: size, height: size }}
+    >
+      <PhilaMonogram className="h-full w-full" />
+    </span>
+  );
+}

@@ -3,7 +3,8 @@
 import { z } from "zod";
 import { requireOrg } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
-import { sendTeamMessageDb, sendToThreadDb, createGroupThreadDb, markThreadReadDb } from "@/db/queries/messages";
+import { sendTeamMessageDb, sendToThreadDb, createGroupThreadDb, markThreadReadDb, getUserName } from "@/db/queries/messages";
+import { broadcastToThread } from "@/lib/messaging/realtime";
 
 /**
  * Internal team messaging  staff-to-staff (hub ↔ counsellor, counsellor ↔
@@ -31,16 +32,19 @@ export async function sendTeamMessage(
 
   let threadId: string | undefined;
   if (isDb()) {
+    let sent;
     if (d.threadId && !d.threadId.startsWith("local_")) {
-      const sent = await sendToThreadDb(membership.orgId, principal.userId, d.threadId, d.text);
+      sent = await sendToThreadDb(membership.orgId, principal.userId, d.threadId, d.text);
       if (!sent) return { ok: false, error: "You're not in that conversation." };
-      threadId = sent.threadId;
     } else if (d.toUserId) {
-      const sent = await sendTeamMessageDb(membership.orgId, principal.userId, d.toUserId, d.text);
-      threadId = sent.threadId;
+      sent = await sendTeamMessageDb(membership.orgId, principal.userId, d.toUserId, d.text);
     } else {
       return { ok: false, error: "Pick a conversation." };
     }
+    threadId = sent.threadId;
+    // Live delivery (Supabase Realtime) — best-effort, dormant if not configured.
+    const senderName = await getUserName(principal.userId);
+    await broadcastToThread(sent.threadId, { threadId: sent.threadId, id: sent.messageId, senderId: principal.userId, text: d.text, at: sent.createdAt, senderName });
   }
 
   await logAccess({

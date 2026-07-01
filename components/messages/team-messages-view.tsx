@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
 import { ArrowLeft, Check, Lock, MessagesSquare, PenSquare, Search, Send, UsersRound } from "lucide-react";
 import type { TeamThread } from "@/lib/data-provider";
 import { TEAM_ROLE_LABELS, type TeamRole } from "@/lib/domain/enums";
@@ -22,14 +23,30 @@ function dayOf(iso: string): string {
 }
 
 interface Teammate { userId: string; name: string; role: TeamRole }
+type RealtimeConfig = { url: string; anonKey: string } | null;
 
-export function TeamMessagesView({ threads: initial, teammates = [] }: { threads: TeamThread[]; teammates?: Teammate[] }) {
+export function TeamMessagesView({
+  threads: initial,
+  teammates = [],
+  realtime = null,
+  myUserId = "",
+  orgId = "",
+}: {
+  threads: TeamThread[];
+  teammates?: Teammate[];
+  realtime?: RealtimeConfig;
+  myUserId?: string;
+  orgId?: string;
+}) {
   const { toast } = useToast();
   const [threads, setThreads] = useState(initial);
   const [activeId, setActiveId] = useState<string | null>(initial[0]?.id ?? null);
   const [draft, setDraft] = useState("");
   const [mobileThread, setMobileThread] = useState(false);
   const [query, setQuery] = useState("");
+  const [online, setOnline] = useState<Set<string>>(new Set());
+  const activeIdRef = useRef(activeId);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [newUserId, setNewUserId] = useState<string | null>(null);
   const [groupOpen, setGroupOpen] = useState(false);
@@ -43,6 +60,50 @@ export function TeamMessagesView({ threads: initial, teammates = [] }: { threads
     [threads, query],
   );
   const startable = teammates.filter((m) => !threads.some((t) => t.otherUserId === m.userId));
+
+  // Keep the active thread readable inside the (stable) realtime handler.
+  useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
+
+  // Auto-scroll to the newest message when the open thread changes or grows.
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [active?.id, active?.messages.length]);
+
+  // Supabase Realtime: live message delivery (per-thread channels) + org presence.
+  const rtUrl = realtime?.url;
+  const rtKey = realtime?.anonKey;
+  const threadKey = threads.map((t) => t.id).filter((id) => !id.startsWith("local_")).sort().join(",");
+  useEffect(() => {
+    if (!rtUrl || !rtKey || !myUserId) return;
+    const supabase = createClient(rtUrl, rtKey, { realtime: { params: { eventsPerSecond: 10 } } });
+
+    const presence = supabase.channel(`presence:org:${orgId}`, { config: { presence: { key: myUserId } } });
+    presence.on("presence", { event: "sync" }, () => setOnline(new Set(Object.keys(presence.presenceState()))));
+    presence.subscribe((status) => { if (status === "SUBSCRIBED") void presence.track({ userId: myUserId }); });
+
+    const ids = threadKey ? threadKey.split(",") : [];
+    const chans = ids.map((id) => {
+      const ch = supabase.channel(`thread:${id}`);
+      ch.on("broadcast", { event: "message" }, ({ payload }) => {
+        const p = payload as { threadId: string; id: string; senderId: string; text: string; at: string; senderName?: string };
+        if (p.senderId === myUserId) return; // our own message is already shown optimistically
+        setThreads((prev) => prev.map((t) => {
+          if (t.id !== p.threadId || t.messages.some((m) => m.id === p.id)) return t;
+          const msg = { id: p.id, from: "them" as const, text: p.text, at: p.at, senderName: p.senderName };
+          return { ...t, messages: [...t.messages, msg], lastAt: p.at, unread: activeIdRef.current === p.threadId ? 0 : t.unread + 1 };
+        }));
+        if (activeIdRef.current === p.threadId) void markThreadRead(p.threadId);
+      });
+      ch.subscribe();
+      return ch;
+    });
+
+    return () => {
+      void presence.unsubscribe();
+      chans.forEach((c) => void c.unsubscribe());
+      void supabase.removeAllChannels();
+    };
+  }, [rtUrl, rtKey, myUserId, orgId, threadKey]);
 
   const openThread = (id: string) => {
     setActiveId(id);
@@ -140,7 +201,7 @@ export function TeamMessagesView({ threads: initial, teammates = [] }: { threads
             ) : visible.map((t) => (
               <li key={t.id}>
                 <button type="button" onClick={() => openThread(t.id)} className={cn("flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors hover:bg-surface-hover", activeId === t.id && "bg-accent-soft/40")}>
-                  <ThreadAvatar thread={t} size="md" />
+                  <ThreadAvatar thread={t} size="md" online={t.kind === "direct" && online.has(t.otherUserId)} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
                       <span className="truncate text-[13.5px] font-medium text-text">{t.otherName}</span>
@@ -163,10 +224,16 @@ export function TeamMessagesView({ threads: initial, teammates = [] }: { threads
             <>
               <div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
                 <button type="button" onClick={() => setMobileThread(false)} className="lg:hidden" aria-label="Back to conversations"><ArrowLeft className="size-5 text-text-2" aria-hidden /></button>
-                <ThreadAvatar thread={active} size="sm" />
+                <ThreadAvatar thread={active} size="sm" online={active.kind === "direct" && online.has(active.otherUserId)} />
                 <div className="min-w-0">
                   <div className="text-[14px] font-[600] leading-tight text-text">{active.otherName}</div>
-                  <div className="text-[11px] text-text-3">{active.kind === "group" ? `${active.memberCount ?? 0} members` : TEAM_ROLE_LABELS[active.otherRole]}</div>
+                  <div className="text-[11px] text-text-3">
+                    {active.kind === "group"
+                      ? `${active.memberCount ?? 0} members`
+                      : online.has(active.otherUserId)
+                        ? <span className="text-emerald-600">Active now</span>
+                        : TEAM_ROLE_LABELS[active.otherRole]}
+                  </div>
                 </div>
               </div>
 
@@ -187,6 +254,7 @@ export function TeamMessagesView({ threads: initial, teammates = [] }: { threads
                     </div>
                   );
                 })}
+                <div ref={messagesEndRef} />
               </div>
 
               <div className="border-t border-border p-3">
@@ -272,13 +340,21 @@ export function TeamMessagesView({ threads: initial, teammates = [] }: { threads
   );
 }
 
-function ThreadAvatar({ thread, size }: { thread: TeamThread; size: "sm" | "md" }) {
-  if (thread.kind === "group") {
-    return (
-      <span className={cn(size === "md" ? "size-9" : "size-8", "inline-flex shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent")}>
+function ThreadAvatar({ thread, size, online }: { thread: TeamThread; size: "sm" | "md"; online?: boolean }) {
+  const inner =
+    thread.kind === "group" ? (
+      <span className={cn(size === "md" ? "size-9" : "size-8", "inline-flex items-center justify-center rounded-full bg-accent-soft text-accent")}>
         <UsersRound className="size-[18px]" strokeWidth={1.9} aria-hidden />
       </span>
+    ) : (
+      <Avatar name={thread.otherName} size={size} />
     );
-  }
-  return <Avatar name={thread.otherName} size={size} />;
+  return (
+    <span className="relative inline-flex shrink-0">
+      {inner}
+      {online && (
+        <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-surface bg-emerald-500" aria-label="Online" />
+      )}
+    </span>
+  );
 }

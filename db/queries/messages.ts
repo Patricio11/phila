@@ -144,3 +144,9 @@ export async function markThreadReadDb(threadId: string, userId: string): Promis
   await getDb().update(threadMembers).set({ lastReadAt: new Date() })
     .where(and(eq(threadMembers.threadId, threadId), eq(threadMembers.userId, userId)));
 }
+
+/** A user's display name (for the realtime broadcast's senderName). */
+export async function getUserName(userId: string): Promise<string> {
+  const [row] = await getDb().select({ name: user.name }).from(user).where(eq(user.id, userId)).limit(1);
+  return row?.name ?? "Someone";
+}

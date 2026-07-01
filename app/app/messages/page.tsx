@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireOrg } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
+import { getRealtimePublicConfig } from "@/lib/messaging/realtime";
 import { PageHead } from "@/components/shell/page-head";
 import { TeamMessagesView } from "@/components/messages/team-messages-view";
 
@@ -10,9 +11,10 @@ export const metadata = { title: "Messages" };
 export default async function MessagesPage() {
   const { principal, membership } = await requireOrg(["counsellor"]);
   const provider = await getDataProvider();
-  const [threads, team] = await Promise.all([
+  const [threads, team, realtime] = await Promise.all([
     provider.listTeamThreads(principal.userId, membership.orgId),
     provider.listTeam(membership.orgId),
+    getRealtimePublicConfig(),
   ]);
   if (!team) notFound();
 
@@ -23,7 +25,7 @@ export default async function MessagesPage() {
   return (
     <div className="rise space-y-5">
       <PageHead title="Messages" summary="Private messages with your team  the hub and your colleagues." />
-      <TeamMessagesView threads={threads} teammates={teammates} />
+      <TeamMessagesView threads={threads} teammates={teammates} realtime={realtime} myUserId={principal.userId} orgId={membership.orgId} />
     </div>
   );
 }

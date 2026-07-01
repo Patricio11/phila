@@ -56,6 +56,9 @@ render from that snapshot, never the live form  so editing a form can never rewr
 ## Proof
 - Six green commits; **tsc + eslint + 119 tests + prod build** clean throughout.
 - Migrations `0025`–`0026` + seed applied to Neon; RLS reapplied.
+- **Playwright E2E** (`tests/e2e/forms-share.spec.ts`): the open share link submits a real, anonymous,
+  completed `form_assignments` row (client_id null) end-to-end and cleans up; a second test proves a
+  required field can't be skipped (no row lands). Both green against the live DB.
 - Demo: Hub → **Forms** → *After your session* → **Responses** for the share link, or open
   **`/f/s_feedback_masizakhe`** (no login) for the themed two-pane page.
 

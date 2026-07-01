@@ -8,20 +8,21 @@ import { useToast } from "@/components/ui/toast";
 import { saveStorageConfig, testStorageConnectionAction } from "@/app/admin/integrations/actions";
 import { cn } from "@/lib/utils";
 
-export function PlatformStorageCard({ initial }: { initial: { enabled: boolean; configured: boolean; url: string; bucket: string } }) {
+export function PlatformStorageCard({ initial }: { initial: { enabled: boolean; configured: boolean; url: string; bucket: string; anonKey: string } }) {
   const { toast } = useToast();
   const [pending, start] = useTransition();
   const [testing, startTest] = useTransition();
   const [url, setUrl] = useState(initial.url);
   const [bucket, setBucket] = useState(initial.bucket);
   const [serviceKey, setServiceKey] = useState("");
+  const [anonKey, setAnonKey] = useState(initial.anonKey);
   const [enabled, setEnabled] = useState(initial.enabled);
   const [configured, setConfigured] = useState(initial.configured);
   const [test, setTest] = useState<{ ok: boolean; detail: string } | null>(null);
 
   const save = (nextEnabled: boolean) =>
     start(async () => {
-      const res = await saveStorageConfig({ url, bucket, serviceKey, enabled: nextEnabled });
+      const res = await saveStorageConfig({ url, bucket, serviceKey, anonKey, enabled: nextEnabled });
       if (!res.ok) return toast({ tone: "error", title: res.error });
       setEnabled(nextEnabled);
       if (serviceKey) setConfigured(true);
@@ -72,6 +73,11 @@ export function PlatformStorageCard({ initial }: { initial: { enabled: boolean; 
       <div className="mt-3 space-y-1">
         <Label>Service-role key</Label>
         <Input type="password" value={serviceKey} onChange={(e) => { setServiceKey(e.target.value); setTest(null); }} placeholder={configured ? "•••••• (leave blank to keep)" : "service_role secret"} />
+      </div>
+      <div className="mt-3 space-y-1">
+        <Label>Anon (public) key</Label>
+        <Input value={anonKey} onChange={(e) => setAnonKey(e.target.value)} placeholder="eyJ… (public — used by the chat for live delivery + presence)" />
+        <p className="text-[11px] text-text-3">Supabase → Project Settings → API → <strong>anon public</strong>. Safe in the browser; powers real-time messaging &amp; online presence.</p>
       </div>
 
       {test && (

@@ -87,6 +87,8 @@ const storageInput = z.object({
   url: z.string().trim().max(200),
   serviceKey: z.string().trim().default(""),
   bucket: z.string().trim().max(100),
+  /** Public anon key — used by the browser for Supabase Realtime (chat live + presence). */
+  anonKey: z.string().trim().max(400).default(""),
   enabled: z.boolean(),
 });
 
@@ -105,10 +107,12 @@ export async function saveStorageConfig(raw: z.infer<typeof storageInput>): Prom
   if (!parsed.success) return { ok: false, error: "Check the details." };
   const d = parsed.data;
   const creds = await resolveStorageCreds({ url: d.url, serviceKey: d.serviceKey, bucket: d.bucket });
+  const existing = await getPlatformIntegration(STORAGE_KEY);
+  const anonKey = d.anonKey.trim() || existing?.creds.anonKey || "";
   if (d.enabled && (!creds.url || !creds.serviceKey || !creds.bucket))
     return { ok: false, error: "Add the project URL, service-role key, and bucket before switching it on." };
 
-  await savePlatformIntegration(STORAGE_KEY, creds, d.enabled);
+  await savePlatformIntegration(STORAGE_KEY, { ...creds, anonKey }, d.enabled);
   await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: null, target: "platform_integration:phila_storage", reason: d.enabled ? "enable_storage" : "save_storage" });
   return { ok: true };
 }

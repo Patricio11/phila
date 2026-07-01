@@ -882,6 +882,29 @@ roles side-by-side. ✅ **Met** (tsc/lint/build + 119 tests green throughout the
 
 ---
 
+## 📝 PHASE 18.6: FORMS — ORG FORMS LIBRARY (in progress, 2026-07-01)
+*Goal: evolve the single, mock intake form into a real, DB-backed forms library — many forms per org (intake,
+feedback, screening, consent, custom), sent to one or many clients, with responses collected and reviewable.
+Intake becomes one form kind, still driving booking. Full plan + living checklist: `docs/PHASE_18.6_FORMS_PLAN.md`.*
+
+- [x] **Commit 1 — data model + seam + docs:** new `forms` + `form_assignments` tables (migration
+  `0025_secret_lyja.sql`), **RLS** org-scoping, `db/queries/forms.ts` (real reads + writes), the provider seam
+  (interface + **mock** in-memory store + **db** wired in `lib/db-provider.ts`), domain types (`Form`, `FormField`,
+  `FormAssignment`, `FormSnapshot`; `IntakeForm`/`IntakeField` kept as aliases so booking doesn't churn), fixtures
+  (`orgForms`, `formAssignments`) **seeded into Neon** so `DATA_PROVIDER=db` serves identical data. Responses render
+  from a **snapshot** frozen at send time (editing a form never rewrites past answers). `getIntakeForm` now resolves
+  the active intake form from `forms`.
+- [ ] **Commit 2 — library + builder + preview:** nav Intake→**Forms**, `/hub/forms` (card grid), `/hub/forms/[id]`
+  (Questions/Preview), `/hub/forms/[id]/edit` (builder), shared `components/forms/form-fields.tsx`,
+  create/update/duplicate/archive, `/hub/intake` redirect.
+- [ ] **Commit 3 — send + responses:** `SendFormModal` (client multi-select), `sendFormToClients`, Responses tab +
+  response detail, `form_sent` notification + `lib/messaging/notify-form.ts` (dormant-by-default).
+- [ ] **Commit 4 — client fill:** public `app/f/[token]` route + submit + confirmation, `/me` Forms surface + `clientNav`.
+- [ ] **Commit 5 — polish + docs:** optional booking-intake→assignment, refresh `docs/SMOKE_TEST.md` /
+  `docs/DEMO_LOGINS.md`, mark 18.6 done.
+
+---
+
 ## 🔒 PHASE 19: TRUST, SECURITY & POPIA HARDENING
 *Goal: be allowed in the room with the most sensitive data there is.*
 - [ ] **Data residency:** migrate Postgres to an SA region (AWS `af-south-1` / Azure SA North) on the `db/client.ts` swap; confirm storage + AI inference residency posture; document cross-border flows.

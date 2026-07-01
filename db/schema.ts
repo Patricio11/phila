@@ -631,3 +631,41 @@ export const userPresence = pgTable("user_presence", {
   userId: text("user_id").primaryKey(),
   lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull(),
 });
+
+/* ── Forms cluster (Phase 18.6 — org forms library) ───────────────────── */
+
+/** An org form: a titled set of questions of a given kind. `fields` is JSONB
+ *  (`FormField[]`). The active `kind='intake'` form drives public booking. */
+export const forms = pgTable("forms", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  kind: text("kind").default("custom").notNull(), // intake | feedback | screening | consent | custom
+  title: text("title").notNull(),
+  intro: text("intro"),
+  fields: jsonb("fields").notNull(), // FormField[]
+  status: text("status").default("active").notNull(), // active | archived
+  createdBy: text("created_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+}, (t) => [index("forms_org_idx").on(t.orgId)]);
+
+/** A form sent to a client — and, once filled, their response. `snapshot` freezes
+ *  the form at send time so later edits never rewrite past answers. The `token` is
+ *  the unguessable capability behind the public fill link (`/f/<token>`). */
+export const formAssignments = pgTable("form_assignments", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  formId: text("form_id").notNull(),
+  clientId: text("client_id").notNull(),
+  token: text("token").notNull(),
+  status: text("status").default("sent").notNull(), // sent | completed | revoked
+  snapshot: jsonb("snapshot").notNull(), // { kind, title, intro, fields }
+  answers: jsonb("answers"), // Record<fieldId,string> | null until completed
+  sentBy: text("sent_by"),
+  sentAt: timestamp("sent_at", { withTimezone: true }).notNull(),
+  submittedAt: timestamp("submitted_at", { withTimezone: true }),
+}, (t) => [
+  uniqueIndex("form_assign_token_uq").on(t.token),
+  index("form_assign_form_idx").on(t.formId),
+  index("form_assign_client_idx").on(t.clientId),
+]);

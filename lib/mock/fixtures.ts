@@ -755,22 +755,74 @@ export const supervisionTemplates: {
   },
 ];
 
-/** The org's intake form, rendered during booking (Phase 2). */
+/* ── Forms library (Phase 18.6) ─────────────────────────────────────────
+ * The org builds a library of forms. The active `kind: "intake"` form is the
+ * one the booking flow renders; the rest are sent to clients on demand. Field
+ * sets are named so the intake form + the booking flow share one source. */
+
+type FormFieldFx = import("@/lib/domain/types").FormField;
+
+const INTAKE_FIELDS: FormFieldFx[] = [
+  { id: "full_name", label: "Your full name", type: "text", required: true, sensitive: true, placeholder: "e.g. Lerato Mahlangu" },
+  { id: "phone", label: "Mobile number", type: "tel", required: true, sensitive: true, placeholder: "+27 …", help: "We'll use this to confirm your session." },
+  { id: "email", label: "Email (optional)", type: "email", required: false, sensitive: true, placeholder: "you@example.co.za" },
+  { id: "reason", label: "What would you like support with?", type: "textarea", required: true, placeholder: "A sentence or two is plenty  only your counsellor will read this.", help: "There's no right answer. Share as much or as little as you like." },
+  { id: "preferred_contact", label: "How should we reach you?", type: "radio", required: true, options: ["WhatsApp", "Phone call", "Email"] },
+  { id: "first_time", label: "Have you had counselling before?", type: "radio", required: false, options: ["This is my first time", "Yes, before", "I'd rather not say"] },
+];
+
+const FEEDBACK_FIELDS: FormFieldFx[] = [
+  { id: "helpful", label: "How helpful was your session?", type: "radio", required: true, options: ["Very helpful", "Helpful", "Neutral", "Not helpful"] },
+  { id: "heard", label: "Did you feel heard and respected?", type: "radio", required: true, options: ["Yes, fully", "Mostly", "Not really"] },
+  { id: "comments", label: "Anything you'd like us to know?", type: "textarea", required: false, placeholder: "Optional  your counsellor and the practice lead will read this.", help: "This helps us keep improving your care." },
+];
+
+/** Seed shape for a form (relative timestamps; the provider/seed resolve to ISO). */
+export type FormSeed = {
+  id: string;
+  kind: import("@/lib/domain/enums").FormKind;
+  status: import("@/lib/domain/enums").FormStatus;
+  title: string;
+  intro?: string;
+  fields: FormFieldFx[];
+  createdDaysAgo: number;
+  updatedDaysAgo: number;
+};
+
+export const orgForms: Record<string, FormSeed[]> = {
+  [ORG_ID]: [
+    {
+      id: "form_intake_masizakhe",
+      kind: "intake",
+      status: "active",
+      title: "A few details before we meet",
+      intro: "This helps your counsellor prepare. Only your counsellor sees it, and it's kept confidential under POPIA.",
+      fields: INTAKE_FIELDS,
+      createdDaysAgo: 120,
+      updatedDaysAgo: 30,
+    },
+    {
+      id: "form_feedback_masizakhe",
+      kind: "feedback",
+      status: "active",
+      title: "After your session",
+      intro: "A couple of quick questions so we can keep improving your care. It's anonymous to everyone but your counsellor.",
+      fields: FEEDBACK_FIELDS,
+      createdDaysAgo: 40,
+      updatedDaysAgo: 12,
+    },
+  ],
+};
+
+/** The org's intake form (booking + legacy intake board). Shares INTAKE_FIELDS. */
 export const intakeForms: Record<string, import("@/lib/domain/types").IntakeForm> = {
   [ORG_ID]: {
-    id: "intake_masizakhe",
+    id: "form_intake_masizakhe",
     orgId: ORG_ID,
     title: "A few details before we meet",
     intro:
       "This helps your counsellor prepare. Only your counsellor sees it, and it's kept confidential under POPIA.",
-    fields: [
-      { id: "full_name", label: "Your full name", type: "text", required: true, sensitive: true, placeholder: "e.g. Lerato Mahlangu" },
-      { id: "phone", label: "Mobile number", type: "tel", required: true, sensitive: true, placeholder: "+27 …", help: "We'll use this to confirm your session." },
-      { id: "email", label: "Email (optional)", type: "email", required: false, sensitive: true, placeholder: "you@example.co.za" },
-      { id: "reason", label: "What would you like support with?", type: "textarea", required: true, placeholder: "A sentence or two is plenty  only your counsellor will read this.", help: "There's no right answer. Share as much or as little as you like." },
-      { id: "preferred_contact", label: "How should we reach you?", type: "radio", required: true, options: ["WhatsApp", "Phone call", "Email"] },
-      { id: "first_time", label: "Have you had counselling before?", type: "radio", required: false, options: ["This is my first time", "Yes, before", "I'd rather not say"] },
-    ],
+    fields: INTAKE_FIELDS,
   },
 };
 
@@ -866,6 +918,29 @@ export const intakeResponses: Record<string, { submittedDaysAgo: number; answers
     },
   },
 };
+
+/**
+ * Forms sent to clients (Phase 18.6)  the assignment IS the response row. The
+ * two completed intake ones reuse the intake answers above; the rest are still
+ * awaiting. `token` is the capability behind the public `/f/<token>` link.
+ */
+export type FormAssignmentSeed = {
+  id: string;
+  formId: string;
+  clientId: string;
+  token: string;
+  status: import("@/lib/domain/enums").FormAssignmentStatus;
+  sentDaysAgo: number;
+  submittedDaysAgo?: number;
+  answers?: Record<string, string>;
+};
+
+export const formAssignments: FormAssignmentSeed[] = [
+  { id: "fa_lerato_intake", formId: "form_intake_masizakhe", clientId: "cl_lerato", token: "f_lerato_intake_9fz2", status: "completed", sentDaysAgo: 50, submittedDaysAgo: 49, answers: intakeResponses.cl_lerato!.answers },
+  { id: "fa_johan_intake", formId: "form_intake_masizakhe", clientId: "cl_johan", token: "f_johan_intake_7kd8", status: "completed", sentDaysAgo: 19, submittedDaysAgo: 18, answers: intakeResponses.cl_johan!.answers },
+  { id: "fa_sipho_intake", formId: "form_intake_masizakhe", clientId: "cl_sipho", token: "f_sipho_intake_3xq1", status: "sent", sentDaysAgo: 3 },
+  { id: "fa_fatima_feedback", formId: "form_feedback_masizakhe", clientId: "cl_fatima", token: "f_fatima_feedback_5bp7", status: "sent", sentDaysAgo: 2 },
+];
 
 /** Public micro-site copy per org  no PII, safe to render unauthenticated. */
 export const orgPublicContent: Record<

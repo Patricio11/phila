@@ -23,6 +23,10 @@ import type {
   DocumentVisibility,
   EmploymentStatus,
   FolderScope,
+  FormAssignmentStatus,
+  FormFieldType,
+  FormKind,
+  FormStatus,
   Gender,
   OrgFeature,
   OutcomeTool,
@@ -287,11 +291,11 @@ export interface OutcomeMeasure {
   takenAt: ISODateTime;
 }
 
-/** An org's intake form  rendered during booking, captured with consent. */
-export interface IntakeField {
+/** A single question in a form (intake or any other). */
+export interface FormField {
   id: string;
   label: string;
-  type: "text" | "textarea" | "tel" | "email" | "radio";
+  type: FormFieldType;
   required: boolean;
   placeholder?: string;
   help?: string;
@@ -300,12 +304,64 @@ export interface IntakeField {
   sensitive?: boolean;
 }
 
+/**
+ * An org form  a titled set of questions of a given kind (Phase 18.6). The org
+ * builds a library of these; the active `kind: "intake"` form drives booking.
+ * `fields` is stored as JSONB.
+ */
+export interface Form {
+  id: string;
+  orgId: string;
+  kind: FormKind;
+  title: string;
+  intro?: string;
+  fields: FormField[];
+  status: FormStatus;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+}
+
+/**
+ * The form frozen at the moment it was sent to a client. Responses render from
+ * this snapshot, so editing the live form never rewrites a past answer.
+ */
+export interface FormSnapshot {
+  kind: FormKind;
+  title: string;
+  intro?: string;
+  fields: FormField[];
+}
+
+/** A form sent to a client  and, once filled, their response. */
+export interface FormAssignment {
+  id: string;
+  orgId: string;
+  formId: string;
+  clientId: string;
+  /** Unguessable capability for the public fill link (`/f/<token>`). */
+  token: string;
+  status: FormAssignmentStatus;
+  snapshot: FormSnapshot;
+  /** Keyed by field id; null until submitted. */
+  answers: Record<string, string> | null;
+  sentBy: string | null;
+  sentAt: ISODateTime;
+  submittedAt: ISODateTime | null;
+}
+
+/**
+ * Back-compat aliases  the booking flow + existing intake code predate the
+ * forms library. `IntakeField` is a `FormField`; an intake form is a `Form`.
+ */
+export type IntakeField = FormField;
+
+/** The minimal intake shape the booking flow consumes (a `Form` satisfies it). */
 export interface IntakeForm {
   id: string;
   orgId: string;
   title: string;
   intro?: string;
-  fields: IntakeField[];
+  fields: FormField[];
 }
 
 /* ---- Funders & grants (M&E) ------------------------------------------ */

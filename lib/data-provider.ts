@@ -19,6 +19,9 @@ import type {
   Document,
   DocumentFolder,
   DocumentRequest,
+  Form,
+  FormField,
+  FormSnapshot,
   Funder,
   Grant,
   GrantIndicator,
@@ -37,6 +40,7 @@ import type {
   Site,
   StorageUsage,
 } from "@/lib/domain/types";
+import type { FormAssignmentStatus, FormKind, FormStatus } from "@/lib/domain/enums";
 
 /** Everything the booking flow (`/o/[slug]/book`) needs in one fetch. */
 export interface BookingConfig {
@@ -409,6 +413,69 @@ export interface IntakeBoard {
   rows: IntakeReviewRow[];
 }
 
+/* ── Forms library (Phase 18.6) ────────────────────────────────────────── */
+
+/** A card in the forms library  the form plus its send/response counts. */
+export interface FormSummary {
+  id: string;
+  kind: FormKind;
+  title: string;
+  intro?: string;
+  fieldCount: number;
+  status: FormStatus;
+  sentCount: number;
+  completedCount: number;
+  updatedAt: string;
+}
+
+/** One row in a form's Responses view (the assignment, flattened for the table). */
+export interface FormResponseRow {
+  assignmentId: string;
+  clientId: string;
+  clientName: string;
+  counsellorName: string;
+  status: FormAssignmentStatus;
+  sentAt: string;
+  submittedAt: string | null;
+  answers: Record<string, string> | null;
+  /** The form as sent (render answers from this, never the live form). */
+  snapshot: FormSnapshot;
+}
+
+export interface FormResponses {
+  form: Form;
+  rows: FormResponseRow[];
+}
+
+/** What the public fill page (`/f/<token>`) sees  no session, resolved by token. */
+export interface FormTokenView {
+  assignmentId: string;
+  orgId: string;
+  orgName: string;
+  status: FormAssignmentStatus;
+  snapshot: FormSnapshot;
+  submittedAt: string | null;
+}
+
+/** A client's assigned forms (portal list in `/me`). */
+export interface ClientFormRow {
+  assignmentId: string;
+  token: string;
+  formTitle: string;
+  kind: FormKind;
+  status: FormAssignmentStatus;
+  sentAt: string;
+  submittedAt: string | null;
+}
+
+/** A form definition as submitted by the builder. */
+export interface FormDraft {
+  kind: FormKind;
+  title: string;
+  intro?: string;
+  fields: FormField[];
+}
+
 export interface DuplicateClient {
   id: string;
   name: string;
@@ -764,6 +831,21 @@ export interface DataProvider {
   listIntakeStatus(orgId: string, now: string): Promise<IntakeStatusRow[]>;
   getIntakeBoard(orgId: string, now: string): Promise<IntakeBoard>;
   getIntakeForm(orgId: string): Promise<import("@/lib/domain/types").IntakeForm | null>;
+
+  // Forms library (Phase 18.6)  the org's forms + sends + responses
+  listForms(orgId: string, now: string): Promise<FormSummary[]>;
+  getForm(orgId: string, formId: string): Promise<Form | null>;
+  getFormResponses(orgId: string, formId: string, now: string): Promise<FormResponses | null>;
+  createForm(orgId: string, draft: FormDraft, createdBy: string, now: string): Promise<{ id: string }>;
+  updateForm(orgId: string, formId: string, draft: FormDraft, now: string): Promise<{ ok: boolean }>;
+  duplicateForm(orgId: string, formId: string, now: string): Promise<{ id: string } | null>;
+  setFormStatus(orgId: string, formId: string, status: FormStatus, now: string): Promise<{ ok: boolean }>;
+  sendFormToClients(orgId: string, formId: string, clientIds: string[], sentBy: string, now: string): Promise<{ sent: number; assignments: { clientId: string; token: string }[] }>;
+  /** Client fill (public token): resolve + submit, no session. */
+  getFormByToken(token: string): Promise<FormTokenView | null>;
+  submitFormResponse(token: string, answers: Record<string, string>, now: string): Promise<{ ok: true } | { ok: false; error: string }>;
+  /** A signed-in client's assigned forms (portal). */
+  listClientForms(clientId: string): Promise<ClientFormRow[]>;
   listOrgInvoices(orgId: string): Promise<Invoice[]>;
   getReporting(orgId: string, now: string, filters: ReportingFilters): Promise<ReportingResult>;
   getOrgSettings(orgId: string): Promise<OrgSettings | null>;

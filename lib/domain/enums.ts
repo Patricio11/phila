@@ -194,6 +194,32 @@ export type StorageBackend = (typeof STORAGE_BACKENDS)[number];
 export const DOCUMENT_SHARED_BY = ["counsellor", "org", "client"] as const;
 export type DocumentSharedBy = (typeof DOCUMENT_SHARED_BY)[number];
 
+/* ---- Forms (org forms library — Phase 18.6) --------------------------- */
+
+/** What a form is for. `intake` is special: the active intake form drives booking. */
+export const FORM_KINDS = ["intake", "feedback", "screening", "consent", "custom"] as const;
+export type FormKind = (typeof FORM_KINDS)[number];
+
+export const FORM_KIND_LABELS: Record<FormKind, string> = {
+  intake: "Intake",
+  feedback: "Feedback",
+  screening: "Screening",
+  consent: "Consent",
+  custom: "Custom",
+};
+
+/** A form is live or tucked away (never hard-deleted — responses must survive). */
+export const FORM_STATUSES = ["active", "archived"] as const;
+export type FormStatus = (typeof FORM_STATUSES)[number];
+
+/** The lifecycle of a form sent to a client. */
+export const FORM_ASSIGNMENT_STATUSES = ["sent", "completed", "revoked"] as const;
+export type FormAssignmentStatus = (typeof FORM_ASSIGNMENT_STATUSES)[number];
+
+/** A question's answer type (shared by the builder, renderer, and validation). */
+export const FORM_FIELD_TYPES = ["text", "textarea", "tel", "email", "radio"] as const;
+export type FormFieldType = (typeof FORM_FIELD_TYPES)[number];
+
 /* ---- South African reference data ------------------------------------- */
 
 export const PROVINCES = [

@@ -16,7 +16,12 @@ import type {
   Conversation,
   CounsellorDashboard,
   CounsellorRoomsView,
+  ClientFormRow,
   DataProvider,
+  FormResponseRow,
+  FormResponses,
+  FormSummary,
+  FormTokenView,
   FunderGrantView,
   GrantBreakdowns,
   GrantSummary,
@@ -53,6 +58,9 @@ import type {
   Document,
   DocumentFolder,
   DocumentRequest,
+  Form,
+  FormAssignment,
+  FormSnapshot,
   Grant,
   GrantIndicator,
   Invoice,
@@ -63,6 +71,7 @@ import type {
   SessionNote,
   StorageUsage,
 } from "@/lib/domain/types";
+import type { FormStatus } from "@/lib/domain/enums";
 import { storageLimitBytes } from "@/lib/documents/quota";
 import {
   aiRailConfig,
@@ -95,6 +104,8 @@ import {
   grants,
   intakeForms,
   intakeResponses,
+  orgForms,
+  formAssignments as formAssignmentsSeed,
   invoices as allInvoices,
   orgExtraInvoices,
   orgPublicContent,
@@ -352,6 +363,42 @@ function toBreakdown(rows: { label: string; count: number }[]): Breakdown[] {
 async function ok<T>(value: T): Promise<T> {
   return value;
 }
+
+/* ── Forms library store (Phase 18.6) ──────────────────────────────────────
+ * Mutable in-memory stores so send/submit behave within a dev session. Seeds
+ * resolve their relative offsets once, against a base captured at module load
+ * (the same trick the rest of the demo uses via the frozen clock). */
+const FORMS_BASE = new Date();
+function agoIso(days: number): string {
+  return new Date(FORMS_BASE.getTime() - days * 86_400_000).toISOString();
+}
+function snapshotOf(f: { kind: Form["kind"]; title: string; intro?: string; fields: Form["fields"] }): FormSnapshot {
+  return { kind: f.kind, title: f.title, intro: f.intro, fields: f.fields };
+}
+
+const mockForms: Form[] = Object.entries(orgForms).flatMap(([orgId, list]) =>
+  list.map((f) => ({
+    id: f.id, orgId, kind: f.kind, title: f.title, intro: f.intro, fields: f.fields,
+    status: f.status, createdAt: agoIso(f.createdDaysAgo), updatedAt: agoIso(f.updatedDaysAgo),
+  })),
+);
+
+const mockAssignments: FormAssignment[] = formAssignmentsSeed.map((a) => {
+  const form = mockForms.find((f) => f.id === a.formId);
+  const orgId = form?.orgId ?? "";
+  return {
+    id: a.id, orgId, formId: a.formId, clientId: a.clientId, token: a.token, status: a.status,
+    snapshot: form ? snapshotOf(form) : { kind: "custom", title: "Form", fields: [] },
+    answers: a.answers ?? null,
+    sentBy: "system",
+    sentAt: agoIso(a.sentDaysAgo),
+    submittedAt: a.submittedDaysAgo != null ? agoIso(a.submittedDaysAgo) : null,
+  };
+});
+
+let formSeq = 1;
+const newId = (prefix: string) => `${prefix}_${Date.now().toString(36)}_${(formSeq++).toString(36)}`;
+const newToken = () => `f_${Math.random().toString(36).slice(2, 10)}${(formSeq++).toString(36)}`;
 
 export const mockProvider: DataProvider = {
   getOrg: (orgId) => ok(orgs.find((o) => o.id === orgId) ?? null),
@@ -1237,6 +1284,112 @@ export const mockProvider: DataProvider = {
   },
 
   getIntakeForm: (orgId) => ok(intakeForms[orgId] ?? null),
+
+  /* ── Forms library (Phase 18.6) ───────────────────────────────────────── */
+  listForms: (orgId): Promise<FormSummary[]> => {
+    const rows = mockForms
+      .filter((f) => f.orgId === orgId)
+      .map((f): FormSummary => {
+        const sends = mockAssignments.filter((a) => a.formId === f.id && a.status !== "revoked");
+        return {
+          id: f.id, kind: f.kind, title: f.title, intro: f.intro, fieldCount: f.fields.length,
+          status: f.status, sentCount: sends.length,
+          completedCount: sends.filter((a) => a.status === "completed").length,
+          updatedAt: f.updatedAt,
+        };
+      })
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    return ok(rows);
+  },
+
+  getForm: (orgId, formId) => ok(mockForms.find((f) => f.id === formId && f.orgId === orgId) ?? null),
+
+  getFormResponses: (orgId, formId): Promise<FormResponses | null> => {
+    const form = mockForms.find((f) => f.id === formId && f.orgId === orgId);
+    if (!form) return ok(null);
+    const counsellors = allCounsellors.filter((c) => c.orgId === orgId);
+    const rows: FormResponseRow[] = mockAssignments
+      .filter((a) => a.formId === formId && a.status !== "revoked")
+      .map((a) => {
+        const client = allClients.find((c) => c.id === a.clientId);
+        return {
+          assignmentId: a.id, clientId: a.clientId, clientName: client?.name ?? "Client",
+          counsellorName: counsellors.find((c) => c.id === client?.primaryCounsellorId)?.name ?? "Unassigned",
+          status: a.status, sentAt: a.sentAt, submittedAt: a.submittedAt, answers: a.answers, snapshot: a.snapshot,
+        };
+      })
+      .sort((x, y) => (y.submittedAt ?? y.sentAt).localeCompare(x.submittedAt ?? x.sentAt));
+    return ok({ form, rows });
+  },
+
+  createForm: (orgId, draft, createdBy, now) => {
+    const id = newId("form");
+    mockForms.push({ id, orgId, kind: draft.kind, title: draft.title, intro: draft.intro, fields: draft.fields, status: "active", createdAt: now, updatedAt: now });
+    return ok({ id });
+  },
+
+  updateForm: (orgId, formId, draft, now) => {
+    const f = mockForms.find((x) => x.id === formId && x.orgId === orgId);
+    if (!f) return ok({ ok: false });
+    Object.assign(f, { kind: draft.kind, title: draft.title, intro: draft.intro, fields: draft.fields, updatedAt: now });
+    return ok({ ok: true });
+  },
+
+  duplicateForm: (orgId, formId, now) => {
+    const f = mockForms.find((x) => x.id === formId && x.orgId === orgId);
+    if (!f) return ok(null);
+    const id = newId("form");
+    mockForms.push({ id, orgId, kind: f.kind === "intake" ? "custom" : f.kind, title: `${f.title} (copy)`, intro: f.intro, fields: f.fields.map((x) => ({ ...x })), status: "active", createdAt: now, updatedAt: now });
+    return ok({ id });
+  },
+
+  setFormStatus: (orgId, formId, status: FormStatus, now) => {
+    const f = mockForms.find((x) => x.id === formId && x.orgId === orgId);
+    if (!f) return ok({ ok: false });
+    f.status = status; f.updatedAt = now;
+    return ok({ ok: true });
+  },
+
+  sendFormToClients: (orgId, formId, clientIds, sentBy, now) => {
+    const form = mockForms.find((f) => f.id === formId && f.orgId === orgId);
+    if (!form) return ok({ sent: 0, assignments: [] });
+    const snapshot = snapshotOf(form);
+    const assignments = clientIds.map((clientId) => {
+      // Reuse an existing un-submitted assignment (a resend) rather than duplicate.
+      const existing = mockAssignments.find((a) => a.formId === formId && a.clientId === clientId && a.status === "sent");
+      if (existing) {
+        existing.snapshot = snapshot; existing.sentAt = now; existing.sentBy = sentBy;
+        return { clientId, token: existing.token };
+      }
+      const token = newToken();
+      mockAssignments.push({ id: newId("fa"), orgId, formId, clientId, token, status: "sent", snapshot, answers: null, sentBy, sentAt: now, submittedAt: null });
+      return { clientId, token };
+    });
+    return ok({ sent: assignments.length, assignments });
+  },
+
+  getFormByToken: (token): Promise<FormTokenView | null> => {
+    const a = mockAssignments.find((x) => x.token === token && x.status !== "revoked");
+    if (!a) return ok(null);
+    const org = orgs.find((o) => o.id === a.orgId);
+    return ok({ assignmentId: a.id, orgId: a.orgId, orgName: org?.name ?? "Your practice", status: a.status, snapshot: a.snapshot, submittedAt: a.submittedAt });
+  },
+
+  submitFormResponse: (token, answers, now) => {
+    const a = mockAssignments.find((x) => x.token === token && x.status !== "revoked");
+    if (!a) return ok({ ok: false as const, error: "This form link is no longer valid." });
+    if (a.status === "completed") return ok({ ok: false as const, error: "This form has already been submitted." });
+    a.answers = answers; a.status = "completed"; a.submittedAt = now;
+    return ok({ ok: true as const });
+  },
+
+  listClientForms: (clientId): Promise<ClientFormRow[]> => {
+    const rows = mockAssignments
+      .filter((a) => a.clientId === clientId && a.status !== "revoked")
+      .map((a): ClientFormRow => ({ assignmentId: a.id, token: a.token, formTitle: a.snapshot.title, kind: a.snapshot.kind, status: a.status, sentAt: a.sentAt, submittedAt: a.submittedAt }))
+      .sort((x, y) => y.sentAt.localeCompare(x.sentAt));
+    return ok(rows);
+  },
 
   listOrgInvoices: (orgId) => ok(orgInvoicesFor(orgId)),
 

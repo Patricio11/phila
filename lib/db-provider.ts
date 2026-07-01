@@ -17,6 +17,7 @@ import { getSubscriptionRow, listSubscriptions } from "@/db/queries/subscription
 import { getReportingDb, getHubInsightsDb } from "@/db/queries/analytics";
 import { listGrantsDb, getGrantViewDb, getFunderGrantViewDb } from "@/db/queries/grants";
 import { listOrgDocumentsDb, listOrgFoldersDb, listDocumentRequestsDb, getStorageUsageDb, listClientVisibleDocumentsDb, listClientRequestsDb, listCounsellorDocumentsDb } from "@/db/queries/documents";
+import { listFormsDb, getFormDb, getActiveIntakeFormDb, getFormResponsesDb, getFormByTokenDb, listClientFormsDb, createFormDb, updateFormDb, duplicateFormDb, setFormStatusDb, sendFormToClientsDb, submitFormResponseDb } from "@/db/queries/forms";
 import { listTeamThreadsDb } from "@/db/queries/messages";
 import { getPublicPageContent, defaultContent } from "@/db/queries/public-page";
 import type { OrgPublicPage } from "@/lib/data-provider";
@@ -237,6 +238,21 @@ export const dbProvider: DataProvider = {
   listClientDocumentRequests: (clientId) => listClientRequestsDb(clientId),
   listCounsellorDocuments: (counsellorId) => listCounsellorDocumentsDb(counsellorId),
   listTeamThreads: (userId, orgId) => listTeamThreadsDb(userId, orgId),
+
+  // Forms library (Phase 18.6)  real DB reads + writes. Intake for booking now
+  // resolves the active intake form from `forms` (falls back to mock if unseeded).
+  listForms: (orgId) => listFormsDb(orgId),
+  getForm: (orgId, formId) => getFormDb(orgId, formId),
+  getFormResponses: (orgId, formId) => getFormResponsesDb(orgId, formId),
+  createForm: (orgId, draft, createdBy, now) => createFormDb(orgId, draft, createdBy, now),
+  updateForm: (orgId, formId, draft, now) => updateFormDb(orgId, formId, draft, now),
+  duplicateForm: (orgId, formId, now) => duplicateFormDb(orgId, formId, now),
+  setFormStatus: (orgId, formId, status, now) => setFormStatusDb(orgId, formId, status, now),
+  sendFormToClients: (orgId, formId, clientIds, sentBy, now) => sendFormToClientsDb(orgId, formId, clientIds, sentBy, now),
+  getFormByToken: (tok) => getFormByTokenDb(tok),
+  submitFormResponse: (tok, answers, now) => submitFormResponseDb(tok, answers, now),
+  listClientForms: (clientId) => listClientFormsDb(clientId),
+  getIntakeForm: async (orgId) => (await getActiveIntakeFormDb(orgId)) ?? mockProvider.getIntakeForm(orgId),
 
   // The public booking config keeps its mock-sourced settings (booking policy +
   // intake form, persisted in later phases) but swaps in the REAL org so the

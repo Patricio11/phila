@@ -37,6 +37,8 @@ import {
   grantNarratives as narrativesFx,
   funderContacts as funderContactsFx,
   teamThreads as teamThreadsFx,
+  orgForms as orgFormsFx,
+  formAssignments as formAssignmentsFx,
 } from "@/lib/mock/fixtures";
 import { CHANNELS, TRIGGERS, DEFAULT_TEMPLATES } from "@/lib/messaging/templates";
 
@@ -218,6 +220,31 @@ async function main() {
       const m = measures[i]!;
       await db.insert(schema.outcomeMeasures).values({ id: `om_${clientId}_${i}`, clientId, tool: m.tool, score: m.score, takenAt: new Date(now.getTime() - m.weeksAgo * 7 * 86_400_000) }).onConflictDoNothing();
     }
+  }
+
+  // ── Forms cluster (Phase 18.6) ────────────────────────────────────────
+  // The org's forms library + the forms already sent to clients (the response
+  // rows). Snapshots freeze the form at send time. Mirrors the mock fixtures.
+  const daysAgo = (n: number) => new Date(now.getTime() - n * 86_400_000);
+  const formById = new Map<string, (typeof orgFormsFx)[string][number] & { orgId: string }>();
+  for (const [orgId, list] of Object.entries(orgFormsFx)) {
+    for (const f of list) {
+      formById.set(f.id, { ...f, orgId });
+      await db.insert(schema.forms).values({
+        id: f.id, orgId, kind: f.kind, title: f.title, intro: f.intro ?? null, fields: f.fields,
+        status: f.status, createdBy: "system", createdAt: daysAgo(f.createdDaysAgo), updatedAt: daysAgo(f.updatedDaysAgo),
+      }).onConflictDoNothing();
+    }
+  }
+  for (const a of formAssignmentsFx) {
+    const f = formById.get(a.formId);
+    if (!f) continue;
+    const snapshot = { kind: f.kind, title: f.title, intro: f.intro, fields: f.fields };
+    await db.insert(schema.formAssignments).values({
+      id: a.id, orgId: f.orgId, formId: a.formId, clientId: a.clientId, token: a.token, status: a.status,
+      snapshot, answers: a.answers ?? null, sentBy: "system", sentAt: daysAgo(a.sentDaysAgo),
+      submittedAt: a.submittedDaysAgo != null ? daysAgo(a.submittedDaysAgo) : null,
+    }).onConflictDoNothing();
   }
 
   // ── Team messaging cluster (internal staff chat) ──────────────────────

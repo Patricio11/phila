@@ -30,7 +30,7 @@ export function ClosingCta() {
                 </a>
               </Button>
               <Button asChild variant="ghost" size="lg">
-                <Link href="/app">Explore the dashboard</Link>
+                <Link href="/signup">Get started</Link>
               </Button>
             </div>
           </div>

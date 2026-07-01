@@ -3,21 +3,12 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Briefcase, HeartHandshake, LifeBuoy, Stethoscope } from "lucide-react";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PasswordField } from "@/components/auth/password-field";
 import { useToast } from "@/components/ui/toast";
 import { signIn, homeForCurrentUser } from "@/app/(auth)/actions";
 import { authClient } from "@/lib/auth/client";
-
-const DEMOS = [
-  { email: "nomsa@masizakhe.org.za", label: "Counsellor", icon: Stethoscope },
-  { email: "thandeka@masizakhe.org.za", label: "Practice admin", icon: Briefcase },
-  { email: "lerato.m@example.co.za", label: "Client", icon: HeartHandshake },
-  { email: "palesa.mokoena@dsd.example.gov.za", label: "Funder", icon: LifeBuoy },
-];
-const DEMO_PASSWORD = "phila1234";
 
 export function LoginForm() {
   const router = useRouter();
@@ -89,23 +80,9 @@ export function LoginForm() {
 
       <Button onClick={submit} loading={pending} className="w-full">Sign in</Button>
 
-      {/* Demo workspaces  explore without an account (Part A). */}
-      <div className="pt-1">
-        <div className="relative flex items-center">
-          <span className="h-px flex-1 bg-border" />
-          <span className="px-3 text-[11.5px] text-text-3">or explore a demo workspace</span>
-          <span className="h-px flex-1 bg-border" />
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          {DEMOS.map((d) => (
-            <button key={d.email} type="button" disabled={pending} onClick={() => doSignIn({ email: d.email, password: DEMO_PASSWORD })} className="group flex items-center gap-2 rounded-control border border-border bg-surface px-3 py-2 text-[12.5px] font-medium text-text-2 transition-colors hover:border-accent/40 hover:bg-accent-soft hover:text-accent disabled:opacity-50">
-              <d.icon className="size-4 shrink-0" strokeWidth={2} aria-hidden />
-              <span className="flex-1 text-left">{d.label}</span>
-              <ArrowRight className="size-3.5 opacity-0 transition-opacity group-hover:opacity-100" strokeWidth={2.2} aria-hidden />
-            </button>
-          ))}
-        </div>
-      </div>
+      <p className="text-center text-[12.5px] text-text-3">
+        New to Phila? <Link href="/signup" className="font-medium text-accent hover:underline">Create a practice</Link>
+      </p>
     </div>
   );
 }

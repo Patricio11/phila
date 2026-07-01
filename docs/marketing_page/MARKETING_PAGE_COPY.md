@@ -97,9 +97,9 @@ until you connect your own accounts.
 
 **Eyebrow:** Proof
 **Heading:** We'd rather show you than sell you
-**Lead:** Phila is new. Open a demo workspace, book a mock appointment, sign a note, watch it roll into a funder report — as any of the five roles.
+**Lead:** Phila is new — we won't pretend otherwise. So instead of a pitch, we'll walk you through the real thing: a booking, a session, a signed note, and the funder report it rolls into — set up with your own services in mind.
 
-**CTA:** Explore a live demo → `/login`
+**CTA:** Book a walkthrough → `mailto:hello@philasa.com`
 
 **Honest line:** We won't invent five-star quotes. As our first practices go live, their words will go here — with their names on them.
 
@@ -144,7 +144,7 @@ the live tiers render from the `plans` table (`components/marketing/pricing.tsx`
 **Heading:** Bring calm to your counselling practice.
 **Subhead:** We'll walk you through Phila with your own services, intake, and reporting in mind — and set it up with you. No obligation, no pressure.
 **Primary CTA:** Book a walkthrough → `mailto:hello@philasa.com`
-**Secondary CTA:** Explore the dashboard → `/app`
+**Secondary CTA:** Get started → `/signup`
 
 ---
 
@@ -158,7 +158,8 @@ the live tiers render from the `plans` table (`components/marketing/pricing.tsx`
 
 ## Copy rules (keep these true as the page evolves)
 
-- **Button label matches what it does** — "Get started" → the sign-up flow; "Explore a live demo" → the demo login.
+- **Button label matches what it does** — "Get started" → the sign-up flow; "Book a walkthrough" → email us.
+- **No public demo access.** For production there are no one-click demo logins and no "explore a demo" CTAs; the seeded org (`docs/DEMO_LOGINS.md`) is dev-only. CTAs point to sign-up or a walkthrough — never straight into `/app`.
 - **No fabricated numbers, logos, or testimonials** until they're real and named.
 - **No scarcity** ("limited spots", countdowns) — Phila is calm and honest; that's the brand.
 - **Every feature claim maps to something shipped.** No AI/automation claim the build can't back.

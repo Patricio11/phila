@@ -47,7 +47,7 @@ export function Hero() {
               </Link>
             </Button>
             <Button asChild variant="ghost" size="lg">
-              <Link href="/app">See the dashboard</Link>
+              <a href="mailto:hello@philasa.com?subject=Phila%20walkthrough">Book a walkthrough</a>
             </Button>
           </div>
 

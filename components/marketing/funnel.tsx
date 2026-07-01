@@ -196,10 +196,10 @@ export function Proof() {
   return (
     <section className="bg-surface-2/40 py-16 sm:py-24">
       <div className="mx-auto w-full max-w-2xl px-4 text-center sm:px-6">
-        <SectionHeading eyebrow="Proof" title="We'd rather show you than sell you" align="center" lead="Phila is new. Open a demo workspace, book a mock appointment, sign a note, watch it roll into a funder report  as any of the five roles." />
+        <SectionHeading eyebrow="Proof" title="We'd rather show you than sell you" align="center" lead="Phila is new  we won't pretend otherwise. So instead of a pitch, we'll walk you through the real thing: a booking, a session, a signed note, and the funder report it rolls into  set up with your own services in mind." />
         <Reveal delay={80}>
           <div className="mt-8 flex justify-center">
-            <Button asChild size="lg"><Link href="/login">Explore a live demo <ArrowRight className="size-4" strokeWidth={2.2} aria-hidden /></Link></Button>
+            <Button asChild size="lg"><a href="mailto:hello@philasa.com?subject=Phila%20walkthrough">Book a walkthrough <ArrowRight className="size-4" strokeWidth={2.2} aria-hidden /></a></Button>
           </div>
         </Reveal>
         <Reveal delay={120}>

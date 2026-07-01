@@ -210,6 +210,22 @@ function respondentNameFrom(snapshot: FormSnapshot, answers: Record<string, stri
   return v || null;
 }
 
+/**
+ * Mirror a completed booking intake into a `form_assignments` row against the org's
+ * active intake form, so intake answers captured at booking also appear in the
+ * form's Responses view. Best-effort  callers must not let this break booking.
+ */
+export async function recordBookingIntakeDb(orgId: string, clientId: string, answers: Record<string, string>, now: string): Promise<void> {
+  const form = await getActiveIntakeFormDb(orgId);
+  if (!form) return;
+  const at = new Date(now);
+  await getDb().insert(formAssignments).values({
+    id: `fa_${randomUUID().slice(0, 12)}`, orgId, formId: form.id, clientId,
+    token: `r_${randomUUID().replace(/-/g, "")}`, status: "completed",
+    snapshot: snapshotOf(form), answers, sentBy: null, sentAt: at, submittedAt: at,
+  });
+}
+
 export async function submitFormResponseDb(tok: string, answers: Record<string, string>, now: string): Promise<{ ok: true } | { ok: false; error: string }> {
   const db = getDb();
   const at = new Date(now);

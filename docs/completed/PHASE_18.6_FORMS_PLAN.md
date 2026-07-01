@@ -80,11 +80,12 @@ intake form from `forms` in DB mode (mock fallback if unseeded).
   creates a fresh response row (no client). Migration `0026`: `theme` jsonb +
   `share_token`/`share_enabled` on `forms`, nullable `client_id` + `respondent_name`
   on `form_assignments`. Seeded a themed split feedback form + its share link.
-- [x] **6 · Polish + docs** — refreshed `docs/DEMO_LOGINS.md` (Forms + share link,
-  corrected the removed one-click buttons note); marked 18.6 done in the ROADMAP + this
-  doc. *Deferred (future nicety):* mirroring a completed booking intake into a
-  `form_assignments` row so booking intake shows in the Responses view  the intake
-  board still works and booking is unaffected, so this is optional.
+- [x] **6 · Polish + docs** — **booking intake now mirrors into Responses**:
+  `recordBookingIntakeDb` writes a completed `form_assignments` row against the active
+  intake form on every public booking (best-effort, wrapped so it can never break the
+  booking flow). Refreshed `docs/DEMO_LOGINS.md` (Forms + share link, corrected the
+  removed one-click buttons note); marked 18.6 done in the ROADMAP + this doc; wrote
+  `docs/completed/PHASE_18.6_COMPLETE.md`.
 
 ## Verification
 

@@ -885,7 +885,8 @@ roles side-by-side. ✅ **Met** (tsc/lint/build + 119 tests green throughout the
 ## 📝 PHASE 18.6: FORMS — ORG FORMS LIBRARY ✅ (2026-07-01)
 *Goal: evolve the single, mock intake form into a real, DB-backed forms library — many forms per org (intake,
 feedback, screening, consent, custom), sent to one or many clients, with responses collected and reviewable.
-Intake becomes one form kind, still driving booking. Full plan + living checklist: `docs/PHASE_18.6_FORMS_PLAN.md`.*
+Intake becomes one form kind, still driving booking. Full write-up: `docs/completed/PHASE_18.6_COMPLETE.md`
+(plan: `docs/completed/PHASE_18.6_FORMS_PLAN.md`).*
 
 - [x] **Commit 1 — data model + seam + docs:** new `forms` + `form_assignments` tables (migration
   `0025_secret_lyja.sql`), **RLS** org-scoping, `db/queries/forms.ts` (real reads + writes), the provider seam

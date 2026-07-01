@@ -4,7 +4,7 @@ import { z } from "zod";
 import { requireOrg } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 import { sendTeamMessageDb, sendToThreadDb, createGroupThreadDb, markThreadReadDb, getUserName } from "@/db/queries/messages";
-import { broadcastToThread } from "@/lib/messaging/realtime";
+import { broadcastToThread, broadcastThreadAdded } from "@/lib/messaging/realtime";
 
 /**
  * Internal team messaging  staff-to-staff (hub ↔ counsellor, counsellor ↔
@@ -71,6 +71,7 @@ export async function createGroup(
   if (!isDb()) return { ok: false, error: "Groups need the database." };
 
   const threadId = await createGroupThreadDb(membership.orgId, principal.userId, parsed.data.title, parsed.data.memberUserIds);
+  await broadcastThreadAdded(parsed.data.memberUserIds, { id: threadId, title: parsed.data.title, memberCount: parsed.data.memberUserIds.length + 1 });
   await logAccess({
     action: "admin.action",
     actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },

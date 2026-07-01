@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type RealtimeChannel } from "@supabase/supabase-js";
 import { ArrowLeft, Check, Lock, MessagesSquare, PenSquare, Search, Send, UsersRound } from "lucide-react";
 import type { TeamThread } from "@/lib/data-provider";
 import { TEAM_ROLE_LABELS, type TeamRole } from "@/lib/domain/enums";
@@ -44,8 +44,14 @@ export function TeamMessagesView({
   const [mobileThread, setMobileThread] = useState(false);
   const [query, setQuery] = useState("");
   const [online, setOnline] = useState<Set<string>>(new Set());
+  const [typing, setTyping] = useState<{ threadId: string; name: string } | null>(null);
   const activeIdRef = useRef(activeId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const channelsRef = useRef<Map<string, RealtimeChannel>>(new Map());
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTypingSent = useRef(0);
+  const teammatesRef = useRef(teammates);
+  useEffect(() => { teammatesRef.current = teammates; }, [teammates]);
   const [newOpen, setNewOpen] = useState(false);
   const [newQuery, setNewQuery] = useState("");
   const [groupOpen, setGroupOpen] = useState(false);
@@ -76,10 +82,23 @@ export function TeamMessagesView({
   useEffect(() => {
     if (!rtUrl || !rtKey || !myUserId) return;
     const supabase = createClient(rtUrl, rtKey, { realtime: { params: { eventsPerSecond: 10 } } });
+    const channels = channelsRef.current;
 
     const presence = supabase.channel(`presence:org:${orgId}`, { config: { presence: { key: myUserId } } });
     presence.on("presence", { event: "sync" }, () => setOnline(new Set(Object.keys(presence.presenceState()))));
     presence.subscribe((status) => { if (status === "SUBSCRIBED") void presence.track({ userId: myUserId }); });
+
+    // Per-user channel: "you were added to a group" arrives live.
+    const userCh = supabase.channel(`user:${myUserId}`);
+    userCh.on("broadcast", { event: "thread_added" }, ({ payload }) => {
+      const p = payload as { id: string; title: string; memberCount: number };
+      setThreads((prev) =>
+        prev.some((t) => t.id === p.id)
+          ? prev
+          : [{ id: p.id, kind: "group", otherUserId: "", otherName: p.title, otherRole: "counsellor", memberCount: p.memberCount, unread: 0, lastAt: new Date().toISOString(), messages: [] }, ...prev],
+      );
+    });
+    userCh.subscribe();
 
     const ids = threadKey ? threadKey.split(",") : [];
     const chans = ids.map((id) => {
@@ -93,14 +112,26 @@ export function TeamMessagesView({
           return { ...t, messages: [...t.messages, msg], lastAt: p.at, unread: activeIdRef.current === p.threadId ? 0 : t.unread + 1 };
         }));
         if (activeIdRef.current === p.threadId) void markThreadRead(p.threadId);
+        setTyping((cur) => (cur?.threadId === p.threadId ? null : cur));
+      });
+      ch.on("broadcast", { event: "typing" }, ({ payload }) => {
+        const uid = (payload as { userId: string }).userId;
+        if (uid === myUserId) return;
+        const name = teammatesRef.current.find((m) => m.userId === uid)?.name ?? "Someone";
+        setTyping({ threadId: id, name });
+        if (typingTimer.current) clearTimeout(typingTimer.current);
+        typingTimer.current = setTimeout(() => setTyping(null), 3500);
       });
       ch.subscribe();
+      channels.set(id, ch);
       return ch;
     });
 
     return () => {
       void presence.unsubscribe();
+      void userCh.unsubscribe();
       chans.forEach((c) => void c.unsubscribe());
+      channels.clear();
       void supabase.removeAllChannels();
     };
   }, [rtUrl, rtKey, myUserId, orgId, threadKey]);
@@ -110,6 +141,15 @@ export function TeamMessagesView({
     setMobileThread(true);
     setThreads((prev) => prev.map((t) => (t.id === id ? { ...t, unread: 0 } : t)));
     void markThreadRead(id);
+  };
+
+  // Broadcast a throttled "typing" ping on the active thread's channel.
+  const emitTyping = (threadId: string | null) => {
+    if (!threadId || threadId.startsWith("local_") || !myUserId) return;
+    const now = Date.now();
+    if (now - lastTypingSent.current < 2000) return;
+    lastTypingSent.current = now;
+    void channelsRef.current.get(threadId)?.send({ type: "broadcast", event: "typing", payload: { userId: myUserId } });
   };
 
   // Open an existing 1:1 with a colleague, or start a fresh one.
@@ -230,11 +270,15 @@ export function TeamMessagesView({
                 <div className="min-w-0">
                   <div className="text-[14px] font-[600] leading-tight text-text">{active.otherName}</div>
                   <div className="text-[11px] text-text-3">
-                    {active.kind === "group"
-                      ? `${active.memberCount ?? 0} members`
-                      : online.has(active.otherUserId)
-                        ? <span className="text-emerald-600">Active now</span>
-                        : TEAM_ROLE_LABELS[active.otherRole]}
+                    {typing?.threadId === active.id ? (
+                      <span className="text-accent">{active.kind === "group" ? `${typing.name} is typing…` : "typing…"}</span>
+                    ) : active.kind === "group" ? (
+                      `${active.memberCount ?? 0} members`
+                    ) : online.has(active.otherUserId) ? (
+                      <span className="text-emerald-600">Active now</span>
+                    ) : (
+                      TEAM_ROLE_LABELS[active.otherRole]
+                    )}
                   </div>
                 </div>
               </div>
@@ -266,7 +310,7 @@ export function TeamMessagesView({
                 <div className="flex items-end gap-2">
                   <textarea
                     value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
+                    onChange={(e) => { setDraft(e.target.value); emitTyping(active.id); }}
                     onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
                     placeholder={`Message ${active.otherName.split(" ")[0]}…`}
                     rows={1}

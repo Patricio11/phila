@@ -47,6 +47,22 @@ export async function broadcastToThread(threadId: string, payload: RealtimeMessa
   }
 }
 
+/** Tell members (via their per-user channel) they've been added to a new group. */
+export async function broadcastThreadAdded(memberUserIds: string[], thread: { id: string; title: string; memberCount: number }): Promise<void> {
+  try {
+    const creds = await getCreds();
+    if (!creds || memberUserIds.length === 0) return;
+    const messages = memberUserIds.map((uid) => ({ topic: `user:${uid}`, event: "thread_added", payload: thread }));
+    await fetch(`${creds.url.replace(/\/$/, "")}/realtime/v1/api/broadcast`, {
+      method: "POST",
+      headers: { apikey: creds.serviceKey, Authorization: `Bearer ${creds.serviceKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ messages }),
+    });
+  } catch {
+    /* best-effort */
+  }
+}
+
 /** Public config the browser needs to subscribe (url + anon key). Null = dormant. */
 export async function getRealtimePublicConfig(): Promise<{ url: string; anonKey: string } | null> {
   const creds = await getCreds();

@@ -1,5 +1,6 @@
 import { CheckCircle2, Link2, Sprout } from "lucide-react";
 import { getDataProvider } from "@/lib/data-provider";
+import { getStorageProvider } from "@/lib/storage";
 import { FormFillView } from "@/components/forms/form-fill-view";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +14,17 @@ export default async function FormFillPage({ params }: { params: Promise<{ token
   if (!view) return <Notice icon={Link2} title="This link isn't valid" body="This form link has expired or was mistyped. If you were expecting a form, please ask the practice to resend it." />;
   if (view.status === "completed") return <Notice icon={CheckCircle2} title="Already submitted" body={`Thank you  ${view.orgName} already has your answers. There's nothing else to do.`} tone="accent" />;
 
-  return <FormFillView token={token} orgName={view.orgName} snapshot={view.snapshot} />;
+  // Resolve a background image (if any) to a short-TTL signed URL, server-side.
+  let imageUrl: string | null = null;
+  const bg = view.theme?.background;
+  if (bg?.type === "image" && bg.imageKey) {
+    try {
+      const storage = await getStorageProvider();
+      if (storage.status === "live") imageUrl = await storage.signedDownloadUrl(bg.imageKey);
+    } catch { imageUrl = null; }
+  }
+
+  return <FormFillView token={token} orgName={view.orgName} snapshot={view.snapshot} theme={view.theme} imageUrl={imageUrl} />;
 }
 
 function Notice({ icon: Icon, title, body, tone }: { icon: typeof Link2; title: string; body: string; tone?: "accent" }) {

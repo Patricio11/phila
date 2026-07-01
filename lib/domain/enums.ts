@@ -220,6 +220,18 @@ export type FormAssignmentStatus = (typeof FORM_ASSIGNMENT_STATUSES)[number];
 export const FORM_FIELD_TYPES = ["text", "textarea", "tel", "email", "radio"] as const;
 export type FormFieldType = (typeof FORM_FIELD_TYPES)[number];
 
+/** How a form's public/share page is laid out. `split` adds a branded hero panel. */
+export const FORM_LAYOUTS = ["form", "split"] as const;
+export type FormLayout = (typeof FORM_LAYOUTS)[number];
+
+/** The hero panel's background source. */
+export const FORM_BG_TYPES = ["gradient", "solid", "image"] as const;
+export type FormBgType = (typeof FORM_BG_TYPES)[number];
+
+/** How an uploaded background image fills the panel. */
+export const FORM_IMAGE_FITS = ["cover", "contain"] as const;
+export type FormImageFit = (typeof FORM_IMAGE_FITS)[number];
+
 /* ---- South African reference data ------------------------------------- */
 
 export const PROVINCES = [

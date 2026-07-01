@@ -17,7 +17,7 @@ import { getSubscriptionRow, listSubscriptions } from "@/db/queries/subscription
 import { getReportingDb, getHubInsightsDb } from "@/db/queries/analytics";
 import { listGrantsDb, getGrantViewDb, getFunderGrantViewDb } from "@/db/queries/grants";
 import { listOrgDocumentsDb, listOrgFoldersDb, listDocumentRequestsDb, getStorageUsageDb, listClientVisibleDocumentsDb, listClientRequestsDb, listCounsellorDocumentsDb } from "@/db/queries/documents";
-import { listFormsDb, getFormDb, getActiveIntakeFormDb, getFormResponsesDb, getFormByTokenDb, listClientFormsDb, createFormDb, updateFormDb, duplicateFormDb, setFormStatusDb, sendFormToClientsDb, submitFormResponseDb } from "@/db/queries/forms";
+import { listFormsDb, getFormDb, getActiveIntakeFormDb, getFormResponsesDb, getFormByTokenDb, listClientFormsDb, createFormDb, updateFormDb, duplicateFormDb, setFormStatusDb, setFormShareDb, sendFormToClientsDb, submitFormResponseDb } from "@/db/queries/forms";
 import { listTeamThreadsDb } from "@/db/queries/messages";
 import { getPublicPageContent, defaultContent } from "@/db/queries/public-page";
 import type { OrgPublicPage } from "@/lib/data-provider";
@@ -249,6 +249,7 @@ export const dbProvider: DataProvider = {
   duplicateForm: (orgId, formId, now) => duplicateFormDb(orgId, formId, now),
   setFormStatus: (orgId, formId, status, now) => setFormStatusDb(orgId, formId, status, now),
   sendFormToClients: (orgId, formId, clientIds, sentBy, now) => sendFormToClientsDb(orgId, formId, clientIds, sentBy, now),
+  setFormShare: (orgId, formId, enabled, now) => setFormShareDb(orgId, formId, enabled, now),
   getFormByToken: (tok) => getFormByTokenDb(tok),
   submitFormResponse: (tok, answers, now) => submitFormResponseDb(tok, answers, now),
   listClientForms: (clientId) => listClientFormsDb(clientId),

@@ -70,12 +70,16 @@ intake form from `forms` in DB mode (mock fallback if unseeded).
   (shared renderer + reused `intakeErrors`) → `submitForm` (server re-validates required
   fields against the snapshot); calm confirmation + invalid/already-submitted states;
   SADAG crisis line. `/me/forms` portal + `clientNav` entry.
-- [ ] **5 · Form Designer + share link** — a **Design** tab in the builder: layout
-  (form-only vs form + hero panel that stacks on mobile), editable hero heading/
-  subheading/bullets, background (gradient / solid colour / uploaded image counting
-  against org storage; image fit cover/contain + colour overlay & opacity); themed
-  two-pane rendering on `/f/<token>`; an **open share link** anyone can fill. New
-  `theme` (jsonb) on `forms`; `shareToken`/`shareEnabled` + nullable assignment client.
+- [x] **5 · Form Designer + share link** — a **Design** tab (`FormDesign`) in the
+  builder: layout (form-only vs form + hero panel that stacks on mobile), editable
+  hero heading/subheading/bullets/footnote, background (gradient / solid colour /
+  uploaded image counting against org storage; image fit cover/contain + colour
+  overlay & opacity) with a live preview. Themed two-pane rendering on `/f/<token>`
+  via shared `form-theme.tsx` (server resolves the image to a signed URL). An **open
+  share link** anyone can fill (`FormShare` toggle + copy) — a share submission
+  creates a fresh response row (no client). Migration `0026`: `theme` jsonb +
+  `share_token`/`share_enabled` on `forms`, nullable `client_id` + `respondent_name`
+  on `form_assignments`. Seeded a themed split feedback form + its share link.
 - [ ] **6 · Polish + docs** — optional booking-intake→assignment, refresh
   `docs/SMOKE_TEST.md` / `docs/DEMO_LOGINS.md`, final ROADMAP + this doc marking 18.6 done.
 

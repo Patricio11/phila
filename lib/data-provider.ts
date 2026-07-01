@@ -22,6 +22,7 @@ import type {
   Form,
   FormField,
   FormSnapshot,
+  FormTheme,
   Funder,
   Grant,
   GrantIndicator,
@@ -449,11 +450,16 @@ export interface FormResponses {
 
 /** What the public fill page (`/f/<token>`) sees  no session, resolved by token. */
 export interface FormTokenView {
-  assignmentId: string;
+  /** Present for a per-client assignment link; null for an open share link. */
+  assignmentId: string | null;
+  formId: string;
   orgId: string;
   orgName: string;
+  /** "assignment" = one client's link; "share" = the open link anyone can fill. */
+  mode: "assignment" | "share";
   status: FormAssignmentStatus;
   snapshot: FormSnapshot;
+  theme: FormTheme | null;
   submittedAt: string | null;
 }
 
@@ -474,6 +480,7 @@ export interface FormDraft {
   title: string;
   intro?: string;
   fields: FormField[];
+  theme?: FormTheme | null;
 }
 
 export interface DuplicateClient {
@@ -841,6 +848,8 @@ export interface DataProvider {
   duplicateForm(orgId: string, formId: string, now: string): Promise<{ id: string } | null>;
   setFormStatus(orgId: string, formId: string, status: FormStatus, now: string): Promise<{ ok: boolean }>;
   sendFormToClients(orgId: string, formId: string, clientIds: string[], sentBy: string, now: string): Promise<{ sent: number; assignments: { clientId: string; token: string }[] }>;
+  /** Turn the open share link on/off (generates a token on first enable). */
+  setFormShare(orgId: string, formId: string, enabled: boolean, now: string): Promise<{ shareToken: string | null; shareEnabled: boolean } | null>;
   /** Client fill (public token): resolve + submit, no session. */
   getFormByToken(token: string): Promise<FormTokenView | null>;
   submitFormResponse(token: string, answers: Record<string, string>, now: string): Promise<{ ok: true } | { ok: false; error: string }>;

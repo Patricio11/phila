@@ -785,6 +785,9 @@ export type FormSeed = {
   title: string;
   intro?: string;
   fields: FormFieldFx[];
+  theme?: import("@/lib/domain/types").FormTheme;
+  shareToken?: string;
+  shareEnabled?: boolean;
   createdDaysAgo: number;
   updatedDaysAgo: number;
 };
@@ -808,6 +811,18 @@ export const orgForms: Record<string, FormSeed[]> = {
       title: "After your session",
       intro: "A couple of quick questions so we can keep improving your care. It's anonymous to everyone but your counsellor.",
       fields: FEEDBACK_FIELDS,
+      theme: {
+        layout: "split",
+        hero: {
+          heading: "How did we do?",
+          subheading: "Your honest feedback helps your counsellor and our practice keep improving your care.",
+          bullets: ["Takes under a minute", "Only your counsellor sees it", "No account needed"],
+          footNote: "Thank you for trusting us with your care.",
+        },
+        background: { type: "gradient", gradientFrom: "#0f5132", gradientTo: "#1c7d58", gradientAngle: 150, overlayColor: "#0b1f17", overlayOpacity: 0 },
+      },
+      shareToken: "s_feedback_masizakhe",
+      shareEnabled: true,
       createdDaysAgo: 40,
       updatedDaysAgo: 12,
     },

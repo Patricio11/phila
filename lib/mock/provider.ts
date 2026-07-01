@@ -379,7 +379,8 @@ function snapshotOf(f: { kind: Form["kind"]; title: string; intro?: string; fiel
 const mockForms: Form[] = Object.entries(orgForms).flatMap(([orgId, list]) =>
   list.map((f) => ({
     id: f.id, orgId, kind: f.kind, title: f.title, intro: f.intro, fields: f.fields,
-    status: f.status, createdAt: agoIso(f.createdDaysAgo), updatedAt: agoIso(f.updatedDaysAgo),
+    status: f.status, theme: f.theme ?? null, shareToken: f.shareToken ?? null, shareEnabled: f.shareEnabled ?? false,
+    createdAt: agoIso(f.createdDaysAgo), updatedAt: agoIso(f.updatedDaysAgo),
   })),
 );
 
@@ -1311,10 +1312,10 @@ export const mockProvider: DataProvider = {
     const rows: FormResponseRow[] = mockAssignments
       .filter((a) => a.formId === formId && a.status !== "revoked")
       .map((a) => {
-        const client = allClients.find((c) => c.id === a.clientId);
+        const client = a.clientId ? allClients.find((c) => c.id === a.clientId) : undefined;
         return {
-          assignmentId: a.id, clientId: a.clientId, clientName: client?.name ?? "Client",
-          counsellorName: counsellors.find((c) => c.id === client?.primaryCounsellorId)?.name ?? "Unassigned",
+          assignmentId: a.id, clientId: a.clientId ?? "", clientName: client?.name ?? a.respondentName ?? "From share link",
+          counsellorName: client ? (counsellors.find((c) => c.id === client.primaryCounsellorId)?.name ?? "Unassigned") : "Shared link",
           status: a.status, sentAt: a.sentAt, submittedAt: a.submittedAt, answers: a.answers, snapshot: a.snapshot,
         };
       })
@@ -1324,14 +1325,14 @@ export const mockProvider: DataProvider = {
 
   createForm: (orgId, draft, createdBy, now) => {
     const id = newId("form");
-    mockForms.push({ id, orgId, kind: draft.kind, title: draft.title, intro: draft.intro, fields: draft.fields, status: "active", createdAt: now, updatedAt: now });
+    mockForms.push({ id, orgId, kind: draft.kind, title: draft.title, intro: draft.intro, fields: draft.fields, theme: draft.theme ?? null, status: "active", createdAt: now, updatedAt: now });
     return ok({ id });
   },
 
   updateForm: (orgId, formId, draft, now) => {
     const f = mockForms.find((x) => x.id === formId && x.orgId === orgId);
     if (!f) return ok({ ok: false });
-    Object.assign(f, { kind: draft.kind, title: draft.title, intro: draft.intro, fields: draft.fields, updatedAt: now });
+    Object.assign(f, { kind: draft.kind, title: draft.title, intro: draft.intro, fields: draft.fields, theme: draft.theme ?? null, updatedAt: now });
     return ok({ ok: true });
   },
 
@@ -1339,8 +1340,16 @@ export const mockProvider: DataProvider = {
     const f = mockForms.find((x) => x.id === formId && x.orgId === orgId);
     if (!f) return ok(null);
     const id = newId("form");
-    mockForms.push({ id, orgId, kind: f.kind === "intake" ? "custom" : f.kind, title: `${f.title} (copy)`, intro: f.intro, fields: f.fields.map((x) => ({ ...x })), status: "active", createdAt: now, updatedAt: now });
+    mockForms.push({ id, orgId, kind: f.kind === "intake" ? "custom" : f.kind, title: `${f.title} (copy)`, intro: f.intro, fields: f.fields.map((x) => ({ ...x })), theme: f.theme ?? null, status: "active", createdAt: now, updatedAt: now });
     return ok({ id });
+  },
+
+  setFormShare: (orgId, formId, enabled, now) => {
+    const f = mockForms.find((x) => x.id === formId && x.orgId === orgId);
+    if (!f) return ok(null);
+    f.shareToken = f.shareToken ?? (enabled ? `s_${newToken()}` : null);
+    f.shareEnabled = enabled; f.updatedAt = now;
+    return ok({ shareToken: f.shareToken ?? null, shareEnabled: enabled });
   },
 
   setFormStatus: (orgId, formId, status: FormStatus, now) => {
@@ -1370,16 +1379,30 @@ export const mockProvider: DataProvider = {
 
   getFormByToken: (token): Promise<FormTokenView | null> => {
     const a = mockAssignments.find((x) => x.token === token && x.status !== "revoked");
-    if (!a) return ok(null);
-    const org = orgs.find((o) => o.id === a.orgId);
-    return ok({ assignmentId: a.id, orgId: a.orgId, orgName: org?.name ?? "Your practice", status: a.status, snapshot: a.snapshot, submittedAt: a.submittedAt });
+    if (a) {
+      const org = orgs.find((o) => o.id === a.orgId);
+      const form = mockForms.find((f) => f.id === a.formId);
+      return ok({ assignmentId: a.id, formId: a.formId, orgId: a.orgId, orgName: org?.name ?? "Your practice", mode: "assignment", status: a.status, snapshot: a.snapshot, theme: form?.theme ?? null, submittedAt: a.submittedAt });
+    }
+    const f = mockForms.find((x) => x.shareToken === token && x.shareEnabled && x.status === "active");
+    if (f) {
+      const org = orgs.find((o) => o.id === f.orgId);
+      return ok({ assignmentId: null, formId: f.id, orgId: f.orgId, orgName: org?.name ?? "Your practice", mode: "share", status: "sent", snapshot: snapshotOf(f), theme: f.theme ?? null, submittedAt: null });
+    }
+    return ok(null);
   },
 
   submitFormResponse: (token, answers, now) => {
     const a = mockAssignments.find((x) => x.token === token && x.status !== "revoked");
-    if (!a) return ok({ ok: false as const, error: "This form link is no longer valid." });
-    if (a.status === "completed") return ok({ ok: false as const, error: "This form has already been submitted." });
-    a.answers = answers; a.status = "completed"; a.submittedAt = now;
+    if (a) {
+      if (a.status === "completed") return ok({ ok: false as const, error: "This form has already been submitted." });
+      a.answers = answers; a.status = "completed"; a.submittedAt = now;
+      return ok({ ok: true as const });
+    }
+    const f = mockForms.find((x) => x.shareToken === token && x.shareEnabled && x.status === "active");
+    if (!f) return ok({ ok: false as const, error: "This form link is no longer valid." });
+    const nameField = f.fields.find((x) => /name/i.test(x.label) || /name/i.test(x.id));
+    mockAssignments.push({ id: newId("fa"), orgId: f.orgId, formId: f.id, clientId: null, token: `r_${newToken()}`, status: "completed", snapshot: snapshotOf(f), answers, sentBy: null, sentAt: now, submittedAt: now, respondentName: (nameField ? answers[nameField.id] : "") || null });
     return ok({ ok: true as const });
   },
 

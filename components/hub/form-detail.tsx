@@ -12,6 +12,7 @@ import { Tag, type TagTone } from "@/components/ui/tag";
 import { FormFields } from "@/components/forms/form-fields";
 import { IntakeDetail } from "@/components/hub/intake-detail";
 import { SendFormModal, type SendClient } from "@/components/hub/send-form-modal";
+import { FormShare } from "@/components/hub/form-share";
 import { cn } from "@/lib/utils";
 
 const KIND_TONE: Record<string, TagTone> = { intake: "accent", feedback: "info", screening: "warn", consent: "neutral", custom: "neutral" };
@@ -66,9 +67,11 @@ export function FormDetail({ form, responses, clients }: { form: Form; responses
       </div>
 
       {tab === "responses" ? (
-        responses.length === 0 ? (
-          <EmptyResponses onSend={() => setSendOpen(true)} />
-        ) : (
+        <div className="space-y-4">
+          <FormShare formId={form.id} shareToken={form.shareToken} shareEnabled={form.shareEnabled} />
+          {responses.length === 0 ? (
+            <EmptyResponses onSend={() => setSendOpen(true)} />
+          ) : (
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-3.5 sm:max-w-md">
               <Stat value={String(completed)} label="Completed" tone="accent" />
@@ -93,7 +96,8 @@ export function FormDetail({ form, responses, clients }: { form: Form; responses
               ))}
             </div>
           </div>
-        )
+          )}
+        </div>
       ) : tab === "questions" ? (
         <ol className="space-y-2.5">
           {form.fields.map((f, i) => (

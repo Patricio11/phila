@@ -232,8 +232,12 @@ async function main() {
       formById.set(f.id, { ...f, orgId });
       await db.insert(schema.forms).values({
         id: f.id, orgId, kind: f.kind, title: f.title, intro: f.intro ?? null, fields: f.fields,
-        status: f.status, createdBy: "system", createdAt: daysAgo(f.createdDaysAgo), updatedAt: daysAgo(f.updatedDaysAgo),
-      }).onConflictDoNothing();
+        status: f.status, theme: f.theme ?? null, shareToken: f.shareToken ?? null, shareEnabled: f.shareEnabled ?? false,
+        createdBy: "system", createdAt: daysAgo(f.createdDaysAgo), updatedAt: daysAgo(f.updatedDaysAgo),
+      }).onConflictDoUpdate({
+        target: schema.forms.id,
+        set: { title: f.title, intro: f.intro ?? null, fields: f.fields, theme: f.theme ?? null, shareToken: f.shareToken ?? null, shareEnabled: f.shareEnabled ?? false, updatedAt: daysAgo(f.updatedDaysAgo) },
+      });
     }
   }
   for (const a of formAssignmentsFx) {

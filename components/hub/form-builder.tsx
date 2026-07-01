@@ -2,8 +2,8 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, Eye, GripVertical, Plus, Save, Trash2, X } from "lucide-react";
-import type { Form, FormField } from "@/lib/domain/types";
+import { ChevronDown, ChevronUp, Eye, GripVertical, ListChecks, Palette, Plus, Save, Trash2, X } from "lucide-react";
+import type { Form, FormField, FormTheme } from "@/lib/domain/types";
 import { FORM_KINDS, FORM_KIND_LABELS, type FormKind } from "@/lib/domain/enums";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,8 @@ import { Input, Textarea, Label, FieldError } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
 import { IntakeDetail } from "@/components/hub/intake-detail";
+import { FormDesign } from "@/components/hub/form-design";
+import { DEFAULT_THEME } from "@/components/forms/form-theme";
 import { saveForm } from "@/app/hub/forms/actions";
 import { cn } from "@/lib/utils";
 
@@ -57,15 +59,17 @@ const TEMPLATES: Record<string, { label: string; kind: FormKind; title: string; 
   },
 };
 
-export function FormBuilder({ initial, orgId }: { initial: Form | null; orgId: string }) {
+export function FormBuilder({ initial, orgId, orgName }: { initial: Form | null; orgId: string; orgName: string }) {
   const router = useRouter();
   const { toast } = useToast();
   const isNew = !initial;
 
+  const [tab, setTab] = useState<"build" | "design">("build");
   const [kind, setKind] = useState<FormKind>(initial?.kind ?? "custom");
   const [title, setTitle] = useState(initial?.title ?? "");
   const [intro, setIntro] = useState(initial?.intro ?? "");
   const [fields, setFields] = useState<FormField[]>(initial?.fields ?? [{ id: "q1", label: "", type: "text", required: false }]);
+  const [theme, setTheme] = useState<FormTheme>(initial?.theme ?? { layout: "form", hero: {}, background: DEFAULT_THEME.background });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState(false);
@@ -111,6 +115,7 @@ export function FormBuilder({ initial, orgId }: { initial: Form | null; orgId: s
         id: f.id, label: f.label, type: f.type, required: f.required, help: f.help ?? "",
         placeholder: f.placeholder ?? "", sensitive: f.sensitive, options: f.type === "radio" ? f.options ?? [] : undefined,
       })),
+      theme,
     });
     setSaving(false);
     if (!res.ok) return setError(res.error);
@@ -125,6 +130,15 @@ export function FormBuilder({ initial, orgId }: { initial: Form | null; orgId: s
 
   return (
     <div className="space-y-5">
+      <div className="flex items-center gap-1 border-b border-border">
+        <BuilderTab active={tab === "build"} onClick={() => setTab("build")} icon={ListChecks}>Build</BuilderTab>
+        <BuilderTab active={tab === "design"} onClick={() => setTab("design")} icon={Palette}>Design</BuilderTab>
+      </div>
+
+      {tab === "design" ? (
+        <FormDesign theme={theme} orgName={orgName} onChange={setTheme} />
+      ) : (
+      <div className="space-y-5">
       {isNew && (
         <Card className="space-y-2 p-4">
           <div className="text-[12.5px] font-medium text-text">Start from a template</div>
@@ -192,6 +206,8 @@ export function FormBuilder({ initial, orgId }: { initial: Form | null; orgId: s
           <Plus className="size-4" strokeWidth={2} aria-hidden /> Add question
         </Button>
       </div>
+      </div>
+      )}
 
       <FieldError>{error}</FieldError>
 
@@ -207,6 +223,14 @@ export function FormBuilder({ initial, orgId }: { initial: Form | null; orgId: s
 
       <IntakeDetail open={preview} onClose={() => setPreview(false)} form={draftForm} />
     </div>
+  );
+}
+
+function BuilderTab({ active, onClick, icon: Icon, children }: { active: boolean; onClick: () => void; icon: typeof ListChecks; children: React.ReactNode }) {
+  return (
+    <button type="button" onClick={onClick} className={cn("-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-[13px] font-medium transition-colors", active ? "border-accent text-accent" : "border-transparent text-text-3 hover:text-text")}>
+      <Icon className="size-4" strokeWidth={2} aria-hidden /> {children}
+    </button>
   );
 }
 

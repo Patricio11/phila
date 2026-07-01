@@ -644,10 +644,13 @@ export const forms = pgTable("forms", {
   intro: text("intro"),
   fields: jsonb("fields").notNull(), // FormField[]
   status: text("status").default("active").notNull(), // active | archived
+  theme: jsonb("theme"), // FormTheme | null  presentation of the public/share page
+  shareToken: text("share_token"), // open share link (anyone can fill)
+  shareEnabled: boolean("share_enabled").default(false).notNull(),
   createdBy: text("created_by"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
-}, (t) => [index("forms_org_idx").on(t.orgId)]);
+}, (t) => [index("forms_org_idx").on(t.orgId), uniqueIndex("forms_share_token_uq").on(t.shareToken)]);
 
 /** A form sent to a client — and, once filled, their response. `snapshot` freezes
  *  the form at send time so later edits never rewrite past answers. The `token` is
@@ -656,7 +659,8 @@ export const formAssignments = pgTable("form_assignments", {
   id: text("id").primaryKey(),
   orgId: text("org_id").notNull().references(() => orgs.id),
   formId: text("form_id").notNull(),
-  clientId: text("client_id").notNull(),
+  clientId: text("client_id"), // null for open share-link submissions
+  respondentName: text("respondent_name"), // captured name for share submissions
   token: text("token").notNull(),
   status: text("status").default("sent").notNull(), // sent | completed | revoked
   snapshot: jsonb("snapshot").notNull(), // { kind, title, intro, fields }

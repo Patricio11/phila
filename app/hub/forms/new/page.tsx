@@ -15,7 +15,7 @@ export default async function NewFormPage() {
         <ArrowLeft className="size-3.5" strokeWidth={2} aria-hidden /> All forms
       </Link>
       <PageHead title="New form" summary="Pick a template to start, or build from scratch. You can preview it exactly as a client will see it." />
-      <FormBuilder initial={null} orgId={membership.orgId} />
+      <FormBuilder initial={null} orgId={membership.orgId} orgName={membership.orgName} />
     </div>
   );
 }

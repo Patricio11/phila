@@ -21,7 +21,7 @@ export default async function EditFormPage({ params }: { params: Promise<{ id: s
         <ArrowLeft className="size-3.5" strokeWidth={2} aria-hidden /> Back to form
       </Link>
       <PageHead title="Edit form" summary="Changes apply to new sends. Answers already collected keep the version they were sent." />
-      <FormBuilder initial={form} orgId={membership.orgId} />
+      <FormBuilder initial={form} orgId={membership.orgId} orgName={membership.orgName} />
     </div>
   );
 }

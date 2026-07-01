@@ -24,8 +24,11 @@ import type {
   EmploymentStatus,
   FolderScope,
   FormAssignmentStatus,
+  FormBgType,
   FormFieldType,
+  FormImageFit,
   FormKind,
+  FormLayout,
   FormStatus,
   Gender,
   OrgFeature,
@@ -305,6 +308,36 @@ export interface FormField {
 }
 
 /**
+ * The look of a form's public/share page (Phase 18.6). Optional  a form with no
+ * theme renders the calm default card. `split` adds a branded hero panel beside
+ * the form (it stacks above on mobile). All colours are hex strings.
+ */
+export interface FormTheme {
+  layout: FormLayout;
+  hero: {
+    heading?: string;
+    subheading?: string;
+    bullets?: string[];
+    footNote?: string;
+  };
+  background: {
+    type: FormBgType;
+    /** solid */
+    color?: string;
+    /** gradient */
+    gradientFrom?: string;
+    gradientTo?: string;
+    gradientAngle?: number;
+    /** image  storage key in Phila Storage (counts against org storage) */
+    imageKey?: string;
+    imageFit?: FormImageFit;
+    /** overlay tint over the image for legible text */
+    overlayColor?: string;
+    overlayOpacity?: number; // 0100 (%)
+  };
+}
+
+/**
  * An org form  a titled set of questions of a given kind (Phase 18.6). The org
  * builds a library of these; the active `kind: "intake"` form drives booking.
  * `fields` is stored as JSONB.
@@ -317,6 +350,11 @@ export interface Form {
   intro?: string;
   fields: FormField[];
   status: FormStatus;
+  /** Presentation of the public/share page (null = calm default). */
+  theme?: FormTheme | null;
+  /** The open share link's token (anyone with it can fill), when generated. */
+  shareToken?: string | null;
+  shareEnabled?: boolean;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
 }
@@ -337,7 +375,10 @@ export interface FormAssignment {
   id: string;
   orgId: string;
   formId: string;
-  clientId: string;
+  /** Null for an open share-link submission (no pre-existing client). */
+  clientId: string | null;
+  /** Captured name for a share-link submission (best-effort from a name field). */
+  respondentName?: string | null;
   /** Unguessable capability for the public fill link (`/f/<token>`). */
   token: string;
   status: FormAssignmentStatus;

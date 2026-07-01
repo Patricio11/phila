@@ -906,10 +906,12 @@ Intake becomes one form kind, still driving booking. Full plan + living checklis
 - [x] **Commit 4 — client fill:** public `app/f/[token]` route (no login) → `FormFillView` (shared renderer +
   reused validation) → `submitForm` (server re-validates required fields against the snapshot); calm confirmation +
   invalid/already-submitted states; SADAG crisis line. `/me/forms` portal surface + `clientNav` entry.
-- [ ] **Commit 5 — Form Designer + share link:** a **Design** tab in the builder — form-only vs form + hero panel
+- [x] **Commit 5 — Form Designer + share link:** a **Design** tab (`FormDesign`) — form-only vs form + hero panel
   (stacks on mobile), editable hero copy, background (gradient / solid colour / uploaded image counting against org
-  storage, with cover/contain fit + colour overlay & opacity); themed two-pane rendering on `/f/<token>`; an **open
-  share link** anyone can fill.
+  storage, cover/contain fit + colour overlay & opacity) with a live preview; themed two-pane rendering on
+  `/f/<token>` (`form-theme.tsx`, server-signed image URL); an **open share link** anyone can fill (`FormShare`),
+  each share submission a fresh response row. Migration `0026` (theme + share on `forms`, nullable client +
+  respondent on `form_assignments`); seeded a themed split feedback form + share link.
 - [ ] **Commit 6 — polish + docs:** optional booking-intake→assignment, refresh `docs/SMOKE_TEST.md` /
   `docs/DEMO_LOGINS.md`, mark 18.6 done.
 

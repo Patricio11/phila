@@ -3,7 +3,7 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { getDb } from "@/db/client";
 import { clients, counsellors, forms, formAssignments, orgs } from "@/db/schema";
-import type { Form, FormField, FormSnapshot } from "@/lib/domain/types";
+import type { Form, FormField, FormSnapshot, FormTheme } from "@/lib/domain/types";
 import type {
   ClientFormRow,
   FormDraft,
@@ -20,6 +20,7 @@ function toForm(r: typeof forms.$inferSelect): Form {
   return {
     id: r.id, orgId: r.orgId, kind: r.kind as FormKind, title: r.title,
     intro: r.intro ?? undefined, fields: r.fields as FormField[], status: r.status as FormStatus,
+    theme: (r.theme as FormTheme | null) ?? null, shareToken: r.shareToken, shareEnabled: r.shareEnabled,
     createdAt: r.createdAt.toISOString(), updatedAt: r.updatedAt.toISOString(),
   };
 }
@@ -82,10 +83,11 @@ export async function getFormResponsesDb(orgId: string, formId: string): Promise
   const rows: FormResponseRow[] = assigns
     .filter((a) => a.status !== "revoked")
     .map((a) => {
-      const client = orgClients.find((c) => c.id === a.clientId);
+      const client = a.clientId ? orgClients.find((c) => c.id === a.clientId) : undefined;
+      const clientName = client?.name ?? a.respondentName ?? "From share link";
       return {
-        assignmentId: a.id, clientId: a.clientId, clientName: client?.name ?? "Client",
-        counsellorName: orgCounsellors.find((c) => c.id === client?.primaryCounsellorId)?.name ?? "Unassigned",
+        assignmentId: a.id, clientId: a.clientId ?? "", clientName,
+        counsellorName: client ? (orgCounsellors.find((c) => c.id === client.primaryCounsellorId)?.name ?? "Unassigned") : "Shared link",
         status: a.status as FormAssignmentStatus, sentAt: a.sentAt.toISOString(),
         submittedAt: a.submittedAt ? a.submittedAt.toISOString() : null,
         answers: (a.answers as Record<string, string> | null) ?? null, snapshot: toSnapshot(a.snapshot),
@@ -95,17 +97,45 @@ export async function getFormResponsesDb(orgId: string, formId: string): Promise
   return { form, rows };
 }
 
-/** Public fill page  resolved by token, no org session. */
+async function orgName(orgId: string): Promise<string> {
+  const [org] = await getDb().select({ name: orgs.name }).from(orgs).where(eq(orgs.id, orgId)).limit(1);
+  return org?.name ?? "Your practice";
+}
+
+/** Public fill page  resolved by an assignment token OR an open share token. */
 export async function getFormByTokenDb(tok: string): Promise<FormTokenView | null> {
   const db = getDb();
+  // 1) A per-client assignment link.
   const [a] = await db.select().from(formAssignments).where(eq(formAssignments.token, tok)).limit(1);
-  if (!a || a.status === "revoked") return null;
-  const [org] = await db.select({ name: orgs.name }).from(orgs).where(eq(orgs.id, a.orgId)).limit(1);
-  return {
-    assignmentId: a.id, orgId: a.orgId, orgName: org?.name ?? "Your practice",
-    status: a.status as FormAssignmentStatus, snapshot: toSnapshot(a.snapshot),
-    submittedAt: a.submittedAt ? a.submittedAt.toISOString() : null,
-  };
+  if (a && a.status !== "revoked") {
+    const form = await getFormDb(a.orgId, a.formId);
+    return {
+      assignmentId: a.id, formId: a.formId, orgId: a.orgId, orgName: await orgName(a.orgId), mode: "assignment",
+      status: a.status as FormAssignmentStatus, snapshot: toSnapshot(a.snapshot), theme: form?.theme ?? null,
+      submittedAt: a.submittedAt ? a.submittedAt.toISOString() : null,
+    };
+  }
+  // 2) An open share link (form-level, still fillable each time).
+  const [f] = await db.select().from(forms).where(eq(forms.shareToken, tok)).limit(1);
+  if (f && f.shareEnabled && f.status === "active") {
+    const form = toForm(f);
+    return {
+      assignmentId: null, formId: form.id, orgId: form.orgId, orgName: await orgName(form.orgId), mode: "share",
+      status: "sent", snapshot: snapshotOf(form), theme: form.theme ?? null, submittedAt: null,
+    };
+  }
+  return null;
+}
+
+/** Enable/disable the open share link (mints a token on first enable). */
+export async function setFormShareDb(orgId: string, formId: string, enabled: boolean, now: string): Promise<{ shareToken: string | null; shareEnabled: boolean } | null> {
+  const db = getDb();
+  const form = await getFormDb(orgId, formId);
+  if (!form) return null;
+  const shareToken = form.shareToken ?? (enabled ? `s_${randomUUID().replace(/-/g, "")}` : null);
+  await db.update(forms).set({ shareToken, shareEnabled: enabled, updatedAt: new Date(now) })
+    .where(and(eq(forms.id, formId), eq(forms.orgId, orgId)));
+  return { shareToken, shareEnabled: enabled };
 }
 
 export async function listClientFormsDb(clientId: string): Promise<ClientFormRow[]> {
@@ -126,14 +156,14 @@ export async function createFormDb(orgId: string, draft: FormDraft, createdBy: s
   const at = new Date(now);
   await getDb().insert(forms).values({
     id, orgId, kind: draft.kind, title: draft.title, intro: draft.intro ?? null,
-    fields: draft.fields, status: "active", createdBy, createdAt: at, updatedAt: at,
+    fields: draft.fields, theme: draft.theme ?? null, status: "active", createdBy, createdAt: at, updatedAt: at,
   });
   return { id };
 }
 
 export async function updateFormDb(orgId: string, formId: string, draft: FormDraft, now: string): Promise<{ ok: boolean }> {
   const res = await getDb().update(forms)
-    .set({ kind: draft.kind, title: draft.title, intro: draft.intro ?? null, fields: draft.fields, updatedAt: new Date(now) })
+    .set({ kind: draft.kind, title: draft.title, intro: draft.intro ?? null, fields: draft.fields, theme: draft.theme ?? null, updatedAt: new Date(now) })
     .where(and(eq(forms.id, formId), eq(forms.orgId, orgId))).returning({ id: forms.id });
   return { ok: res.length > 0 };
 }
@@ -173,11 +203,32 @@ export async function sendFormToClientsDb(orgId: string, formId: string, clientI
   return { sent: out.length, assignments: out };
 }
 
+/** Best-effort respondent name for an open submission (a field that looks like a name). */
+function respondentNameFrom(snapshot: FormSnapshot, answers: Record<string, string>): string | null {
+  const nameField = snapshot.fields.find((f) => /name/i.test(f.label) || /name/i.test(f.id));
+  const v = nameField ? (answers[nameField.id] ?? "").trim() : "";
+  return v || null;
+}
+
 export async function submitFormResponseDb(tok: string, answers: Record<string, string>, now: string): Promise<{ ok: true } | { ok: false; error: string }> {
   const db = getDb();
+  const at = new Date(now);
+  // 1) A per-client assignment link  fill it in place.
   const [a] = await db.select().from(formAssignments).where(eq(formAssignments.token, tok)).limit(1);
-  if (!a || a.status === "revoked") return { ok: false, error: "This form link is no longer valid." };
-  if (a.status === "completed") return { ok: false, error: "This form has already been submitted." };
-  await db.update(formAssignments).set({ answers, status: "completed", submittedAt: new Date(now) }).where(eq(formAssignments.id, a.id));
+  if (a) {
+    if (a.status === "revoked") return { ok: false, error: "This form link is no longer valid." };
+    if (a.status === "completed") return { ok: false, error: "This form has already been submitted." };
+    await db.update(formAssignments).set({ answers, status: "completed", submittedAt: at }).where(eq(formAssignments.id, a.id));
+    return { ok: true };
+  }
+  // 2) An open share link  each submission is a fresh response row.
+  const [f] = await db.select().from(forms).where(eq(forms.shareToken, tok)).limit(1);
+  if (!f || !f.shareEnabled || f.status !== "active") return { ok: false, error: "This form link is no longer valid." };
+  const snapshot = snapshotOf(toForm(f));
+  await db.insert(formAssignments).values({
+    id: `fa_${randomUUID().slice(0, 12)}`, orgId: f.orgId, formId: f.id, clientId: null,
+    respondentName: respondentNameFrom(snapshot, answers), token: `r_${randomUUID().replace(/-/g, "")}`,
+    status: "completed", snapshot, answers, sentBy: null, sentAt: at, submittedAt: at,
+  });
   return { ok: true };
 }

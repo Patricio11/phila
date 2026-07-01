@@ -851,11 +851,14 @@ presence**  world-class (push), not polling.*
 - [x] **Follow-ups shipped (2026-07-01):** a live **"you were added to a group"** push (new members get the group
   on the fly, no reload); **typing indicators** (client→client via the thread channel; "…is typing" in the header);
   **message edit + delete** (author-only, live in-place, with an "· edited" marker + a "This message was deleted" state).
-- [ ] **Remaining follow-ups:** **attachments** in chat (reuse Phila Storage · Supabase — a dedicated slice: presign
-  → PUT → message carries the file, image preview / signed-URL download). **Private channels + Supabase RLS
-  authorization** — the real security hardening; needs a Supabase-compatible JWT minted from the Better Auth session
-  **and** thread membership reachable in Supabase (it lives in Neon today), so it's a deliberate architecture step.
-  The current per-thread channels are keyed by the **unguessable `mt_<uuid>`** id (not enumerable), but not yet RLS-enforced.
+- [x] **Attachments (2026-07-01):** a paperclip in the composer → presigned upload to **Phila Storage** (validates
+  type + size + the org quota) → the message carries the file; an attachment chip (name + size + open via short-TTL
+  signed URL, members-only, audited). **Attachment bytes count against the org's storage** (`org_storage_usage`).
+- [x] **Private channels + Supabase RLS (2026-07-01, opt-in):** the server mints a short-lived Supabase-compatible
+  JWT scoped to the user's channels (a `topics` claim), the client uses **private channels** + that token when the
+  super-admin switches it on (with the JWT secret + the one-time RLS SQL in `docs/SUPABASE_REALTIME_SETUP.md`); the
+  token refreshes as threads change. **Off by default** (public per-thread channels keyed by the unguessable
+  `mt_<uuid>` id remain the fallback). **Phase 18.5 fully done.**
 
 **Done when:** staff chat persists, groups work, and messages + presence are live across sessions  proven with two
 roles side-by-side. ✅ **Met** (tsc/lint/build + 119 tests green throughout the four commits).

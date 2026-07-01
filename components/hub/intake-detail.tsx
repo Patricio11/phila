@@ -4,7 +4,7 @@ import { CheckCircle2, Send } from "lucide-react";
 import type { IntakeForm } from "@/lib/domain/types";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FieldHint, Input, Label, RadioGroup, Textarea } from "@/components/ui/input";
+import { FormFields } from "@/components/forms/form-fields";
 import { cn } from "@/lib/utils";
 
 function fullDate(iso: string): string {
@@ -85,32 +85,7 @@ export function IntakeDetail({
         </ol>
       ) : (
         // Blank-form preview  rendered exactly as a client sees it (read-only).
-        <div className="space-y-5">
-          {form.fields.map((f) => {
-            const id = `preview-${f.id}`;
-            return (
-              <div key={f.id} className="space-y-1.5">
-                <Label htmlFor={id} required={f.required} optional={!f.required}>
-                  {f.label}
-                </Label>
-                {f.type === "textarea" ? (
-                  <Textarea id={id} readOnly placeholder={f.placeholder} />
-                ) : f.type === "radio" ? (
-                  <RadioGroup readOnly options={f.options ?? []} value="" onChange={() => {}} />
-                ) : (
-                  <Input
-                    id={id}
-                    readOnly
-                    type={f.type === "tel" ? "tel" : f.type === "email" ? "email" : "text"}
-                    inputMode={f.type === "tel" ? "tel" : undefined}
-                    placeholder={f.placeholder}
-                  />
-                )}
-                {f.help ? <FieldHint>{f.help}</FieldHint> : null}
-              </div>
-            );
-          })}
-        </div>
+        <FormFields fields={form.fields} readOnly idPrefix="preview" />
       )}
     </Dialog>
   );

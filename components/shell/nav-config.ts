@@ -113,7 +113,7 @@ export const hubNav: NavSection[] = [
       { label: "Services", href: "/hub/services", icon: HeartHandshake, ready: true },
       { label: "Documents", href: "/hub/documents", icon: FolderClosed, ready: true },
       { label: "Booking", href: "/hub/booking", icon: CalendarCheck, ready: true },
-      { label: "Intake", href: "/hub/intake", icon: ClipboardList, ready: true },
+      { label: "Forms", href: "/hub/forms", icon: ClipboardList, ready: true },
       { label: "Invoicing", href: "/hub/invoicing", icon: ReceiptText, ready: true },
       { label: "Billing & usage", href: "/hub/billing", icon: Wallet, ready: true },
     ],

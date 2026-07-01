@@ -54,10 +54,13 @@ intake form from `forms` in DB mode (mock fallback if unseeded).
   `forms`/`form_assignments` tables + migration `0025_secret_lyja.sql`, RLS,
   `db/queries/forms.ts`, provider interface + mock + db, fixtures (`orgForms`,
   `formAssignments`) + **Neon seed**. Migration + RLS + seed applied. This doc + ROADMAP §18.6.
-- [ ] **2 · Library + builder + preview** — nav Intake→Forms, `/hub/forms` (card
-  grid), `/hub/forms/[id]` (Questions/Preview), `/hub/forms/[id]/edit` (builder),
-  shared `components/forms/form-fields.tsx`, create/update/duplicate/archive
-  actions, `/hub/intake` redirect.
+- [x] **2 · Library + builder + preview** — nav Intake→**Forms**; `/hub/forms`
+  (card grid + archived section + empty state); `/hub/forms/new` + `/hub/forms/[id]/edit`
+  (`FormBuilder` — kind selector + starter templates); `/hub/forms/[id]`
+  (`FormDetail` — Questions/Preview tabs); shared `components/forms/form-fields.tsx`
+  (now also powers booking intake + the hub preview); `saveForm`/`duplicateForm`/
+  `setFormArchived` actions; `/hub/intake` + `/hub/intake/form` redirect to `/hub/forms`;
+  removed the superseded `intake-tracker`/`intake-form-editor`/intake actions.
 - [ ] **3 · Send + responses** — `SendFormModal` (client multi-select),
   `sendFormToClients`, Responses tab + response detail, `form_sent` notification +
   `lib/messaging/notify-form.ts`.

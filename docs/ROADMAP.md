@@ -894,9 +894,11 @@ Intake becomes one form kind, still driving booking. Full plan + living checklis
   (`orgForms`, `formAssignments`) **seeded into Neon** so `DATA_PROVIDER=db` serves identical data. Responses render
   from a **snapshot** frozen at send time (editing a form never rewrites past answers). `getIntakeForm` now resolves
   the active intake form from `forms`.
-- [ ] **Commit 2 — library + builder + preview:** nav Intake→**Forms**, `/hub/forms` (card grid), `/hub/forms/[id]`
-  (Questions/Preview), `/hub/forms/[id]/edit` (builder), shared `components/forms/form-fields.tsx`,
-  create/update/duplicate/archive, `/hub/intake` redirect.
+- [x] **Commit 2 — library + builder + preview:** nav Intake→**Forms**; `/hub/forms` (card grid, archived section,
+  empty state); `/hub/forms/new` + `/hub/forms/[id]/edit` (`FormBuilder` — kind selector + starter templates);
+  `/hub/forms/[id]` (`FormDetail` — Questions/Preview tabs); shared `components/forms/form-fields.tsx` (one renderer
+  now powering booking intake + hub preview + client fill); `saveForm`/`duplicateForm`/`setFormArchived`;
+  `/hub/intake` redirects to `/hub/forms`; removed superseded intake-tracker/editor/actions.
 - [ ] **Commit 3 — send + responses:** `SendFormModal` (client multi-select), `sendFormToClients`, Responses tab +
   response detail, `form_sent` notification + `lib/messaging/notify-form.ts` (dormant-by-default).
 - [ ] **Commit 4 — client fill:** public `app/f/[token]` route + submit + confirmation, `/me` Forms surface + `clientNav`.

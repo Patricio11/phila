@@ -829,6 +829,8 @@ export interface DataProvider {
   // Org-admin Hub
   getHubOverview(orgId: string, now: string): Promise<HubOverview | null>;
   listOrgClients(orgId: string, now: string): Promise<OrgClientRow[]>;
+  /** Soft-deleted clients (the "Removed" tab) — full history retained, restorable. */
+  listRemovedClients(orgId: string, now: string): Promise<OrgClientRow[]>;
   findDuplicateClients(orgId: string, now: string): Promise<DuplicateGroup[]>;
   listTeam(orgId: string): Promise<TeamMemberView[]>;
   getTeamMemberDetail(orgId: string, userId: string, now: string): Promise<TeamMemberDetail | null>;

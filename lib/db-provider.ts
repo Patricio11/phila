@@ -10,8 +10,8 @@
  * `org_members` + `user` (lib/auth/session.ts). RLS becomes the tenant boundary
  * as the write paths migrate (docs/SECURITY.md).
  */
-import { and, eq, gte, isNull, lte } from "drizzle-orm";
-import type { AppointmentView, CaseloadRow, CaseloadStatus, CounsellorDashboard, DataProvider, HubOverview, OutcomePoint, OrgSubscription, PlanWithUsage, RoomView, RoomDetail } from "@/lib/data-provider";
+import { and, eq, gte, isNotNull, isNull, lte } from "drizzle-orm";
+import type { AppointmentView, CaseloadRow, CaseloadStatus, ClientDossier, CounsellorDashboard, DataProvider, DuplicateGroup, HubOverview, OutcomePoint, OrgClientRow, OrgSubscription, PlanWithUsage, RoomView, RoomDetail } from "@/lib/data-provider";
 import { PLANS, planById } from "@/lib/billing/plans";
 import { getSubscriptionRow, listSubscriptions } from "@/db/queries/subscriptions";
 import { getReportingDb, getHubInsightsDb } from "@/db/queries/analytics";
@@ -23,7 +23,7 @@ import { getPublicPageContent, defaultContent } from "@/db/queries/public-page";
 import type { OrgPublicPage } from "@/lib/data-provider";
 import { computeHubOverview, computeCounsellorDashboard } from "@/lib/domain/dashboards";
 import { desc, inArray } from "drizzle-orm";
-import type { Appointment, CarePlan, Client, ClientDocument, ConsentRecord, Counsellor, Funder, Grant, Invoice, Org, Room, Service, Site } from "@/lib/domain/types";
+import type { Appointment, CarePlan, Client, ClientDocument, ConsentRecord, Counsellor, Demographics, Funder, Grant, Invoice, Org, OutcomeMeasure, Room, Service, Site } from "@/lib/domain/types";
 import type { PaymentStatus } from "@/lib/domain/enums";
 import type { AppointmentState, AppointmentType, ConsentPurpose, ConsentState, CredentialBody, CredentialStatus, Province, RoomStatus } from "@/lib/domain/enums";
 import { mockProvider } from "@/lib/mock/provider";
@@ -44,6 +44,7 @@ import {
   grants as grantsTable,
   funderContacts as funderContactsTable,
   outcomeMeasures as outcomeMeasuresTable,
+  demographics as demographicsTable,
   roomAssignments as roomAssignmentsTable,
 } from "@/db/schema";
 import { isoWeekday, roomUtilisation } from "@/lib/domain/helpers";
@@ -96,6 +97,41 @@ async function orgApptViews(orgId: string): Promise<AppointmentView[]> {
     .leftJoin(roomsTable, eq(appointmentsTable.roomId, roomsTable.id))
     .where(eq(appointmentsTable.orgId, orgId));
   return rows.map((r) => ({ ...toAppt(r.a), clientName: r.clientName ?? "Unknown client", serviceName: r.serviceName ?? "Session", counsellorName: r.counsellorName ?? "", roomName: r.roomName ?? null }));
+}
+
+const HELD_STATES = ["completed", "no_show", "risk_flagged", "discharged"];
+
+function caseStatusFrom(client: Client, appts: AppointmentView[], nowMs: number): { status: CaseloadStatus; nextSession: AppointmentView | null; lastSession: AppointmentView | null; held: number } {
+  const sorted = [...appts].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  const past = sorted.filter((a) => new Date(a.startsAt).getTime() <= nowMs);
+  const future = sorted.filter((a) => new Date(a.startsAt).getTime() > nowMs && a.state === "scheduled");
+  const held = past.filter((a) => HELD_STATES.includes(a.state));
+  const lastSession = past[past.length - 1] ?? null;
+  const status: CaseloadStatus = client.riskFlag
+    ? "at_risk"
+    : held.length === 0
+      ? "new"
+      : lastSession && nowMs - new Date(lastSession.startsAt).getTime() > 60 * 86_400_000
+        ? "inactive"
+        : "active";
+  return { status, nextSession: future[0] ?? null, lastSession, held: held.length };
+}
+
+/** Org clients as hub rows. `removed` selects the Removed tab (soft-deleted) vs the live caseload. */
+async function orgClientRowsDb(orgId: string, now: string, removed: boolean): Promise<OrgClientRow[]> {
+  const db = getDb();
+  const [clientRows, counsellorRows, views] = await Promise.all([
+    db.select().from(clientsTable).where(and(eq(clientsTable.orgId, orgId), removed ? isNotNull(clientsTable.deletedAt) : isNull(clientsTable.deletedAt))),
+    db.select().from(counsellorsTable).where(eq(counsellorsTable.orgId, orgId)),
+    orgApptViews(orgId),
+  ]);
+  const nowMs = new Date(now).getTime();
+  return clientRows.map((cr): OrgClientRow => {
+    const client = toClient(cr);
+    const { status, nextSession, lastSession } = caseStatusFrom(client, views.filter((v) => v.clientId === client.id), nowMs);
+    const counsellor = counsellorRows.find((c) => c.id === client.primaryCounsellorId);
+    return { client, counsellorName: counsellor?.name ?? "Unassigned", nextSession, lastSession, status };
+  });
 }
 
 /* SAST date helpers (fixed +02:00, no DST) for the weekly room window. */
@@ -402,6 +438,102 @@ export const dbProvider: DataProvider = {
             : "active";
       return { client, nextSession: future[0] ?? null, lastSession, sessionCount: held.length, status };
     });
+  },
+
+  // ── Hub clients  org caseload, dossier, and duplicate detection (DB) ──
+  listOrgClients: (orgId: string, now: string) => orgClientRowsDb(orgId, now, false),
+  listRemovedClients: (orgId: string, now: string) => orgClientRowsDb(orgId, now, true),
+
+  getClientDossier: async (clientId: string): Promise<ClientDossier | null> => {
+    const db = getDb();
+    const [cRow] = await db.select().from(clientsTable).where(eq(clientsTable.id, clientId)).limit(1);
+    if (!cRow) return null;
+    const client = toClient(cRow);
+    const [orgRow] = await db.select().from(orgsTable).where(eq(orgsTable.id, client.orgId)).limit(1);
+    const counsRows = client.primaryCounsellorId
+      ? await db.select().from(counsellorsTable).where(eq(counsellorsTable.id, client.primaryCounsellorId)).limit(1)
+      : [];
+    if (!orgRow || !counsRows[0]) return null;
+
+    const [consentRows, demoRows, outcomeRows, docRows, carePlanRows, views] = await Promise.all([
+      db.select().from(consentsTable).where(eq(consentsTable.clientId, clientId)),
+      db.select().from(demographicsTable).where(eq(demographicsTable.clientId, clientId)),
+      db.select().from(outcomeMeasuresTable).where(eq(outcomeMeasuresTable.clientId, clientId)),
+      db.select().from(clientDocumentsTable).where(eq(clientDocumentsTable.clientId, clientId)),
+      db.select().from(carePlansTable).where(eq(carePlansTable.clientId, clientId)).limit(1),
+      orgApptViews(client.orgId),
+    ]);
+
+    const consents: ConsentRecord[] = consentRows.map((r) => ({
+      clientId: r.clientId,
+      purpose: r.purpose as ConsentPurpose,
+      state: r.state as ConsentState,
+      version: r.version,
+      updatedAt: r.updatedAt.toISOString(),
+    }));
+    const demographicsAllowed = consents.some((c) => c.purpose === "demographics" && c.state === "granted");
+    const dRow = demoRows[0];
+    const demographics: Demographics | null = demographicsAllowed && dRow
+      ? { clientId: dRow.clientId, gender: dRow.gender as Demographics["gender"], populationGroup: dRow.populationGroup as Demographics["populationGroup"], employmentStatus: dRow.employmentStatus as Demographics["employmentStatus"], ageBand: dRow.ageBand as Demographics["ageBand"], province: dRow.province as Province }
+      : null;
+    const cp = carePlanRows[0];
+
+    return {
+      client,
+      org: toOrg(orgRow),
+      counsellor: toCounsellor(counsRows[0]),
+      consents,
+      demographics,
+      sessions: views.filter((v) => v.clientId === clientId).sort((a, b) => b.startsAt.localeCompare(a.startsAt)),
+      outcomes: outcomeRows.map((o): OutcomeMeasure => ({ id: o.id, clientId: o.clientId, tool: o.tool as OutcomeMeasure["tool"], score: o.score, takenAt: o.takenAt.toISOString() })),
+      documents: docRows.map((d) => ({ id: d.id, clientId: d.clientId, orgId: d.orgId, name: d.name, kind: d.kind as ClientDocument["kind"], sizeLabel: d.sizeLabel, sharedBy: d.sharedBy as ClientDocument["sharedBy"], createdAt: d.createdAt.toISOString() })),
+      carePlan: cp ? { id: cp.id, clientId: cp.clientId, authorCounsellorId: cp.authorCounsellorId, summary: cp.summary, tasks: cp.tasks, resources: cp.resources, nextStep: cp.nextStep, sharedAt: cp.sharedAt ? cp.sharedAt.toISOString() : null } : null,
+    };
+  },
+
+  findDuplicateClients: async (orgId: string): Promise<DuplicateGroup[]> => {
+    const db = getDb();
+    const [clientRows, counsellorRows, views] = await Promise.all([
+      db.select().from(clientsTable).where(and(eq(clientsTable.orgId, orgId), isNull(clientsTable.deletedAt))),
+      db.select().from(counsellorsTable).where(eq(counsellorsTable.orgId, orgId)),
+      orgApptViews(orgId),
+    ]);
+    const list = clientRows.map(toClient);
+    const sessionCount = (id: string) => views.filter((v) => v.clientId === id).length;
+    const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+    const digits = (s: string) => s.replace(/\D/g, "");
+
+    // Union-find: link clients that share a normalised name, phone, or email.
+    const parent = new Map<string, string>(list.map((c) => [c.id, c.id]));
+    const find = (x: string): string => { let r = x; while (parent.get(r) !== r) r = parent.get(r)!; return r; };
+    const union = (a: string, b: string) => { const ra = find(a), rb = find(b); if (ra !== rb) parent.set(ra, rb); };
+    const keyToIds = new Map<string, string[]>();
+    const addKey = (k: string, id: string) => keyToIds.set(k, [...(keyToIds.get(k) ?? []), id]);
+    for (const c of list) {
+      addKey(`n:${norm(c.name)}`, c.id);
+      if (c.phone) addKey(`p:${digits(c.phone)}`, c.id);
+      if (c.email) addKey(`e:${norm(c.email)}`, c.id);
+    }
+    for (const ids of keyToIds.values()) for (let i = 1; i < ids.length; i++) union(ids[0]!, ids[i]!);
+
+    const groups = new Map<string, string[]>();
+    for (const c of list) { const r = find(c.id); groups.set(r, [...(groups.get(r) ?? []), c.id]); }
+
+    const result: DuplicateGroup[] = [];
+    for (const ids of groups.values()) {
+      if (ids.length < 2) continue;
+      const cs = ids.map((id) => list.find((c) => c.id === id)!);
+      const sameName = new Set(cs.map((c) => norm(c.name))).size === 1;
+      const samePhone = cs.every((c) => c.phone) && new Set(cs.map((c) => digits(c.phone!))).size === 1;
+      const reason = sameName && samePhone ? "Same name and phone" : sameName ? "Same name" : samePhone ? "Same phone number" : "Shared contact details";
+      result.push({
+        reason,
+        clients: cs
+          .map((c) => ({ id: c.id, name: c.name, phone: c.phone ?? null, email: c.email ?? null, counsellorName: counsellorRows.find((cc) => cc.id === c.primaryCounsellorId)?.name ?? "", sessions: sessionCount(c.id), createdAt: c.createdAt }))
+          .sort((a, b) => b.sessions - a.sessions || a.createdAt.localeCompare(b.createdAt)),
+      });
+    }
+    return result;
   },
 
   // ── Composite dashboard  counsellor home, aggregated from DB rows ─────

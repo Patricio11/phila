@@ -22,10 +22,13 @@ form, and the **public booking** flow (which also creates a client record).
 
 ## Scope
 
-Because the clients feature is still **UI-first / mock** (persistence lands in
-Phase 10/11 under RLS), the server actions here **validate + audit** and return
-`{ ok }`; no rows are written yet. The booking client record *is* persisted (booking
-is real), so the booking guard is the one that already touches the DB.
+The clients feature is now **DB-backed** (no more mock). Under `DATA_PROVIDER=db`
+the hub reads (`listOrgClients`, `listRemovedClients`, `getClientDossier`,
+`findDuplicateClients`) and the writes (create / update / reassign / remove+restore)
+all hit Postgres via `db/queries/clients.ts`, org-scoped, with removal as a
+soft-delete (`deletedAt`). Every write is still validated + audited, and the pages
+`revalidatePath` + `router.refresh()` so the caseload reflects the DB immediately.
+Booking already persisted its client row; it now shares the same phone-or-email rule.
 
 ### 1. Create with phone **or** email — hub
 - `createClient` (`app/hub/clients/actions.ts`): shared `contactShape` + a `.refine`
@@ -59,11 +62,22 @@ is real), so the booking guard is the one that already touches the DB.
   as optional + a "phone or email — one is enough" hint so the required asterisk never
   contradicts what actually validates. Wizard `canAdvance` uses the pair rule too.
 
+## DB persistence (done in this phase)
+- `db/queries/clients.ts` — `createClientDb`, `updateClientDb`, `setClientRemovedDb`
+  (soft-delete/restore), `reassignClientDb`; all org-scoped by `(id, orgId)`.
+- `lib/db-provider.ts` — real `listOrgClients`, `listRemovedClients` (Removed tab),
+  `getClientDossier` (consents/demographics/outcomes/documents/care-plan from the DB,
+  demographics consent-gated), and `findDuplicateClients` (union-find over real rows).
+- Actions gated on `DATA_PROVIDER === "db"` (mock mode stays audit-only), then
+  `revalidatePath` + client `router.refresh()` so the caseload updates live.
+- **Verified** against Neon: a phone-only client added via the UI wrote a real row
+  (`email: null`, correct org + counsellor) and showed on refresh.
+
 ## Out of scope (noted for later)
-- Real persistence of hub client create/edit/remove/restore/invite → **Phase 10/11**
-  (RLS + consent state machine). These stay mock+audit here.
 - Real per-client invite **tokens** + delivery → **Phase 12** channel rail. The copy
-  link points at the existing client activation page today.
+  link points at the existing client activation page today; the invite itself is
+  recorded to the `audit_log`.
+- Consent state machine on first contact (auto-granting booking/notes) → Phase 10/11.
 
 ## Verification
 - Gates green: `tsc`, `eslint`, `npm test` (119), `npm run build`.

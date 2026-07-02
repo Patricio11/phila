@@ -1022,6 +1022,20 @@ export const mockProvider: DataProvider = {
     return ok(rows);
   },
 
+  listRemovedClients: (orgId, now) => {
+    const counsellors = allCounsellors.filter((c) => c.orgId === orgId);
+    const clients = allClients.filter((c) => c.orgId === orgId && c.deletedAt);
+    const nowMs = new Date(now).getTime();
+    const rows: OrgClientRow[] = clients.map((client) => {
+      const appts = clientAppointments(client.id, now).map(toView).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+      const past = appts.filter((a) => new Date(a.startsAt).getTime() <= nowMs);
+      const future = appts.filter((a) => new Date(a.startsAt).getTime() > nowMs && a.state === "scheduled");
+      const counsellor = counsellors.find((c) => c.id === client.primaryCounsellorId);
+      return { client, counsellorName: counsellor?.name ?? "Unassigned", nextSession: future[0] ?? null, lastSession: past[past.length - 1] ?? null, status: caseloadStatusFor(client, now) };
+    });
+    return ok(rows);
+  },
+
   findDuplicateClients: (orgId, now): Promise<DuplicateGroup[]> => {
     const list = liveOnly(allClients.filter((c) => c.orgId === orgId));
     const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();

@@ -15,8 +15,9 @@ export default async function HubClientsPage() {
   const { principal, membership } = await requireHub();
   const provider = await getDataProvider();
   const now = clockNow();
-  const [rows, counsellors, duplicates] = await Promise.all([
+  const [rows, removedRows, counsellors, duplicates] = await Promise.all([
     provider.listOrgClients(membership.orgId, now),
+    provider.listRemovedClients(membership.orgId, now),
     provider.listCounsellors(membership.orgId),
     provider.findDuplicateClients(membership.orgId, now),
   ]);
@@ -46,7 +47,7 @@ export default async function HubClientsPage() {
 
       <DedupeBanner groups={duplicates} />
 
-      <HubClientsTable rows={rows} counsellors={counsellorOpts} />
+      <HubClientsTable rows={rows} removedRows={removedRows} counsellors={counsellorOpts} />
     </div>
   );
 }

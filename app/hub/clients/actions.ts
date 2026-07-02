@@ -1,14 +1,20 @@
 "use server";
 
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 import { PROVINCES } from "@/lib/domain/enums";
+import { now as clockNow } from "@/lib/clock";
+import { createClientDb, updateClientDb, setClientRemovedDb, reassignClientDb } from "@/db/queries/clients";
+
+const isDb = () => process.env.DATA_PROVIDER === "db";
 
 /**
- * Client CRUD (mock). Validated + audited; Phase 10/11 persist to Postgres
- * (under RLS) and run the consent state machine on first contact. Creating or
- * moving a client never distorts compiled stats (Outcome-Honesty Rule).
+ * Client CRUD. Validated + audited, and (under `DATA_PROVIDER=db`) persisted to
+ * Postgres via `db/queries/clients` — create/update/reassign write real rows;
+ * remove/restore is a soft-delete (`deletedAt`). Every write is org-scoped and
+ * never distorts compiled stats (Outcome-Honesty Rule). Mock mode stays audit-only.
  */
 /**
  * A client is reachable if we have *either* a phone number or an email  many SA
@@ -40,6 +46,10 @@ export async function createClient(
   const parsed = createInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the details." };
 
+  if (isDb()) {
+    const { name, phone, email, province, counsellorId, riskFlag } = parsed.data;
+    await createClientDb(membership.orgId, { name, phone, email, province, counsellorId, riskFlag }, clockNow());
+  }
   await logAccess({
     action: "admin.action",
     actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
@@ -47,6 +57,7 @@ export async function createClient(
     target: "client:new",
     reason: "create_client",
   });
+  revalidatePath("/hub/clients");
   return { ok: true };
 }
 
@@ -129,13 +140,19 @@ export async function updateClient(
   const parsed = updateInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the details." };
 
+  const { clientId, name, phone, email, province, counsellorId, riskFlag } = parsed.data;
+  if (isDb()) {
+    await updateClientDb(membership.orgId, clientId, { name, phone, email, province, counsellorId, riskFlag });
+  }
   await logAccess({
     action: "admin.action",
     actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
     orgId: membership.orgId,
-    target: `client:${parsed.data.clientId}`,
+    target: `client:${clientId}`,
     reason: "update_client",
   });
+  revalidatePath("/hub/clients");
+  revalidatePath(`/hub/clients/${clientId}`);
   return { ok: true };
 }
 
@@ -179,16 +196,20 @@ export async function removeClient(raw: z.infer<typeof clientIdInput>): Promise<
   const { principal, membership } = await requireHub();
   const parsed = clientIdInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Not found." };
+  if (isDb()) await setClientRemovedDb(membership.orgId, parsed.data.clientId, true, clockNow());
   await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `client:${parsed.data.clientId}`, reason: "remove_client" });
+  revalidatePath("/hub/clients");
   return { ok: true };
 }
 
-/** Restore a previously-removed client to the active caseload (mock). Audited. */
+/** Restore a previously-removed client to the active caseload. Audited. */
 export async function restoreClient(raw: z.infer<typeof clientIdInput>): Promise<{ ok: true } | { ok: false; error: string }> {
   const { principal, membership } = await requireHub();
   const parsed = clientIdInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Not found." };
+  if (isDb()) await setClientRemovedDb(membership.orgId, parsed.data.clientId, false, clockNow());
   await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `client:${parsed.data.clientId}`, reason: "restore_client" });
+  revalidatePath("/hub/clients");
   return { ok: true };
 }
 
@@ -204,6 +225,7 @@ export async function reassignClient(
   const parsed = reassignInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Pick a counsellor." };
 
+  if (isDb()) await reassignClientDb(membership.orgId, parsed.data.clientId, parsed.data.counsellorId);
   await logAccess({
     action: "admin.action",
     actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
@@ -211,5 +233,7 @@ export async function reassignClient(
     target: `client:${parsed.data.clientId}`,
     reason: "reassign_client",
   });
+  revalidatePath("/hub/clients");
+  revalidatePath(`/hub/clients/${parsed.data.clientId}`);
   return { ok: true };
 }

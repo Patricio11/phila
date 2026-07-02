@@ -942,11 +942,17 @@ let the org fully edit a client's profile. One policy applied at every door a cl
   phone-or-email rule at the server boundary; the shared intake validator gains an opt-in `contactPair` so a client
   with only a phone *or* only an email can book (each still format-checked), with a "one is enough" hint. Generic
   Forms fill (`/f/[token]`) is untouched.
+- [x] **DB-backed (no more mock):** the whole hub clients cluster now hits Postgres under `DATA_PROVIDER=db` —
+  `db/queries/clients.ts` (create / update / reassign / soft-delete + restore, org-scoped) and real reads in
+  `lib/db-provider.ts` (`listOrgClients`, `listRemovedClients` for the Removed tab, `getClientDossier` with
+  consent-gated demographics, `findDuplicateClients`). Actions `revalidatePath` + `router.refresh()` so the caseload
+  reflects the DB live. Verified end-to-end against Neon (a phone-only client wrote a real row and appeared on refresh)
+  and via Playwright screenshots of the Add / Invite-with-copy-link / Edit modals.
 
 **Done when:** a client can be created, invited, and edited with only a phone number **or** only an email, over every
-front door (hub + booking), with a shareable link when messaging can't reach them. ✅ **Met** (tsc/lint/build + 119
-tests green). *Real persistence of hub client writes stays Phase 10/11 (RLS); real invite tokens + delivery stay
-Phase 12 — mock+audit here, booking's client row is already persisted.*
+front door (hub + booking), persisted to Postgres, with a shareable link when messaging can't reach them. ✅ **Met**
+(tsc/lint/build + 119 tests green; verified against Neon). *Real invite tokens + delivery stay Phase 12 — the invite
+is recorded to `audit_log` and the copy link points at the client activation page today.*
 
 ---
 

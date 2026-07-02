@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { AlertTriangle, UserPlus } from "lucide-react";
 import { PROVINCES, type Province } from "@/lib/domain/enums";
 import { Dialog } from "@/components/ui/dialog";
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 export function AddClientButton({ counsellors }: { counsellors: { id: string; name: string }[] }) {
   const { toast } = useToast();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   const [attempted, setAttempted] = useState(false);
@@ -43,6 +45,7 @@ export function AddClientButton({ counsellors }: { counsellors: { id: string; na
       toast({ tone: "success", title: "Client added", description: `${name.split(" ")[0]} is on ${counsellors.find((c) => c.id === counsellorId)?.name.split(" ")[0]}'s caseload.` });
       setOpen(false);
       reset();
+      router.refresh();
     });
   };
 

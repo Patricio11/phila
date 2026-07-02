@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeftRight, Check, Inbox, Search, UserMinus, Undo2 } from "lucide-react";
 import type { CaseloadStatus, OrgClientRow } from "@/lib/data-provider";
 import { DataTable, type Column } from "@/components/ui/data-table";
@@ -39,10 +40,9 @@ function shortDate(iso: string | null | undefined): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "short" }).format(new Date(iso));
 }
 
-export function HubClientsTable({ rows, counsellors }: { rows: OrgClientRow[]; counsellors: { id: string; name: string }[] }) {
+export function HubClientsTable({ rows, removedRows, counsellors }: { rows: OrgClientRow[]; removedRows: OrgClientRow[]; counsellors: { id: string; name: string }[] }) {
   const { toast } = useToast();
-  const [assignments, setAssignments] = useState<Record<string, string>>({});
-  const [removed, setRemoved] = useState<Set<string>>(new Set());
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>("all");
   const [counsellorFilter, setCounsellorFilter] = useState<string>(ALL_COUNSELLORS);
   const [pending, start] = useTransition();
@@ -54,13 +54,9 @@ export function HubClientsTable({ rows, counsellors }: { rows: OrgClientRow[]; c
   // Remove confirmation state
   const [removeTarget, setRemoveTarget] = useState<OrgClientRow | null>(null);
 
-  // Apply optimistic reassignments to the row set.
-  const allRows = useMemo(
-    () => rows.map((r) => (assignments[r.client.id] ? { ...r, counsellorName: assignments[r.client.id]! } : r)),
-    [rows, assignments],
-  );
-  const liveRows = allRows.filter((r) => !removed.has(r.client.id));
-  const removedRows = allRows.filter((r) => removed.has(r.client.id));
+  // Source of truth is the DB — the server component re-reads on router.refresh().
+  const liveRows = rows;
+  const isRemoved = (r: OrgClientRow) => Boolean(r.client.deletedAt);
 
   const counts = useMemo(() => {
     const c: Record<Tab, number> = { all: liveRows.length, active: 0, new: 0, at_risk: 0, inactive: 0, removed: removedRows.length };
@@ -84,13 +80,14 @@ export function HubClientsTable({ rows, counsellors }: { rows: OrgClientRow[]; c
   const closeReassign = () => { setReassigning(null); setCounsellorQuery(""); };
   const confirmReassign = () => {
     if (!reassigning || !pickCounsellor) return;
+    const target = reassigning;
     start(async () => {
-      const res = await reassignClient({ clientId: reassigning.client.id, counsellorId: pickCounsellor });
+      const res = await reassignClient({ clientId: target.client.id, counsellorId: pickCounsellor });
       if (!res.ok) return toast({ tone: "error", title: res.error });
       const name = counsellors.find((c) => c.id === pickCounsellor)?.name ?? "";
-      setAssignments((prev) => ({ ...prev, [reassigning.client.id]: name }));
-      toast({ tone: "success", title: `${reassigning.client.name.split(" ")[0]} reassigned`, description: `Now with ${name.split(" ")[0]}. History stays intact.` });
+      toast({ tone: "success", title: `${target.client.name.split(" ")[0]} reassigned`, description: `Now with ${name.split(" ")[0]}. History stays intact.` });
       closeReassign();
+      router.refresh();
     });
   };
 
@@ -101,17 +98,17 @@ export function HubClientsTable({ rows, counsellors }: { rows: OrgClientRow[]; c
     start(async () => {
       const res = await removeClient({ clientId: r.client.id });
       if (!res.ok) return toast({ tone: "error", title: res.error });
-      setRemoved((prev) => new Set(prev).add(r.client.id));
       setRemoveTarget(null);
       toast({ tone: "default", title: `${r.client.name.split(" ")[0]} moved to Removed`, description: "Nothing was deleted  open the Removed tab to restore them." });
+      router.refresh();
     });
   };
   const restore = (r: OrgClientRow) => {
     start(async () => {
       const res = await restoreClient({ clientId: r.client.id });
       if (!res.ok) return toast({ tone: "error", title: res.error });
-      setRemoved((prev) => { const n = new Set(prev); n.delete(r.client.id); return n; });
       toast({ tone: "success", title: `${r.client.name.split(" ")[0]} restored`, description: "Back on the active caseload." });
+      router.refresh();
     });
   };
 
@@ -133,7 +130,7 @@ export function HubClientsTable({ rows, counsellors }: { rows: OrgClientRow[]; c
       header: "Status",
       sortValue: (r) => r.status,
       render: (r) =>
-        removed.has(r.client.id) ? (
+        isRemoved(r) ? (
           <span className="inline-flex items-center gap-1.5 rounded-chip bg-surface-2 px-2 py-0.5 text-[11.5px] font-medium text-text-3">Removed</span>
         ) : (
           <span className="inline-flex items-center gap-1.5 text-[12.5px] text-text-2">
@@ -148,7 +145,7 @@ export function HubClientsTable({ rows, counsellors }: { rows: OrgClientRow[]; c
       header: "",
       align: "right",
       render: (r) =>
-        removed.has(r.client.id) ? (
+        isRemoved(r) ? (
           <div className="flex justify-end">
             <Button variant="mini" onClick={() => restore(r)} disabled={pending}>
               <Undo2 className="size-3.5" strokeWidth={2} aria-hidden /> Restore

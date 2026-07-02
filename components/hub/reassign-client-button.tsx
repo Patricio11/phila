@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowLeftRight, Check, Search } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ export function ReassignClientButton({
   currentCounsellorId: string | null;
 }) {
   const { toast } = useToast();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   const [counsellorId, setCounsellorId] = useState<string | null>(currentCounsellorId ?? counsellors[0]?.id ?? null);
@@ -44,6 +46,7 @@ export function ReassignClientButton({
       setDone(name);
       toast({ tone: "success", title: `${clientName.split(" ")[0]} reassigned`, description: `Now with ${name.split(" ")[0]}. Full history moves with them.` });
       close();
+      router.refresh();
     });
   };
 

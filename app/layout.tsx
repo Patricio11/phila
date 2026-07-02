@@ -27,7 +27,8 @@ export const metadata: Metadata = {
   applicationName: "Phila",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: "Phila", statusBarStyle: "default" },
-  icons: { icon: "/favicon.ico", apple: "/icons/icon-192.png" },
+  // Favicon + iOS home-screen icon are file-based: app/icon.svg + app/apple-icon.png
+  // (Next auto-links both). Android/PWA icons live in the web manifest.
   // The product is private by default; the public marketing/org pages opt back in.
   robots: { index: false, follow: false },
 };

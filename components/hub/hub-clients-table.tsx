@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowLeftRight, UserMinus } from "lucide-react";
+import { ArrowLeftRight, Check, Search, UserMinus } from "lucide-react";
 import type { CaseloadStatus, OrgClientRow } from "@/lib/data-provider";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { Select } from "@/components/ui/select";
-import { Label } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { StatusDot, type DotTone } from "@/components/ui/status-dot";
 import { useToast } from "@/components/ui/toast";
 import { reassignClient } from "@/app/hub/clients/actions";
+import { cn } from "@/lib/utils";
 
 const STATUS: Record<CaseloadStatus, { label: string; tone: DotTone }> = {
   new: { label: "New", tone: "blue" },
@@ -32,7 +32,15 @@ export function HubClientsTable({ rows, counsellors }: { rows: OrgClientRow[]; c
   const [removed, setRemoved] = useState<Set<string>>(new Set());
   const [reassigning, setReassigning] = useState<OrgClientRow | null>(null);
   const [pickCounsellor, setPickCounsellor] = useState<string | null>(null);
+  const [counsellorQuery, setCounsellorQuery] = useState("");
   const [pending, start] = useTransition();
+
+  const currentCounsellorId = reassigning ? counsellors.find((c) => c.name === reassigning.counsellorName)?.id ?? null : null;
+  const filteredCounsellors = useMemo(() => {
+    const t = counsellorQuery.trim().toLowerCase();
+    return t ? counsellors.filter((c) => c.name.toLowerCase().includes(t)) : counsellors;
+  }, [counsellorQuery, counsellors]);
+  const closeReassign = () => { setReassigning(null); setCounsellorQuery(""); };
 
   const shown = rows
     .filter((r) => !removed.has(r.client.id))
@@ -51,7 +59,7 @@ export function HubClientsTable({ rows, counsellors }: { rows: OrgClientRow[]; c
       const name = counsellors.find((c) => c.id === pickCounsellor)?.name ?? "";
       setAssignments((prev) => ({ ...prev, [reassigning.client.id]: name }));
       toast({ tone: "success", title: `${reassigning.client.name.split(" ")[0]} reassigned`, description: `Now with ${name.split(" ")[0]}. History stays intact.` });
-      setReassigning(null);
+      closeReassign();
     });
   };
 
@@ -114,19 +122,49 @@ export function HubClientsTable({ rows, counsellors }: { rows: OrgClientRow[]; c
 
       <Dialog
         open={Boolean(reassigning)}
-        onClose={() => setReassigning(null)}
+        onClose={closeReassign}
         title={reassigning ? `Reassign ${reassigning.client.name}` : "Reassign"}
         description="Move this client to another counsellor. Their full history and outcomes move with them."
         footer={
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setReassigning(null)} disabled={pending}>Cancel</Button>
-            <Button onClick={confirmReassign} loading={pending}>Reassign</Button>
+            <Button variant="ghost" onClick={closeReassign} disabled={pending}>Cancel</Button>
+            <Button onClick={confirmReassign} loading={pending} disabled={!pickCounsellor}>Reassign</Button>
           </div>
         }
       >
-        <div className="space-y-1.5">
-          <Label>New counsellor</Label>
-          <Select value={pickCounsellor} onChange={setPickCounsellor} options={counsellors.map((c) => ({ value: c.id, label: c.name }))} />
+        <div className="space-y-2.5">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-3" aria-hidden />
+            <Input value={counsellorQuery} onChange={(e) => setCounsellorQuery(e.target.value)} placeholder="Search counsellors…" className="pl-9" />
+          </div>
+          <div className="max-h-72 space-y-0.5 overflow-y-auto">
+            {filteredCounsellors.length === 0 ? (
+              <p className="py-8 text-center text-[12.5px] text-text-3">No counsellors found.</p>
+            ) : (
+              filteredCounsellors.map((c) => {
+                const selected = c.id === pickCounsellor;
+                const isCurrent = c.id === currentCounsellorId;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setPickCounsellor(c.id)}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-control px-2.5 py-2.5 text-left transition-colors",
+                      selected ? "bg-accent-soft" : "hover:bg-surface-hover",
+                    )}
+                  >
+                    <Avatar name={c.name} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <div className={cn("truncate text-[13.5px] font-medium", selected ? "text-accent" : "text-text")}>{c.name}</div>
+                      {isCurrent && <div className="text-[11px] text-text-3">Current counsellor</div>}
+                    </div>
+                    {selected && <Check className="size-4 shrink-0 text-accent" strokeWidth={2.4} aria-hidden />}
+                  </button>
+                );
+              })
+            )}
+          </div>
         </div>
       </Dialog>
     </>

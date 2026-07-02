@@ -30,16 +30,12 @@ export default async function HubClientsPage() {
   });
 
   const counsellorOpts = counsellors.map((c) => ({ id: c.id, name: c.name }));
-  const active = rows.filter((r) => r.status === "active").length;
-  const safeguarding = rows.filter((r) => r.status === "at_risk").length;
-  const newClients = rows.filter((r) => r.status === "new").length;
-  const seenThisWeek = rows.filter((r) => r.lastSession && (new Date(now).getTime() - new Date(r.lastSession.startsAt).getTime()) < 7 * 864e5).length;
 
   return (
     <div className="rise space-y-6">
       <PageHead
         title="Clients"
-        summary={`${rows.length} across the practice. Reassign or remove without distorting your reporting.`}
+        summary={`${rows.length} across the practice. Filter by status or counsellor, reassign, or remove and restore  reporting stays accurate.`}
         actions={
           <div className="flex items-center gap-2">
             <ImportClientsButton counsellors={counsellorOpts} />
@@ -50,23 +46,7 @@ export default async function HubClientsPage() {
 
       <DedupeBanner groups={duplicates} />
 
-      <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
-        <Stat value={String(active)} label="Active" />
-        <Stat value={String(newClients)} label="New · awaiting first session" />
-        <Stat value={String(seenThisWeek)} label="Seen this week" />
-        <Stat value={String(safeguarding)} label="Safeguarding" tone={safeguarding > 0 ? "danger" : "default"} />
-      </div>
-
       <HubClientsTable rows={rows} counsellors={counsellorOpts} />
-    </div>
-  );
-}
-
-function Stat({ value, label, tone = "default" }: { value: string; label: string; tone?: "default" | "danger" }) {
-  return (
-    <div className="rounded-card border border-border bg-surface p-4 shadow-sm">
-      <div className={`text-[22px] font-bold tabular-nums ${tone === "danger" ? "text-danger" : "text-text"}`}>{value}</div>
-      <div className="truncate text-[12px] text-text-2">{label}</div>
     </div>
   );
 }

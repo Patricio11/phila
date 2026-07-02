@@ -117,6 +117,30 @@ export async function mergeClients(
   return { ok: true };
 }
 
+const clientIdInput = z.object({ clientId: z.string().min(1) });
+
+/**
+ * Remove a client from the active caseload (mock  soft-delete in Phase 10/11).
+ * Nothing is destroyed: the record + full history are retained and the client
+ * moves to the "Removed" view, restorable at any time. Audited.
+ */
+export async function removeClient(raw: z.infer<typeof clientIdInput>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = clientIdInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Not found." };
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `client:${parsed.data.clientId}`, reason: "remove_client" });
+  return { ok: true };
+}
+
+/** Restore a previously-removed client to the active caseload (mock). Audited. */
+export async function restoreClient(raw: z.infer<typeof clientIdInput>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = clientIdInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Not found." };
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `client:${parsed.data.clientId}`, reason: "restore_client" });
+  return { ok: true };
+}
+
 const reassignInput = z.object({
   clientId: z.string().min(1),
   counsellorId: z.string().min(1, "Pick a counsellor."),

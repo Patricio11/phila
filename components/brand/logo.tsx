@@ -47,3 +47,30 @@ export function BrandMark({ className, size = 32 }: { className?: string; size?:
     </span>
   );
 }
+
+/**
+ * Tile-less variant under review  the protea on its own (no square), filled
+ * with the brand green→mint gradient so it keeps depth on any background.
+ * Previewed in the sidebar header only.
+ */
+export function PhilaMark({ className, size = 32 }: { className?: string; size?: number }) {
+  return (
+    <svg viewBox="0 0 512 512" width={size} height={size} className={cn("shrink-0", className)} aria-hidden>
+      <defs>
+        <linearGradient id="phila-bloom" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#1C7D58" />
+          <stop offset="1" stopColor="#34BC83" />
+        </linearGradient>
+      </defs>
+      <g fill="url(#phila-bloom)" transform="translate(256 256) scale(1.15) translate(-256 -260)">
+        {OUTER.map(([a, s]) => (
+          <path key={`o${a}`} d={PETAL} transform={`translate(256 336) rotate(${a}) scale(${s})`} />
+        ))}
+        {INNER.map(([a, s]) => (
+          <path key={`i${a}`} d={PETAL} transform={`translate(256 336) rotate(${a}) scale(${s})`} />
+        ))}
+        <circle cx="256" cy="300" r="78" />
+      </g>
+    </svg>
+  );
+}

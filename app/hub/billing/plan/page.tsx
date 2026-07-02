@@ -24,7 +24,7 @@ export default async function ChangePlanPage({ searchParams }: { searchParams: P
   const sub = await provider.getOrgSubscription(membership.orgId, clockNow());
 
   return (
-    <div className="rise mx-auto max-w-5xl space-y-6">
+    <div className="rise space-y-6">
       <PageHead title="Your Phila plan" summary="Pick the plan that fits your practice. Billed to Phila  separate from your own client-payment gateway." />
 
       {activated && (

@@ -30,7 +30,7 @@ export default async function NotificationsSettingsPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:px-6">
+    <div className="rise space-y-6">
       <PageHead title="Notifications" summary="Reach clients on WhatsApp, SMS, and email  on their preferred channel, with your wording." />
 
       <Card>

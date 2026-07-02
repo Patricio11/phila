@@ -20,7 +20,7 @@ export default async function HubBookingPage() {
   if (!org) notFound();
 
   return (
-    <div className="rise mx-auto max-w-2xl space-y-6">
+    <div className="rise space-y-6">
       <PageHead
         title="Booking"
         summary="How clients book you online. Everything here shapes your public booking page  what's offered, by whom, and on what terms."

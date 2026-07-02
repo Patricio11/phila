@@ -38,7 +38,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
   const aiPct = aiSettings.monthlyCapCents > 0 ? Math.min(100, Math.round((aiSpent / aiSettings.monthlyCapCents) * 100)) : 0;
 
   return (
-    <div className="rise mx-auto max-w-4xl space-y-6">
+    <div className="rise space-y-6">
       <PageHead title="Billing & usage" summary="Your notification credits, AI spend, and top-ups  all in one place." />
 
       {justCredited && (

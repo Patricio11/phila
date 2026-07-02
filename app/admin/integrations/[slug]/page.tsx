@@ -60,7 +60,7 @@ export default async function IntegrationConfigPage({ params }: { params: Promis
   }
 
   return (
-    <div className="rise mx-auto max-w-xl space-y-5">
+    <div className="rise space-y-5">
       <Link href="/admin/integrations" className="inline-flex items-center gap-1.5 text-[13px] text-text-2 transition-colors hover:text-text">
         <ArrowLeft className="size-4" aria-hidden /> Integrations
       </Link>

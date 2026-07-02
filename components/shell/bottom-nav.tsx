@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MoreHorizontal, Settings, type LucideIcon } from "lucide-react";
@@ -94,6 +94,11 @@ function MoreSheet({
   settingsHref?: string;
   activeHref?: string;
 }) {
+  // Swipe-down-to-dismiss: drag the handle; release past ~90px closes, else snaps back.
+  const [dragY, setDragY] = useState(0); // reset by onDragEnd; only non-zero mid-drag
+  const [dragging, setDragging] = useState(false);
+  const startY = useRef(0);
+
   // Esc closes; lock body scroll while the sheet is up (native-feeling).
   useEffect(() => {
     if (!open) return;
@@ -107,24 +112,47 @@ function MoreSheet({
     };
   }, [open, onClose]);
 
+  const onDragStart = (e: React.PointerEvent) => {
+    startY.current = e.clientY;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setDragging(true);
+  };
+  const onDragMove = (e: React.PointerEvent) => {
+    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+    setDragY(Math.max(0, e.clientY - startY.current));
+  };
+  const onDragEnd = (e: React.PointerEvent) => {
+    setDragging(false);
+    if (e.clientY - startY.current > 90) onClose(); // measure from the actual release
+    setDragY(0);
+  };
+
   return (
     <div className={cn("fixed inset-0 z-50 lg:hidden", open ? "pointer-events-auto" : "pointer-events-none")} aria-hidden={!open}>
       <div
-        className={cn("absolute inset-0 bg-black/40 transition-opacity duration-200", open ? "opacity-100" : "opacity-0")}
+        className="absolute inset-0 bg-black/40 transition-opacity duration-200"
+        style={{ opacity: open ? Math.max(0, 1 - dragY / 400) : 0 }}
         onClick={onClose}
       />
       <div
         role="dialog"
         aria-modal="true"
         aria-label="More menu"
-        className={cn(
-          "absolute inset-x-0 bottom-0 max-h-[80vh] overflow-y-auto rounded-t-[20px] border-t border-border bg-surface shadow-[var(--shadow-card)] transition-transform duration-300 ease-[cubic-bezier(.2,0,0,1)]",
-          open ? "translate-y-0" : "translate-y-full",
-        )}
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 14px)" }}
+        className="absolute inset-x-0 bottom-0 max-h-[80vh] overflow-y-auto rounded-t-[20px] border-t border-border bg-surface shadow-[var(--shadow-card)] ease-[cubic-bezier(.2,0,0,1)]"
+        style={{
+          transform: open ? `translateY(${dragY}px)` : "translateY(100%)",
+          transition: dragging ? "none" : "transform 300ms cubic-bezier(.2,0,0,1)",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 14px)",
+        }}
       >
-        <div className="sticky top-0 z-10 flex justify-center bg-surface/95 pb-1.5 pt-2.5 backdrop-blur">
-          <span className="h-1 w-9 rounded-full bg-border-strong" aria-hidden />
+        <div
+          className="sticky top-0 z-10 flex touch-none justify-center bg-surface/95 pb-1.5 pt-2.5 backdrop-blur"
+          onPointerDown={onDragStart}
+          onPointerMove={onDragMove}
+          onPointerUp={onDragEnd}
+          onPointerCancel={onDragEnd}
+        >
+          <span className="h-1.5 w-10 rounded-full bg-border-strong" aria-hidden />
         </div>
 
         <div className="px-3 pt-1">

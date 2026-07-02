@@ -23,6 +23,7 @@ export function PasswordField({
   invalid,
   autoComplete = "current-password",
   meter = false,
+  onKeyDown,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -30,6 +31,7 @@ export function PasswordField({
   invalid?: boolean;
   autoComplete?: string;
   meter?: boolean;
+  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
 }) {
   const [show, setShow] = useState(false);
   const { score, label } = strength(value);
@@ -45,6 +47,7 @@ export function PasswordField({
           placeholder={placeholder}
           invalid={invalid}
           autoComplete={autoComplete}
+          onKeyDown={onKeyDown}
           className="pr-10"
         />
         <button

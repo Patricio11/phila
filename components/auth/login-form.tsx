@@ -74,7 +74,7 @@ export function LoginForm() {
           <Label>Password</Label>
           <Link href="/forgot-password" className="text-[12px] font-medium text-accent hover:underline">Forgot password?</Link>
         </div>
-        <PasswordField value={password} onChange={setPassword} invalid={Boolean(attempted && errors.password)} />
+        <PasswordField value={password} onChange={setPassword} invalid={Boolean(attempted && errors.password)} onKeyDown={(e) => e.key === "Enter" && submit()} />
         {attempted && errors.password ? <FieldError>{errors.password}</FieldError> : null}
       </div>
 

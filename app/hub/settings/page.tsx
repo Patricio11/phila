@@ -6,6 +6,7 @@ import { getDataProvider } from "@/lib/data-provider";
 import type { BusinessHours } from "@/lib/domain/types";
 import { PageHead } from "@/components/shell/page-head";
 import { SettingsTabs } from "@/components/hub/settings-tabs";
+import { ClientPortalSettings } from "@/components/hub/client-portal-settings";
 import { Card, CardHead } from "@/components/ui/card";
 import { IntegrationToggles } from "@/components/hub/integration-toggles";
 import { PaymentConnectionCard } from "@/components/hub/payment-connection-card";
@@ -72,6 +73,12 @@ export default async function HubSettingsPage() {
               <CardHead title="Organisation profile" />
               <div className="px-[17px] pb-[17px]">
                 <OrgProfileForm initial={profile} />
+              </div>
+            </Card>
+            <Card>
+              <CardHead title="Client portal" />
+              <div className="px-[17px] pb-[17px]">
+                <ClientPortalSettings initial={org.clientPortal} />
               </div>
             </Card>
             <Card>

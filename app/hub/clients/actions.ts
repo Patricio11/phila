@@ -36,6 +36,9 @@ const createInput = z
     province: z.enum(PROVINCES),
     counsellorId: z.string().min(1, "Assign a counsellor."),
     riskFlag: z.boolean(),
+    /** Send a portal invite on create (opt-in). Off by default  non-tech clients
+     *  are added silently and only invited when the org clicks "Invite to portal". */
+    notify: z.boolean().optional(),
   })
   .refine(hasContact, { message: contactMessage, path: ["phone"] });
 
@@ -46,9 +49,11 @@ export async function createClient(
   const parsed = createInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the details." };
 
+  const { name, phone, email, province, counsellorId, riskFlag, notify } = parsed.data;
+  let clientId = "new";
   if (isDb()) {
-    const { name, phone, email, province, counsellorId, riskFlag } = parsed.data;
-    await createClientDb(membership.orgId, { name, phone, email, province, counsellorId, riskFlag }, clockNow());
+    const res = await createClientDb(membership.orgId, { name, phone, email, province, counsellorId, riskFlag }, clockNow());
+    clientId = res.id;
   }
   await logAccess({
     action: "admin.action",
@@ -57,6 +62,17 @@ export async function createClient(
     target: "client:new",
     reason: "create_client",
   });
+  // Portal invite only when explicitly opted in  never a surprise set-password link.
+  if (notify) {
+    const channel = email?.trim() ? "email" : "sms";
+    await logAccess({
+      action: "admin.action",
+      actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+      orgId: membership.orgId,
+      target: `client:${clientId}/portal_invite`,
+      reason: `invite_${channel}`,
+    });
+  }
   revalidatePath("/hub/clients");
   return { ok: true };
 }

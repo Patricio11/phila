@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, UserPlus } from "lucide-react";
+import { AlertTriangle, Send, UserPlus } from "lucide-react";
 import { PROVINCES, type Province } from "@/lib/domain/enums";
 import { Dialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
@@ -12,7 +12,7 @@ import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/app/hub/clients/actions";
 import { cn } from "@/lib/utils";
 
-export function AddClientButton({ counsellors }: { counsellors: { id: string; name: string }[] }) {
+export function AddClientButton({ counsellors, inviteOnCreateDefault = false }: { counsellors: { id: string; name: string }[]; inviteOnCreateDefault?: boolean }) {
   const { toast } = useToast();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -25,6 +25,7 @@ export function AddClientButton({ counsellors }: { counsellors: { id: string; na
   const [province, setProvince] = useState<Province>("Gauteng");
   const [counsellorId, setCounsellorId] = useState<string | null>(counsellors[0]?.id ?? null);
   const [riskFlag, setRiskFlag] = useState(false);
+  const [notify, setNotify] = useState(inviteOnCreateDefault);
 
   const errors = {
     name: name.trim().length < 2 ? "Enter the client's full name." : "",
@@ -34,15 +35,24 @@ export function AddClientButton({ counsellors }: { counsellors: { id: string; na
     contact: !phone.trim() && !email.trim() ? "Add a phone number or an email — either works." : "",
   };
 
-  const reset = () => { setName(""); setPhone(""); setEmail(""); setProvince("Gauteng"); setCounsellorId(counsellors[0]?.id ?? null); setRiskFlag(false); setAttempted(false); };
+  const reset = () => { setName(""); setPhone(""); setEmail(""); setProvince("Gauteng"); setCounsellorId(counsellors[0]?.id ?? null); setRiskFlag(false); setNotify(inviteOnCreateDefault); setAttempted(false); };
+
+  const inviteChannel = email.trim() ? "email" : "SMS";
 
   const submit = () => {
     setAttempted(true);
     if (errors.name || errors.counsellor || errors.phone || errors.email || errors.contact) return;
     start(async () => {
-      const res = await createClient({ name: name.trim(), phone: phone.replace(/\s/g, ""), email, province, counsellorId: counsellorId!, riskFlag });
+      const res = await createClient({ name: name.trim(), phone: phone.replace(/\s/g, ""), email, province, counsellorId: counsellorId!, riskFlag, notify });
       if (!res.ok) return toast({ tone: "error", title: res.error });
-      toast({ tone: "success", title: "Client added", description: `${name.split(" ")[0]} is on ${counsellors.find((c) => c.id === counsellorId)?.name.split(" ")[0]}'s caseload.` });
+      const firstName = name.split(" ")[0];
+      toast({
+        tone: "success",
+        title: "Client added",
+        description: notify
+          ? `${firstName} is on the caseload and will get a portal invite by ${inviteChannel}.`
+          : `${firstName} is on ${counsellors.find((c) => c.id === counsellorId)?.name.split(" ")[0]}'s caseload.`,
+      });
       setOpen(false);
       reset();
       router.refresh();
@@ -118,6 +128,25 @@ export function AddClientButton({ counsellors }: { counsellors: { id: string; na
             </span>
             <span className={cn("ml-auto mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors", riskFlag ? "bg-danger" : "bg-surface-2")}>
               <span className={cn("size-4 rounded-full bg-surface shadow-sm transition-transform", riskFlag && "translate-x-4")} />
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setNotify((v) => !v)}
+            className={cn("flex w-full items-start gap-2.5 rounded-control border p-3 text-left transition-colors", notify ? "border-accent/40 bg-accent-soft/50" : "border-border bg-surface hover:bg-surface-hover")}
+          >
+            <Send className={cn("mt-0.5 size-4 shrink-0", notify ? "text-accent" : "text-text-3")} strokeWidth={2} aria-hidden />
+            <span>
+              <span className="block text-[13px] font-medium text-text">Send a portal invite</span>
+              <span className="block text-[11.5px] text-text-2">
+                {notify
+                  ? `They'll get a set-password link by ${inviteChannel}. Leave off for clients who won't use the portal — you can invite them any time.`
+                  : "Off by default. The client is added quietly; invite them later from their profile when you're ready."}
+              </span>
+            </span>
+            <span className={cn("ml-auto mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors", notify ? "bg-accent" : "bg-surface-2")}>
+              <span className={cn("size-4 rounded-full bg-surface shadow-sm transition-transform", notify && "translate-x-4")} />
             </span>
           </button>
         </div>

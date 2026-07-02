@@ -102,6 +102,7 @@ async function main() {
     timezone: org.timezone,
     features: org.features as Record<string, boolean>,
     scheduling: org.scheduling as unknown as Record<string, unknown>,
+    clientPortal: org.clientPortal as unknown as Record<string, boolean>,
     createdAt: now,
   }).onConflictDoNothing();
 

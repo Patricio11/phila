@@ -62,6 +62,18 @@ export interface Org {
     bufferMin: number;
     businessHours: BusinessHours;
   };
+  /**
+   * Client-portal onboarding policy. Both default OFF so clients are added/booked
+   * silently  many orgs serve clients who won't use a portal. A set-password
+   * invite only goes out when the org clicks "Invite to portal", unless the org
+   * opts into auto-inviting here.
+   */
+  clientPortal: {
+    /** Auto-invite a client to their portal when they book online. */
+    inviteOnBooking: boolean;
+    /** Default state of the "Send portal invite" switch on the Add-client modal. */
+    inviteOnCreate: boolean;
+  };
 }
 
 /** Per-weekday business hours; `null` means closed that day. Monday = 1. */

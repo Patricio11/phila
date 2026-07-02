@@ -1,0 +1,1 @@
+ALTER TABLE "orgs" ADD COLUMN "client_portal" jsonb DEFAULT '{}'::jsonb NOT NULL;

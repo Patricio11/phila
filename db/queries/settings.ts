@@ -24,3 +24,8 @@ export async function saveBusinessHours(orgId: string, hours: unknown): Promise<
   const scheduling = { ...(org.scheduling as Record<string, unknown>), businessHours: hours };
   await db.update(orgs).set({ scheduling }).where(eq(orgs.id, orgId));
 }
+
+/** Update the org's client-portal onboarding policy (the client_portal JSONB). */
+export async function saveClientPortal(orgId: string, settings: { inviteOnBooking: boolean; inviteOnCreate: boolean }): Promise<void> {
+  await getDb().update(orgs).set({ clientPortal: settings }).where(eq(orgs.id, orgId));
+}

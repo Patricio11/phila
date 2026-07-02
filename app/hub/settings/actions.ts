@@ -3,9 +3,10 @@
 import { z } from "zod";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
-import { saveBusinessHours as persistBusinessHours } from "@/db/queries/settings";
+import { saveBusinessHours as persistBusinessHours, saveClientPortal as persistClientPortal } from "@/db/queries/settings";
 import { saveVideoSettings } from "@/db/queries/video";
 import { saveAiSettings } from "@/db/queries/ai";
+import { revalidatePath } from "next/cache";
 
 /**
  * AI scribe consent + budget (Phase 14). The `aiEnabled` toggle IS the POPIA
@@ -80,6 +81,33 @@ export async function saveBusinessHours(
     target: `org:${membership.orgId}/business_hours`,
     reason: "update_business_hours",
   });
+  return { ok: true };
+}
+
+/**
+ * Client-portal onboarding policy. Both default OFF  many orgs serve clients who
+ * won't use a portal, so nobody gets a set-password link unless the org opts in
+ * (or clicks "Invite to portal" on the client). Validated + audited; persisted to
+ * the org's client_portal JSONB.
+ */
+const portalInput = z.object({ inviteOnBooking: z.boolean(), inviteOnCreate: z.boolean() });
+
+export async function saveClientPortalSettings(
+  raw: z.infer<typeof portalInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = portalInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Check the portal settings." };
+  if (process.env.DATA_PROVIDER === "db") await persistClientPortal(membership.orgId, parsed.data);
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `org:${membership.orgId}/client_portal`,
+    reason: `portal_booking_${parsed.data.inviteOnBooking ? "on" : "off"}_create_${parsed.data.inviteOnCreate ? "on" : "off"}`,
+  });
+  revalidatePath("/hub/settings");
+  revalidatePath("/hub/clients");
   return { ok: true };
 }
 

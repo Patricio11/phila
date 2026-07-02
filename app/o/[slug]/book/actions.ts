@@ -211,6 +211,18 @@ export async function submitBooking(
       void recordPageEvent(config.org.id, "booked"); // PII-free conversion (Phase 17)
       // Mirror the intake into the active intake form's Responses (best-effort).
       try { await recordBookingIntakeDb(config.org.id, res.clientId, input.intake, clockNow()); } catch { /* never break booking */ }
+      // Auto-invite to the portal ONLY if the org opted in (Dormant-by-Default).
+      // Otherwise the client just gets the booking confirmation — no set-password link.
+      if (config.org.clientPortal.inviteOnBooking) {
+        const channel = input.intake.email?.trim() ? "email" : "sms";
+        await logAccess({
+          action: "admin.action",
+          actor: { userId: "public:booking", platformRole: "client", teamRole: null },
+          orgId: config.org.id,
+          target: `client:${res.clientId}/portal_invite`,
+          reason: `invite_${channel}`,
+        });
+      }
     } catch (e) {
       if (isSlotTakenError(e)) return { ok: false, error: SLOT_TAKEN_MESSAGE };
       throw e;

@@ -43,6 +43,7 @@ export const orgs: Org[] = [
     timezone: "Africa/Johannesburg",
     features: { ai: false, video: false, whatsapp: false, sms: false, payments: true },
     scheduling: { defaultDurationMin: 60, bufferMin: 10, businessHours },
+    clientPortal: { inviteOnBooking: false, inviteOnCreate: false },
   },
 ];
 

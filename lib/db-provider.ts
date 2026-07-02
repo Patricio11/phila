@@ -163,6 +163,10 @@ function toOrg(row: OrgRow): Org {
     timezone: "Africa/Johannesburg",
     features: row.features as Org["features"],
     scheduling: row.scheduling as unknown as Org["scheduling"],
+    clientPortal: {
+      inviteOnBooking: Boolean((row.clientPortal as Record<string, boolean>)?.inviteOnBooking),
+      inviteOnCreate: Boolean((row.clientPortal as Record<string, boolean>)?.inviteOnCreate),
+    },
   };
 }
 

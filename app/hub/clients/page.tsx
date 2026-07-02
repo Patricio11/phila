@@ -15,11 +15,12 @@ export default async function HubClientsPage() {
   const { principal, membership } = await requireHub();
   const provider = await getDataProvider();
   const now = clockNow();
-  const [rows, removedRows, counsellors, duplicates] = await Promise.all([
+  const [rows, removedRows, counsellors, duplicates, org] = await Promise.all([
     provider.listOrgClients(membership.orgId, now),
     provider.listRemovedClients(membership.orgId, now),
     provider.listCounsellors(membership.orgId),
     provider.findDuplicateClients(membership.orgId, now),
+    provider.getOrg(membership.orgId),
   ]);
 
   await logAccess({
@@ -40,7 +41,7 @@ export default async function HubClientsPage() {
         actions={
           <div className="flex items-center gap-2">
             <ImportClientsButton counsellors={counsellorOpts} />
-            <AddClientButton counsellors={counsellorOpts} />
+            <AddClientButton counsellors={counsellorOpts} inviteOnCreateDefault={Boolean(org?.clientPortal.inviteOnCreate)} />
           </div>
         }
       />

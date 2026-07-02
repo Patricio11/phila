@@ -41,7 +41,10 @@ export function TopBar({
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-surface/80 px-4 backdrop-blur-md sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center border-b border-border bg-surface/80 backdrop-blur-md">
+      {/* Same container as the page content (app-shell) so the top-bar title +
+          actions line up exactly with the page body at every width and collapse state. */}
+      <div className="mx-auto flex h-full w-full max-w-[1320px] items-center gap-3 px-4 sm:px-6">
       <div className="min-w-0">
         <h1 className="truncate text-[15px] font-[650] tracking-[-0.01em] text-text">{title}</h1>
         <p className="truncate text-[12px] text-text-3">{date}</p>
@@ -75,6 +78,7 @@ export function TopBar({
       </div>
 
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} sections={sections} />
+      </div>
     </header>
   );
 }

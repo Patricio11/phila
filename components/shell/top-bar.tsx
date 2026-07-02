@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Menu, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { CommandPalette } from "@/components/shell/command-palette";
 import { NotificationsMenu } from "@/components/shell/notifications-menu";
 import { AccountMenu } from "@/components/shell/account-menu";
+import { PhilaMark } from "@/components/brand/logo";
 import type { NavSection } from "@/components/shell/nav-config";
 
 /**
@@ -19,14 +20,12 @@ export function TopBar({
   user,
   sections,
   settingsHref,
-  onOpenMobileNav,
 }: {
   title: string;
   date: string;
   user: { name: string; email: string; roleLabel: string };
   sections: NavSection[];
   settingsHref?: string;
-  onOpenMobileNav: () => void;
 }) {
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -44,14 +43,8 @@ export function TopBar({
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-surface/80 px-4 backdrop-blur-md sm:px-6">
-      <button
-        type="button"
-        onClick={onOpenMobileNav}
-        className="-ml-1 inline-flex size-9 items-center justify-center rounded-control text-text-2 transition-colors hover:bg-surface-hover hover:text-text lg:hidden"
-        aria-label="Open navigation"
-      >
-        <Menu className="size-5" strokeWidth={1.9} aria-hidden />
-      </button>
+      {/* Brand on mobile (the sidebar  which holds it on desktop  is hidden here). */}
+      <PhilaMark size={26} className="-ml-0.5 lg:hidden" />
 
       <div className="min-w-0">
         <h1 className="truncate text-[15px] font-[650] tracking-[-0.01em] text-text">{title}</h1>

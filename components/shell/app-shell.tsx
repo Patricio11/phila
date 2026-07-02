@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/shell/sidebar";
 import { TopBar } from "@/components/shell/top-bar";
+import { BottomNav } from "@/components/shell/bottom-nav";
 import { NAVS, type NavKey, type NavSection } from "@/components/shell/nav-config";
-import { cn } from "@/lib/utils";
 
 const COLLAPSE_KEY = "phila-sidebar-collapsed";
 const COLLAPSE_EVENT = "phila:sidebar";
@@ -62,7 +62,6 @@ export function AppShell({
   const pathname = usePathname();
   const sections: NavSection[] = NAVS[navKey];
   const collapsed = useSyncExternalStore(subscribeCollapse, readCollapsed, () => false);
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   const toggleCollapse = () => {
     const next = !readCollapsed();
@@ -99,38 +98,6 @@ export function AppShell({
         />
       </aside>
 
-      {/* Mobile drawer */}
-      <div
-        className={cn(
-          "fixed inset-0 z-50 lg:hidden",
-          mobileOpen ? "pointer-events-auto" : "pointer-events-none",
-        )}
-        aria-hidden={!mobileOpen}
-      >
-        <div
-          className={cn(
-            "absolute inset-0 bg-black/40 transition-opacity duration-200",
-            mobileOpen ? "opacity-100" : "opacity-0",
-          )}
-          onClick={() => setMobileOpen(false)}
-        />
-        <div
-          className={cn(
-            "absolute left-0 top-0 h-full w-[248px] border-r border-border shadow-[var(--shadow-card)] transition-transform duration-300 ease-[cubic-bezier(.2,0,0,1)]",
-            mobileOpen ? "translate-x-0" : "-translate-x-full",
-          )}
-        >
-          <Sidebar
-            sections={sections}
-            orgName={orgName}
-            collapsed={false}
-            onToggleCollapse={() => setMobileOpen(false)}
-            onNavigate={() => setMobileOpen(false)}
-            settingsHref={settingsHref}
-          />
-        </div>
-      </div>
-
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar
@@ -139,12 +106,15 @@ export function AppShell({
           user={user}
           sections={sections}
           settingsHref={settingsHref}
-          onOpenMobileNav={() => setMobileOpen(true)}
         />
         <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto outline-none">
-          <div className="mx-auto w-full max-w-[1320px] px-4 py-6 sm:px-6 sm:py-8">{children}</div>
+          {/* Bottom padding on mobile clears the floating tab bar + home-indicator safe area. */}
+          <div className="mx-auto w-full max-w-[1320px] px-4 pt-6 pb-[calc(env(safe-area-inset-bottom)+4.75rem)] sm:px-6 sm:pt-8 lg:pb-8">{children}</div>
         </main>
       </div>
+
+      {/* Mobile: a native floating tab bar + a "More" sheet (desktop uses the sidebar). */}
+      <BottomNav sections={sections} settingsHref={settingsHref} />
     </div>
   );
 }

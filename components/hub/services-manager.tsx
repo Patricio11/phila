@@ -38,6 +38,7 @@ export function ServicesManager({ initial }: { initial: Service[] }) {
 
   return (
     <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {services.map((s, i) => (
         <Card key={s.id} className="p-4">
           <div className="flex items-start gap-3">
@@ -87,6 +88,7 @@ export function ServicesManager({ initial }: { initial: Service[] }) {
           </div>
         </Card>
       ))}
+      </div>
 
       <Button variant="ghost" onClick={add} className="w-full border border-dashed border-border">
         <Plus className="size-4" strokeWidth={2} aria-hidden /> Add a service

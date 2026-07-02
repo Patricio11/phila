@@ -3,9 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MoreHorizontal, Settings } from "lucide-react";
+import { MoreHorizontal, Settings, type LucideIcon } from "lucide-react";
 import type { NavSection } from "@/components/shell/nav-config";
 import { cn } from "@/lib/utils";
+
+/** Overshoot easing  a subtle spring for the active-tab pop. */
+const SPRING = "ease-[cubic-bezier(.34,1.56,.64,1)]";
 
 /**
  * Mobile navigation (DESIGN.md §5.4)  a native-feeling floating tab bar pinned to
@@ -35,49 +38,46 @@ export function BottomNav({ sections, settingsHref }: { sections: NavSection[]; 
 
   return (
     <>
-      <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/85 backdrop-blur-lg lg:hidden"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      {/* A floating, glassy, rounded pill  not edge-to-edge (DESIGN.md §5.4). */}
+      <div
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 lg:hidden"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
       >
-        <div className="mx-auto flex h-[54px] max-w-md items-stretch justify-around px-1">
-          {tabs.map((item) => {
-            const active = item.href === activeHref;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-medium transition-colors",
-                  active ? "text-accent" : "text-text-3 active:text-text-2",
-                )}
-              >
-                <item.icon className={cn("size-[23px] transition-transform duration-200", active && "-translate-y-px scale-105")} strokeWidth={active ? 2.2 : 1.9} aria-hidden />
-                <span className="max-w-[64px] truncate leading-none">{item.label}</span>
-              </Link>
-            );
-          })}
-          {useMore && (
-            <button
-              type="button"
-              onClick={() => setMoreOpen(true)}
-              aria-label="More"
-              className={cn(
-                "flex flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-medium transition-colors",
-                moreActive ? "text-accent" : "text-text-3 active:text-text-2",
-              )}
-            >
-              <MoreHorizontal className="size-[23px]" strokeWidth={moreActive ? 2.2 : 1.9} aria-hidden />
-              <span className="leading-none">More</span>
-            </button>
-          )}
-        </div>
-      </nav>
+        <nav className="pointer-events-auto flex h-[58px] w-full max-w-[440px] items-stretch justify-around gap-0.5 rounded-[24px] border border-border/70 bg-surface/75 px-1.5 shadow-[0_12px_34px_-10px_rgba(16,24,20,0.4)] backdrop-blur-xl">
+          {tabs.map((item) => (
+            <Tab key={item.href} href={item.href} icon={item.icon} label={item.label} active={item.href === activeHref} />
+          ))}
+          {useMore && <Tab icon={MoreHorizontal} label="More" active={moreActive} onClick={() => setMoreOpen(true)} />}
+        </nav>
+      </div>
 
       {useMore && (
         <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} sections={sections} settingsHref={settingsHref} activeHref={activeHref} />
       )}
     </>
+  );
+}
+
+/** One tab  a Link (destination) or a button (More). The active state pops a
+ *  soft accent pill behind the icon with a spring, and the icon lifts + tints. */
+function Tab({ href, onClick, icon: Icon, label, active }: { href?: string; onClick?: () => void; icon: LucideIcon; label: string; active: boolean }) {
+  const inner = (
+    <>
+      <span className="relative flex size-7 items-center justify-center">
+        <span
+          aria-hidden
+          className={cn("absolute -inset-1 rounded-full bg-accent-soft transition-[transform,opacity] duration-300", SPRING, active ? "scale-100 opacity-100" : "scale-0 opacity-0")}
+        />
+        <Icon className={cn("relative size-[21px] transition-[transform,color] duration-300", SPRING, active ? "scale-110 text-accent" : "text-text-3")} strokeWidth={active ? 2.3 : 1.9} aria-hidden />
+      </span>
+      <span className={cn("max-w-[68px] truncate text-[9.5px] font-medium leading-none transition-colors", active ? "text-accent" : "text-text-3")}>{label}</span>
+    </>
+  );
+  const cls = "flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl transition-transform duration-150 active:scale-90";
+  return href ? (
+    <Link href={href} aria-current={active ? "page" : undefined} className={cls}>{inner}</Link>
+  ) : (
+    <button type="button" onClick={onClick} aria-label={label} className={cls}>{inner}</button>
   );
 }
 

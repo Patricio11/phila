@@ -109,7 +109,7 @@ export function AppShell({
         />
         <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto outline-none">
           {/* Bottom padding on mobile clears the floating tab bar + home-indicator safe area. */}
-          <div className="mx-auto w-full max-w-[1320px] px-4 pt-6 pb-[calc(env(safe-area-inset-bottom)+4.75rem)] sm:px-6 sm:pt-8 lg:pb-8">{children}</div>
+          <div className="mx-auto w-full max-w-[1320px] px-4 pt-6 pb-[calc(env(safe-area-inset-bottom)+5.75rem)] sm:px-6 sm:pt-8 lg:pb-8">{children}</div>
         </main>
       </div>
 

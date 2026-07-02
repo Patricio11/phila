@@ -1,14 +1,18 @@
-import { CalendarCheck, DoorOpen, FolderClosed, MessageCircle, MessagesSquare, ReceiptText, Sparkles, Video } from "lucide-react";
+import { CalendarCheck, ClipboardList, DoorOpen, FolderClosed, MessageCircle, MessagesSquare, ReceiptText, Sparkles, Video } from "lucide-react";
 import { SectionHeading } from "@/components/marketing/section-heading";
 import { Reveal } from "@/components/marketing/reveal";
 
 const CAPABILITIES = [
+  // Row 1  how clients come in and stay in touch.
   { icon: CalendarCheck, title: "Booking & intake", body: "A public page clients book from  service, time, consent, done. No back-and-forth." },
-  { icon: MessagesSquare, title: "Team messaging", body: "Private staff chat, groups, and who's online  handovers and supervision in one place." },
-  { icon: FolderClosed, title: "Documents & sharing", body: "Folders, share with a client, request a file  one home for every document, no more Dropbox." },
-  { icon: ReceiptText, title: "Invoicing & PayShap", body: "A4 invoices, pay-by-link, VAT the SA way  clients pay the practice directly." },
+  { icon: ClipboardList, title: "Forms & assessments", body: "Intake, screening, and feedback  build once, send a link, and read every response on the client's file." },
   { icon: MessageCircle, title: "Reminders on WhatsApp", body: "Booked, reminded, rescheduled  on the channel your clients actually live on." },
+  // Row 2  the clinical work and the team around it.
   { icon: Sparkles, title: "AI scribe", body: "A note draft you edit and sign  and its structured fields feed your reporting." },
+  { icon: FolderClosed, title: "Documents & files", body: "Folders, share with a client, request a file back  one home for every document, no more Dropbox." },
+  { icon: MessagesSquare, title: "Team messaging", body: "Private staff chat, groups, and who's online  handovers and supervision in one place." },
+  // Row 3  running the practice.
+  { icon: ReceiptText, title: "Invoicing & PayShap", body: "A4 invoices, pay-by-link, VAT the SA way  clients pay the practice directly." },
   { icon: Video, title: "Video sessions", body: "Online sessions in-app and in-region, or paste your own Zoom, Meet, or Teams link." },
   { icon: DoorOpen, title: "Rooms & utilisation", body: "Every room, who's in it, and how full it is  across sites, with no double-booking." },
 ];
@@ -20,12 +24,12 @@ export function OnePlace() {
       <SectionHeading
         eyebrow="The whole practice"
         title="One calm place  not seven tools that don't talk"
-        lead="Today it's a scheduler in one tab, a WhatsApp group in another, a Dropbox folder, a spreadsheet, and a separate invoice tool  none of them aware of each other. Phila is the one place where they are."
+        lead="Today it's a scheduler in one tab, a Google Form for intake, a WhatsApp group, a Dropbox folder, a spreadsheet, and a separate invoice tool  none of them aware of each other. Phila is the one place where they are."
       />
 
-      <div className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {CAPABILITIES.map((c, i) => (
-          <Reveal key={c.title} delay={(i % 4) * 70}>
+          <Reveal key={c.title} delay={(i % 3) * 70}>
             <div className="h-full rounded-card border border-border bg-surface p-5 shadow-sm transition-shadow duration-200 hover:shadow-[var(--shadow-card)]">
               <span className="inline-flex size-9 items-center justify-center rounded-control bg-accent-soft text-accent">
                 <c.icon className="size-[18px]" strokeWidth={1.9} aria-hidden />

@@ -53,16 +53,18 @@ export function BrandMark({ className, size = 32 }: { className?: string; size?:
  * with the brand green→mint gradient so it keeps depth on any background.
  * Previewed in the sidebar header only.
  */
-export function PhilaMark({ className, size = 32 }: { className?: string; size?: number }) {
+export function PhilaMark({ className, size = 40 }: { className?: string; size?: number }) {
+  // viewBox is cropped tight to the bloom (no transparent padding), so the mark
+  // sits close to the wordmark next to it.
   return (
-    <svg viewBox="0 0 512 512" width={size} height={size} className={cn("shrink-0", className)} aria-hidden>
+    <svg viewBox="120 135 272 272" width={size} height={size} className={cn("shrink-0", className)} aria-hidden>
       <defs>
         <linearGradient id="phila-bloom" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#1C7D58" />
           <stop offset="1" stopColor="#34BC83" />
         </linearGradient>
       </defs>
-      <g fill="url(#phila-bloom)" transform="translate(256 256) scale(1.15) translate(-256 -260)">
+      <g fill="url(#phila-bloom)">
         {OUTER.map(([a, s]) => (
           <path key={`o${a}`} d={PETAL} transform={`translate(256 336) rotate(${a}) scale(${s})`} />
         ))}

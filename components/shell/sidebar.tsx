@@ -40,8 +40,8 @@ export function Sidebar({
   return (
     <div className="flex h-full flex-col bg-sidebar">
       {/* Header */}
-      <div className="flex h-16 items-center gap-2.5 border-b border-border px-3.5">
-        <PhilaMark size={36} />
+      <div className="flex h-16 items-center gap-1.5 border-b border-border px-3.5">
+        <PhilaMark size={collapsed ? 40 : 60} />
         <span
           className={cn(
             "flex min-w-0 flex-col leading-tight transition-opacity duration-150",

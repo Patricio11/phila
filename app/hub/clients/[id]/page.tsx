@@ -18,6 +18,7 @@ import { SessionTimeline } from "@/components/client/session-timeline";
 import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";
 import { ReassignClientButton } from "@/components/hub/reassign-client-button";
 import { InviteClientButton } from "@/components/hub/invite-client-button";
+import { EditClientButton } from "@/components/hub/edit-client-button";
 import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
@@ -76,6 +77,11 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
         summary={`With ${counsellor.name} · ${client.province}`}
         actions={
           <div className="flex items-center gap-2">
+            <EditClientButton
+              clientId={client.id}
+              counsellors={counsellorOpts}
+              initial={{ name: client.name, phone: client.phone ?? null, email: client.email ?? null, province: client.province, counsellorId: counsellor.id, riskFlag: client.riskFlag }}
+            />
             <InviteClientButton clientId={client.id} clientName={client.name} phone={client.phone ?? null} email={client.email ?? null} whatsappOn={Boolean(org.features.whatsapp)} smsOn={Boolean(org.features.sms)} />
             <ReassignClientButton clientId={client.id} clientName={client.name} counsellors={counsellorOpts} currentCounsellorId={counsellor.id} />
             <Button asChild>

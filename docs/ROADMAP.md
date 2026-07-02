@@ -923,6 +923,33 @@ six commits; migrations 0025–0026 + seed applied to Neon).
 
 ---
 
+## 👤 PHASE 18.7: CLIENT ONBOARDING — PHONE-OR-EMAIL, PORTAL INVITE, FULL EDIT ✅ (2026-07-02)
+*Goal: make the client front door match how SA practices actually work — a **phone number *or* an email** is enough
+(many clients have no email), invite a client to their portal over the right channel with a copy-paste fallback, and
+let the org fully edit a client's profile. One policy applied at every door a client is created. Full write-up:
+`docs/PHASE_18.7_CLIENT_ONBOARDING_PLAN.md`.*
+
+- [x] **Create with phone *or* email (hub):** shared `contactShape` + `.refine(phone || email)` on `createClient`;
+  the Add-client modal shows a combined contact error when both are empty and a helper line teaching the invite
+  behaviour ("we invite by email when there's one, otherwise by SMS").
+- [x] **Channel-aware portal invite + copy link:** `InviteClientButton` defaults to **email when present**, else SMS,
+  else WhatsApp (each disabled when the channel isn't connected); a dashed **"Can't tap the link?"** block shows the
+  full activation URL with a **Copy** button so the org can paste it into any browser. `inviteClientToPortal` returns
+  the shareable path.
+- [x] **Full client edit:** `updateClient` (validated + audited, same phone-or-email rule) + a pre-filled
+  `EditClientButton` on the client detail page — name, phone, email, province, primary counsellor, safeguarding flag.
+- [x] **Booking consistency:** the public booking flow (which also creates a client record) now enforces the *same*
+  phone-or-email rule at the server boundary; the shared intake validator gains an opt-in `contactPair` so a client
+  with only a phone *or* only an email can book (each still format-checked), with a "one is enough" hint. Generic
+  Forms fill (`/f/[token]`) is untouched.
+
+**Done when:** a client can be created, invited, and edited with only a phone number **or** only an email, over every
+front door (hub + booking), with a shareable link when messaging can't reach them. ✅ **Met** (tsc/lint/build + 119
+tests green). *Real persistence of hub client writes stays Phase 10/11 (RLS); real invite tokens + delivery stay
+Phase 12 — mock+audit here, booking's client row is already persisted.*
+
+---
+
 ## 🔒 PHASE 19: TRUST, SECURITY & POPIA HARDENING
 *Goal: be allowed in the room with the most sensitive data there is.*
 - [ ] **Data residency:** migrate Postgres to an SA region (AWS `af-south-1` / Azure SA North) on the `db/client.ts` swap; confirm storage + AI inference residency posture; document cross-border flows.

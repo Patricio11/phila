@@ -1,28 +1,43 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { AlertTriangle, UserPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { AlertTriangle, Pencil } from "lucide-react";
 import { PROVINCES, type Province } from "@/lib/domain/enums";
 import { Dialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { createClient } from "@/app/hub/clients/actions";
+import { updateClient } from "@/app/hub/clients/actions";
 import { cn } from "@/lib/utils";
 
-export function AddClientButton({ counsellors }: { counsellors: { id: string; name: string }[] }) {
+/**
+ * Full client edit  the org can correct any detail on the profile. Mirrors the
+ * Add-client form (same phone-or-email rule) but pre-filled and saved via
+ * updateClient. Phase 10/11 persists the change under RLS.
+ */
+export function EditClientButton({
+  clientId,
+  counsellors,
+  initial,
+}: {
+  clientId: string;
+  counsellors: { id: string; name: string }[];
+  initial: { name: string; phone: string | null; email: string | null; province: Province; counsellorId: string | null; riskFlag: boolean };
+}) {
   const { toast } = useToast();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   const [attempted, setAttempted] = useState(false);
 
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [province, setProvince] = useState<Province>("Gauteng");
-  const [counsellorId, setCounsellorId] = useState<string | null>(counsellors[0]?.id ?? null);
-  const [riskFlag, setRiskFlag] = useState(false);
+  const [name, setName] = useState(initial.name);
+  const [phone, setPhone] = useState(initial.phone ?? "");
+  const [email, setEmail] = useState(initial.email ?? "");
+  const [province, setProvince] = useState<Province>(initial.province);
+  const [counsellorId, setCounsellorId] = useState<string | null>(initial.counsellorId ?? counsellors[0]?.id ?? null);
+  const [riskFlag, setRiskFlag] = useState(initial.riskFlag);
 
   const errors = {
     name: name.trim().length < 2 ? "Enter the client's full name." : "",
@@ -32,35 +47,42 @@ export function AddClientButton({ counsellors }: { counsellors: { id: string; na
     contact: !phone.trim() && !email.trim() ? "Add a phone number or an email — either works." : "",
   };
 
-  const reset = () => { setName(""); setPhone(""); setEmail(""); setProvince("Gauteng"); setCounsellorId(counsellors[0]?.id ?? null); setRiskFlag(false); setAttempted(false); };
+  const resetToInitial = () => {
+    setName(initial.name); setPhone(initial.phone ?? ""); setEmail(initial.email ?? "");
+    setProvince(initial.province); setCounsellorId(initial.counsellorId ?? counsellors[0]?.id ?? null);
+    setRiskFlag(initial.riskFlag); setAttempted(false);
+  };
+
+  const close = () => { setOpen(false); resetToInitial(); };
 
   const submit = () => {
     setAttempted(true);
     if (errors.name || errors.counsellor || errors.phone || errors.email || errors.contact) return;
     start(async () => {
-      const res = await createClient({ name: name.trim(), phone: phone.replace(/\s/g, ""), email, province, counsellorId: counsellorId!, riskFlag });
+      const res = await updateClient({ clientId, name: name.trim(), phone: phone.replace(/\s/g, ""), email, province, counsellorId: counsellorId!, riskFlag });
       if (!res.ok) return toast({ tone: "error", title: res.error });
-      toast({ tone: "success", title: "Client added", description: `${name.split(" ")[0]} is on ${counsellors.find((c) => c.id === counsellorId)?.name.split(" ")[0]}'s caseload.` });
+      toast({ tone: "success", title: "Profile updated", description: `${name.split(" ")[0]}'s details are saved.` });
       setOpen(false);
-      reset();
+      setAttempted(false);
+      router.refresh();
     });
   };
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>
-        <UserPlus className="size-4" strokeWidth={2} aria-hidden /> Add client
+      <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
+        <Pencil className="size-4" strokeWidth={2} aria-hidden /> Edit profile
       </Button>
 
       <Dialog
         open={open}
-        onClose={() => setOpen(false)}
-        title="Add a client"
-        description="Capture the essentials  consent is requested at first contact."
+        onClose={close}
+        title={`Edit ${initial.name.split(" ")[0]}'s profile`}
+        description="Correct any detail. Changes never distort compiled reports."
         footer={
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>Cancel</Button>
-            <Button onClick={submit} loading={pending}>Add client</Button>
+            <Button variant="ghost" onClick={close} disabled={pending}>Cancel</Button>
+            <Button onClick={submit} loading={pending}>Save changes</Button>
           </div>
         }
       >
@@ -110,8 +132,8 @@ export function AddClientButton({ counsellors }: { counsellors: { id: string; na
           >
             <AlertTriangle className={cn("mt-0.5 size-4 shrink-0", riskFlag ? "text-danger" : "text-text-3")} strokeWidth={2} aria-hidden />
             <span>
-              <span className="block text-[13px] font-medium text-text">Open with a safeguarding flag</span>
-              <span className="block text-[11.5px] text-text-2">Only if there&apos;s a known concern. It&apos;s never auto-actioned  it just keeps the counsellor close.</span>
+              <span className="block text-[13px] font-medium text-text">Safeguarding flag</span>
+              <span className="block text-[11.5px] text-text-2">Only if there&apos;s a known concern. It&apos;s never auto-actioned — it just keeps the counsellor close.</span>
             </span>
             <span className={cn("ml-auto mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors", riskFlag ? "bg-danger" : "bg-surface-2")}>
               <span className={cn("size-4 rounded-full bg-surface shadow-sm transition-transform", riskFlag && "translate-x-4")} />

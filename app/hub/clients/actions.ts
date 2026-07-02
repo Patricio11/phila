@@ -10,14 +10,28 @@ import { PROVINCES } from "@/lib/domain/enums";
  * (under RLS) and run the consent state machine on first contact. Creating or
  * moving a client never distorts compiled stats (Outcome-Honesty Rule).
  */
-const createInput = z.object({
-  name: z.string().min(2, "Enter the client's full name."),
+/**
+ * A client is reachable if we have *either* a phone number or an email  many SA
+ * clients have no email, so phone alone is enough. When both exist we prefer email
+ * for the portal invite; phone-only clients are invited by SMS. Shared by create,
+ * edit, and the public booking flow so the front door is consistent.
+ */
+const contactShape = {
   phone: z.string().regex(/^(\+27|0)\d{9}$/, "Use a SA number, e.g. 082 123 4567.").optional().or(z.literal("")),
   email: z.string().email("Enter a valid email.").optional().or(z.literal("")),
-  province: z.enum(PROVINCES),
-  counsellorId: z.string().min(1, "Assign a counsellor."),
-  riskFlag: z.boolean(),
-});
+};
+const hasContact = (v: { phone?: string; email?: string }) => Boolean(v.phone?.trim()) || Boolean(v.email?.trim());
+const contactMessage = "Add a phone number or an email so we can reach the client.";
+
+const createInput = z
+  .object({
+    name: z.string().min(2, "Enter the client's full name."),
+    ...contactShape,
+    province: z.enum(PROVINCES),
+    counsellorId: z.string().min(1, "Assign a counsellor."),
+    riskFlag: z.boolean(),
+  })
+  .refine(hasContact, { message: contactMessage, path: ["phone"] });
 
 export async function createClient(
   raw: z.infer<typeof createInput>,
@@ -74,7 +88,7 @@ const inviteInput = z.object({
  */
 export async function inviteClientToPortal(
   raw: z.infer<typeof inviteInput>,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<{ ok: true; path: string } | { ok: false; error: string }> {
   const { principal, membership } = await requireHub();
   const parsed = inviteInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Couldn't send the invite." };
@@ -84,6 +98,43 @@ export async function inviteClientToPortal(
     orgId: membership.orgId,
     target: `client:${parsed.data.clientId}/portal_invite`,
     reason: `invite_${parsed.data.channel}`,
+  });
+  // The org can copy this link and share it manually if the client can't tap the
+  // message. Real per-client tokens land with the Phase 12 channel rail; this points
+  // at the client set-password (activation) page today.
+  return { ok: true, path: `/activate?role=client&c=${encodeURIComponent(parsed.data.clientId)}` };
+}
+
+const updateInput = z
+  .object({
+    clientId: z.string().min(1),
+    name: z.string().min(2, "Enter the client's full name."),
+    ...contactShape,
+    province: z.enum(PROVINCES),
+    counsellorId: z.string().min(1, "Assign a counsellor."),
+    riskFlag: z.boolean(),
+  })
+  .refine(hasContact, { message: contactMessage, path: ["phone"] });
+
+/**
+ * Fully edit a client's profile (mock). The org can correct any detail  name,
+ * phone, email, province, primary counsellor, safeguarding flag. Validated (still
+ * needs a phone or an email) + audited; Phase 10/11 persists under RLS. Editing a
+ * client never distorts compiled stats (Outcome-Honesty Rule).
+ */
+export async function updateClient(
+  raw: z.infer<typeof updateInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = updateInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the details." };
+
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `client:${parsed.data.clientId}`,
+    reason: "update_client",
   });
   return { ok: true };
 }

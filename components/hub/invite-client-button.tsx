@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Mail, MessageCircle, Send, Smartphone } from "lucide-react";
+import { Check, Copy, Link2, Mail, MessageCircle, Send, Smartphone } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
@@ -28,14 +28,32 @@ export function InviteClientButton({
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
+  const [copied, setCopied] = useState(false);
+
+  // Built client-side so the org can copy + paste it into any browser if the
+  // client can't tap the message. Points at the client set-password page today;
+  // real per-client tokens arrive with the Phase 12 channel rail.
+  const [origin] = useState(() => (typeof window === "undefined" ? "" : window.location.origin));
+  const link = `${origin}/activate?role=client&c=${encodeURIComponent(clientId)}`;
 
   const options: { key: Channel; label: string; detail: string; icon: typeof Mail; available: boolean; note?: string }[] = [
     { key: "whatsapp", label: "WhatsApp", detail: phone ?? "No number on file", icon: MessageCircle, available: Boolean(phone) && whatsappOn, note: phone && !whatsappOn ? "Connect WhatsApp in Settings" : undefined },
     { key: "sms", label: "SMS", detail: phone ?? "No number on file", icon: Smartphone, available: Boolean(phone) && smsOn, note: phone && !smsOn ? "Connect SMS in Settings" : undefined },
     { key: "email", label: "Email", detail: email ?? "No email on file", icon: Mail, available: Boolean(email) },
   ];
-  const best = options.find((o) => o.available)?.key ?? "email";
+  // Prefer email when the client has one; otherwise SMS to their number, then WhatsApp.
+  const best: Channel = email ? "email" : options.find((o) => o.available)?.key ?? "email";
   const [channel, setChannel] = useState<Channel>(best);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      toast({ tone: "error", title: "Couldn't copy — select and copy the link manually." });
+    }
+  };
 
   const send = () => {
     start(async () => {
@@ -88,6 +106,20 @@ export function InviteClientButton({
               {!o.available && <span className="shrink-0 text-[11px] text-text-3">Unavailable</span>}
             </button>
           ))}
+        </div>
+
+        {/* Copy-paste fallback — if the client can't tap the message, share this link. */}
+        <div className="mt-4 rounded-control border border-dashed border-border bg-surface-2/40 p-3">
+          <div className="flex items-center gap-2 text-[12.5px] font-medium text-text">
+            <Link2 className="size-4 text-text-3" strokeWidth={2} aria-hidden /> Can&apos;t tap the link?
+          </div>
+          <p className="mt-1 text-[11.5px] text-text-3">Copy it and paste it into any browser — it opens their set-a-password page.</p>
+          <div className="mt-2 flex items-center gap-2">
+            <code suppressHydrationWarning className="min-w-0 flex-1 truncate rounded-chip bg-surface px-2.5 py-1.5 text-[11.5px] text-text-2">{link}</code>
+            <Button variant="subtle" size="sm" onClick={copy} disabled={!origin}>
+              {copied ? <><Check className="size-4 text-accent" strokeWidth={2.4} aria-hidden /> Copied</> : <><Copy className="size-4" strokeWidth={2} aria-hidden /> Copy</>}
+            </Button>
+          </div>
         </div>
       </Dialog>
     </>

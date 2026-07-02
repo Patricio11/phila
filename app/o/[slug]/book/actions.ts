@@ -137,11 +137,16 @@ export async function submitBooking(
   if (!input.consents.booking || !input.consents.notes) {
     return { ok: false, error: "Booking and clinical-notes consent are needed to confirm." };
   }
-  // Minimal contact + reason must be present.
-  for (const required of ["full_name", "phone", "reason", "preferred_contact"]) {
+  // Minimal details + reason must be present.
+  for (const required of ["full_name", "reason", "preferred_contact"]) {
     if (!input.intake[required]?.trim()) {
       return { ok: false, error: "Please complete the required intake fields." };
     }
+  }
+  // A client is reachable with EITHER a phone number or an email (many SA clients
+  // have no email) — the same phone-or-email rule the hub uses when creating clients.
+  if (!input.intake.phone?.trim() && !input.intake.email?.trim()) {
+    return { ok: false, error: "Add a phone number or an email so we can confirm your session." };
   }
 
   const provider = await getDataProvider();

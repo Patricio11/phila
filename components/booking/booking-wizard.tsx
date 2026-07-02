@@ -9,7 +9,7 @@ import { submitBooking, type BookingConfirmation } from "@/app/o/[slug]/book/act
 import { enqueueBooking } from "@/lib/pwa/queue-client";
 import { BookingShell, type BookingStepMeta } from "@/components/booking/booking-shell";
 import { EMPTY_BOOKING, type BookingState } from "@/components/booking/types";
-import { isIntakeValid, hasRequiredConsents } from "@/components/booking/validation";
+import { isIntakeValid, hasRequiredConsents, CONTACT_PAIR } from "@/components/booking/validation";
 import { ServiceStep } from "@/components/booking/steps/service-step";
 import { TimeStep } from "@/components/booking/steps/time-step";
 import { IntakeStep } from "@/components/booking/steps/intake-step";
@@ -106,7 +106,7 @@ export function BookingWizard({
       case 1:
         return Boolean(state.slotStart);
       case 2:
-        return isIntakeValid(config.intakeForm.fields, state.intake);
+        return isIntakeValid(config.intakeForm.fields, state.intake, { contactPair: CONTACT_PAIR });
       case 3:
         return hasRequiredConsents(state.consents);
       default:

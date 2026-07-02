@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronLeft, Settings } from "lucide-react";
-import { MonogramMark } from "@/components/brand/logo";
+import { BrandMark } from "@/components/brand/logo";
 import type { NavSection } from "@/components/shell/nav-config";
 import { cn } from "@/lib/utils";
 
@@ -41,7 +41,7 @@ export function Sidebar({
     <div className="flex h-full flex-col bg-sidebar">
       {/* Header */}
       <div className="flex h-16 items-center gap-2.5 border-b border-border px-3.5">
-        <MonogramMark size={32} />
+        <BrandMark size={32} />
         <span
           className={cn(
             "flex min-w-0 flex-col leading-tight transition-opacity duration-150",

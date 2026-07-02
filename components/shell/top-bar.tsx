@@ -6,7 +6,6 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { CommandPalette } from "@/components/shell/command-palette";
 import { NotificationsMenu } from "@/components/shell/notifications-menu";
 import { AccountMenu } from "@/components/shell/account-menu";
-import { PhilaMark } from "@/components/brand/logo";
 import type { NavSection } from "@/components/shell/nav-config";
 
 /**
@@ -43,9 +42,6 @@ export function TopBar({
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-surface/80 px-4 backdrop-blur-md sm:px-6">
-      {/* Brand on mobile (the sidebar  which holds it on desktop  is hidden here). */}
-      <PhilaMark size={26} className="-ml-0.5 lg:hidden" />
-
       <div className="min-w-0">
         <h1 className="truncate text-[15px] font-[650] tracking-[-0.01em] text-text">{title}</h1>
         <p className="truncate text-[12px] text-text-3">{date}</p>

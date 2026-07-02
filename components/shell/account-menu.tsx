@@ -63,7 +63,7 @@ export function AccountMenu({
         onClick={() => setOpen((v) => !v)}
         aria-label="Account menu"
         aria-expanded={open}
-        className="ml-1 flex items-center gap-2 rounded-pill border border-border bg-surface py-1 pl-1 pr-2 transition-colors hover:bg-surface-hover"
+        className="ml-1 flex items-center gap-2 rounded-pill border border-border bg-surface py-1 pl-1 pr-1 transition-colors hover:bg-surface-hover sm:pr-2"
       >
         <Avatar name={name} size="sm" />
         <span className="hidden min-w-0 flex-col items-start leading-tight sm:flex">

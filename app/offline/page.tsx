@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CloudOff } from "lucide-react";
-import { BrandMark } from "@/components/brand/logo";
+import { PhilaMark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 
 export const metadata = { title: "Offline" };
@@ -13,7 +13,7 @@ export const metadata = { title: "Offline" };
 export default function OfflinePage() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center px-6 text-center">
-      <BrandMark size={44} />
+      <PhilaMark size={44} />
       <div className="mt-6 inline-flex size-12 items-center justify-center rounded-full bg-surface-2 text-text-3">
         <CloudOff className="size-6" strokeWidth={1.9} aria-hidden />
       </div>

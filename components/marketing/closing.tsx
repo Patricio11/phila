@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { BrandMark } from "@/components/brand/logo";
+import { PhilaMark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/marketing/reveal";
 
@@ -52,7 +52,7 @@ export function SiteFooter() {
     <footer className="border-t border-border bg-surface-2/50">
       <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-6 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="flex items-center gap-2.5">
-          <BrandMark size={30} />
+          <PhilaMark size={30} />
           <div className="leading-tight">
             <div className="text-[15px] font-[650] tracking-[-0.01em] text-text">Phila</div>
             <div className="text-[11.5px] text-text-3">Made for South Africa · philasa.com</div>

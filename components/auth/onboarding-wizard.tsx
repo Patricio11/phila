@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Building2, CalendarClock, Check, FileCheck2, PartyPopper, ShieldCheck, Upload } from "lucide-react";
 import type { OnboardingRequirement } from "@/lib/data-provider";
-import { BrandMark } from "@/components/brand/logo";
+import { PhilaMark } from "@/components/brand/logo";
 import { Input, Label } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { completeOnboarding } from "@/app/(auth)/actions";
@@ -56,7 +56,7 @@ export function OnboardingWizard({ requirements }: { requirements: OnboardingReq
       <header className="border-b border-border bg-surface px-5 py-3.5 sm:px-8">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
           <Link href="/" className="inline-flex items-center gap-2.5" aria-label="Phila home">
-            <BrandMark size={26} />
+            <PhilaMark size={26} />
             <span className="text-[16px] font-[680] tracking-[-0.02em] text-text">Phila</span>
           </Link>
           <span className="text-[12.5px] text-text-3">Step {step + 1} of {STEPS.length}</span>

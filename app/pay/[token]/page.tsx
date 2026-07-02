@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { CheckCircle2, Landmark } from "lucide-react";
-import { BrandMark } from "@/components/brand/logo";
+import { PhilaMark } from "@/components/brand/logo";
 import { verifyInvoiceToken } from "@/lib/payments/invoice-link";
 import { getPayableInvoice } from "@/db/queries/invoice-payments";
 import { confirmInvoicePayment } from "./actions";
@@ -29,7 +29,7 @@ export default async function PayPage({ params, searchParams }: { params: Promis
     <main className="flex min-h-dvh items-center justify-center bg-surface-2 px-4 py-10">
       <div className="w-full max-w-md">
         <div className="mb-5 flex items-center justify-center gap-2 text-text-2">
-          <BrandMark size={28} />
+          <PhilaMark size={28} />
           <span className="text-[15px] font-[680] tracking-[-0.01em] text-text">Phila</span>
         </div>
 

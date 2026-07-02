@@ -8,7 +8,7 @@ import {
   UserX,
   Video,
 } from "lucide-react";
-import { BrandMark } from "@/components/brand/logo";
+import { PhilaMark } from "@/components/brand/logo";
 import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardHead } from "@/components/ui/card";
 import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";
@@ -41,7 +41,7 @@ export function DashboardPreview() {
     <div className="pointer-events-none flex select-none text-text" aria-hidden>
       {/* Slim sidebar rail */}
       <div className="hidden w-14 shrink-0 flex-col items-center gap-4 border-r border-border bg-sidebar py-4 sm:flex">
-        <BrandMark size={28} />
+        <PhilaMark size={28} />
         <nav className="flex flex-col items-center gap-1.5">
           {[LayoutDashboard, CalendarDays, Users, NotebookPen, MessagesSquare].map((Icon, i) => (
             <span

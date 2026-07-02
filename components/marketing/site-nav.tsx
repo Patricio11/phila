@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { BrandMark } from "@/components/brand/logo";
+import { PhilaMark } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -38,7 +38,7 @@ export function SiteNav({ showPricing = false }: { showPricing?: boolean }) {
     >
       <div className="mx-auto flex h-16 w-full max-w-[1200px] items-center gap-3 px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2.5" aria-label="Phila home">
-          <BrandMark size={30} />
+          <PhilaMark size={30} />
           <span className="text-[16px] font-[650] tracking-[-0.01em] text-text">Phila</span>
         </Link>
 

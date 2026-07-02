@@ -1,4 +1,4 @@
-import { PhilaGlyph } from "@/components/brand/logo";
+import { PhilaMark } from "@/components/brand/logo";
 import { Reveal } from "@/components/marketing/reveal";
 
 /**
@@ -11,9 +11,7 @@ export function Voice() {
     <section className="py-16 sm:py-24">
       <div className="mx-auto w-full max-w-3xl px-4 text-center sm:px-6">
         <Reveal>
-          <span className="mx-auto inline-flex size-11 items-center justify-center rounded-[12px] bg-gradient-to-br from-accent to-[#34bc83] text-white shadow-sm">
-            <PhilaGlyph className="size-6" />
-          </span>
+          <PhilaMark size={48} className="mx-auto block" />
           <blockquote className="mt-6 text-[clamp(1.4rem,3vw,2rem)] font-[600] leading-[1.3] tracking-[-0.02em] text-text">
             “Friday afternoons used to mean rebuilding the quarter from memory  who we saw, what
             changed, what each funder still needs. The reporting was a second job. Phila just has it.”

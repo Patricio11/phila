@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Lock, MapPin, ShieldCheck } from "lucide-react";
-import { BrandMark } from "@/components/brand/logo";
+import { PhilaGlyph, PhilaMark } from "@/components/brand/logo";
 
 /**
  * AuthShell  the calm, branded frame for sign-in / sign-up / reset. A warm
@@ -25,8 +25,8 @@ export function AuthShell({
         <div className="pointer-events-none absolute -right-24 -top-24 size-[420px] rounded-full bg-white/10 blur-2xl" aria-hidden />
         <div className="pointer-events-none absolute -bottom-32 -left-16 size-[360px] rounded-full bg-black/10 blur-2xl" aria-hidden />
 
-        <Link href="/" className="relative z-10 inline-flex items-center gap-2.5" aria-label="Phila home">
-          <BrandMark size={32} />
+        <Link href="/" className="relative z-10 inline-flex items-center gap-2" aria-label="Phila home">
+          <PhilaGlyph className="size-9" />
           <span className="text-[18px] font-[680] tracking-[-0.02em]">Phila</span>
         </Link>
 
@@ -48,8 +48,8 @@ export function AuthShell({
       {/* Form column */}
       <main className="flex flex-1 flex-col px-5 py-8 sm:px-10">
         {/* Mobile brand header */}
-        <Link href="/" className="mb-8 inline-flex items-center gap-2.5 lg:hidden" aria-label="Phila home">
-          <BrandMark size={28} />
+        <Link href="/" className="mb-8 inline-flex items-center gap-2 lg:hidden" aria-label="Phila home">
+          <PhilaMark size={30} />
           <span className="text-[17px] font-[680] tracking-[-0.02em] text-text">Phila</span>
         </Link>
 

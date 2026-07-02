@@ -40,12 +40,12 @@ export function Sidebar({
   return (
     <div className="flex h-full flex-col bg-sidebar">
       {/* Header */}
-      <div className="flex h-16 items-center gap-1.5 border-b border-border px-3.5">
-        <PhilaMark size={40} />
+      <div className={cn("flex h-16 items-center gap-1.5 border-b border-border", collapsed ? "justify-center px-0" : "px-3.5")}>
+        <PhilaMark size={38} />
         <span
           className={cn(
-            "flex min-w-0 flex-col leading-tight transition-opacity duration-150",
-            collapsed && "pointer-events-none opacity-0",
+            "flex min-w-0 flex-col leading-tight",
+            collapsed && "hidden",
           )}
         >
           <span className="text-[15px] font-[650] tracking-[-0.01em] text-text">Phila</span>
@@ -84,7 +84,7 @@ export function Sidebar({
                     <span
                       className={cn(
                         "flex-1 truncate text-left transition-opacity duration-150",
-                        collapsed && "opacity-0",
+                        collapsed && "hidden",
                       )}
                     >
                       {item.label}
@@ -161,7 +161,7 @@ export function Sidebar({
             )}
           >
             <Settings className="size-[18px] shrink-0" strokeWidth={1.9} aria-hidden />
-            <span className={cn("flex-1 transition-opacity duration-150", collapsed && "opacity-0")}>Settings</span>
+            <span className={cn("flex-1 transition-opacity duration-150", collapsed && "hidden")}>Settings</span>
           </Link>
         )}
         <button
@@ -181,7 +181,7 @@ export function Sidebar({
             strokeWidth={1.9}
             aria-hidden
           />
-          <span className={cn("flex-1 text-left transition-opacity duration-150", collapsed && "opacity-0")}>
+          <span className={cn("flex-1 text-left transition-opacity duration-150", collapsed && "hidden")}>
             Collapse
           </span>
         </button>

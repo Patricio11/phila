@@ -30,6 +30,15 @@ export async function saveClientPortal(orgId: string, settings: { inviteOnBookin
   await getDb().update(orgs).set({ clientPortal: settings }).where(eq(orgs.id, orgId));
 }
 
+/** Update the org's scheduling defaults (default session length + inter-session interval), merged into scheduling JSONB. */
+export async function saveSchedulingDefaults(orgId: string, defaults: { defaultDurationMin: number; bufferMin: number }): Promise<void> {
+  const db = getDb();
+  const [org] = await db.select({ scheduling: orgs.scheduling }).from(orgs).where(eq(orgs.id, orgId)).limit(1);
+  if (!org) return;
+  const scheduling = { ...(org.scheduling as Record<string, unknown>), defaultDurationMin: defaults.defaultDurationMin, bufferMin: defaults.bufferMin };
+  await db.update(orgs).set({ scheduling }).where(eq(orgs.id, orgId));
+}
+
 /** Enable/disable one org feature flag, merged into the features JSONB (dormant-by-default). */
 export async function setOrgFeature(orgId: string, feature: string, enabled: boolean): Promise<void> {
   const db = getDb();

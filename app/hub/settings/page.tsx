@@ -13,6 +13,7 @@ import { IntegrationToggles } from "@/components/hub/integration-toggles";
 import { PaymentConnectionCard } from "@/components/hub/payment-connection-card";
 import { PublicPageEditor } from "@/components/hub/public-page-editor";
 import { BusinessHoursEditor } from "@/components/hub/business-hours-editor";
+import { SchedulingDefaultsForm } from "@/components/hub/scheduling-defaults-form";
 import { OrgProfileForm, type OrgProfile } from "@/components/hub/org-profile-form";
 import { InvoiceSettingsForm } from "@/components/hub/invoice-settings-form";
 import { YourPlanCard } from "@/components/hub/your-plan-card";
@@ -93,12 +94,11 @@ export default async function HubSettingsPage() {
         scheduling={
           <Card>
             <CardHead title="Scheduling" />
-            <div className="space-y-4 px-[17px] pb-[17px]">
-              <div className="grid max-w-md grid-cols-2 gap-3">
-                <Stat label="Default duration" value={`${org.scheduling.defaultDurationMin} min`} />
-                <Stat label="Buffer between sessions" value={`${org.scheduling.bufferMin} min`} />
+            <div className="space-y-5 px-[17px] pb-[17px]">
+              <SchedulingDefaultsForm initial={{ defaultDurationMin: org.scheduling.defaultDurationMin, bufferMin: org.scheduling.bufferMin }} />
+              <div className="border-t border-border pt-4">
+                <BusinessHoursEditor initial={bh} />
               </div>
-              <BusinessHoursEditor initial={bh} />
             </div>
           </Card>
         }
@@ -175,15 +175,6 @@ export default async function HubSettingsPage() {
           </Card>
         }
       />
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-control bg-surface-2 p-3">
-      <div className="text-[15px] font-[640] text-text">{value}</div>
-      <div className="text-[11.5px] text-text-3">{label}</div>
     </div>
   );
 }

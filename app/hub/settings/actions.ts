@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
-import { saveBusinessHours as persistBusinessHours, saveClientPortal as persistClientPortal, setOrgFeature as persistOrgFeature } from "@/db/queries/settings";
+import { saveBusinessHours as persistBusinessHours, saveClientPortal as persistClientPortal, setOrgFeature as persistOrgFeature, saveSchedulingDefaults as persistSchedulingDefaults } from "@/db/queries/settings";
 import { saveVideoSettings } from "@/db/queries/video";
 import { saveAiSettings } from "@/db/queries/ai";
 import { ORG_FEATURES } from "@/lib/domain/enums";
@@ -62,6 +62,35 @@ const input = z.object({
     1: day, 2: day, 3: day, 4: day, 5: day, 6: day, 7: day,
   }),
 });
+
+/**
+ * Scheduling defaults: the default session length and the inter-session interval
+ * (buffer) that keeps bookings from being back-to-back. The slot engine pads every
+ * booked window by the interval on each side, so the next start is only offered
+ * once the interval has passed. Validated + audited; persisted to scheduling JSONB.
+ */
+const defaultsInput = z.object({
+  defaultDurationMin: z.number().int().min(10, "A session is at least 10 minutes.").max(480, "Keep a session under 8 hours."),
+  bufferMin: z.number().int().min(0, "The interval can't be negative.").max(120, "Keep the interval under 2 hours."),
+});
+
+export async function saveSchedulingDefaults(
+  raw: z.infer<typeof defaultsInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = defaultsInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the values." };
+  if (process.env.DATA_PROVIDER === "db") await persistSchedulingDefaults(membership.orgId, parsed.data);
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `org:${membership.orgId}/scheduling_defaults`,
+    reason: `interval_${parsed.data.bufferMin}_duration_${parsed.data.defaultDurationMin}`,
+  });
+  revalidatePath("/hub/settings");
+  return { ok: true };
+}
 
 export async function saveBusinessHours(
   raw: z.infer<typeof input>,

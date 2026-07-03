@@ -44,18 +44,28 @@ export async function testPaystackConnection(raw: { secretKey: string }): Promis
  * Video gateway (LiveKit)  Demo (self-host) or Live (Cloud). Configured + switched on
  * here; key/secret encrypted at rest. A blank secret keeps the stored one.
  */
+const lkCreds = z.object({
+  wsUrl: z.string().trim().max(200).default(""),
+  apiKey: z.string().trim().max(200).default(""),
+  apiSecret: z.string().trim().max(400).default(""),
+});
 const lkInput = z.object({
-  mode: z.enum(["demo", "live"]),
-  wsUrl: z.string().trim().max(200),
-  apiKey: z.string().trim().max(200),
-  apiSecret: z.string().trim().default(""),
+  provider: z.enum(["selfhosted", "cloud"]),
+  sh: lkCreds, // Phila self-hosted (Docker)
+  cloud: lkCreds, // LiveKit Cloud
   enabled: z.boolean(),
 });
 
-async function resolveLkSecret(provided: string): Promise<string> {
+async function existingLkCreds(): Promise<Record<string, string>> {
+  return (await getPlatformIntegration("livekit"))?.creds ?? {};
+}
+
+/** Blank secret keeps the stored one — resolved per provider (incl. legacy flat key). */
+function keepSecret(provided: string, provider: "selfhosted" | "cloud", ex: Record<string, string>): string {
   if (provided) return provided;
-  const existing = await getPlatformIntegration("livekit");
-  return existing?.creds.apiSecret ?? "";
+  const perProvider = provider === "cloud" ? ex.cloud_apiSecret : ex.sh_apiSecret;
+  const legacyMatches = (ex.mode === "live" ? "cloud" : "selfhosted") === provider;
+  return perProvider || (legacyMatches ? ex.apiSecret : "") || "";
 }
 
 export async function saveLivekitConfig(raw: z.infer<typeof lkInput>): Promise<{ ok: true } | { ok: false; error: string }> {
@@ -63,17 +73,29 @@ export async function saveLivekitConfig(raw: z.infer<typeof lkInput>): Promise<{
   const parsed = lkInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Check the details." };
   const d = parsed.data;
-  const apiSecret = await resolveLkSecret(d.apiSecret);
-  if (d.enabled && (!d.wsUrl || !d.apiKey || !apiSecret)) return { ok: false, error: "Add the URL, key, and secret before switching it on." };
+  const ex = await existingLkCreds();
 
-  await savePlatformIntegration("livekit", { mode: d.mode, wsUrl: d.wsUrl, apiKey: d.apiKey, apiSecret }, d.enabled);
-  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: null, target: "platform_integration:livekit", reason: d.enabled ? `enable_livekit_${d.mode}` : "save_livekit" });
+  const creds: Record<string, string> = {
+    provider: d.provider,
+    sh_wsUrl: d.sh.wsUrl, sh_apiKey: d.sh.apiKey, sh_apiSecret: keepSecret(d.sh.apiSecret, "selfhosted", ex),
+    cloud_wsUrl: d.cloud.wsUrl, cloud_apiKey: d.cloud.apiKey, cloud_apiSecret: keepSecret(d.cloud.apiSecret, "cloud", ex),
+  };
+  const active = d.provider === "cloud"
+    ? { wsUrl: creds.cloud_wsUrl, apiKey: creds.cloud_apiKey, apiSecret: creds.cloud_apiSecret }
+    : { wsUrl: creds.sh_wsUrl, apiKey: creds.sh_apiKey, apiSecret: creds.sh_apiSecret };
+  if (d.enabled && (!active.wsUrl || !active.apiKey || !active.apiSecret)) {
+    return { ok: false, error: `Add the URL, key, and secret for ${d.provider === "cloud" ? "LiveKit Cloud" : "the self-hosted server"} before switching it on.` };
+  }
+
+  await savePlatformIntegration("livekit", creds, d.enabled);
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: null, target: "platform_integration:livekit", reason: d.enabled ? `enable_livekit_${d.provider}` : "save_livekit" });
   return { ok: true };
 }
 
-export async function testLivekitConnection(raw: { wsUrl: string; apiKey: string; apiSecret: string }): Promise<{ ok: boolean; detail: string }> {
+export async function testLivekitConnection(raw: { provider?: "selfhosted" | "cloud"; wsUrl: string; apiKey: string; apiSecret: string }): Promise<{ ok: boolean; detail: string }> {
   await requireSuperAdmin();
-  const apiSecret = await resolveLkSecret((raw.apiSecret ?? "").trim());
+  const provider = raw.provider ?? "selfhosted";
+  const apiSecret = keepSecret((raw.apiSecret ?? "").trim(), provider, await existingLkCreds());
   return testLivekit((raw.wsUrl ?? "").trim(), (raw.apiKey ?? "").trim(), apiSecret);
 }
 

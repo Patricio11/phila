@@ -1,45 +1,59 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CheckCircle2, Plug, Video, XCircle } from "lucide-react";
+import { CheckCircle2, Cloud, Plug, Server, Video, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { saveLivekitConfig, testLivekitConnection } from "@/app/admin/integrations/actions";
 import { cn } from "@/lib/utils";
 
-type Mode = "demo" | "live";
-const DEMO_DEFAULTS = { wsUrl: "ws://localhost:7880", apiKey: "devkey" };
+type Provider = "selfhosted" | "cloud";
+type CredsIn = { wsUrl: string; apiKey: string; configured: boolean };
+const SH_DEFAULTS = { wsUrl: "ws://localhost:7880", apiKey: "devkey" };
 
-export function PlatformVideoCard({ initial }: { initial: { enabled: boolean; configured: boolean; mode: Mode; wsUrl: string; apiKey: string } }) {
+const META: Record<Provider, { label: string; icon: typeof Server; wsPlaceholder: string; keyPlaceholder: string; secretPlaceholder: string }> = {
+  selfhosted: { label: "Phila (self-hosted)", icon: Server, wsPlaceholder: "ws://localhost:7880", keyPlaceholder: "devkey", secretPlaceholder: "your server secret" },
+  cloud: { label: "LiveKit Cloud", icon: Cloud, wsPlaceholder: "wss://your-project.livekit.cloud", keyPlaceholder: "API…", secretPlaceholder: "your Cloud API secret" },
+};
+
+export function PlatformVideoCard({ initial }: { initial: { enabled: boolean; provider: Provider; sh: CredsIn; cloud: CredsIn } }) {
   const { toast } = useToast();
   const [pending, start] = useTransition();
   const [testing, startTest] = useTransition();
-  const [mode, setMode] = useState<Mode>(initial.mode);
-  const [wsUrl, setWsUrl] = useState(initial.wsUrl);
-  const [apiKey, setApiKey] = useState(initial.apiKey);
-  const [apiSecret, setApiSecret] = useState("");
+
+  const [provider, setProvider] = useState<Provider>(initial.provider);
   const [enabled, setEnabled] = useState(initial.enabled);
-  const [configured, setConfigured] = useState(initial.configured);
+  const [sh, setSh] = useState({ wsUrl: initial.sh.wsUrl, apiKey: initial.sh.apiKey, apiSecret: "" });
+  const [cloud, setCloud] = useState({ wsUrl: initial.cloud.wsUrl, apiKey: initial.cloud.apiKey, apiSecret: "" });
+  const [configured, setConfigured] = useState<Record<Provider, boolean>>({ selfhosted: initial.sh.configured, cloud: initial.cloud.configured });
   const [test, setTest] = useState<{ ok: boolean; detail: string } | null>(null);
 
-  const pickMode = (m: Mode) => {
-    setMode(m);
+  const cur = provider === "cloud" ? cloud : sh;
+  const setCur = (patch: Partial<typeof cur>) => (provider === "cloud" ? setCloud : setSh)((p) => ({ ...p, ...patch }));
+  const meta = META[provider];
+  const curConfigured = configured[provider];
+  const canAct = Boolean(cur.wsUrl && cur.apiKey && (cur.apiSecret || curConfigured));
+
+  const pickProvider = (p: Provider) => {
+    setProvider(p);
     setTest(null);
-    if (m === "demo" && !wsUrl) { setWsUrl(DEMO_DEFAULTS.wsUrl); setApiKey(DEMO_DEFAULTS.apiKey); }
+    if (p === "selfhosted" && !sh.wsUrl) setSh((s) => ({ ...s, wsUrl: SH_DEFAULTS.wsUrl, apiKey: SH_DEFAULTS.apiKey }));
   };
 
   const save = (nextEnabled: boolean) => start(async () => {
-    const res = await saveLivekitConfig({ mode, wsUrl, apiKey, apiSecret, enabled: nextEnabled });
+    const res = await saveLivekitConfig({ provider, sh, cloud, enabled: nextEnabled });
     if (!res.ok) return toast({ tone: "error", title: res.error });
     setEnabled(nextEnabled);
-    if (apiSecret) setConfigured(true);
-    setApiSecret("");
-    toast({ tone: "success", title: nextEnabled ? `Video switched on (${mode})` : "Saved" });
+    if (sh.apiSecret) setConfigured((c) => ({ ...c, selfhosted: true }));
+    if (cloud.apiSecret) setConfigured((c) => ({ ...c, cloud: true }));
+    setSh((s) => ({ ...s, apiSecret: "" }));
+    setCloud((s) => ({ ...s, apiSecret: "" }));
+    toast({ tone: "success", title: nextEnabled ? `Video on · ${META[provider].label}` : "Saved" });
   });
 
   const runTest = () => startTest(async () => {
-    const res = await testLivekitConnection({ wsUrl, apiKey, apiSecret });
+    const res = await testLivekitConnection({ provider, wsUrl: cur.wsUrl, apiKey: cur.apiKey, apiSecret: cur.apiSecret });
     setTest(res);
     toast({ tone: res.ok ? "success" : "error", title: res.ok ? "Connection OK" : "Connection failed", description: res.detail });
   });
@@ -52,34 +66,42 @@ export function PlatformVideoCard({ initial }: { initial: { enabled: boolean; co
           <div className="flex items-center gap-2 text-[14px] font-[660] text-text">
             Video rooms · LiveKit
             {enabled
-              ? <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-1.5 py-0.5 text-[10.5px] font-medium text-accent"><CheckCircle2 className="size-3" strokeWidth={2.4} aria-hidden /> Live · {mode}</span>
-              : configured && <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10.5px] font-medium text-text-2">Configured · off</span>}
+              ? <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-1.5 py-0.5 text-[10.5px] font-medium text-accent"><CheckCircle2 className="size-3" strokeWidth={2.4} aria-hidden /> On · {META[provider].label}</span>
+              : (configured.selfhosted || configured.cloud) && <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10.5px] font-medium text-text-2">Configured · off</span>}
           </div>
-          <div className="text-[11.5px] text-text-3">Secure in-region video for online sessions. Demo = self-hosted (Docker); Live = LiveKit Cloud.</div>
+          <div className="text-[11.5px] text-text-3">Secure in-region video for online sessions. Same secure token flow either way — pick where the server lives.</div>
         </div>
       </div>
 
-      {/* Mode segmented control */}
+      {/* Provider segmented control */}
       <div className="mt-3 inline-flex rounded-control border border-border bg-surface-2/60 p-0.5 text-[12.5px]">
-        {(["demo", "live"] as const).map((m) => (
-          <button key={m} type="button" onClick={() => pickMode(m)} className={cn("rounded-[7px] px-3 py-1 font-medium capitalize transition-colors", mode === m ? "bg-surface text-text shadow-sm" : "text-text-3 hover:text-text-2")}>
-            {m === "demo" ? "Demo (self-host)" : "Live (Cloud)"}
-          </button>
-        ))}
+        {(["selfhosted", "cloud"] as const).map((p) => {
+          const Icon = META[p].icon;
+          return (
+            <button key={p} type="button" onClick={() => pickProvider(p)} className={cn("inline-flex items-center gap-1.5 rounded-[7px] px-3 py-1 font-medium transition-colors", provider === p ? "bg-surface text-text shadow-sm" : "text-text-3 hover:text-text-2")}>
+              <Icon className="size-3.5" strokeWidth={2} aria-hidden /> {META[p].label}
+              {configured[p] && <span className="size-1.5 rounded-full bg-accent" aria-hidden />}
+            </button>
+          );
+        })}
       </div>
+
+      {provider === "cloud" && (
+        <p className="mt-2 text-[11.5px] text-text-3">Paste the three values from your LiveKit Cloud project (Settings → Keys): the URL, API key, and API secret.</p>
+      )}
 
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <div className="space-y-1 sm:col-span-2">
           <Label>WebSocket URL</Label>
-          <Input value={wsUrl} onChange={(e) => { setWsUrl(e.target.value); setTest(null); }} placeholder={mode === "demo" ? "ws://localhost:7880" : "wss://your-app.livekit.cloud"} />
+          <Input value={cur.wsUrl} onChange={(e) => { setCur({ wsUrl: e.target.value }); setTest(null); }} placeholder={meta.wsPlaceholder} />
         </div>
         <div className="space-y-1">
           <Label>API key</Label>
-          <Input value={apiKey} onChange={(e) => { setApiKey(e.target.value); setTest(null); }} placeholder={mode === "demo" ? "devkey" : "APIxxxx"} />
+          <Input value={cur.apiKey} onChange={(e) => { setCur({ apiKey: e.target.value }); setTest(null); }} placeholder={meta.keyPlaceholder} />
         </div>
         <div className="space-y-1">
           <Label>API secret</Label>
-          <Input type="password" value={apiSecret} onChange={(e) => { setApiSecret(e.target.value); setTest(null); }} placeholder={configured ? "•••••• (leave blank to keep)" : mode === "demo" ? "secret" : "your live secret"} />
+          <Input type="password" value={cur.apiSecret} onChange={(e) => { setCur({ apiSecret: e.target.value }); setTest(null); }} placeholder={curConfigured ? "•••••• (leave blank to keep)" : meta.secretPlaceholder} />
         </div>
       </div>
 
@@ -91,7 +113,7 @@ export function PlatformVideoCard({ initial }: { initial: { enabled: boolean; co
       )}
 
       <div className="mt-3 flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={runTest} loading={testing} disabled={!wsUrl || !apiKey || (!apiSecret && !configured)}>
+        <Button variant="ghost" size="sm" onClick={runTest} loading={testing} disabled={!canAct}>
           <Plug className="size-3.5" strokeWidth={2} aria-hidden /> Test connection
         </Button>
         <div className="flex-1" />
@@ -101,7 +123,7 @@ export function PlatformVideoCard({ initial }: { initial: { enabled: boolean; co
             <Button variant="ghost" size="sm" onClick={() => save(false)} disabled={pending}>Switch off</Button>
           </>
         ) : (
-          <Button size="sm" onClick={() => save(true)} loading={pending} disabled={!wsUrl || !apiKey || (!apiSecret && !configured)}>Switch on</Button>
+          <Button size="sm" onClick={() => save(true)} loading={pending} disabled={!canAct}>Switch on · {META[provider].label}</Button>
         )}
       </div>
     </div>

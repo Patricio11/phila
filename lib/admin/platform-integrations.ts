@@ -16,7 +16,7 @@ export interface PlatformIntegrationMeta {
 
 export const PLATFORM_INTEGRATIONS: PlatformIntegrationMeta[] = [
   { slug: "paystack", name: "Paystack", category: "Payments", description: "Phila's own gateway for credit top-ups + subscription billing.", key: "paystack" },
-  { slug: "livekit", name: "Video · LiveKit", category: "Video", description: "In-app online sessions, owned + in-region (Demo self-host or Cloud).", key: "livekit" },
+  { slug: "livekit", name: "Video · LiveKit", category: "Video", description: "In-app online sessions — Phila self-hosted (Docker) or LiveKit Cloud. Same secure token flow either way.", key: "livekit" },
   { slug: "storage", name: "Phila Storage · Supabase", category: "Storage", description: "The platform file store for documents  private bucket, signed URLs only.", key: "phila_storage" },
   { slug: "bulksms", name: "SMS · BulkSMS", category: "Messaging", description: "Phila-provided SMS credits  reminders + notices for clients.", key: "bulksms" },
   { slug: "resend", name: "Email · Resend", category: "Messaging", description: "Phila-provided email  verified domain, practice reply-to.", key: "resend" },

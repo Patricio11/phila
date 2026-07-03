@@ -10,20 +10,46 @@ import { getPlatformIntegration } from "@/db/queries/platform-integrations";
  * Cloud) is configured + switched on by the super-admin in /admin/integrations
  * (encrypted at rest)  NOT env vars. See docs/LIVEKIT_SETUP.md.
  */
+export type LivekitProvider = "selfhosted" | "cloud";
+
 export interface LivekitConfig {
+  /** Which server the tokens/URL point at. Both use the identical SDK + protocol. */
+  provider: LivekitProvider;
+  /** Legacy alias kept for callers/logs: selfhosted → "demo", cloud → "live". */
   mode: "demo" | "live";
   wsUrl: string;
   apiKey: string;
   apiSecret: string;
 }
 
+/**
+ * The active provider's credential set from the stored creds. Both providers are
+ * stored side-by-side (sh_* = Phila self-hosted, cloud_* = LiveKit Cloud) so the
+ * switch is a real toggle, not a re-entry. Falls back to the legacy flat keys so an
+ * older single-set config keeps working.
+ */
+export function activeLivekitCreds(creds: Record<string, string>): { provider: LivekitProvider; wsUrl: string; apiKey: string; apiSecret: string } {
+  const provider: LivekitProvider =
+    creds.provider === "cloud" ? "cloud" : creds.provider === "selfhosted" ? "selfhosted" : creds.mode === "live" ? "cloud" : "selfhosted";
+  const legacyMatches = (creds.mode === "live" ? "cloud" : "selfhosted") === provider;
+  const pick = provider === "cloud"
+    ? { wsUrl: creds.cloud_wsUrl, apiKey: creds.cloud_apiKey, apiSecret: creds.cloud_apiSecret }
+    : { wsUrl: creds.sh_wsUrl, apiKey: creds.sh_apiKey, apiSecret: creds.sh_apiSecret };
+  return {
+    provider,
+    wsUrl: pick.wsUrl || (legacyMatches ? creds.wsUrl : "") || "",
+    apiKey: pick.apiKey || (legacyMatches ? creds.apiKey : "") || "",
+    apiSecret: pick.apiSecret || (legacyMatches ? creds.apiSecret : "") || "",
+  };
+}
+
 /** The live LiveKit config  only when configured AND switched on. */
 export async function getLivekitConfig(): Promise<LivekitConfig | null> {
   const it = await getPlatformIntegration("livekit");
   if (!it || !it.enabled) return null;
-  const { wsUrl, apiKey, apiSecret, mode } = it.creds;
+  const { provider, wsUrl, apiKey, apiSecret } = activeLivekitCreds(it.creds);
   if (!wsUrl || !apiKey || !apiSecret) return null;
-  return { mode: mode === "live" ? "live" : "demo", wsUrl, apiKey, apiSecret };
+  return { provider, mode: provider === "cloud" ? "live" : "demo", wsUrl, apiKey, apiSecret };
 }
 
 export async function livekitConfigured(): Promise<boolean> {

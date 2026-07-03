@@ -29,9 +29,10 @@ describe("video join links", () => {
 
 describe("mintToken", () => {
   it("issues a JWT scoped to the appointment's room with publish/subscribe", async () => {
-    expect(await livekitConfigured()).toBe(true); // seeded admin-managed (demo) integration
+    expect(await livekitConfigured()).toBe(true); // admin-managed integration (self-hosted or Cloud)
     const cfg = await getLivekitConfig();
-    expect(cfg?.mode).toBe("demo");
+    expect(cfg?.wsUrl).toBeTruthy();
+    expect(cfg?.mode === "demo" || cfg?.mode === "live").toBe(true);
     const room = roomNameForAppointment("appt_x");
     const jwt = await mintToken(cfg!, { roomName: room, identity: "host_1", name: "Nomsa", canPublish: true });
     expect(typeof jwt).toBe("string");

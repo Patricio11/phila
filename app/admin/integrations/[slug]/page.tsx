@@ -23,15 +23,25 @@ export default async function IntegrationConfigPage({ params }: { params: Promis
   if (slug === "paystack") {
     card = <PlatformPspCard initial={await getPlatformIntegrationStatus("paystack")} />;
   } else if (slug === "livekit") {
-    const raw = await getPlatformIntegration("livekit");
+    const c = (await getPlatformIntegration("livekit"))?.creds ?? {};
+    const enabled = (await getPlatformIntegration("livekit"))?.enabled ?? false;
+    const provider: "selfhosted" | "cloud" = c.provider === "cloud" ? "cloud" : c.provider === "selfhosted" ? "selfhosted" : c.mode === "live" ? "cloud" : "selfhosted";
+    const legacyProv = c.mode === "live" ? "cloud" : "selfhosted";
     card = (
       <PlatformVideoCard
         initial={{
-          enabled: raw?.enabled ?? false,
-          configured: Boolean(raw?.creds.apiSecret),
-          mode: (raw?.creds.mode === "live" ? "live" : "demo") as "demo" | "live",
-          wsUrl: raw?.creds.wsUrl ?? "",
-          apiKey: raw?.creds.apiKey ?? "",
+          enabled,
+          provider,
+          sh: {
+            wsUrl: c.sh_wsUrl ?? (legacyProv === "selfhosted" ? c.wsUrl : "") ?? "",
+            apiKey: c.sh_apiKey ?? (legacyProv === "selfhosted" ? c.apiKey : "") ?? "",
+            configured: Boolean(c.sh_apiSecret || (legacyProv === "selfhosted" && c.apiSecret)),
+          },
+          cloud: {
+            wsUrl: c.cloud_wsUrl ?? (legacyProv === "cloud" ? c.wsUrl : "") ?? "",
+            apiKey: c.cloud_apiKey ?? (legacyProv === "cloud" ? c.apiKey : "") ?? "",
+            configured: Boolean(c.cloud_apiSecret || (legacyProv === "cloud" && c.apiSecret)),
+          },
         }}
       />
     );

@@ -104,6 +104,8 @@ export type IndicatorType = (typeof INDICATOR_TYPES)[number];
 export const GRANT_STATUSES = ["pending", "active", "closed"] as const;
 export type GrantStatus = (typeof GRANT_STATUSES)[number];
 
+export const REPORTING_SCHEDULES = ["monthly", "quarterly", "biannual", "annual"] as const;
+
 /** Payments  SA rails (PayShap / pay-by-bank / cards) + statuses. */
 export const PAYMENT_PROVIDERS = ["stitch", "ozow", "yoco", "paystack"] as const;
 export type PaymentProvider = (typeof PAYMENT_PROVIDERS)[number];
@@ -137,7 +139,7 @@ export const AI_FEATURES = [
 export type AiFeature = (typeof AI_FEATURES)[number];
 
 /** Per-org feature toggles  dormant by default (Dormant-by-Default Rule). */
-export const ORG_FEATURES = ["ai", "video", "whatsapp", "sms", "payments"] as const;
+export const ORG_FEATURES = ["ai", "video", "whatsapp", "sms", "payments", "funders"] as const;
 export type OrgFeature = (typeof ORG_FEATURES)[number];
 
 /* ---- Documents (Phase 18) ---------------------------------------------- */

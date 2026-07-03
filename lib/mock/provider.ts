@@ -1515,6 +1515,15 @@ export const mockProvider: DataProvider = {
     });
   },
 
+  getGrantAdmin: (orgId, grantId) => {
+    const grant = grants.find((g) => g.id === grantId && g.orgId === orgId);
+    if (!grant) return ok(null);
+    return ok({
+      indicators: grantIndicators.filter((i) => i.grantId === grantId),
+      allocatedClientIds: [...new Set(grantAllocations.filter((a) => a.grantId === grantId).map((a) => a.clientId))],
+    });
+  },
+
   listFunderGrants: (funderUserId) => {
     const scoped = funderContacts.filter((fc) => fc.userId === funderUserId);
     const grantIds = new Set(scoped.flatMap((fc) => fc.grantIds));

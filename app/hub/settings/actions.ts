@@ -3,9 +3,10 @@
 import { z } from "zod";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
-import { saveBusinessHours as persistBusinessHours, saveClientPortal as persistClientPortal } from "@/db/queries/settings";
+import { saveBusinessHours as persistBusinessHours, saveClientPortal as persistClientPortal, setOrgFeature as persistOrgFeature } from "@/db/queries/settings";
 import { saveVideoSettings } from "@/db/queries/video";
 import { saveAiSettings } from "@/db/queries/ai";
+import { ORG_FEATURES } from "@/lib/domain/enums";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -108,6 +109,32 @@ export async function saveClientPortalSettings(
   });
   revalidatePath("/hub/settings");
   revalidatePath("/hub/clients");
+  return { ok: true };
+}
+
+/**
+ * Toggle an org feature flag (Dormant-by-Default). Currently the org-facing switch
+ * for the Funders & grants (M&E) module  off by default, so the whole area (nav +
+ * pages) only appears once an org opts in. Validated + audited; persisted to the
+ * org's features JSONB.
+ */
+const featureInput = z.object({ feature: z.enum(ORG_FEATURES), enabled: z.boolean() });
+
+export async function saveOrgFeature(
+  raw: z.infer<typeof featureInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = featureInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Unknown feature." };
+  if (process.env.DATA_PROVIDER === "db") await persistOrgFeature(membership.orgId, parsed.data.feature, parsed.data.enabled);
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `org:${membership.orgId}/feature/${parsed.data.feature}`,
+    reason: parsed.data.enabled ? "feature_on" : "feature_off",
+  });
+  revalidatePath("/hub", "layout");
   return { ok: true };
 }
 

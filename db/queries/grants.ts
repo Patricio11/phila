@@ -1,7 +1,8 @@
 import "server-only";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { funders, grants, grantIndicators, grantAllocations, grantNarratives, funderContacts, orgs, appointments } from "@/db/schema";
+import { user } from "@/db/auth-schema";
 import type { Funder, Grant, GrantIndicator, GrantNarrative } from "@/lib/domain/types";
 import type { GrantSummary, GrantView, FunderGrantView, IndicatorActual } from "@/lib/data-provider";
 import { loadCohort } from "@/db/queries/analytics";
@@ -116,4 +117,109 @@ export async function getGrantOrgId(grantId: string): Promise<string | null> {
 /** Post a grant narrative (Phase 16)  persists; org-side authorship checked by the caller. */
 export async function postGrantNarrativeDb(grantId: string, author: string, body: string): Promise<void> {
   await getDb().insert(grantNarratives).values({ id: `narr_${crypto.randomUUID().slice(0, 12)}`, grantId, author, body, postedAt: new Date() });
+}
+
+/* ── Writes (Phase 18.8)  org builds its own funders, grants, indicators + allocations.
+      Every write is org-scoped; grant-child writes verify grant ownership via the caller. ── */
+
+const rid = (prefix: string) => `${prefix}_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
+
+export interface FunderInput { name: string; type: string; contactName: string; contactEmail: string }
+export interface GrantInput { funderId: string; title: string; periodStart: string; periodEnd: string; amountCents: number; restricted: boolean; reportingSchedule: string; status: string }
+export interface IndicatorInput { name: string; type: string; metric: string; target: number; unit: string; rule: string }
+
+export async function createFunderDb(orgId: string, input: FunderInput): Promise<{ id: string }> {
+  const id = rid("f");
+  await getDb().insert(funders).values({ id, orgId, name: input.name, type: input.type, contactName: input.contactName, contactEmail: input.contactEmail });
+  return { id };
+}
+
+export async function updateFunderDb(orgId: string, funderId: string, input: FunderInput): Promise<void> {
+  await getDb().update(funders).set({ name: input.name, type: input.type, contactName: input.contactName, contactEmail: input.contactEmail }).where(and(eq(funders.id, funderId), eq(funders.orgId, orgId)));
+}
+
+/** Remove a funder and cascade its grants (+ indicators/allocations/narratives). */
+export async function deleteFunderDb(orgId: string, funderId: string): Promise<void> {
+  const db = getDb();
+  const gs = await db.select({ id: grants.id }).from(grants).where(and(eq(grants.funderId, funderId), eq(grants.orgId, orgId)));
+  const gids = gs.map((g) => g.id);
+  if (gids.length) {
+    await db.delete(grantAllocations).where(inArray(grantAllocations.grantId, gids));
+    await db.delete(grantIndicators).where(inArray(grantIndicators.grantId, gids));
+    await db.delete(grantNarratives).where(inArray(grantNarratives.grantId, gids));
+    await db.delete(grants).where(inArray(grants.id, gids));
+  }
+  await db.delete(funders).where(and(eq(funders.id, funderId), eq(funders.orgId, orgId)));
+}
+
+export async function createGrantDb(orgId: string, input: GrantInput): Promise<{ id: string }> {
+  const id = rid("g");
+  await getDb().insert(grants).values({ id, orgId, funderId: input.funderId, title: input.title, periodStart: input.periodStart, periodEnd: input.periodEnd, amountCents: input.amountCents, restricted: input.restricted, reportingSchedule: input.reportingSchedule, status: input.status });
+  return { id };
+}
+
+export async function updateGrantDb(orgId: string, grantId: string, input: GrantInput): Promise<void> {
+  await getDb().update(grants).set({ funderId: input.funderId, title: input.title, periodStart: input.periodStart, periodEnd: input.periodEnd, amountCents: input.amountCents, restricted: input.restricted, reportingSchedule: input.reportingSchedule, status: input.status }).where(and(eq(grants.id, grantId), eq(grants.orgId, orgId)));
+}
+
+export async function deleteGrantDb(orgId: string, grantId: string): Promise<void> {
+  const db = getDb();
+  const owns = (await db.select({ id: grants.id }).from(grants).where(and(eq(grants.id, grantId), eq(grants.orgId, orgId))).limit(1)).length > 0;
+  if (!owns) return;
+  await db.delete(grantAllocations).where(eq(grantAllocations.grantId, grantId));
+  await db.delete(grantIndicators).where(eq(grantIndicators.grantId, grantId));
+  await db.delete(grantNarratives).where(eq(grantNarratives.grantId, grantId));
+  await db.delete(grants).where(eq(grants.id, grantId));
+}
+
+/** Replace a grant's indicators wholesale (the edit form owns the whole set). */
+export async function setGrantIndicatorsDb(grantId: string, indicators: IndicatorInput[]): Promise<void> {
+  const db = getDb();
+  await db.delete(grantIndicators).where(eq(grantIndicators.grantId, grantId));
+  if (indicators.length) {
+    await db.insert(grantIndicators).values(indicators.map((i) => ({ id: rid("ind"), grantId, name: i.name, type: i.type, metric: i.metric, target: i.target, unit: i.unit, rule: i.rule })));
+  }
+}
+
+/** Replace the clients tagged to a grant (which clients count toward its targets). */
+export async function setGrantAllocationsDb(grantId: string, clientIds: string[]): Promise<void> {
+  const db = getDb();
+  await db.delete(grantAllocations).where(eq(grantAllocations.grantId, grantId));
+  const unique = [...new Set(clientIds)];
+  if (unique.length) {
+    await db.insert(grantAllocations).values(unique.map((clientId) => ({ grantId, clientId })));
+  }
+}
+
+/**
+ * Invite (or re-scope) a funder to one or more grants. Provisions a funder user
+ * account keyed by email if one doesn't exist yet (they set a password via the
+ * activation link), then upserts the funderContact scope. The funder portal reads
+ * ONLY the grant(s) in this scope (Rule #10).
+ */
+export async function inviteFunderContactDb(funderId: string, grantIds: string[], email: string, name: string): Promise<{ userId: string; existing: boolean }> {
+  const db = getDb();
+  const [found] = await db.select({ id: user.id }).from(user).where(eq(user.email, email)).limit(1);
+  let userId = found?.id;
+  if (!userId) {
+    userId = rid("funder");
+    await db.insert(user).values({ id: userId, name: name || email, email, emailVerified: false, platformRole: "funder", createdAt: new Date(), updatedAt: new Date() });
+  }
+  await db
+    .insert(funderContacts)
+    .values({ userId, funderId, grantIds })
+    .onConflictDoUpdate({ target: [funderContacts.userId, funderContacts.funderId], set: { grantIds } });
+  return { userId, existing: Boolean(found) };
+}
+
+/** The grant's indicators + tagged client ids  for the edit surfaces. */
+export async function getGrantAdminDb(orgId: string, grantId: string): Promise<{ indicators: GrantIndicator[]; allocatedClientIds: string[] } | null> {
+  const db = getDb();
+  const [g] = await db.select({ id: grants.id }).from(grants).where(and(eq(grants.id, grantId), eq(grants.orgId, orgId))).limit(1);
+  if (!g) return null;
+  const [indRows, allocRows] = await Promise.all([
+    db.select().from(grantIndicators).where(eq(grantIndicators.grantId, grantId)),
+    db.select({ clientId: grantAllocations.clientId }).from(grantAllocations).where(eq(grantAllocations.grantId, grantId)),
+  ]);
+  return { indicators: indRows.map(toIndicator), allocatedClientIds: allocRows.map((a) => a.clientId) };
 }

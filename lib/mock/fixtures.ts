@@ -41,7 +41,7 @@ export const orgs: Org[] = [
     brandAccent: "#1C7D58",
     province: "Gauteng",
     timezone: "Africa/Johannesburg",
-    features: { ai: false, video: false, whatsapp: false, sms: false, payments: true },
+    features: { ai: false, video: false, whatsapp: false, sms: false, payments: true, funders: true },
     scheduling: { defaultDurationMin: 60, bufferMin: 10, businessHours },
     clientPortal: { inviteOnBooking: false, inviteOnCreate: false },
   },

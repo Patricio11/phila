@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, Users } from "lucide-react";
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
@@ -11,6 +11,8 @@ import { Tag } from "@/components/ui/tag";
 import { GrantDashboard } from "@/components/funder/grant-dashboard";
 import { NarrativeComposer } from "@/components/funder/narrative-composer";
 import { ReportExport } from "@/components/funder/funder-actions";
+import { GrantFormButton } from "@/components/funder/grant-form-modal";
+import { ManageGrantClients } from "@/components/funder/manage-grant-clients";
 import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
@@ -29,8 +31,17 @@ export default async function GrantPage({ params }: { params: Promise<{ id: stri
   const provider = await getDataProvider();
   const now = clockNow();
 
+  const org = await provider.getOrg(membership.orgId);
+  if (!org?.features.funders) redirect("/hub");
+
   const view = await provider.getGrantView(id, now);
   if (!view || view.grant.orgId !== membership.orgId) notFound();
+
+  const [funders, admin, clients] = await Promise.all([
+    provider.listFunders(membership.orgId),
+    provider.getGrantAdmin(membership.orgId, id),
+    provider.listOrgClients(membership.orgId, now),
+  ]);
 
   await logAccess({
     action: "demographics.read",
@@ -51,7 +62,28 @@ export default async function GrantPage({ params }: { params: Promise<{ id: stri
       <PageHead
         title={grant.title}
         summary={`${funder.name} · ${period(grant.periodStart, grant.periodEnd)} · ${rands(grant.amountCents)}`}
-        actions={<ReportExport grantId={grant.id} />}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <GrantFormButton
+              trigger="edit"
+              funders={funders.map((f) => ({ id: f.id, name: f.name }))}
+              grant={{
+                id: grant.id,
+                funderId: grant.funderId,
+                title: grant.title,
+                periodStart: grant.periodStart,
+                periodEnd: grant.periodEnd,
+                amountCents: grant.amountCents,
+                restricted: grant.restricted,
+                reportingSchedule: grant.reportingSchedule,
+                status: grant.status,
+                indicators: (admin?.indicators ?? []).map((i) => ({ metric: i.metric, target: i.target })),
+              }}
+            />
+            <ManageGrantClients grantId={grant.id} clients={clients.map((r) => ({ id: r.client.id, name: r.client.name }))} initial={admin?.allocatedClientIds ?? []} />
+            <ReportExport grantId={grant.id} />
+          </div>
+        }
       />
 
       {/* Period + allocation strip */}

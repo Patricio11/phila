@@ -15,7 +15,7 @@ import type { AppointmentView, CaseloadRow, CaseloadStatus, ClientDossier, Couns
 import { PLANS, planById } from "@/lib/billing/plans";
 import { getSubscriptionRow, listSubscriptions } from "@/db/queries/subscriptions";
 import { getReportingDb, getHubInsightsDb } from "@/db/queries/analytics";
-import { listGrantsDb, getGrantViewDb, getFunderGrantViewDb } from "@/db/queries/grants";
+import { listGrantsDb, getGrantViewDb, getFunderGrantViewDb, getGrantAdminDb } from "@/db/queries/grants";
 import { listOrgDocumentsDb, listOrgFoldersDb, listDocumentRequestsDb, getStorageUsageDb, listClientVisibleDocumentsDb, listClientRequestsDb, listCounsellorDocumentsDb } from "@/db/queries/documents";
 import { listFormsDb, getFormDb, getActiveIntakeFormDb, getFormResponsesDb, getFormByTokenDb, listClientFormsDb, createFormDb, updateFormDb, duplicateFormDb, setFormStatusDb, setFormShareDb, sendFormToClientsDb, submitFormResponseDb } from "@/db/queries/forms";
 import { listTeamThreadsDb } from "@/db/queries/messages";
@@ -267,6 +267,7 @@ export const dbProvider: DataProvider = {
   getHubInsights: (orgId, now, filters) => getHubInsightsDb(orgId, now, filters),
   listGrants: (orgId) => listGrantsDb(orgId),
   getGrantView: (grantId, now) => getGrantViewDb(grantId, now),
+  getGrantAdmin: (orgId, grantId) => getGrantAdminDb(orgId, grantId),
   getFunderGrantView: (funderUserId, grantId, now) => getFunderGrantViewDb(funderUserId, grantId, now),
 
   // Documents (Phase 18)  the org's document workspace, real DB reads.

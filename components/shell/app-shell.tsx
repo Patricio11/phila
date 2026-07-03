@@ -51,16 +51,25 @@ export function AppShell({
   orgName,
   user,
   settingsHref,
+  features,
   children,
 }: {
   navKey: NavKey;
   orgName: string;
   user: { name: string; email: string; roleLabel: string };
   settingsHref?: string;
+  /** Org feature flags  used to hide feature-gated nav items (e.g. Funders). */
+  features?: Record<string, boolean>;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const sections: NavSection[] = NAVS[navKey];
+  const sections: NavSection[] = useMemo(
+    () =>
+      NAVS[navKey]
+        .map((s) => ({ ...s, items: s.items.filter((i) => !i.feature || features?.[i.feature]) }))
+        .filter((s) => s.items.length > 0),
+    [navKey, features],
+  );
   const collapsed = useSyncExternalStore(subscribeCollapse, readCollapsed, () => false);
 
   const toggleCollapse = () => {

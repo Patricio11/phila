@@ -7,6 +7,7 @@ import type { BusinessHours } from "@/lib/domain/types";
 import { PageHead } from "@/components/shell/page-head";
 import { SettingsTabs } from "@/components/hub/settings-tabs";
 import { ClientPortalSettings } from "@/components/hub/client-portal-settings";
+import { FundersFeatureToggle } from "@/components/hub/funders-feature-toggle";
 import { Card, CardHead } from "@/components/ui/card";
 import { IntegrationToggles } from "@/components/hub/integration-toggles";
 import { PaymentConnectionCard } from "@/components/hub/payment-connection-card";
@@ -132,9 +133,10 @@ export default async function HubSettingsPage() {
           <>
             <Card>
               <CardHead title="Platform features" />
-              <div className="px-[17px] pb-[17px]">
-                <p className="mb-3 text-[12.5px] text-text-2">Everything starts off. Turn on only what you need  nothing sends or leaves until you do.</p>
+              <div className="space-y-2.5 px-[17px] pb-[17px]">
+                <p className="text-[12.5px] text-text-2">Everything starts off. Turn on only what you need  nothing sends or leaves until you do.</p>
                 <IntegrationToggles initial={org.features} />
+                <FundersFeatureToggle initial={Boolean(org.features.funders)} />
               </div>
             </Card>
             <div className="grid items-start gap-6 lg:grid-cols-2">

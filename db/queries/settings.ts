@@ -29,3 +29,12 @@ export async function saveBusinessHours(orgId: string, hours: unknown): Promise<
 export async function saveClientPortal(orgId: string, settings: { inviteOnBooking: boolean; inviteOnCreate: boolean }): Promise<void> {
   await getDb().update(orgs).set({ clientPortal: settings }).where(eq(orgs.id, orgId));
 }
+
+/** Enable/disable one org feature flag, merged into the features JSONB (dormant-by-default). */
+export async function setOrgFeature(orgId: string, feature: string, enabled: boolean): Promise<void> {
+  const db = getDb();
+  const [org] = await db.select({ features: orgs.features }).from(orgs).where(eq(orgs.id, orgId)).limit(1);
+  if (!org) return;
+  const features = { ...(org.features as Record<string, boolean>), [feature]: enabled };
+  await db.update(orgs).set({ features }).where(eq(orgs.id, orgId));
+}

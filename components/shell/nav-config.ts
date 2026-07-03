@@ -44,6 +44,8 @@ export interface NavItem {
   icon: LucideIcon;
   badge?: number;
   ready?: boolean;
+  /** Hidden unless this org feature is on (Dormant-by-Default). */
+  feature?: import("@/lib/domain/enums").OrgFeature;
 }
 
 export interface NavSection {
@@ -102,7 +104,7 @@ export const hubNav: NavSection[] = [
       { label: "Clients", href: "/hub/clients", icon: Contact, ready: true },
       { label: "Insights", href: "/hub/insights", icon: TrendingUp, ready: true },
       { label: "Reporting", href: "/hub/reporting", icon: PieChart, ready: true },
-      { label: "Funders & grants", href: "/hub/funders", icon: HandCoins, ready: true },
+      { label: "Funders & grants", href: "/hub/funders", icon: HandCoins, ready: true, feature: "funders" },
     ],
   },
   {

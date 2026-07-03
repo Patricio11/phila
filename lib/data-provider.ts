@@ -871,6 +871,8 @@ export interface DataProvider {
   listFunders(orgId: string): Promise<Funder[]>;
   listGrants(orgId: string): Promise<GrantSummary[]>;
   getGrantView(grantId: string, now: string): Promise<GrantView | null>;
+  /** Editable config for a grant: its indicators + the client ids tagged to it. */
+  getGrantAdmin(orgId: string, grantId: string): Promise<{ indicators: import("@/lib/domain/types").GrantIndicator[]; allocatedClientIds: string[] } | null>;
   /** Funder portal: the grants a funder user is scoped to (read-only). */
   listFunderGrants(funderUserId: string): Promise<{ grant: Grant; funderName: string; orgName: string }[]>;
   getFunderGrantView(funderUserId: string, grantId: string, now: string): Promise<FunderGrantView | null>;

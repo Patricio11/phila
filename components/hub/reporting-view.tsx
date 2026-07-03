@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { FilterMenu } from "@/components/ui/filter-menu";
 import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";
+import { DonutChart } from "@/components/charts/donut-chart";
 import { useToast } from "@/components/ui/toast";
 import { coverageNote } from "@/lib/domain/helpers";
 import { exportFunderReport, runReport } from "@/app/hub/reporting/actions";
@@ -178,13 +179,13 @@ export function ReportingView({ initial, orgName }: { initial: ReportingResult; 
         </div>
       </Card>
 
-      {/* Breakdowns */}
+      {/* Breakdowns — donuts for the shape splits, ranked bars for the ordered ones */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <BreakdownCard title="By province" rows={result.byProvince} />
-        <BreakdownCard title="By gender" rows={result.byGender} />
-        <BreakdownCard title="By population group" rows={result.byPopulationGroup} />
+        <BreakdownDonut title="By gender" rows={result.byGender} />
+        <BreakdownDonut title="By population group" rows={result.byPopulationGroup} />
+        <BreakdownDonut title="By employment" rows={result.byEmployment} />
         <BreakdownCard title="By age band" rows={result.byAgeBand} />
-        <BreakdownCard title="By employment" rows={result.byEmployment} />
+        <BreakdownCard title="By province" rows={result.byProvince} />
         <Card>
           <CardHead title="Outcome trend (PHQ-9)" />
           <div className="px-[17px] pb-[17px]">
@@ -209,6 +210,31 @@ export function ReportingView({ initial, orgName }: { initial: ReportingResult; 
         </div>
       </Card>
     </div>
+  );
+}
+
+/** A donut for a demographic split. Suppressed (k-anon) cohorts have no known
+ *  count, so they're kept out of the wedge and noted honestly beneath. */
+function BreakdownDonut({ title, rows }: { title: string; rows: Breakdown[] }) {
+  const visible = rows.filter((r) => !r.suppressed && (r.count ?? 0) > 0);
+  const suppressed = rows.filter((r) => r.suppressed).length;
+  const total = visible.reduce((s, r) => s + (r.count ?? 0), 0);
+  return (
+    <Card>
+      <CardHead title={title} />
+      <div className="px-[17px] pb-[17px] pt-1">
+        {visible.length === 0 ? (
+          <p className="py-4 text-[12.5px] text-text-3">Too few to report in this view.</p>
+        ) : (
+          <DonutChart data={visible.map((r) => ({ label: r.label, value: r.count ?? 0 }))} centerLabel={total} centerCaption="reported" size={116} thickness={14} />
+        )}
+        {suppressed > 0 && (
+          <p className="mt-2.5 border-t border-border pt-2.5 text-[11px] text-text-3">
+            + {suppressed} cohort{suppressed === 1 ? "" : "s"} too few to report (k-anonymity floor).
+          </p>
+        )}
+      </div>
+    </Card>
   );
 }
 

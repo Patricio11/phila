@@ -9,6 +9,7 @@ import { Card, CardHead } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
 import { Select } from "@/components/ui/select";
 import { FilterMenu } from "@/components/ui/filter-menu";
+import { DonutChart } from "@/components/charts/donut-chart";
 import { coverageNote } from "@/lib/domain/helpers";
 import { runInsights } from "@/app/hub/insights/actions";
 import { cn } from "@/lib/utils";
@@ -65,17 +66,33 @@ export function HubInsightsView({ initial }: { initial: HubInsights }) {
         <StatCard icon={Coins} label="Revenue (paid)" value={rands(data.revenueActualCents)} coverage="received this period" trend={trend(data.revenueActualCents, data.previous?.revenueActualCents, (n) => `${n > 0 ? "+" : ""}${rands(Math.abs(n)).replace("R", n < 0 ? "-R" : "R")}`)} />
       </div>
 
-      {/* Trends */}
+      {/* Trends + session mix */}
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>
           <CardHead title="Sessions this week" />
           <div className="px-[17px] pb-[17px]"><Bars bars={data.byDay} /></div>
         </Card>
         <Card>
-          <CardHead title="Sessions by month" />
-          <div className="px-[17px] pb-[17px]"><Bars bars={data.byMonth} /></div>
+          <CardHead title="Session mix this period" />
+          <div className="px-[17px] pb-[20px] pt-1">
+            <DonutChart
+              data={[
+                { label: "Completed", value: data.completed },
+                { label: "Upcoming", value: data.upcoming },
+                { label: "No-show", value: data.noShows, muted: true },
+                { label: "Cancelled", value: data.cancelled, muted: true },
+              ]}
+              centerLabel={data.completed + data.upcoming + data.noShows + data.cancelled}
+              centerCaption="sessions"
+            />
+          </div>
         </Card>
       </div>
+
+      <Card>
+        <CardHead title="Sessions by month" />
+        <div className="px-[17px] pb-[17px]"><Bars bars={data.byMonth} /></div>
+      </Card>
 
       {/* Client mix */}
       <Card>
@@ -93,13 +110,13 @@ export function HubInsightsView({ initial }: { initial: HubInsights }) {
             <FilterMenu label="Age" value={filters.ageBand} onChange={(v) => update({ ageBand: v })} options={AGE_BANDS.map((a) => ({ value: a, label: AGE_BAND_LABELS[a] }))} />
             <FilterMenu label="Location" value={filters.province} onChange={(v) => update({ province: v })} options={PROVINCES.map((p) => ({ value: p, label: p }))} />
           </div>
-          <div className="grid gap-5 sm:grid-cols-3">
-            <MixBlock title="By gender" rows={data.byGender} />
-            <MixBlock title="By age" rows={data.byAgeBand} />
-            <MixBlock title="By location" rows={data.byProvince} />
+          <div className="grid gap-6 lg:grid-cols-3">
+            <MixDonut title="By gender" rows={data.byGender} />
+            <MixDonut title="By age" rows={data.byAgeBand} />
+            <MixDonut title="By location" rows={data.byProvince} />
           </div>
           <p className="border-t border-border pt-3 text-[11.5px] text-text-3">
-            Your own clients, counted from those who consented to share demographics (POPIA). Internal to your practice  funder reports are separately k-anonymised under Reporting.
+            Your own clients, counted from those who consented to share demographics (POPIA). Internal to your practice  funder reports are separately k-anonymised in the Funder reporting tab.
           </p>
         </div>
       </Card>
@@ -110,47 +127,37 @@ export function HubInsightsView({ initial }: { initial: HubInsights }) {
 function Bars({ bars }: { bars: InsightsBar[] }) {
   const max = Math.max(1, ...bars.map((b) => b.count));
   return (
-    <div className="flex items-end gap-2" style={{ height: 120 }}>
-      {bars.map((b) => (
-        <div key={b.key} className="flex flex-1 flex-col items-center gap-1.5">
-          <div className="flex w-full flex-1 items-end">
+    <div>
+      {/* Fixed-height plot area so the flex columns actually get height. */}
+      <div className="flex h-[120px] items-end gap-2.5">
+        {bars.map((b) => (
+          <div key={b.key} className="flex h-full flex-1 items-end">
             <div
-              className="w-full rounded-t-[4px] bg-accent/85 transition-[height]"
-              style={{ height: `${Math.max(4, (b.count / max) * 100)}%` }}
-              title={`${b.count}`}
+              className="w-full rounded-t-[5px] bg-accent/85 transition-[height] duration-300 hover:bg-accent"
+              style={{ height: b.count > 0 ? `${Math.max(3, (b.count / max) * 100)}%` : 0 }}
+              title={`${b.label}: ${b.count}`}
             />
           </div>
-          <span className="text-[10.5px] tabular-nums text-text">{b.count}</span>
-          <span className="text-[10.5px] text-text-3">{b.label}</span>
-        </div>
-      ))}
+        ))}
+      </div>
+      <div className="mt-1.5 flex gap-2.5">
+        {bars.map((b) => (
+          <div key={b.key} className="flex flex-1 flex-col items-center">
+            <span className="text-[11px] font-medium tabular-nums text-text">{b.count}</span>
+            <span className="text-[10.5px] text-text-3">{b.label}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
-function MixBlock({ title, rows }: { title: string; rows: InsightsMix[] }) {
+function MixDonut({ title, rows }: { title: string; rows: InsightsMix[] }) {
   const total = rows.reduce((s, r) => s + r.count, 0);
-  const sorted = [...rows].sort((a, b) => b.count - a.count);
   return (
     <div>
-      <div className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-text-3">{title}</div>
-      {sorted.length === 0 ? (
-        <p className="text-[12.5px] text-text-3">No data yet.</p>
-      ) : (
-        <div className="space-y-2">
-          {sorted.map((r) => (
-            <div key={r.label}>
-              <div className="flex items-baseline justify-between gap-2 text-[12.5px]">
-                <span className="truncate text-text-2">{r.label}</span>
-                <span className="shrink-0 tabular-nums font-medium text-text">{r.count}</span>
-              </div>
-              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2">
-                <div className="h-full rounded-full bg-accent" style={{ width: `${total ? (r.count / total) * 100 : 0}%` }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="mb-3 text-[11.5px] font-semibold uppercase tracking-wide text-text-3">{title}</div>
+      <DonutChart data={rows.map((r) => ({ label: r.label, value: r.count }))} centerLabel={total} centerCaption="clients" size={112} thickness={14} />
     </div>
   );
 }

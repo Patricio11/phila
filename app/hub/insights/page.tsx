@@ -2,7 +2,7 @@ import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
 import { PageHead } from "@/components/shell/page-head";
-import { HubInsightsView } from "@/components/hub/hub-insights-view";
+import { InsightsWorkspace } from "@/components/hub/insights-workspace";
 import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,10 @@ export default async function HubInsightsPage() {
   const provider = await getDataProvider();
   const now = clockNow();
 
-  const initial = await provider.getHubInsights(membership.orgId, now, { period: "month" });
+  const [insights, reporting] = await Promise.all([
+    provider.getHubInsights(membership.orgId, now, { period: "month" }),
+    provider.getReporting(membership.orgId, now, {}),
+  ]);
 
   await logAccess({
     action: "pii.read",
@@ -27,9 +30,9 @@ export default async function HubInsightsPage() {
     <div className="rise space-y-6">
       <PageHead
         title="Insights"
-        summary="How your practice is going  sessions by day, week, and month, attendance, revenue, and your client mix. Real numbers, for running the practice."
+        summary="How your practice is going — sessions, attendance, revenue, and your client mix — plus consent-gated funder reporting. Real numbers, beautifully clear."
       />
-      <HubInsightsView initial={initial} />
+      <InsightsWorkspace insights={insights} reporting={reporting} orgName={membership.orgName} />
     </div>
   );
 }

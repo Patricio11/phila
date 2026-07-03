@@ -32,11 +32,8 @@ test("public booking creates a real client + appointment in the DB", async ({ pa
   await page.getByRole("radio", { name: "WhatsApp" }).click();
   await page.getByRole("button", { name: "Continue" }).click();
 
-  // Step 3  consent (tick all shown; booking + notes are required).
-  for (const sw of await page.getByRole("switch").all()) await sw.click();
-  await page.getByRole("button", { name: "Continue" }).click();
-
-  // Step 4  confirm.
+  // Step 3  confirm: one Terms & Conditions acceptance (not a page of toggles), then book.
+  await page.getByRole("checkbox").check();
   await page.getByRole("button", { name: "Confirm booking" }).click();
   await expect(page.getByText(/You.?re booked/i)).toBeVisible({ timeout: 25_000 });
   await page.screenshot({ path: "screenshots/booking-persisted.png", fullPage: true });
@@ -46,8 +43,12 @@ test("public booking creates a real client + appointment in the DB", async ({ pa
   expect(rows.length).toBe(1);
   expect(rows[0]!.state).toBe("scheduled");
 
-  // Cleanup.
+  // Accepting the T&C granted the everyday consents (booking + notes are required).
   const cid = rows[0]!.cid as string;
+  const purposes = (await sql`SELECT purpose FROM consents WHERE client_id = ${cid}`).map((r) => r.purpose);
+  expect(purposes).toEqual(expect.arrayContaining(["booking", "notes"]));
+
+  // Cleanup.
   await sql`DELETE FROM appointments WHERE client_id = ${cid}`;
   await sql`DELETE FROM consents WHERE client_id = ${cid}`;
   await sql`DELETE FROM clients WHERE id = ${cid}`;

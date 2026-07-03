@@ -25,10 +25,16 @@ export function ConfirmStep({
   config,
   state,
   error,
+  accepted,
+  onAccept,
+  inviteOnBooking,
 }: {
   config: BookingConfig;
   state: BookingState;
   error: string | null;
+  accepted: boolean;
+  onAccept: (v: boolean) => void;
+  inviteOnBooking: boolean;
 }) {
   const service = config.services.find((s) => s.id === state.serviceId);
   const counsellor = config.counsellors.find((c) => c.id === state.slotCounsellorId);
@@ -60,11 +66,39 @@ export function ConfirmStep({
         </div>
       ) : null}
 
-      <div className="mt-4 rounded-control bg-surface-2 p-3.5 text-[12.5px] leading-relaxed text-text-2">
-        We&apos;ll create a private Phila account for{" "}
-        <span className="font-medium text-text">{name || "you"}</span> so you can see this session,
-        join online, and manage your bookings. Your details stay confidential under POPIA.
-      </div>
+      {/* Only when the practice invites clients to the portal on booking (off by
+          default) do we mention an account  otherwise the client just books. */}
+      {inviteOnBooking ? (
+        <div className="mt-4 rounded-control bg-surface-2 p-3.5 text-[12.5px] leading-relaxed text-text-2">
+          We&apos;ll send{" "}
+          <span className="font-medium text-text">{name || "you"}</span> a link to set up a private Phila
+          account  so you can see this session, join online, and manage your bookings. Your details stay
+          confidential under POPIA.
+        </div>
+      ) : null}
+
+      {/* One affirmative acceptance in place of a page of toggles  the terms carry the detail. */}
+      <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-control border border-border bg-surface p-3.5 transition-colors hover:bg-surface-hover">
+        <input
+          type="checkbox"
+          checked={accepted}
+          onChange={(e) => onAccept(e.target.checked)}
+          className="mt-0.5 size-[18px] shrink-0 rounded accent-[var(--brand)]"
+        />
+        <span className="text-[13px] leading-relaxed text-text-2">
+          I&apos;ve read and accept the{" "}
+          <a
+            href="/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="font-medium text-text underline decoration-border-strong underline-offset-2 hover:text-accent"
+          >
+            Terms &amp; Conditions
+          </a>
+          {" "} including how my sessions, notes, reminders, and de-identified reporting information are handled, kept confidential, and recorded under POPIA.
+        </span>
+      </label>
 
       {error ? (
         <p role="alert" className="mt-3 text-[12.5px] font-medium text-danger">

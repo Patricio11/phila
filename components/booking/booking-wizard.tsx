@@ -8,12 +8,11 @@ import { contrastSafeAccent } from "@/lib/contrast";
 import { submitBooking, type BookingConfirmation } from "@/app/o/[slug]/book/actions";
 import { enqueueBooking } from "@/lib/pwa/queue-client";
 import { BookingShell, type BookingStepMeta } from "@/components/booking/booking-shell";
-import { EMPTY_BOOKING, type BookingState } from "@/components/booking/types";
-import { isIntakeValid, hasRequiredConsents, CONTACT_PAIR } from "@/components/booking/validation";
+import { EMPTY_BOOKING, TERMS_CONSENTS, type BookingState } from "@/components/booking/types";
+import { isIntakeValid, CONTACT_PAIR } from "@/components/booking/validation";
 import { ServiceStep } from "@/components/booking/steps/service-step";
 import { TimeStep } from "@/components/booking/steps/time-step";
 import { IntakeStep } from "@/components/booking/steps/intake-step";
-import { ConsentStep } from "@/components/booking/steps/consent-step";
 import { ConfirmStep } from "@/components/booking/steps/confirm-step";
 import { SuccessStep } from "@/components/booking/steps/success-step";
 import { cn } from "@/lib/utils";
@@ -22,7 +21,6 @@ const STEPS: BookingStepMeta[] = [
   { key: "service", label: "Service" },
   { key: "time", label: "Time" },
   { key: "intake", label: "About you" },
-  { key: "consent", label: "Consent" },
   { key: "confirm", label: "Confirm" },
 ];
 
@@ -107,8 +105,6 @@ export function BookingWizard({
         return Boolean(state.slotStart);
       case 2:
         return isIntakeValid(config.intakeForm.fields, state.intake, { contactPair: CONTACT_PAIR });
-      case 3:
-        return hasRequiredConsents(state.consents);
       default:
         return true;
     }
@@ -129,10 +125,11 @@ export function BookingWizard({
   }
 
   function handleConfirm() {
-    if (!state.serviceId || !state.slotStart || !state.slotCounsellorId) return;
+    if (!state.serviceId || !state.slotStart || !state.slotCounsellorId || !state.termsAccepted) return;
     setSubmitError(null);
+    // Accepting the T&C grants the everyday consents; nothing is granted otherwise.
     const consents = Object.fromEntries(
-      CONSENT_PURPOSES.map((p) => [p, Boolean(state.consents[p])]),
+      CONSENT_PURPOSES.map((p) => [p, Boolean(TERMS_CONSENTS[p])]),
     ) as Record<ConsentPurpose, boolean>;
     const payload = {
       slug,
@@ -240,14 +237,15 @@ export function BookingWizard({
         />
       )}
       {step === 3 && (
-        <ConsentStep
-          org={org}
-          consents={state.consents}
-          onChange={(purpose, checked) => patch({ consents: { ...state.consents, [purpose]: checked } })}
-          showError={showErrors}
+        <ConfirmStep
+          config={config}
+          state={state}
+          error={submitError}
+          accepted={state.termsAccepted}
+          onAccept={(v) => patch({ termsAccepted: v })}
+          inviteOnBooking={Boolean(org.clientPortal.inviteOnBooking)}
         />
       )}
-      {step === 4 && <ConfirmStep config={config} state={state} error={submitError} />}
 
       {/* Footer */}
       <div className="mt-7 flex items-center gap-3 border-t border-border pt-5">
@@ -272,8 +270,8 @@ export function BookingWizard({
             <button
               type="button"
               onClick={handleConfirm}
-              disabled={submitting}
-              className="inline-flex h-11 items-center gap-2 rounded-control px-5 text-[14px] font-medium text-white shadow-sm transition-[filter] hover:brightness-95 disabled:opacity-70"
+              disabled={submitting || !state.termsAccepted}
+              className="inline-flex h-11 items-center gap-2 rounded-control px-5 text-[14px] font-medium text-white shadow-sm transition-[filter] hover:brightness-95 disabled:opacity-50"
               style={{ backgroundColor: "var(--brand)" }}
             >
               {submitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}

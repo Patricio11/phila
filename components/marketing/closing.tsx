@@ -45,6 +45,7 @@ const FOOTER_LINKS = [
   { label: "For funders", href: "#funders" },
   { label: "Trust & POPIA", href: "#trust" },
   { label: "Who it's for", href: "#who" },
+  { label: "Terms", href: "/terms" },
 ];
 
 export function SiteFooter() {

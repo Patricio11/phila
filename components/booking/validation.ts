@@ -1,5 +1,4 @@
 import type { IntakeField } from "@/lib/domain/types";
-import type { BookingState } from "@/components/booking/types";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -51,9 +50,4 @@ export function isIntakeValid(
   opts?: { contactPair?: readonly [string, string] },
 ): boolean {
   return Object.keys(intakeErrors(fields, values, opts)).length === 0;
-}
-
-/** Booking + clinical-notes consent are the lawful basis to proceed. */
-export function hasRequiredConsents(consents: BookingState["consents"]): boolean {
-  return Boolean(consents.booking) && Boolean(consents.notes);
 }

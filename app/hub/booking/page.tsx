@@ -3,6 +3,8 @@ import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { PageHead } from "@/components/shell/page-head";
 import { BookingSettingsForm } from "@/components/hub/booking-settings-form";
+import { BookingSignupToggle } from "@/components/hub/booking-signup-toggle";
+import { Card, CardHead } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Booking" };
@@ -26,6 +28,13 @@ export default async function HubBookingPage() {
         summary="How clients book you online. Everything here shapes your public booking page  what's offered, by whom, and on what terms."
       />
       <BookingSettingsForm initial={settings} services={services} counsellors={counsellors} orgSlug={org.slug} />
+
+      <Card>
+        <CardHead title="Client sign-up" />
+        <div className="px-[17px] pb-[17px]">
+          <BookingSignupToggle initial={org.clientPortal} />
+        </div>
+      </Card>
     </div>
   );
 }

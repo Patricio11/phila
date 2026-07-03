@@ -28,11 +28,10 @@ test("a booking made offline queues, then syncs to the DB on reconnect", async (
   await page.getByLabel(/What would you like support with/).fill("Offline booking test.");
   await page.getByRole("radio", { name: "WhatsApp" }).click();
   await page.getByRole("button", { name: "Continue" }).click();
-  for (const sw of await page.getByRole("switch").all()) await sw.click();
-  await page.getByRole("button", { name: "Continue" }).click();
 
   // Go offline, then confirm → it must QUEUE, not send.
   await context.setOffline(true);
+  await page.getByRole("checkbox").check(); // accept the Terms & Conditions
   await page.getByRole("button", { name: "Confirm booking" }).click();
   await expect(page.getByText(/Saved on your device/i)).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(/Offline  1 queued/i)).toBeVisible({ timeout: 10_000 });

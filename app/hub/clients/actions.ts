@@ -6,7 +6,8 @@ import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 import { PROVINCES } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
-import { createClientDb, updateClientDb, setClientRemovedDb, reassignClientDb } from "@/db/queries/clients";
+import { getDataProvider } from "@/lib/data-provider";
+import { createClientDb, createClientsDb, updateClientDb, setClientRemovedDb, reassignClientDb } from "@/db/queries/clients";
 
 const isDb = () => process.env.DATA_PROVIDER === "db";
 
@@ -77,12 +78,22 @@ export async function createClient(
   return { ok: true };
 }
 
+/**
+ * Bulk import (smart import). No counsellor — imported clients land unassigned and
+ * the org assigns them from the caseload. Rows arrive already parsed, mapped, and
+ * de-duped client-side; the server validates + persists. A missing province falls
+ * back to the org's own province (the column is required in the DB).
+ */
 const importInput = z.object({
-  counsellorId: z.string().min(1, "Choose a counsellor for the imported clients."),
   clients: z
-    .array(z.object({ name: z.string().min(2), phone: z.string().optional(), email: z.string().optional(), province: z.string().optional() }))
+    .array(z.object({
+      name: z.string().min(2).max(120),
+      phone: z.string().nullable().optional(),
+      email: z.string().nullable().optional(),
+      province: z.string().nullable().optional(),
+    }))
     .min(1, "Nothing to import  add at least one row.")
-    .max(500, "Import up to 500 clients at a time."),
+    .max(5000, "Import up to 5000 clients at a time."),
 });
 
 export async function importClients(
@@ -92,14 +103,29 @@ export async function importClients(
   const parsed = importInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the import." };
 
+  let count = parsed.data.clients.length;
+  if (isDb()) {
+    const provider = await getDataProvider();
+    const org = await provider.getOrg(membership.orgId);
+    const fallbackProvince = org?.province ?? "Gauteng";
+    const rows = parsed.data.clients.map((c) => ({
+      name: c.name.trim(),
+      phone: c.phone ?? null,
+      email: c.email ?? null,
+      province: (c.province && c.province.trim()) || fallbackProvince,
+    }));
+    count = await createClientsDb(membership.orgId, rows, clockNow());
+  }
+
   await logAccess({
     action: "admin.action",
     actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
     orgId: membership.orgId,
-    target: `clients:import:${parsed.data.clients.length}`,
+    target: `clients:import:${count}`,
     reason: "import_clients",
   });
-  return { ok: true, count: parsed.data.clients.length };
+  revalidatePath("/hub/clients");
+  return { ok: true, count };
 }
 
 const inviteInput = z.object({

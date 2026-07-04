@@ -46,6 +46,31 @@ export async function createClientDb(orgId: string, input: ClientWriteInput, now
   return { id };
 }
 
+export interface ImportRow { name: string; phone: string | null; email: string | null; province: string }
+
+/** Bulk-insert imported clients (unassigned — no primary counsellor). Returns the count. */
+export async function createClientsDb(orgId: string, rows: ImportRow[], now: string): Promise<number> {
+  if (rows.length === 0) return 0;
+  const createdAt = new Date(now);
+  const values = rows.map((r) => ({
+    id: rid("cl"),
+    orgId,
+    name: r.name.trim(),
+    phone: clean(r.phone),
+    email: clean(r.email),
+    province: r.province,
+    primaryCounsellorId: null,
+    riskFlag: false,
+    createdAt,
+  }));
+  // Insert in chunks so a very large import doesn't blow the parameter limit.
+  const CHUNK = 500;
+  for (let i = 0; i < values.length; i += CHUNK) {
+    await getDb().insert(clients).values(values.slice(i, i + CHUNK));
+  }
+  return values.length;
+}
+
 /** Update every editable field on a client, scoped to the org. */
 export async function updateClientDb(orgId: string, clientId: string, input: ClientWriteInput): Promise<void> {
   await getDb()

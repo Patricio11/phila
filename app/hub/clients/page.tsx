@@ -6,6 +6,7 @@ import { HubClientsTable } from "@/components/hub/hub-clients-table";
 import { AddClientButton } from "@/components/hub/add-client-modal";
 import { ImportClientsButton } from "@/components/hub/import-clients-modal";
 import { DedupeBanner } from "@/components/hub/dedupe-clients";
+import { phoneKey, emailKey } from "@/lib/import/validate";
 import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,10 @@ export default async function HubClientsPage() {
   });
 
   const counsellorOpts = counsellors.map((c) => ({ id: c.id, name: c.name }));
+  // Dedupe keys of existing clients (live + removed) so the import skips repeats.
+  const existingKeys = [...rows, ...removedRows]
+    .flatMap((r) => [phoneKey(r.client.phone), emailKey(r.client.email)])
+    .filter((k): k is string => Boolean(k));
 
   return (
     <div className="rise space-y-6">
@@ -40,7 +45,7 @@ export default async function HubClientsPage() {
         summary={`${rows.length} across the practice. Filter by status or counsellor, reassign, or remove and restore  reporting stays accurate.`}
         actions={
           <div className="flex items-center gap-2">
-            <ImportClientsButton counsellors={counsellorOpts} />
+            <ImportClientsButton existingKeys={existingKeys} />
             <AddClientButton counsellors={counsellorOpts} inviteOnCreateDefault={Boolean(org?.clientPortal.inviteOnCreate)} />
           </div>
         }

@@ -69,7 +69,7 @@ export function FunderFormButton({ funder }: { funder?: FunderInit }) {
         open={open}
         onClose={() => setOpen(false)}
         title={editing ? `Edit ${funder!.name}` : "Add a funder"}
-        description="A funder is the organisation that supports your work — a grant sits under it."
+        description="A funder is the organisation that supports your work  a grant sits under it."
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>Cancel</Button>

@@ -5,10 +5,10 @@ import { clients } from "@/db/schema";
 import type { Province } from "@/lib/domain/enums";
 
 /**
- * Client writes (Phase 10/11) — real, org-scoped persistence for the hub caseload.
+ * Client writes (Phase 10/11)  real, org-scoped persistence for the hub caseload.
  * Every write is scoped by `orgId` (the tenant boundary) as well as the row id, so a
  * hub admin can only ever touch their own org's clients. Removal is a **soft delete**
- * (`deletedAt`) — the record + full history are retained (Outcome-Honesty Rule), and
+ * (`deletedAt`)  the record + full history are retained (Outcome-Honesty Rule), and
  * a restore just clears the timestamp.
  */
 function rid(prefix: string): string {
@@ -48,7 +48,7 @@ export async function createClientDb(orgId: string, input: ClientWriteInput, now
 
 export interface ImportRow { name: string; phone: string | null; email: string | null; province: string }
 
-/** Bulk-insert imported clients (unassigned — no primary counsellor). Returns the count. */
+/** Bulk-insert imported clients (unassigned  no primary counsellor). Returns the count. */
 export async function createClientsDb(orgId: string, rows: ImportRow[], now: string): Promise<number> {
   if (rows.length === 0) return 0;
   const createdAt = new Date(now);

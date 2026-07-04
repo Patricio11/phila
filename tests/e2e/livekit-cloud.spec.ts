@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 /**
  * LiveKit is a dual-provider platform integration: Phila self-hosted (Docker) or
  * LiveKit Cloud. This proves the super-admin can flip to Cloud, enter the Cloud
- * URL/key/secret, switch it on, and have it persist — so Cloud can be tested in
+ * URL/key/secret, switch it on, and have it persist  so Cloud can be tested in
  * prod without standing up Docker.
  */
 const DATABASE_URL = (readFileSync(".env.local", "utf8").match(/^DATABASE_URL=(.+)$/m)?.[1] ?? "").trim();
@@ -19,8 +19,8 @@ async function signInAdmin(page: Page) {
   await page.waitForURL("**/admin", { timeout: 30_000 });
 }
 
-test("switch LiveKit to Cloud, enter creds, switch on — persisted", async ({ page }) => {
-  // Snapshot the existing (seeded) config so we can restore it — never clobber it.
+test("switch LiveKit to Cloud, enter creds, switch on  persisted", async ({ page }) => {
+  // Snapshot the existing (seeded) config so we can restore it  never clobber it.
   const [snap] = await sql`SELECT credentials_enc, enabled, updated_at FROM platform_integrations WHERE key = 'livekit'`;
   try {
     await signInAdmin(page);

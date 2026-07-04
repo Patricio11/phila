@@ -54,7 +54,7 @@ export function HubClientsTable({ rows, removedRows, counsellors }: { rows: OrgC
   // Remove confirmation state
   const [removeTarget, setRemoveTarget] = useState<OrgClientRow | null>(null);
 
-  // Source of truth is the DB — the server component re-reads on router.refresh().
+  // Source of truth is the DB  the server component re-reads on router.refresh().
   const liveRows = rows;
   const isRemoved = (r: OrgClientRow) => Boolean(r.client.deletedAt);
 

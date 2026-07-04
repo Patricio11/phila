@@ -638,7 +638,7 @@ export const userPresence = pgTable("user_presence", {
   lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull(),
 });
 
-/* ── Forms cluster (Phase 18.6 — org forms library) ───────────────────── */
+/* ── Forms cluster (Phase 18.6  org forms library) ───────────────────── */
 
 /** An org form: a titled set of questions of a given kind. `fields` is JSONB
  *  (`FormField[]`). The active `kind='intake'` form drives public booking. */
@@ -658,7 +658,7 @@ export const forms = pgTable("forms", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 }, (t) => [index("forms_org_idx").on(t.orgId), uniqueIndex("forms_share_token_uq").on(t.shareToken)]);
 
-/** A form sent to a client — and, once filled, their response. `snapshot` freezes
+/** A form sent to a client  and, once filled, their response. `snapshot` freezes
  *  the form at send time so later edits never rewrite past answers. The `token` is
  *  the unguessable capability behind the public fill link (`/f/<token>`). */
 export const formAssignments = pgTable("form_assignments", {

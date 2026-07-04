@@ -3,7 +3,7 @@
  * dependency-free state machine (quoted fields, embedded delimiters, "" escapes,
  * BOM, CRLF, comma/semicolon/tab). XLSX uses exceljs, lazy-loaded only when an
  * .xlsx is actually picked so it never bloats the main bundle. Everything runs in
- * the browser — the file never leaves the device.
+ * the browser  the file never leaves the device.
  */
 export interface ParsedFile {
   headers: string[];

@@ -7,7 +7,7 @@ export const CONTACT_PAIR = ["phone", "email"] as const;
 
 /**
  * `contactPair` names two field ids (e.g. `["phone", "email"]`) that count as a
- * single "at least one" requirement — used by booking so a client with only a
+ * single "at least one" requirement  used by booking so a client with only a
  * phone number *or* only an email can still book (many SA clients have no email).
  * Each is still format-checked when filled. Omitted → every field validates on its
  * own `required` flag (the generic Forms behaviour).

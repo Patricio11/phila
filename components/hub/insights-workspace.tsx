@@ -17,7 +17,7 @@ const TABS: { key: TabKey; label: string; icon: typeof LineChart }[] = [
  * One analytics home. "Practice" is the honest operational view (real counts,
  * period deltas, session mix); "Funder reporting" is the consent-gated, k-anonymised
  * view (breakdowns, outcomes, narrative, export). Reporting used to be its own nav
- * item — it now lives here as a tab. Both panels stay mounted (each keeps its own
+ * item  it now lives here as a tab. Both panels stay mounted (each keeps its own
  * filters), hidden when inactive.
  */
 export function InsightsWorkspace({ insights, reporting, orgName }: { insights: HubInsights; reporting: ReportingResult; orgName: string }) {

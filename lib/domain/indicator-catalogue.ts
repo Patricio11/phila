@@ -3,7 +3,7 @@ import type { IndicatorType } from "@/lib/domain/enums";
 
 /**
  * The metrics an org can track against a funder target. Each maps to a live
- * computation in `lib/domain/reporting.ts` (computeIndicator) — the org only picks
+ * computation in `lib/domain/reporting.ts` (computeIndicator)  the org only picks
  * a metric + a target; the type, unit, default label and rule come from here, so
  * indicators can never be miswired. Shared client + server (pure data).
  */

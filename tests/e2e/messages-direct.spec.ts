@@ -72,7 +72,7 @@ test("two users exchanging first messages get ONE shared thread (no duplicate)",
     // Best-effort: did the hub receive it live (Supabase Realtime configured)?
     const liveDelivered = await pageB.getByText(markerA, { exact: false }).first()
       .isVisible({ timeout: 6_000 }).catch(() => false);
-    console.log(`[messages-direct] live delivery to hub: ${liveDelivered ? "YES (realtime on)" : "no (realtime dormant — will verify via reload)"}`);
+    console.log(`[messages-direct] live delivery to hub: ${liveDelivered ? "YES (realtime on)" : "no (realtime dormant  will verify via reload)"}`);
 
     // Thandeka → Pieter: a "new message" too. The pair_key guard must reuse the
     // SAME thread rather than forking a second one.

@@ -14,7 +14,7 @@ import {
 } from "@/db/queries/grants";
 
 /**
- * Funders & grants CRUD (Phase 18.8) — real, org-scoped M&E. The org builds its own
+ * Funders & grants CRUD (Phase 18.8)  real, org-scoped M&E. The org builds its own
  * funders, grants, indicators and client allocations; the reporting engine already
  * rolls the actuals up live. Every write is validated, org-scoped, and audited.
  */

@@ -3,11 +3,11 @@ import { cn } from "@/lib/utils";
 export interface DonutDatum {
   label: string;
   value: number;
-  /** k-anon suppressed / "other" — drawn in a muted grey and never a bright colour. */
+  /** k-anon suppressed / "other"  drawn in a muted grey and never a bright colour. */
   muted?: boolean;
 }
 
-/** On-brand data palette — accent-led, harmonious, distinct in light + dark. */
+/** On-brand data palette  accent-led, harmonious, distinct in light + dark. */
 const PALETTE = ["#1C7D58", "#4FA97F", "#86C7A6", "#D8A72E", "#5B84D6", "#B5628A", "#7A8896"];
 const MUTED = "#C3C8CE";
 

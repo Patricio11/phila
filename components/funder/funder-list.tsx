@@ -66,7 +66,7 @@ export function FunderList({ funders }: { funders: Funder[] }) {
           </div>
         }
       >
-        <p className="text-[13px] leading-relaxed text-text-2">Grant targets and tags are removed with it — but nothing clinical (clients, sessions, outcomes) is affected.</p>
+        <p className="text-[13px] leading-relaxed text-text-2">Grant targets and tags are removed with it  but nothing clinical (clients, sessions, outcomes) is affected.</p>
       </Dialog>
     </>
   );

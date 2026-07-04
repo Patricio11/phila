@@ -144,7 +144,7 @@ export async function submitBooking(
     }
   }
   // A client is reachable with EITHER a phone number or an email (many SA clients
-  // have no email) — the same phone-or-email rule the hub uses when creating clients.
+  // have no email)  the same phone-or-email rule the hub uses when creating clients.
   if (!input.intake.phone?.trim() && !input.intake.email?.trim()) {
     return { ok: false, error: "Add a phone number or an email so we can confirm your session." };
   }
@@ -212,7 +212,7 @@ export async function submitBooking(
       // Mirror the intake into the active intake form's Responses (best-effort).
       try { await recordBookingIntakeDb(config.org.id, res.clientId, input.intake, clockNow()); } catch { /* never break booking */ }
       // Auto-invite to the portal ONLY if the org opted in (Dormant-by-Default).
-      // Otherwise the client just gets the booking confirmation — no set-password link.
+      // Otherwise the client just gets the booking confirmation  no set-password link.
       if (config.org.clientPortal.inviteOnBooking) {
         const channel = input.intake.email?.trim() ? "email" : "sms";
         await logAccess({

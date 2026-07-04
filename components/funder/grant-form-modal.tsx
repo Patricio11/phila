@@ -177,7 +177,7 @@ export function GrantFormButton({ funders, grant, trigger }: { funders: { id: st
               </button>
             </div>
             {rows.length === 0 ? (
-              <p className="rounded-control border border-dashed border-border px-3 py-4 text-center text-[12.5px] text-text-3">No targets yet — add one so this grant reports progress.</p>
+              <p className="rounded-control border border-dashed border-border px-3 py-4 text-center text-[12.5px] text-text-3">No targets yet  add one so this grant reports progress.</p>
             ) : (
               <div className="space-y-2">
                 {rows.map((row) => {

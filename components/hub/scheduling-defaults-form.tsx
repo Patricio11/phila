@@ -11,7 +11,7 @@ const DURATIONS = [30, 45, 60, 90];
 const INTERVALS = [0, 5, 10, 15, 20, 30];
 
 /**
- * Scheduling defaults — the default session length and the inter-session interval
+ * Scheduling defaults  the default session length and the inter-session interval
  * (buffer). The interval is a gap after each session so bookings aren't back-to-back:
  * the slot engine won't offer the next start until the interval has passed.
  */
@@ -66,9 +66,9 @@ export function SchedulingDefaultsForm({ initial }: { initial: { defaultDuration
       <p className="rounded-control bg-surface-2/50 px-3 py-2 text-[12px] leading-relaxed text-text-2">
         The <span className="font-medium text-text">interval</span>{" "}is a gap after each session so bookings aren&apos;t back-to-back
         {buffer > 0 ? (
-          <> — a session ending <span className="font-medium text-text">9:40</span> with a {buffer}-minute interval frees{" "}
+          <>  a session ending <span className="font-medium text-text">9:40</span> with a {buffer}-minute interval frees{" "}
             <span className="font-medium text-text">{addMinutesLabel("09:40", buffer)}</span> for the next booking.</>
-        ) : <> — set to 0 for no gap.</>}
+        ) : <>  set to 0 for no gap.</>}
       </p>
 
       <Button size="sm" onClick={save} loading={pending}>

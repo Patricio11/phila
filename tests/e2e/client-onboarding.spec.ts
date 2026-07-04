@@ -51,7 +51,7 @@ test("create a phone-only client persists (no invite when the switch is off)", a
     expect(rows[0]!.phone).toBe("0821234567");
     expect(rows[0]!.email).toBeNull();
 
-    // No portal invite audit — the client was added quietly.
+    // No portal invite audit  the client was added quietly.
     const invites = await sql`SELECT 1 FROM audit_log WHERE target = ${"client:" + rows[0]!.id + "/portal_invite"}`;
     expect(invites.length).toBe(0);
     await page.screenshot({ path: "screenshots/onb-create-phone-only.png", fullPage: true });

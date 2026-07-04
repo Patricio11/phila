@@ -69,7 +69,7 @@ export function PlatformVideoCard({ initial }: { initial: { enabled: boolean; pr
               ? <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-1.5 py-0.5 text-[10.5px] font-medium text-accent"><CheckCircle2 className="size-3" strokeWidth={2.4} aria-hidden /> On · {META[provider].label}</span>
               : (configured.selfhosted || configured.cloud) && <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10.5px] font-medium text-text-2">Configured · off</span>}
           </div>
-          <div className="text-[11.5px] text-text-3">Secure in-region video for online sessions. Same secure token flow either way — pick where the server lives.</div>
+          <div className="text-[11.5px] text-text-3">Secure in-region video for online sessions. Same secure token flow either way  pick where the server lives.</div>
         </div>
       </div>
 

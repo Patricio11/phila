@@ -49,7 +49,7 @@ export function InviteFunderButton({ funders, grants }: { funders: { id: string;
   const copy = async () => {
     if (!sentLink) return;
     try { await navigator.clipboard.writeText(sentLink); setCopied(true); setTimeout(() => setCopied(false), 1800); }
-    catch { toast({ tone: "error", title: "Couldn't copy — select the link manually." }); }
+    catch { toast({ tone: "error", title: "Couldn't copy  select the link manually." }); }
   };
 
   const close = () => { setOpen(false); reset(); };
@@ -64,7 +64,7 @@ export function InviteFunderButton({ funders, grants }: { funders: { id: string;
         open={open}
         onClose={close}
         title="Invite a funder"
-        description="Give a funder a read-only portal scoped to only the grant(s) you choose — aggregate, k-anonymised figures, never an individual."
+        description="Give a funder a read-only portal scoped to only the grant(s) you choose  aggregate, k-anonymised figures, never an individual."
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={close} disabled={pending}>{sentLink ? "Done" : "Cancel"}</Button>
@@ -93,7 +93,7 @@ export function InviteFunderButton({ funders, grants }: { funders: { id: string;
           <div className="space-y-1.5">
             <Label>Share which grant(s)</Label>
             {funderGrants.length === 0 ? (
-              <p className="rounded-control border border-dashed border-border px-3 py-3 text-[12.5px] text-text-3">This funder has no grants yet — create one first.</p>
+              <p className="rounded-control border border-dashed border-border px-3 py-3 text-[12.5px] text-text-3">This funder has no grants yet  create one first.</p>
             ) : (
               <div className="space-y-1">
                 {funderGrants.map((g) => {

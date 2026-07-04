@@ -16,7 +16,7 @@ import { importClients } from "@/app/hub/clients/actions";
 import { cn } from "@/lib/utils";
 
 /**
- * Smart client import — upload a CSV/Excel (or paste), we auto-map the columns, you
+ * Smart client import  upload a CSV/Excel (or paste), we auto-map the columns, you
  * confirm, we import. No counsellor step: bulk-imported clients land unassigned and
  * the org assigns them from the caseload. Parsing is entirely in the browser.
  */
@@ -101,7 +101,7 @@ export function ImportClientsButton({ existingKeys = [] }: { existingKeys?: stri
         open={open}
         onClose={close}
         title="Import clients"
-        description={parsed ? `${parsed.fileName} · ${parsed.rows.length} rows — check the column mapping, then import.` : "Upload a CSV or Excel export — we'll map the columns for you."}
+        description={parsed ? `${parsed.fileName} · ${parsed.rows.length} rows  check the column mapping, then import.` : "Upload a CSV or Excel export  we'll map the columns for you."}
         className="sm:max-w-4xl"
         footer={
           parsed ? (

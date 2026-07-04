@@ -13,7 +13,7 @@ const isDb = () => process.env.DATA_PROVIDER === "db";
 
 /**
  * Client CRUD. Validated + audited, and (under `DATA_PROVIDER=db`) persisted to
- * Postgres via `db/queries/clients` — create/update/reassign write real rows;
+ * Postgres via `db/queries/clients`  create/update/reassign write real rows;
  * remove/restore is a soft-delete (`deletedAt`). Every write is org-scoped and
  * never distorts compiled stats (Outcome-Honesty Rule). Mock mode stays audit-only.
  */
@@ -79,7 +79,7 @@ export async function createClient(
 }
 
 /**
- * Bulk import (smart import). No counsellor — imported clients land unassigned and
+ * Bulk import (smart import). No counsellor  imported clients land unassigned and
  * the org assigns them from the caseload. Rows arrive already parsed, mapped, and
  * de-duped client-side; the server validates + persists. A missing province falls
  * back to the org's own province (the column is required in the DB).

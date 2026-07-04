@@ -30,7 +30,7 @@ export default async function HubInsightsPage() {
     <div className="rise space-y-6">
       <PageHead
         title="Insights"
-        summary="How your practice is going — sessions, attendance, revenue, and your client mix — plus consent-gated funder reporting. Real numbers, beautifully clear."
+        summary="How your practice is going  sessions, attendance, revenue, and your client mix  plus consent-gated funder reporting. Real numbers, beautifully clear."
       />
       <InsightsWorkspace insights={insights} reporting={reporting} orgName={membership.orgName} />
     </div>

@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Smart client import — the org uploads a CSV/Excel export in *any* column order, we
+ * Smart client import  the org uploads a CSV/Excel export in *any* column order, we
  * auto-map the columns (data-shape beats the header, so a "Contact" column of emails
  * maps to Email even under a phone-ish name), they re-arrange anything we got wrong,
  * and import. No counsellor step: imported clients land unassigned. Asserted against
@@ -22,7 +22,7 @@ async function signIn(page: Page, email = "thandeka@masizakhe.org.za", password 
 }
 const dialog = (page: Page) => page.getByRole("dialog");
 
-test("upload a shuffled CSV, auto-map, re-arrange, and import — persisted to the DB", async ({ page }) => {
+test("upload a shuffled CSV, auto-map, re-arrange, and import  persisted to the DB", async ({ page }) => {
   const stamp = Date.now();
   const base = String(stamp).slice(-6); // 6 digits → unique 10-digit SA numbers this run
   const names = [`Import One ${stamp}`, `Import Two ${stamp}`, `Import Three ${stamp}`];
@@ -69,7 +69,7 @@ test("upload a shuffled CSV, auto-map, re-arrange, and import — persisted to t
     await expect(previewRow).toContainText(phone(0));
     await expect(previewRow).toContainText("Gauteng"); // GP alias resolved
 
-    // The user controls the mapping: un-map the province column, then map it back —
+    // The user controls the mapping: un-map the province column, then map it back 
     // proving the columns are theirs to arrange. Each Select button reads its current
     // field, so we can target it by that value.
     await dialog(page).getByRole("button", { name: "Province", exact: true }).click();

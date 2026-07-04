@@ -1,4 +1,4 @@
-# Phase 18.7 — Client onboarding: phone-or-email, portal invite, full edit
+# Phase 18.7  Client onboarding: phone-or-email, portal invite, full edit
 
 *Status: in progress · Owner: Phila · Started 2026-07-02*
 
@@ -9,13 +9,13 @@ quietly assumed email: creating a client and booking both leaned on it, and ther
 no clean way to invite a client to their portal by SMS or to hand them a link they can
 paste into a browser. Orgs also need to **correct any detail** on a client's profile
 after intake. This phase makes the client front door reflect how SA practices actually
-work — **a phone number *or* an email is enough**, everywhere a client is created.
+work  **a phone number *or* an email is enough**, everywhere a client is created.
 
 ## The rule (one policy, applied everywhere)
 
 > A client is reachable if we have **either a phone number or an email**. When both
 > exist we invite by **email**; phone-only clients are invited by **SMS**. Neither is
-> allowed — every client must have at least one contact.
+> allowed  every client must have at least one contact.
 
 This is enforced at **three front doors**: the hub Add-client form, the hub Edit-client
 form, and the **public booking** flow (which also creates a client record).
@@ -30,7 +30,7 @@ soft-delete (`deletedAt`). Every write is still validated + audited, and the pag
 `revalidatePath` + `router.refresh()` so the caseload reflects the DB immediately.
 Booking already persisted its client row; it now shares the same phone-or-email rule.
 
-### 1. Create with phone **or** email — hub
+### 1. Create with phone **or** email  hub
 - `createClient` (`app/hub/clients/actions.ts`): shared `contactShape` + a `.refine`
   requiring `phone || email`; message points at the phone field.
 - `AddClientButton` (`components/hub/add-client-modal.tsx`): a combined `contact`
@@ -52,20 +52,20 @@ Booking already persisted its client row; it now shares the same phone-or-email 
 
 ### 4. Booking consistency (booking creates a client too)
 - Server (`app/o/[slug]/book/actions.ts`): drop the hard `phone`-required check; require
-  `full_name`, `reason`, `preferred_contact`, **and** at least one of `phone`/`email` —
+  `full_name`, `reason`, `preferred_contact`, **and** at least one of `phone`/`email` 
   the same policy as the hub, enforced where the client row is actually written.
 - Client-side validator (`components/booking/validation.ts`): opt-in `contactPair`
   option so `phone`/`email` count as a single "at least one" requirement (each still
   format-checked). Exported `CONTACT_PAIR`. Generic Forms fill (`/f/[token]`) is
-  **unchanged** — it passes no `contactPair`.
+  **unchanged**  it passes no `contactPair`.
 - Intake step (`components/booking/steps/intake-step.tsx`): render both contact fields
-  as optional + a "phone or email — one is enough" hint so the required asterisk never
+  as optional + a "phone or email  one is enough" hint so the required asterisk never
   contradicts what actually validates. Wizard `canAdvance` uses the pair rule too.
 
 ## DB persistence (done in this phase)
-- `db/queries/clients.ts` — `createClientDb`, `updateClientDb`, `setClientRemovedDb`
+- `db/queries/clients.ts`  `createClientDb`, `updateClientDb`, `setClientRemovedDb`
   (soft-delete/restore), `reassignClientDb`; all org-scoped by `(id, orgId)`.
-- `lib/db-provider.ts` — real `listOrgClients`, `listRemovedClients` (Removed tab),
+- `lib/db-provider.ts`  real `listOrgClients`, `listRemovedClients` (Removed tab),
   `getClientDossier` (consents/demographics/outcomes/documents/care-plan from the DB,
   demographics consent-gated), and `findDuplicateClients` (union-find over real rows).
 - Actions gated on `DATA_PROVIDER === "db"` (mock mode stays audit-only), then
@@ -86,5 +86,5 @@ Booking already persisted its client row; it now shares the same phone-or-email 
   (no phone) now advances and confirms.
 
 ## Checklist
-- [ ] Commit — the whole phase (create phone-or-email, invite + copy link, full edit,
+- [ ] Commit  the whole phase (create phone-or-email, invite + copy link, full edit,
   booking consistency) as one green commit; plan + ROADMAP updated.

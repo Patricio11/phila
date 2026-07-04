@@ -32,7 +32,7 @@ export function AddClientButton({ counsellors, inviteOnCreateDefault = false }: 
     counsellor: !counsellorId ? "Assign a counsellor." : "",
     phone: phone && !/^(\+27|0)\d{9}$/.test(phone.replace(/\s/g, "")) ? "Use a SA number, e.g. 082 123 4567." : "",
     email: email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? "Enter a valid email." : "",
-    contact: !phone.trim() && !email.trim() ? "Add a phone number or an email — either works." : "",
+    contact: !phone.trim() && !email.trim() ? "Add a phone number or an email  either works." : "",
   };
 
   const reset = () => { setName(""); setPhone(""); setEmail(""); setProvince("Gauteng"); setCounsellorId(counsellors[0]?.id ?? null); setRiskFlag(false); setNotify(inviteOnCreateDefault); setAttempted(false); };
@@ -141,7 +141,7 @@ export function AddClientButton({ counsellors, inviteOnCreateDefault = false }: 
               <span className="block text-[13px] font-medium text-text">Send a portal invite</span>
               <span className="block text-[11.5px] text-text-2">
                 {notify
-                  ? `They'll get a set-password link by ${inviteChannel}. Leave off for clients who won't use the portal — you can invite them any time.`
+                  ? `They'll get a set-password link by ${inviteChannel}. Leave off for clients who won't use the portal  you can invite them any time.`
                   : "Off by default. The client is added quietly; invite them later from their profile when you're ready."}
               </span>
             </span>

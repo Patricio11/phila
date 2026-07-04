@@ -44,7 +44,7 @@ export function EditClientButton({
     counsellor: !counsellorId ? "Assign a counsellor." : "",
     phone: phone && !/^(\+27|0)\d{9}$/.test(phone.replace(/\s/g, "")) ? "Use a SA number, e.g. 082 123 4567." : "",
     email: email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? "Enter a valid email." : "",
-    contact: !phone.trim() && !email.trim() ? "Add a phone number or an email — either works." : "",
+    contact: !phone.trim() && !email.trim() ? "Add a phone number or an email  either works." : "",
   };
 
   const resetToInitial = () => {
@@ -133,7 +133,7 @@ export function EditClientButton({
             <AlertTriangle className={cn("mt-0.5 size-4 shrink-0", riskFlag ? "text-danger" : "text-text-3")} strokeWidth={2} aria-hidden />
             <span>
               <span className="block text-[13px] font-medium text-text">Safeguarding flag</span>
-              <span className="block text-[11.5px] text-text-2">Only if there&apos;s a known concern. It&apos;s never auto-actioned — it just keeps the counsellor close.</span>
+              <span className="block text-[11.5px] text-text-2">Only if there&apos;s a known concern. It&apos;s never auto-actioned  it just keeps the counsellor close.</span>
             </span>
             <span className={cn("ml-auto mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors", riskFlag ? "bg-danger" : "bg-surface-2")}>
               <span className={cn("size-4 rounded-full bg-surface shadow-sm transition-transform", riskFlag && "translate-x-4")} />

@@ -196,7 +196,7 @@ export type StorageBackend = (typeof STORAGE_BACKENDS)[number];
 export const DOCUMENT_SHARED_BY = ["counsellor", "org", "client"] as const;
 export type DocumentSharedBy = (typeof DOCUMENT_SHARED_BY)[number];
 
-/* ---- Forms (org forms library — Phase 18.6) --------------------------- */
+/* ---- Forms (org forms library  Phase 18.6) --------------------------- */
 
 /** What a form is for. `intake` is special: the active intake form drives booking. */
 export const FORM_KINDS = ["intake", "feedback", "screening", "consent", "custom"] as const;
@@ -210,7 +210,7 @@ export const FORM_KIND_LABELS: Record<FormKind, string> = {
   custom: "Custom",
 };
 
-/** A form is live or tucked away (never hard-deleted — responses must survive). */
+/** A form is live or tucked away (never hard-deleted  responses must survive). */
 export const FORM_STATUSES = ["active", "archived"] as const;
 export type FormStatus = (typeof FORM_STATUSES)[number];
 

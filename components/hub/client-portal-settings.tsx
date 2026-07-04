@@ -34,14 +34,14 @@ export function ClientPortalSettings({ initial }: { initial: PortalState }) {
         setState(prev);
         return toast({ tone: "error", title: res.error });
       }
-      toast({ tone: "default", title: `${label} ${next[key] ? "on" : "off"}`, description: next[key] ? "Clients will be invited automatically." : "No automatic invite — you invite from the client's profile." });
+      toast({ tone: "default", title: `${label} ${next[key] ? "on" : "off"}`, description: next[key] ? "Clients will be invited automatically." : "No automatic invite  you invite from the client's profile." });
     });
   };
 
   return (
     <div className="space-y-2.5">
       <p className="text-[12.5px] leading-relaxed text-text-2">
-        Some clients aren&apos;t online at all. By default nobody gets a set-password link — you invite deliberately from a client&apos;s profile. Turn these on only if your clients are comfortable using the portal.
+        Some clients aren&apos;t online at all. By default nobody gets a set-password link  you invite deliberately from a client&apos;s profile. Turn these on only if your clients are comfortable using the portal.
       </p>
       {ROWS.map((r) => {
         const on = state[r.key];

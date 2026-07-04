@@ -179,7 +179,7 @@ export function ReportingView({ initial, orgName }: { initial: ReportingResult; 
         </div>
       </Card>
 
-      {/* Breakdowns — donuts for the shape splits, ranked bars for the ordered ones */}
+      {/* Breakdowns  donuts for the shape splits, ranked bars for the ordered ones */}
       <div className="grid gap-4 lg:grid-cols-2">
         <BreakdownDonut title="By gender" rows={result.byGender} />
         <BreakdownDonut title="By population group" rows={result.byPopulationGroup} />

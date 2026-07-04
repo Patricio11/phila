@@ -51,7 +51,7 @@ export function InviteClientButton({
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
-      toast({ tone: "error", title: "Couldn't copy — select and copy the link manually." });
+      toast({ tone: "error", title: "Couldn't copy  select and copy the link manually." });
     }
   };
 
@@ -108,12 +108,12 @@ export function InviteClientButton({
           ))}
         </div>
 
-        {/* Copy-paste fallback — if the client can't tap the message, share this link. */}
+        {/* Copy-paste fallback  if the client can't tap the message, share this link. */}
         <div className="mt-4 rounded-control border border-dashed border-border bg-surface-2/40 p-3">
           <div className="flex items-center gap-2 text-[12.5px] font-medium text-text">
             <Link2 className="size-4 text-text-3" strokeWidth={2} aria-hidden /> Can&apos;t tap the link?
           </div>
-          <p className="mt-1 text-[11.5px] text-text-3">Copy it and paste it into any browser — it opens their set-a-password page.</p>
+          <p className="mt-1 text-[11.5px] text-text-3">Copy it and paste it into any browser  it opens their set-a-password page.</p>
           <div className="mt-2 flex items-center gap-2">
             <code suppressHydrationWarning className="min-w-0 flex-1 truncate rounded-chip bg-surface px-2.5 py-1.5 text-[11.5px] text-text-2">{link}</code>
             <Button variant="subtle" size="sm" onClick={copy} disabled={!origin}>

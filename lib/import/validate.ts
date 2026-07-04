@@ -10,7 +10,7 @@ export interface BuiltRow {
 
 export interface BuildResult {
   ready: BuiltRow[];
-  /** Rows set aside — a required field was missing (never dropped silently). */
+  /** Rows set aside  a required field was missing (never dropped silently). */
   attention: { row: number; value: string; reason: string }[];
   /** Skipped because they already exist (in the org or earlier in the file). */
   duplicates: number;
@@ -43,7 +43,7 @@ export function matchEnum(raw: string, field: ImportField): string | null {
   return field.aliases?.[l] ?? null;
 }
 
-/** The last 9 digits of a phone — canonical across 0…, +27…, 27… for de-dupe. */
+/** The last 9 digits of a phone  canonical across 0…, +27…, 27… for de-dupe. */
 export function phoneKey(phone: string | null | undefined): string | null {
   const d = (phone ?? "").replace(/\D/g, "");
   return d.length >= 9 ? `p:${d.slice(-9)}` : null;

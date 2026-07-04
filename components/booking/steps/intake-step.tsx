@@ -30,7 +30,7 @@ export function IntakeStep({
       <StepHeader title={form.title} subtitle={form.intro} />
       {hasPair && (
         <p className="mb-4 rounded-control border border-border bg-surface-2/40 px-3 py-2 text-[12px] text-text-2">
-          Share a <strong className="font-medium text-text">phone number or an email</strong> — one is enough so we can confirm your session.
+          Share a <strong className="font-medium text-text">phone number or an email</strong>  one is enough so we can confirm your session.
         </p>
       )}
       <FormFields fields={fields} values={values} errors={errors} onChange={onChange} idPrefix="intake" />

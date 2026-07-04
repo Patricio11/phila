@@ -60,7 +60,7 @@ async function existingLkCreds(): Promise<Record<string, string>> {
   return (await getPlatformIntegration("livekit"))?.creds ?? {};
 }
 
-/** Blank secret keeps the stored one — resolved per provider (incl. legacy flat key). */
+/** Blank secret keeps the stored one  resolved per provider (incl. legacy flat key). */
 function keepSecret(provided: string, provider: "selfhosted" | "cloud", ex: Record<string, string>): string {
   if (provided) return provided;
   const perProvider = provider === "cloud" ? ex.cloud_apiSecret : ex.sh_apiSecret;

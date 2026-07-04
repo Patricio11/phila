@@ -12,7 +12,7 @@ const SKIP = "__skip";
 /**
  * The mapping surface (Stripe / HubSpot style): one card per file column showing
  * its header + a sample, and a "Maps to → [field]" dropdown you can re-arrange.
- * Presentational — the host owns the mapping + the built result, so there are no
+ * Presentational  the host owns the mapping + the built result, so there are no
  * cross-component effects. Reusable for any import (pass a different field list).
  */
 export function ColumnMapper({
@@ -97,7 +97,7 @@ export function ColumnMapper({
                   <tr key={i} className="border-b border-border/60 last:border-0">
                     {fields.map((f) => {
                       const v = (row as unknown as Record<string, string | null>)[f.key];
-                      return <td key={f.key} className={cn("whitespace-nowrap px-3 py-1.5", v ? "text-text" : "text-text-3")}>{v || "—"}</td>;
+                      return <td key={f.key} className={cn("whitespace-nowrap px-3 py-1.5", v ? "text-text" : "text-text-3")}>{v || ""}</td>;
                     })}
                   </tr>
                 ))}

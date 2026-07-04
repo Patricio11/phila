@@ -34,7 +34,7 @@ const PROVINCE_ALIASES: Record<string, string> = {
   nw: "North West", "north west": "North West", "north-west": "North West",
 };
 
-/** Clients: name is the only required field. No counsellor — bulk-imported clients
+/** Clients: name is the only required field. No counsellor  bulk-imported clients
  *  land unassigned (the org assigns from the caseload afterwards). */
 export const CLIENT_IMPORT_FIELDS: ImportField[] = [
   { key: "name", label: "Full name", required: true, kind: "text", match: /^(full[\s_-]*)?name$|client\s*name|^client$|surname|first[\s_-]*name/i, hint: "Required" },

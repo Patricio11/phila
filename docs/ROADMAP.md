@@ -882,38 +882,38 @@ roles side-by-side. ✅ **Met** (tsc/lint/build + 119 tests green throughout the
 
 ---
 
-## 📝 PHASE 18.6: FORMS — ORG FORMS LIBRARY ✅ (2026-07-01)
-*Goal: evolve the single, mock intake form into a real, DB-backed forms library — many forms per org (intake,
+## 📝 PHASE 18.6: FORMS  ORG FORMS LIBRARY ✅ (2026-07-01)
+*Goal: evolve the single, mock intake form into a real, DB-backed forms library  many forms per org (intake,
 feedback, screening, consent, custom), sent to one or many clients, with responses collected and reviewable.
 Intake becomes one form kind, still driving booking. Full write-up: `docs/completed/PHASE_18.6_COMPLETE.md`
 (plan: `docs/completed/PHASE_18.6_FORMS_PLAN.md`).*
 
-- [x] **Commit 1 — data model + seam + docs:** new `forms` + `form_assignments` tables (migration
+- [x] **Commit 1  data model + seam + docs:** new `forms` + `form_assignments` tables (migration
   `0025_secret_lyja.sql`), **RLS** org-scoping, `db/queries/forms.ts` (real reads + writes), the provider seam
   (interface + **mock** in-memory store + **db** wired in `lib/db-provider.ts`), domain types (`Form`, `FormField`,
   `FormAssignment`, `FormSnapshot`; `IntakeForm`/`IntakeField` kept as aliases so booking doesn't churn), fixtures
   (`orgForms`, `formAssignments`) **seeded into Neon** so `DATA_PROVIDER=db` serves identical data. Responses render
   from a **snapshot** frozen at send time (editing a form never rewrites past answers). `getIntakeForm` now resolves
   the active intake form from `forms`.
-- [x] **Commit 2 — library + builder + preview:** nav Intake→**Forms**; `/hub/forms` (card grid, archived section,
-  empty state); `/hub/forms/new` + `/hub/forms/[id]/edit` (`FormBuilder` — kind selector + starter templates);
-  `/hub/forms/[id]` (`FormDetail` — Questions/Preview tabs); shared `components/forms/form-fields.tsx` (one renderer
+- [x] **Commit 2  library + builder + preview:** nav Intake→**Forms**; `/hub/forms` (card grid, archived section,
+  empty state); `/hub/forms/new` + `/hub/forms/[id]/edit` (`FormBuilder`  kind selector + starter templates);
+  `/hub/forms/[id]` (`FormDetail`  Questions/Preview tabs); shared `components/forms/form-fields.tsx` (one renderer
   now powering booking intake + hub preview + client fill); `saveForm`/`duplicateForm`/`setFormArchived`;
   `/hub/intake` redirects to `/hub/forms`; removed superseded intake-tracker/editor/actions.
-- [x] **Commit 3 — send + responses:** `SendFormModal` (searchable client multi-select + select-all) → `sendForm`
+- [x] **Commit 3  send + responses:** `SendFormModal` (searchable client multi-select + select-all) → `sendForm`
   action → `sendFormToClients`; Responses tab (stats + list + View answers via the shared dialog) with a Send button;
   `form_sent` notification (templates + Zod enum + template-manager) + `lib/messaging/notify-form.ts` (dormant-by-default,
   builds the `/f/<token>` link). Re-seeded `form_sent` templates into Neon.
-- [x] **Commit 4 — client fill:** public `app/f/[token]` route (no login) → `FormFillView` (shared renderer +
+- [x] **Commit 4  client fill:** public `app/f/[token]` route (no login) → `FormFillView` (shared renderer +
   reused validation) → `submitForm` (server re-validates required fields against the snapshot); calm confirmation +
   invalid/already-submitted states; SADAG crisis line. `/me/forms` portal surface + `clientNav` entry.
-- [x] **Commit 5 — Form Designer + share link:** a **Design** tab (`FormDesign`) — form-only vs form + hero panel
+- [x] **Commit 5  Form Designer + share link:** a **Design** tab (`FormDesign`)  form-only vs form + hero panel
   (stacks on mobile), editable hero copy, background (gradient / solid colour / uploaded image counting against org
   storage, cover/contain fit + colour overlay & opacity) with a live preview; themed two-pane rendering on
   `/f/<token>` (`form-theme.tsx`, server-signed image URL); an **open share link** anyone can fill (`FormShare`),
   each share submission a fresh response row. Migration `0026` (theme + share on `forms`, nullable client +
   respondent on `form_assignments`); seeded a themed split feedback form + share link.
-- [x] **Commit 6 — polish + docs:** refreshed `docs/DEMO_LOGINS.md` (Forms + share link; fixed the stale
+- [x] **Commit 6  polish + docs:** refreshed `docs/DEMO_LOGINS.md` (Forms + share link; fixed the stale
   one-click-buttons note), marked 18.6 done. Deferred as a future nicety: mirroring a completed booking intake into a
   `form_assignments` row (booking + the intake board are unaffected either way).
 
@@ -923,8 +923,8 @@ six commits; migrations 0025–0026 + seed applied to Neon).
 
 ---
 
-## 👤 PHASE 18.7: CLIENT ONBOARDING — PHONE-OR-EMAIL, PORTAL INVITE, FULL EDIT ✅ (2026-07-02)
-*Goal: make the client front door match how SA practices actually work — a **phone number *or* an email** is enough
+## 👤 PHASE 18.7: CLIENT ONBOARDING  PHONE-OR-EMAIL, PORTAL INVITE, FULL EDIT ✅ (2026-07-02)
+*Goal: make the client front door match how SA practices actually work  a **phone number *or* an email** is enough
 (many clients have no email), invite a client to their portal over the right channel with a copy-paste fallback, and
 let the org fully edit a client's profile. One policy applied at every door a client is created. Full write-up:
 `docs/PHASE_18.7_CLIENT_ONBOARDING_PLAN.md`.*
@@ -937,12 +937,12 @@ let the org fully edit a client's profile. One policy applied at every door a cl
   full activation URL with a **Copy** button so the org can paste it into any browser. `inviteClientToPortal` returns
   the shareable path.
 - [x] **Full client edit:** `updateClient` (validated + audited, same phone-or-email rule) + a pre-filled
-  `EditClientButton` on the client detail page — name, phone, email, province, primary counsellor, safeguarding flag.
+  `EditClientButton` on the client detail page  name, phone, email, province, primary counsellor, safeguarding flag.
 - [x] **Booking consistency:** the public booking flow (which also creates a client record) now enforces the *same*
   phone-or-email rule at the server boundary; the shared intake validator gains an opt-in `contactPair` so a client
   with only a phone *or* only an email can book (each still format-checked), with a "one is enough" hint. Generic
   Forms fill (`/f/[token]`) is untouched.
-- [x] **DB-backed (no more mock):** the whole hub clients cluster now hits Postgres under `DATA_PROVIDER=db` —
+- [x] **DB-backed (no more mock):** the whole hub clients cluster now hits Postgres under `DATA_PROVIDER=db` 
   `db/queries/clients.ts` (create / update / reassign / soft-delete + restore, org-scoped) and real reads in
   `lib/db-provider.ts` (`listOrgClients`, `listRemovedClients` for the Removed tab, `getClientDossier` with
   consent-gated demographics, `findDuplicateClients`). Actions `revalidatePath` + `router.refresh()` so the caseload
@@ -951,7 +951,7 @@ let the org fully edit a client's profile. One policy applied at every door a cl
 
 **Done when:** a client can be created, invited, and edited with only a phone number **or** only an email, over every
 front door (hub + booking), persisted to Postgres, with a shareable link when messaging can't reach them. ✅ **Met**
-(tsc/lint/build + 119 tests green; verified against Neon). *Real invite tokens + delivery stay Phase 12 — the invite
+(tsc/lint/build + 119 tests green; verified against Neon). *Real invite tokens + delivery stay Phase 12  the invite
 is recorded to `audit_log` and the copy link points at the client activation page today.*
 
 ---

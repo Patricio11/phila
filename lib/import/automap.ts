@@ -3,7 +3,7 @@ import type { ParsedFile } from "@/lib/import/parse";
 
 /**
  * The "smart" part: map each field to a file column. First by header pattern, then
- * by DATA SHAPE — a column that's mostly emails maps to email even if its header is
+ * by DATA SHAPE  a column that's mostly emails maps to email even if its header is
  * "Contact". One field ↔ one column (a match steals the column from any other field).
  */
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -31,7 +31,7 @@ function shapeScore(cells: string[], field: ImportField): number {
 
 /**
  * Score a (field, column) pairing. We weight DATA SHAPE more than the header, because
- * headers lie ("Contact" over a column of emails) but the data doesn't — so a column
+ * headers lie ("Contact" over a column of emails) but the data doesn't  so a column
  * that's clearly emails wins the email field even if a phone-ish header sits above it.
  * A header-only signal (score 1) still suffices when the column has no usable samples.
  */
@@ -46,7 +46,7 @@ export function autoMap(fields: ImportField[], parsed: ParsedFile): Record<strin
   for (const f of fields) mapping[f.key] = null;
 
   // Score every field × column pairing, then assign greedily from the strongest
-  // signal down — one field ↔ one column. A confident data-shape match therefore
+  // signal down  one field ↔ one column. A confident data-shape match therefore
   // steals a column back from a weaker header match on a different field.
   const cols = parsed.headers.map((_, i) => columnCells(parsed, i));
   const candidates: { field: string; col: number; score: number }[] = [];

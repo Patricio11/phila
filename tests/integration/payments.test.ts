@@ -21,7 +21,7 @@ const REF = "ref_test_p15";
 afterAll(async () => {
   await sql`DELETE FROM credit_ledger WHERE idempotency_key = ${`purchase_${REF}`}`;
   await sql`DELETE FROM payments WHERE provider_ref = ${REF}`;
-  await sql`UPDATE credit_balances SET balance = 100 WHERE org_id = ${ORG} AND channel = 'email'`;
+  await sql`UPDATE credit_balances SET balance = 1000 WHERE org_id = ${ORG} AND channel = 'email'`;
 });
 
 describe("credit purchase", () => {
@@ -29,7 +29,7 @@ describe("credit purchase", () => {
   it("settles once and is idempotent on the payment ref", async () => {
     await sql`DELETE FROM credit_ledger WHERE idempotency_key = ${`purchase_${REF}`}`;
     await sql`DELETE FROM payments WHERE provider_ref = ${REF}`;
-    await sql`UPDATE credit_balances SET balance = 100 WHERE org_id = ${ORG} AND channel = 'email'`;
+    await sql`UPDATE credit_balances SET balance = 1000 WHERE org_id = ${ORG} AND channel = 'email'`;
 
     const pack = packById("email_1000")!;
     await createPayment(ORG, pack, "paystack", REF);

@@ -20,14 +20,14 @@ const recipient = { phone: "+27820000123", email: "lerato@example.co.za", prefer
 beforeEach(async () => {
   await sql`DELETE FROM message_log WHERE org_id=${ORG} AND to_masked='+27***23'`;
   await sql`DELETE FROM credit_ledger WHERE org_id=${ORG} AND reason='send'`;
-  await sql`UPDATE credit_balances SET balance=100 WHERE org_id=${ORG} AND channel='sms'`;
+  await sql`UPDATE credit_balances SET balance=500 WHERE org_id=${ORG} AND channel='sms'`;
   await sql`DELETE FROM message_opt_outs WHERE org_id=${ORG}`;
 });
 afterAll(async () => {
   await sql`DELETE FROM message_log WHERE org_id=${ORG} AND to_masked='+27***23'`;
   await sql`DELETE FROM credit_ledger WHERE org_id=${ORG} AND reason='send'`;
   await sql`DELETE FROM message_opt_outs WHERE org_id=${ORG}`;
-  await sql`UPDATE credit_balances SET balance=100 WHERE org_id=${ORG} AND channel='sms'`;
+  await sql`UPDATE credit_balances SET balance=500 WHERE org_id=${ORG} AND channel='sms'`;
 });
 
 describe("deliver pipeline", () => {

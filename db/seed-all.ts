@@ -303,9 +303,13 @@ async function main() {
     orgId: "org_masizakhe", whatsappEnabled: false, smsEnabled: true, emailEnabled: true,
     emailReplyTo: "reception@masizakhe.org.za", emailFromName: "Masizakhe Counselling", quietStart: "21:00", quietEnd: "07:00", updatedAt: msgNow,
   }).onConflictDoNothing();
+  // Notification credits — a healthy starter balance so email confirmations flow
+  // out of the box (500 SMS + 1000 email). Ledgered; idempotent per grant key.
+  const STARTER_CREDITS = { sms: 500, email: 1000 } as const;
   for (const channel of ["sms", "email"] as const) {
-    await db.insert(schema.creditBalances).values({ orgId: "org_masizakhe", channel, balance: 100 }).onConflictDoNothing();
-    await db.insert(schema.creditLedger).values({ orgId: "org_masizakhe", channel, delta: 100, reason: "grant", ref: "seed", idempotencyKey: `seed_grant_${channel}_org_masizakhe`, balanceAfter: 100, createdAt: msgNow }).onConflictDoNothing();
+    const amount = STARTER_CREDITS[channel];
+    await db.insert(schema.creditBalances).values({ orgId: "org_masizakhe", channel, balance: amount }).onConflictDoNothing();
+    await db.insert(schema.creditLedger).values({ orgId: "org_masizakhe", channel, delta: amount, reason: "grant", ref: "seed", idempotencyKey: `seed_grant_${channel}_org_masizakhe`, balanceAfter: amount, createdAt: msgNow }).onConflictDoNothing();
   }
 
   // Phila subscription (Phase 15A)  Masizakhe is on the Community plan, billed monthly.

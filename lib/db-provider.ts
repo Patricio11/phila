@@ -264,18 +264,18 @@ export const dbProvider: DataProvider = {
 
   // Analytics & M&E reporting (Phase 16)  real, computed from the clinical tables.
   // (listFunders + listFunderGrants are already DB-backed below.)
-  getReporting: (orgId, now, filters) => getReportingDb(orgId, now, filters),
-  getHubInsights: (orgId, now, filters) => getHubInsightsDb(orgId, now, filters),
-  listGrants: (orgId) => listGrantsDb(orgId),
+  getReporting: (orgId, now, filters) => runForOrg(orgId, () => getReportingDb(orgId, now, filters)),
+  getHubInsights: (orgId, now, filters) => runForOrg(orgId, () => getHubInsightsDb(orgId, now, filters)),
+  listGrants: (orgId) => runForOrg(orgId, () => listGrantsDb(orgId)),
   getGrantView: (grantId, now) => getGrantViewDb(grantId, now),
   getGrantAdmin: (orgId, grantId) => getGrantAdminDb(orgId, grantId),
   getFunderGrantView: (funderUserId, grantId, now) => getFunderGrantViewDb(funderUserId, grantId, now),
 
-  // Documents (Phase 18)  the org's document workspace, real DB reads.
-  listOrgDocuments: (orgId) => listOrgDocumentsDb(orgId),
-  listOrgFolders: (orgId) => listOrgFoldersDb(orgId),
-  listDocumentRequests: (orgId) => listDocumentRequestsDb(orgId),
-  getStorageUsage: (orgId) => getStorageUsageDb(orgId),
+  // Documents (Phase 18)  the org's document workspace, RLS-scoped DB reads.
+  listOrgDocuments: (orgId) => runForOrg(orgId, () => listOrgDocumentsDb(orgId)),
+  listOrgFolders: (orgId) => runForOrg(orgId, () => listOrgFoldersDb(orgId)),
+  listDocumentRequests: (orgId) => runForOrg(orgId, () => listDocumentRequestsDb(orgId)),
+  getStorageUsage: (orgId) => runForOrg(orgId, () => getStorageUsageDb(orgId)),
   listClientVisibleDocuments: (clientId) => listClientVisibleDocumentsDb(clientId),
   listClientDocumentRequests: (clientId) => listClientRequestsDb(clientId),
   listCounsellorDocuments: (counsellorId) => listCounsellorDocumentsDb(counsellorId),
@@ -283,9 +283,9 @@ export const dbProvider: DataProvider = {
 
   // Forms library (Phase 18.6)  real DB reads + writes. Intake for booking now
   // resolves the active intake form from `forms` (falls back to mock if unseeded).
-  listForms: (orgId) => listFormsDb(orgId),
-  getForm: (orgId, formId) => getFormDb(orgId, formId),
-  getFormResponses: (orgId, formId) => getFormResponsesDb(orgId, formId),
+  listForms: (orgId) => runForOrg(orgId, () => listFormsDb(orgId)),
+  getForm: (orgId, formId) => runForOrg(orgId, () => getFormDb(orgId, formId)),
+  getFormResponses: (orgId, formId) => runForOrg(orgId, () => getFormResponsesDb(orgId, formId)),
   createForm: (orgId, draft, createdBy, now) => createFormDb(orgId, draft, createdBy, now),
   updateForm: (orgId, formId, draft, now) => updateFormDb(orgId, formId, draft, now),
   duplicateForm: (orgId, formId, now) => duplicateFormDb(orgId, formId, now),
@@ -324,22 +324,22 @@ export const dbProvider: DataProvider = {
     const [r] = await getDb().select().from(clientsTable).where(eq(clientsTable.id, clientId)).limit(1);
     return r && !r.deletedAt ? toClient(r) : null;
   },
-  listServices: async (orgId: string): Promise<Service[]> => {
-    const rows = await getDb().select().from(servicesTable).where(eq(servicesTable.orgId, orgId));
+  listServices: (orgId: string): Promise<Service[]> => runForOrg(orgId, async () => {
+    const rows = await activeDb().select().from(servicesTable).where(eq(servicesTable.orgId, orgId));
     return rows.map((s) => ({ id: s.id, orgId: s.orgId, name: s.name, durationMin: s.durationMin, priceCents: s.priceCents }));
-  },
-  listSites: async (orgId: string): Promise<Site[]> => {
-    const rows = await getDb().select().from(sitesTable).where(eq(sitesTable.orgId, orgId));
+  }),
+  listSites: (orgId: string): Promise<Site[]> => runForOrg(orgId, async () => {
+    const rows = await activeDb().select().from(sitesTable).where(eq(sitesTable.orgId, orgId));
     return rows.map((s) => ({ id: s.id, orgId: s.orgId, name: s.name, province: s.province as Province }));
-  },
-  listRooms: async (orgId: string): Promise<Room[]> => {
-    const rows = await getDb().select().from(roomsTable).where(eq(roomsTable.orgId, orgId));
+  }),
+  listRooms: (orgId: string): Promise<Room[]> => runForOrg(orgId, async () => {
+    const rows = await activeDb().select().from(roomsTable).where(eq(roomsTable.orgId, orgId));
     return rows.map(toRoom);
-  },
+  }),
 
   // ── Rooms cluster  utilisation rolled up from REAL appointments ───────
-  getRoomsOverview: async (orgId: string, now: string): Promise<RoomView[]> => {
-    const db = getDb();
+  getRoomsOverview: (orgId: string, now: string): Promise<RoomView[]> => runForOrg(orgId, async () => {
+    const db = activeDb();
     const [[orgRow], roomRows, siteRows, counsellorRows, views, assignmentRows] = await Promise.all([
       db.select().from(orgsTable).where(eq(orgsTable.id, orgId)).limit(1),
       db.select().from(roomsTable).where(eq(roomsTable.orgId, orgId)),
@@ -362,7 +362,7 @@ export const dbProvider: DataProvider = {
         bookings: roomAppts.filter((a) => weekDates.some((d) => a.startsAt.startsWith(d))).sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
       };
     });
-  },
+  }),
 
   getRoomDetail: async (roomId: string, now: string): Promise<RoomDetail | null> => {
     const db = getDb();
@@ -615,10 +615,10 @@ export const dbProvider: DataProvider = {
   },
 
   // ── Funders & grants  funder list + funder-scoped grants ─────────────
-  listFunders: async (orgId: string): Promise<Funder[]> => {
-    const rows = await getDb().select().from(fundersTable).where(eq(fundersTable.orgId, orgId));
+  listFunders: (orgId: string): Promise<Funder[]> => runForOrg(orgId, async () => {
+    const rows = await activeDb().select().from(fundersTable).where(eq(fundersTable.orgId, orgId));
     return rows.map((f) => ({ id: f.id, orgId: f.orgId, name: f.name, type: f.type as Funder["type"], contactName: f.contactName, contactEmail: f.contactEmail }));
-  },
+  }),
   listFunderGrants: async (funderUserId: string): Promise<{ grant: Grant; funderName: string; orgName: string }[]> => {
     const db = getDb();
     const contacts = await db.select().from(funderContactsTable).where(eq(funderContactsTable.userId, funderUserId));

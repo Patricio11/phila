@@ -2,6 +2,7 @@ import "server-only";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { getDb } from "@/db/client";
+import { activeDb } from "@/lib/db/scoped";
 import {
   clients,
   documents,
@@ -56,24 +57,24 @@ function toRequest(r: typeof documentRequests.$inferSelect): DocumentRequest {
 /* ── Reads ─────────────────────────────────────────────────────────────── */
 
 export async function listOrgDocumentsDb(orgId: string): Promise<Document[]> {
-  const rows = await getDb().select().from(documents)
+  const rows = await activeDb().select().from(documents)
     .where(and(eq(documents.orgId, orgId), isNull(documents.deletedAt)));
   return rows.map(toDocument);
 }
 
 export async function listOrgFoldersDb(orgId: string): Promise<DocumentFolder[]> {
-  const rows = await getDb().select().from(documentFolders)
+  const rows = await activeDb().select().from(documentFolders)
     .where(and(eq(documentFolders.orgId, orgId), isNull(documentFolders.deletedAt)));
   return rows.map(toFolder);
 }
 
 export async function listDocumentRequestsDb(orgId: string): Promise<DocumentRequest[]> {
-  const rows = await getDb().select().from(documentRequests).where(eq(documentRequests.orgId, orgId));
+  const rows = await activeDb().select().from(documentRequests).where(eq(documentRequests.orgId, orgId));
   return rows.map(toRequest);
 }
 
 export async function getStorageUsageDb(orgId: string): Promise<StorageUsage> {
-  const [row] = await getDb().select().from(orgStorageUsage)
+  const [row] = await activeDb().select().from(orgStorageUsage)
     .where(eq(orgStorageUsage.orgId, orgId)).limit(1);
   return { orgId, bytesUsed: row?.bytesUsed ?? 0, bytesLimit: storageLimitBytes() };
 }

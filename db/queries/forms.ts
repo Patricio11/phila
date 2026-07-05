@@ -2,6 +2,7 @@ import "server-only";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { getDb } from "@/db/client";
+import { activeDb } from "@/lib/db/scoped";
 import { clients, counsellors, forms, formAssignments, orgs } from "@/db/schema";
 import type { Form, FormField, FormSnapshot, FormTheme } from "@/lib/domain/types";
 import type {
@@ -39,7 +40,7 @@ const token = () => `f_${randomUUID().replace(/-/g, "")}`;
 /* ── Reads ─────────────────────────────────────────────────────────────── */
 
 export async function listFormsDb(orgId: string): Promise<FormSummary[]> {
-  const db = getDb();
+  const db = activeDb();
   const rows = await db.select().from(forms).where(eq(forms.orgId, orgId));
   const ids = rows.map((r) => r.id);
   const sends = ids.length
@@ -59,7 +60,7 @@ export async function listFormsDb(orgId: string): Promise<FormSummary[]> {
 }
 
 export async function getFormDb(orgId: string, formId: string): Promise<Form | null> {
-  const [r] = await getDb().select().from(forms).where(and(eq(forms.id, formId), eq(forms.orgId, orgId))).limit(1);
+  const [r] = await activeDb().select().from(forms).where(and(eq(forms.id, formId), eq(forms.orgId, orgId))).limit(1);
   return r ? toForm(r) : null;
 }
 
@@ -72,7 +73,7 @@ export async function getActiveIntakeFormDb(orgId: string): Promise<Form | null>
 }
 
 export async function getFormResponsesDb(orgId: string, formId: string): Promise<FormResponses | null> {
-  const db = getDb();
+  const db = activeDb();
   const form = await getFormDb(orgId, formId);
   if (!form) return null;
   const [assigns, orgClients, orgCounsellors] = await Promise.all([

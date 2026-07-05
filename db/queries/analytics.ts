@@ -1,6 +1,6 @@
 import "server-only";
 import { and, eq, isNull } from "drizzle-orm";
-import { getDb } from "@/db/client";
+import { activeDb } from "@/lib/db/scoped";
 import { clients, demographics, consents, outcomeMeasures, appointments, invoices } from "@/db/schema";
 import type { Demographics } from "@/lib/domain/types";
 import type { ReportingResult, ReportingFilters, HubInsights, InsightsFilters } from "@/lib/data-provider";
@@ -9,7 +9,7 @@ import { computeReporting, computeInsights, type OutcomeRow, type ApptRow, type 
 /** Phase 16  real analytics from the clinical tables (no mock fallback). */
 
 export async function loadCohort(orgId: string): Promise<{ clientRows: ClientRow[]; consentedIds: Set<string>; demos: Demographics[]; outcomes: OutcomeRow[] }> {
-  const db = getDb();
+  const db = activeDb();
   const [clientRows, demoRows, consentRows] = await Promise.all([
     db.select({ id: clients.id, createdAt: clients.createdAt }).from(clients).where(and(eq(clients.orgId, orgId), isNull(clients.deletedAt))),
     db.select().from(demographics),
@@ -30,7 +30,7 @@ export async function getReportingDb(orgId: string, now: string, filters: Report
 
 export async function getHubInsightsDb(orgId: string, now: string, filters: InsightsFilters): Promise<HubInsights & InsightsExtras> {
   const c = await loadCohort(orgId);
-  const db = getDb();
+  const db = activeDb();
   const [apptRows, invRows] = await Promise.all([
     db.select({ clientId: appointments.clientId, state: appointments.state, startsAt: appointments.startsAt }).from(appointments).where(eq(appointments.orgId, orgId)),
     db.select({ status: invoices.status, issuedAt: invoices.issuedAt, amountCents: invoices.amountCents }).from(invoices).where(eq(invoices.orgId, orgId)),

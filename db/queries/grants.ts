@@ -1,6 +1,7 @@
 import "server-only";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db/client";
+import { activeDb } from "@/lib/db/scoped";
 import { funders, grants, grantIndicators, grantAllocations, grantNarratives, funderContacts, orgs, appointments } from "@/db/schema";
 import { user } from "@/db/auth-schema";
 import type { Funder, Grant, GrantIndicator, GrantNarrative } from "@/lib/domain/types";
@@ -15,11 +16,11 @@ const toGrant = (g: typeof grants.$inferSelect): Grant => ({ id: g.id, funderId:
 const toIndicator = (i: typeof grantIndicators.$inferSelect): GrantIndicator => ({ id: i.id, grantId: i.grantId, name: i.name, type: i.type as GrantIndicator["type"], metric: i.metric as GrantIndicator["metric"], target: i.target, unit: i.unit, rule: i.rule });
 
 export async function listFundersDb(orgId: string): Promise<Funder[]> {
-  return (await getDb().select().from(funders).where(eq(funders.orgId, orgId))).map(toFunder);
+  return (await activeDb().select().from(funders).where(eq(funders.orgId, orgId))).map(toFunder);
 }
 
 export async function listGrantsDb(orgId: string): Promise<GrantSummary[]> {
-  const db = getDb();
+  const db = activeDb();
   const [gRows, fRows, indRows, allocRows] = await Promise.all([
     db.select().from(grants).where(eq(grants.orgId, orgId)),
     db.select().from(funders).where(eq(funders.orgId, orgId)),

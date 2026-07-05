@@ -54,14 +54,17 @@ export type EditScope = "this" | "following";
  * Reschedule. `scope: "this"` moves only this session; `"following"` shifts this
  * session AND every later one in its series by the same delta (the deferrable
  * exclusion constraints let the whole shift land atomically). Returns the count moved.
+ *
+ * Every read + write is scoped by `orgId` (the tenant boundary), so a caller can
+ * only ever move their own org's appointments — a cross-org id resolves to 0.
  */
-export async function rescheduleAppointment(appointmentId: string, newStart: string, scope: EditScope = "this"): Promise<number> {
+export async function rescheduleAppointment(orgId: string, appointmentId: string, newStart: string, scope: EditScope = "this"): Promise<number> {
   const db = getDb();
-  const [appt] = await db.select().from(appointments).where(eq(appointments.id, appointmentId)).limit(1);
+  const [appt] = await db.select().from(appointments).where(and(eq(appointments.id, appointmentId), eq(appointments.orgId, orgId))).limit(1);
   if (!appt) return 0;
 
   if (scope === "this" || !appt.seriesId) {
-    await db.update(appointments).set({ startsAt: new Date(newStart) }).where(eq(appointments.id, appointmentId));
+    await db.update(appointments).set({ startsAt: new Date(newStart) }).where(and(eq(appointments.id, appointmentId), eq(appointments.orgId, orgId)));
     return 1;
   }
 
@@ -72,30 +75,36 @@ export async function rescheduleAppointment(appointmentId: string, newStart: str
   const res = await db
     .update(appointments)
     .set({ startsAt: sql`${appointments.startsAt} + make_interval(secs => ${deltaSec})` })
-    .where(and(eq(appointments.seriesId, appt.seriesId), gte(appointments.startsAt, appt.startsAt), ne(appointments.state, "cancelled")))
+    .where(and(eq(appointments.orgId, orgId), eq(appointments.seriesId, appt.seriesId), gte(appointments.startsAt, appt.startsAt), ne(appointments.state, "cancelled")))
     .returning({ id: appointments.id });
   return res.length;
 }
 
-/** Cancel, with a reason. `scope: "following"` cancels this + all later series members. */
-export async function cancelAppointment(appointmentId: string, reason: string, scope: EditScope = "this"): Promise<number> {
+/** Cancel, with a reason. `scope: "following"` cancels this + all later series members. Org-scoped. */
+export async function cancelAppointment(orgId: string, appointmentId: string, reason: string, scope: EditScope = "this"): Promise<number> {
   const db = getDb();
-  const [appt] = await db.select().from(appointments).where(eq(appointments.id, appointmentId)).limit(1);
+  const [appt] = await db.select().from(appointments).where(and(eq(appointments.id, appointmentId), eq(appointments.orgId, orgId))).limit(1);
   if (!appt) return 0;
   const set = { state: "cancelled", cancelReason: reason || null };
 
   if (scope === "this" || !appt.seriesId) {
-    await db.update(appointments).set(set).where(eq(appointments.id, appointmentId));
+    await db.update(appointments).set(set).where(and(eq(appointments.id, appointmentId), eq(appointments.orgId, orgId)));
     return 1;
   }
   const res = await db
     .update(appointments)
     .set(set)
-    .where(and(eq(appointments.seriesId, appt.seriesId), gte(appointments.startsAt, appt.startsAt), ne(appointments.state, "cancelled")))
+    .where(and(eq(appointments.orgId, orgId), eq(appointments.seriesId, appt.seriesId), gte(appointments.startsAt, appt.startsAt), ne(appointments.state, "cancelled")))
     .returning({ id: appointments.id });
   return res.length;
 }
 
-export async function setAppointmentState(appointmentId: string, state: string): Promise<void> {
-  await getDb().update(appointments).set({ state }).where(eq(appointments.id, appointmentId));
+/** Flip an appointment's lifecycle state, org-scoped. Returns the number of rows changed (0 = not found / wrong org). */
+export async function setAppointmentState(orgId: string, appointmentId: string, state: string): Promise<number> {
+  const res = await getDb()
+    .update(appointments)
+    .set({ state })
+    .where(and(eq(appointments.id, appointmentId), eq(appointments.orgId, orgId)))
+    .returning({ id: appointments.id });
+  return res.length;
 }

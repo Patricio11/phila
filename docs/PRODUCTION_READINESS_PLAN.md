@@ -38,19 +38,22 @@
 
 **Status:** not started. *Nothing goes near real client data until this closes.*
 
-### 0.1 Guard + org-scope the unauthenticated action modules
+### 0.1 Guard + org-scope the unauthenticated action modules ✅ (2026-07-05)
 `app/app/appointments/actions.ts` and `app/app/sessions/[id]/actions.ts` are `"use server"` endpoints
 with **no `require*` guard** — any caller can mutate any org's appointments and burn its AI budget.
 
-- [ ] Add `const { principal, membership } = await requireOrg([...])` (or a new `requireCounsellor`) to
-      the top of **every** exported action in both files.
-- [ ] `rescheduleAppointment` / `cancelAppointment` / `markProgress` → pass `membership.orgId` into the query.
-- [ ] `db/queries/appointments.ts`: add `and(eq(appointments.orgId, orgId))` to `rescheduleAppointment`,
-      `cancelAppointment`, `setAppointmentState` (currently filter by `id` only).
-- [ ] `generateAiDraft` / `generateCarePlanDraft`: verify the appointment belongs to the caller's org
-      **before** reading the client name or calling the AI / `recordAiUsage`.
-- [ ] Derive the audit `teamRole` from the resolved membership — stop hard-coding `"counsellor"`.
-- [ ] Regression test: a counsellor in org B gets 403/404 on an org-A appointment id.
+- [x] Add `const { principal, membership } = await requireOrg([...])` to the top of **every** exported
+      action in both files (schedulers = counsellor/org_admin/front_desk; clinicians = counsellor/org_admin).
+- [x] `rescheduleAppointment` / `cancelAppointment` / `markProgress` → pass `membership.orgId` into the query;
+      a 0-row result now returns an honest "couldn't be found" instead of a false success.
+- [x] `db/queries/appointments.ts`: `orgId` is now a required first arg on `rescheduleAppointment`,
+      `cancelAppointment`, `setAppointmentState`, and every read/write is `and(eq(id), eq(orgId))`-scoped.
+- [x] `generateAiDraft` / `generateCarePlanDraft`: `aiContext(orgId, id)` scopes the lookup by org **before**
+      reading the client name or calling the AI / `recordAiUsage`.
+- [x] Audit `teamRole` + `orgId` now derive from the resolved membership — no more hard-coded `"counsellor"`/`null`.
+- [x] Regression test (`tests/integration/series.test.ts`): a different org's id can't reschedule, cancel, or
+      restate an appointment (0 rows, row untouched). Full suite 134 green; legitimate counsellor flows
+      (lifecycle/appointments e2e) still persist.
 
 ### 0.2 Make RLS actually enforce at runtime (Phase 19 "runtime cutover")
 `db/rls.sql` is correct but bypassed: `db/client.ts` connects as `neondb_owner` (`BYPASSRLS`), the org

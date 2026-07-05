@@ -59,12 +59,26 @@ with **no `require*` guard** — any caller can mutate any org's appointments an
 `db/rls.sql` is correct but bypassed: `db/client.ts` connects as `neondb_owner` (`BYPASSRLS`), the org
 GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't survive.
 
-- [ ] Switch the request-path connection to the non-owner `phila_app` role (`DATABASE_URL_APP`).
-- [ ] Move to a session-capable driver (neon serverless WebSocket pool or `postgres`/`pg`).
-- [ ] Wrap each request's queries in a transaction that runs
-      `set_config('app.org_id', <caller org>, true)` and `app.is_super` where relevant, **before** any query.
-- [ ] Keep the owner connection for migrations/seed/webhooks that legitimately cross orgs.
-- [ ] CI test: run as `phila_app`, assert cross-org reads return **0 rows** for every tenant table.
+**W0.2a — scoped primitive + proof + plumbing ✅ (2026-07-05):**
+- [x] Session-capable driver: `lib/db/scoped.ts` uses the neon-serverless `Pool` (WebSocket, wired to the
+      Node 22 global `WebSocket`) as the non-owner `phila_app` role via `DATABASE_URL_APP`.
+- [x] Per-**operation** scoping (not one long per-request tx): `runScoped(fn)` opens a short transaction, sets
+      `app.org_id` / `app.is_super` locally from an `AsyncLocalStorage` context, then runs `fn`. Fails **closed**
+      (throws) if no context was entered — never runs unscoped. (Avoids holding a connection across LLM/AI awaits.)
+- [x] Guards enter the context: `requireOrg` / `requireHub` → `{orgId, isSuper:false}`; `requireSuperAdmin` →
+      `{orgId:null, isSuper:true}`. Owner connection (`db/client.ts`) stays for bootstrapping (session/membership
+      resolution), webhooks, cron, and seed.
+- [x] Leak proof: `tests/integration/rls-scoped.test.ts` proves `runScoped` sees only its own org, denies a
+      bogus org (0 rows), lets super-admin cross orgs, and fails closed with no context. (Complements the raw-SQL
+      policy proof in `rls.test.ts`.) Empirically confirmed RLS is already `enable`+`force` on the live DB and
+      `phila_app` has no BYPASSRLS.
+
+**W0.2b — migrate the DAL onto `runScoped`, cluster by cluster (each independently tested):**
+- [ ] Clients read cluster (`listOrgClients`, dossier, removed, duplicates) → `runScoped`, e2e + screenshot.
+- [ ] Remaining hub read clusters (services, rooms, forms, documents, invoicing, insights, funders/grants).
+- [ ] Write paths (each already org-scoped in the app layer; add `runScoped` for defence in depth).
+- [ ] Client-portal + funder read paths (enter context in `requireClient` / `requireFunder` with their org).
+- [ ] Confirm public/booking/webhook/cron paths stay on the owner connection (no context → correct by design).
 - [ ] Add RLS to the 3 uncovered tables (`platform_integrations`, `ai_providers`, `user_presence`) —
       lock the first two to super-admin/owner, isolate `user_presence` by org.
 

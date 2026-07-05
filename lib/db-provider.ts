@@ -219,7 +219,7 @@ export const dbProvider: DataProvider = {
   },
 
   // Phila subscription (Phase 15A)  read from the subscriptions table.
-  getOrgSubscription: async (orgId: string, now: string): Promise<OrgSubscription | null> => {
+  getOrgSubscription: (orgId: string, now: string): Promise<OrgSubscription | null> => runForOrg(orgId, async () => {
     const sub = await getSubscriptionRow(orgId);
     if (!sub) return null;
     const plan = planById(sub.planId);
@@ -227,7 +227,7 @@ export const dbProvider: DataProvider = {
     const d = new Date(now);
     const nextBillingAt = sub.currentPeriodEnd ?? new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)).toISOString();
     return { plan, status: sub.status, nextBillingAt, billedVia: "Phila platform billing" };
-  },
+  }),
 
   listPlans: async (): Promise<PlanWithUsage[]> => {
     const subs = await listSubscriptions();
@@ -585,10 +585,10 @@ export const dbProvider: DataProvider = {
     const rows = await getDb().select().from(invoicesTable).where(eq(invoicesTable.clientId, clientId)).orderBy(desc(invoicesTable.issuedAt));
     return rows.map(toInvoice);
   },
-  listOrgInvoices: async (orgId: string): Promise<Invoice[]> => {
-    const rows = await getDb().select().from(invoicesTable).where(eq(invoicesTable.orgId, orgId)).orderBy(desc(invoicesTable.issuedAt));
+  listOrgInvoices: (orgId: string): Promise<Invoice[]> => runForOrg(orgId, async () => {
+    const rows = await activeDb().select().from(invoicesTable).where(eq(invoicesTable.orgId, orgId)).orderBy(desc(invoicesTable.issuedAt));
     return rows.map(toInvoice);
-  },
+  }),
 
   // ── Composite dashboard  Hub overview, aggregated from DB rows ───────
   getHubOverview: async (orgId: string, now: string): Promise<HubOverview | null> => {

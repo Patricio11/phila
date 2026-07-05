@@ -1,6 +1,7 @@
 import "server-only";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/client";
+import { activeDb } from "@/lib/db/scoped";
 import { subscriptions, payments } from "@/db/schema";
 
 /** An org's Phila plan subscription (Phase 15A). */
@@ -12,7 +13,9 @@ export interface SubRow {
 }
 
 export async function getSubscriptionRow(orgId: string): Promise<SubRow | null> {
-  const [r] = await getDb().select().from(subscriptions).where(eq(subscriptions.orgId, orgId)).limit(1);
+  // activeDb(): the RLS-scoped tx when called inside runForOrg (hub billing/settings),
+  // else the owner connection — so this read is safe from either kind of caller.
+  const [r] = await activeDb().select().from(subscriptions).where(eq(subscriptions.orgId, orgId)).limit(1);
   if (!r) return null;
   return { orgId: r.orgId, planId: r.planId, status: r.status, currentPeriodEnd: r.currentPeriodEnd?.toISOString() ?? null };
 }

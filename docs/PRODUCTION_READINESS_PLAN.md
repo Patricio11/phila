@@ -77,7 +77,10 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
 - [x] Clients read cluster: `listOrgClients` / `listRemovedClients` / `findDuplicateClients` → `runForOrg`,
       verified live (hub clients page renders all 39 through `phila_app`; server log clean; 6 e2e paths green + screenshot).
       `getClientDossier` deferred (no `orgId` param to scope by — migrates once its org is threaded).
-- [ ] Remaining hub read clusters (services, rooms, forms, documents, invoicing, insights, funders/grants).
+- [x] Hub billing reads: `listOrgInvoices` + `getOrgSubscription` → `runForOrg`; `getSubscriptionRow`
+      (`db/queries/subscriptions.ts`) switched to `activeDb()` — proves the `db/queries/*.ts` → `activeDb()`
+      pattern. Verified live (billing plan + invoicing pages render through `phila_app`; server log clean; 3 e2e green + screenshot).
+- [ ] Remaining hub read clusters (services, rooms, forms, documents, insights, funders/grants, hub overview).
 - [ ] Write paths (each already org-scoped in the app layer; add `runScoped` for defence in depth).
 - [ ] Client-portal + funder read paths (enter context in `requireClient` / `requireFunder` with their org).
 - [ ] Confirm public/booking/webhook/cron paths stay on the owner connection (no context → correct by design).

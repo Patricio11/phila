@@ -10,12 +10,21 @@ export const dynamic = "force-dynamic";
 /**
  * Reminder sweep (Phase 12.4). Sends a T-24h and a T-1h reminder for upcoming
  * scheduled sessions, each exactly once (the reminded_24h/reminded_1h flags make
- * it idempotent regardless of how often the cron runs). Protect with CRON_SECRET
- * when set; otherwise open in dev so it's testable.
+ * it idempotent regardless of how often the cron runs).
+ *
+ * Auth **fails closed in production**: a `CRON_SECRET` is required and the bearer
+ * must match, or the endpoint refuses. It only stays open (for local testing) when
+ * the secret is unset AND we're not in production — otherwise a missing env var
+ * would leave a public endpoint that fans out real, paid reminders on demand.
  */
 async function sweep(req: Request) {
   const secret = process.env.CRON_SECRET;
-  if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json({ error: "cron not configured" }, { status: 503 });
+    }
+    // dev only: open so the sweep is testable without a secret.
+  } else if (req.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

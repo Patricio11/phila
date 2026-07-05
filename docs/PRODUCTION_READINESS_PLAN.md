@@ -68,10 +68,9 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
 - [ ] Add RLS to the 3 uncovered tables (`platform_integrations`, `ai_providers`, `user_presence`) —
       lock the first two to super-admin/owner, isolate `user_presence` by org.
 
-### 0.3 Fix the fail-open cron
-- [ ] `app/api/cron/reminders/route.ts`: fail **closed** in production when `CRON_SECRET` is unset
-      (currently `if (secret && …)` → public reminder fan-out). Only allow the open branch when
-      `NODE_ENV !== "production"`.
+### 0.3 Fix the fail-open cron ✅ (2026-07-05)
+- [x] `app/api/cron/reminders/route.ts` now fails **closed** in production: an unset `CRON_SECRET` returns
+      503 (`NODE_ENV === "production"`); a set secret requires the bearer; open only in dev with no secret.
 
 ---
 

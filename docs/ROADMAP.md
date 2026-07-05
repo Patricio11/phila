@@ -755,6 +755,35 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 
 ---
 
+## 🔔 PHASE 17.2: SCHEDULING & NOTIFICATIONS POLISH ✅ (2026-07-06)
+*Goal: the Hub appointment flow feels complete  the online link is visible, everyone is notified
+(in-app + email by default), and booking a client is smooth.*
+
+- [x] **Online join link on the appointment detail** — an online session's detail modal now shows the
+  secure room: **Join now** + **Copy link** (signed, org-gated `getAppointmentJoinLink`). Previously the
+  room existed but no link was surfaced.
+- [x] **Real in-app notifications (the bell was mock)** — a `notifications` table (migration 0029) +
+  `db/queries/notifications.ts` + a self-fetching bell (60s poll, unread badge, mark-read on open,
+  deep-links). Always-on: no external service needed.
+- [x] **Email + in-app are the default notification channels (SMS opt-in)** — `notifyAppointmentBooked`
+  fans out on BOTH the Hub's create-appointment **and** the public booking: the client gets an email via
+  the rail (real once the admin's Resend integration is on; honestly dormant otherwise) and both the
+  counsellor and the client's portal account get an in-app notification.
+- [x] **Searchable pickers** — a reusable **`SearchSelect`** combobox (`components/ui/search-select.tsx`,
+  extracted from the messaging search pattern); the New-appointment modal's **Client** + **Counsellor**
+  dropdowns are searchable.
+- [x] **“New client” inline in the client dropdown** — name/phone/email → `createClientForBooking`
+  creates the client with **the selected counsellor as primary** (selection required — no silent
+  fallback) and selects them for the booking.
+- [x] **Creative “Where” cards** — In person / Online as icon cards (room vs secure video) instead of
+  plain radios.
+- [x] **Notification credits** — seed grants a healthy starter balance (**500 SMS / 1000 email**,
+  ledgered + idempotent); the super-admin tops up any org at `/admin/orgs/[id]` → **Notification
+  credits** (channel + amount, ledgered, audited). Orgs self-serve packs via Billing & usage (15.1).
+- [x] Tests: notifications create/list/unread/mark-read + counsellor resolver; balance resets aligned.
+
+---
+
 ## 📁 PHASE 18: DOCUMENT SYSTEM  HUB-FIRST, SUPABASE-BACKED
 *Goal: a beautiful, smooth document workspace for the org  folders, drag-to-move, assign-to-client,
 request-gated client uploads, and org→counsellor sharing  all on Phila Storage (Supabase), POPIA-safe.*

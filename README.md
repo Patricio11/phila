@@ -47,6 +47,39 @@ change**. See `ROADMAP.md`.
   reduced-motion, light/dark, and PWA install + offline shell. **Part A ships: all roles, on a phone,
   in either theme, installed as an app, zero dead ends.**
 
+**Part B runs on the real database** (`DATA_PROVIDER=db`, Neon Postgres)  same UI, real data,
+everything **seeded** (no mock at runtime). Per-phase records live in `docs/completed/`; verify with
+`docs/SMOKE_TEST.md`.
+
+- ✅ **Phase 9  Identity & auth.** Better Auth (credentials), role-routed sign-in, seeded demo accounts
+  (`docs/DEMO_LOGINS.md`, password `phila1234`).
+- ✅ **Phase 10  Data engine.** Drizzle schema + migrations, **Postgres RLS** (non-owner `phila_app`
+  role, leak-proof tests), field-level AES-256-GCM encryption, the full seed (`npm run db:seed`).
+- ✅ **Phase 11  Scheduling engine.** Real availability + GiST no-double-booking constraints
+  (counsellor + room, race-free), recurring series (edit this / all following), working-hours guards.
+- ✅ **Phase 12  Notifications rail.** The `deliver()` chokepoint: templates, routing, quiet hours,
+  opt-outs (POPIA), per-org **credit metering** (ledgered)  WhatsApp BYO, SMS/email platform-provided.
+- ✅ **Phase 13  Video (LiveKit).** Self-host or Cloud, admin-managed under **/admin/integrations**
+  (Demo/Live toggle + Test connection  no env keys); signed join links, branded waiting room.
+- ✅ **Phase 14  AI scribe.** OpenAI or Claude behind the admin **AI rail**; de-identification before any
+  cross-border call, org consent gate (POPIA s.72), draft note + funder fields + care-plan draft, metered.
+- ✅ **Phase 15  Payments (Paystack).** Three real money flows: org credit packs + plan subscriptions
+  (platform gateway) and client invoice payments via the **org's own gateway** (signed `/pay/[token]`
+  page)  all idempotent, webhook + callback settled.
+- ✅ **Phase 16  Analytics & funder/M&E reporting.** DB-computed insights (period deltas), k-anon
+  demographic reporting + improvement rate, the grant-indicator engine (actual vs paced target), and the
+  live scoped funder portal with persisted narratives.
+- ✅ **Phase 17  Org public page + SEO.** `org_public_pages` section editor (show/hide per section),
+  world-class `/o/[slug]` micro-site, JSON-LD + sitemap + robots, PII-free page→booking funnel.
+- ✅ **Phase 17.2  Scheduling & notifications polish.** Online sessions surface their **join link**
+  (Join now / Copy) on the appointment detail; **real in-app notifications** (bell + `notifications`
+  table) with **email + in-app as the defaults** (SMS opt-in) firing on Hub *and* public bookings;
+  searchable Client/Counsellor pickers (`SearchSelect`) with **inline "New client"** (primary counsellor
+  = the selected counsellor); seeded starter credits (500 SMS / 1000 email) + super-admin top-ups at
+  `/admin/orgs/[id]`.
+- ✅ **Phases 18 / 18.5 / 18.6 / 18.7**  documents (Supabase storage), real-time team messaging,
+  the org forms library, and client onboarding (see `docs/ROADMAP.md`).
+
 ## Getting started
 
 ```bash
@@ -54,7 +87,12 @@ npm install
 npm run dev      # http://localhost:3000  → redirects to /app (counsellor workspace)
 ```
 
-The app boots on **mock data**  no database or secrets required in Part A.
+With no env the app boots on **mock data** (Part A). For the real thing (Part B): set
+`DATA_PROVIDER=db` + the vars below in `.env.local`, run `npm run db:seed` (idempotent  seeds
+orgs, accounts, clients, the M&E cohort, credits, the public page, and the LiveKit demo
+integration), then sign in with an account from `docs/DEMO_LOGINS.md`. External gateways
+(Paystack, Resend email, LiveKit, AI providers) are configured **in-app** by the super-admin
+under `/admin/integrations`  encrypted at rest, with Test-connection buttons; never env vars.
 
 ## Scripts
 
@@ -69,13 +107,16 @@ The app boots on **mock data**  no database or secrets required in Part A.
 
 ## Environment
 
-Part A needs **nothing**. The variables below light up in Part B  see `.env.example`.
+Part A needs **nothing**. Part B needs only the core vars below (see `.env.example` for the full
+annotated list)  every gateway/provider key (Paystack, Resend, LiveKit, OpenAI/Claude) is managed
+in-app under `/admin/integrations`, not in env.
 
 | Var | Phase | Purpose |
 |-----|-------|---------|
 | `DATA_PROVIDER` | 0 | `mock` (default) or `db`. |
 | `DATABASE_URL` | 10 | Neon Postgres (EU now → SA region before launch). |
-| `PHILA_FIELD_KEY` | 10 | base64 32-byte key for field-level encryption (required in prod). |
+| `PHILA_FIELD_KEY` | 10 | base64 32-byte key for field-level encryption (required in prod; also encrypts the admin-managed integration credentials). |
+| `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` | 9 | Auth signing secret + the app's base URL (also signs video join links + invoice pay-links). |
 
 ## Architecture (Part A)
 

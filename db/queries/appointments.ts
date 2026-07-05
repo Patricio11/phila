@@ -27,7 +27,7 @@ export interface CreateAppointmentInput {
 }
 
 /** Create the appointment, plus a weekly series when recurring (linked by seriesId). */
-export async function createAppointment(input: CreateAppointmentInput): Promise<void> {
+export async function createAppointment(input: CreateAppointmentInput): Promise<{ firstId: string }> {
   const db = getDb();
   const count = input.recurring ? input.recurringCount ?? 12 : 1;
   const seriesId = count > 1 ? rid().replace("appt_", "series_") : null;
@@ -46,6 +46,7 @@ export async function createAppointment(input: CreateAppointmentInput): Promise<
     seriesId,
   }));
   await db.insert(appointments).values(rows);
+  return { firstId: rows[0]!.id };
 }
 
 export type EditScope = "this" | "following";

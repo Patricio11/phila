@@ -312,6 +312,20 @@ export const funderContacts = pgTable("funder_contacts", {
 
 /* ---- Messaging / notifications (Phase 12) ---------------------------- */
 
+/** In-app notifications (the bell) — one row per recipient user per event. Always-on
+ * (no external dependency); email is a separate, complementary channel. */
+export const notifications = pgTable("notifications", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id").notNull(),
+  orgId: text("org_id"),
+  kind: text("kind").notNull(), // appointment_booked | appointment_cancelled | appointment_moved | …
+  title: text("title").notNull(),
+  body: text("body"),
+  href: text("href"),
+  readAt: timestamp("read_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+}, (t) => [index("notif_user_idx").on(t.userId, t.createdAt)]);
+
 /** The org's public micro-site (Phase 17)  section content + per-section visibility,
  * managed by the org. One row per org; rendered SSR at /o/[slug]. */
 export const orgPublicPages = pgTable("org_public_pages", {

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CalendarDays, Check, Clock, Hourglass, MapPin, NotebookPen, Repeat, Stethoscope, User, UserX, Video, X } from "lucide-react";
+import { AlertTriangle, CalendarDays, Check, Clock, Copy, Hourglass, MapPin, NotebookPen, Repeat, Stethoscope, User, UserX, Video, X } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
 import { Dialog } from "@/components/ui/dialog";
@@ -12,7 +12,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Input, Textarea } from "@/components/ui/input";
 import { StatusDot, type DotTone } from "@/components/ui/status-dot";
 import { useToast } from "@/components/ui/toast";
-import { rescheduleAppointment, cancelAppointment } from "@/app/app/appointments/actions";
+import { rescheduleAppointment, cancelAppointment, getAppointmentJoinLink } from "@/app/app/appointments/actions";
 import { markProgress } from "@/app/app/sessions/[id]/actions";
 import { cn } from "@/lib/utils";
 
@@ -71,6 +71,24 @@ export function AppointmentDetail({
   const [override, setOverride] = useState(false);
   const [scope, setScope] = useState<EditScope>("this");
   const [reason, setReason] = useState("");
+  const [join, setJoin] = useState<{ id: string; url: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+  const joinUrl = appt && join?.id === appt.id ? join.url : null;
+
+  // Fetch the signed join link when viewing an online session (state set only async).
+  useEffect(() => {
+    if (!appt || appt.type !== "online") return;
+    let live = true;
+    const id = appt.id;
+    getAppointmentJoinLink({ appointmentId: id }).then((res) => { if (live && res.ok) setJoin({ id, url: res.url }); });
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appt?.id, appt?.type]);
+
+  const copyJoin = async () => {
+    if (!joinUrl) return;
+    try { await navigator.clipboard.writeText(joinUrl); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* clipboard blocked */ }
+  };
 
   const isSeries = Boolean(appt?.seriesId);
   const state = appt ? STATE[appt.state] : null;
@@ -175,6 +193,20 @@ export function AppointmentDetail({
               value={appt.type === "online" ? "Secure video room" : (appt.roomName ?? "In person")}
             />
           </dl>
+
+          {/* Online join link — the counsellor joins, or copies the invite for the client */}
+          {appt.type === "online" && appt.state !== "cancelled" && (
+            <div className="flex flex-wrap items-center gap-2 rounded-card border border-accent/25 bg-accent-soft/20 p-3">
+              <Video className="size-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+              <span className="min-w-0 flex-1 text-[12.5px] text-text-2">{joinUrl ? "Secure Phila video room — ready to join" : "Preparing the room link…"}</span>
+              <Button variant="ghost" size="sm" onClick={copyJoin} disabled={!joinUrl}>
+                {copied ? <Check className="size-3.5 text-accent" strokeWidth={2.4} aria-hidden /> : <Copy className="size-3.5" strokeWidth={2} aria-hidden />} {copied ? "Copied" : "Copy link"}
+              </Button>
+              <Button asChild size="sm" className={cn(!joinUrl && "pointer-events-none opacity-60")}>
+                <a href={joinUrl ?? "#"} target="_blank" rel="noopener noreferrer"><Video className="size-3.5" strokeWidth={2} aria-hidden /> Join now</a>
+              </Button>
+            </div>
+          )}
 
           {/* Manage */}
           {canManage && (

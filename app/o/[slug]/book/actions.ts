@@ -10,7 +10,7 @@ import { persistBooking } from "@/db/queries/booking";
 import { recordBookingIntakeDb } from "@/db/queries/forms";
 import { recordPageEvent } from "@/db/queries/public-page";
 import { isSlotTakenError, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
-import { notifyAppointment } from "@/lib/messaging/notify";
+import { notifyAppointmentBooked } from "@/lib/messaging/notify";
 import { videoJoinPath } from "@/lib/video/livekit";
 
 /** First active room with no overlapping booking in [start, start+duration). */
@@ -207,7 +207,8 @@ export async function submitBooking(
       roomName = res.roomName;
       // Online → a real, signed join link to the LiveKit room for this appointment.
       if (input.modality === "online") joinUrl = videoJoinPath(res.appointmentId);
-      await notifyAppointment(res.appointmentId, "booked", input.intake.preferred_contact);
+      // Email (rail) + always-on in-app for the counsellor + client (Phase 17.2).
+      await notifyAppointmentBooked(res.appointmentId);
       void recordPageEvent(config.org.id, "booked"); // PII-free conversion (Phase 17)
       // Mirror the intake into the active intake form's Responses (best-effort).
       try { await recordBookingIntakeDb(config.org.id, res.clientId, input.intake, clockNow()); } catch { /* never break booking */ }

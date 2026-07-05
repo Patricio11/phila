@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { Check } from "lucide-react";
+import { AlertCircle, Check, MapPin, Plus, UserPlus, Video, X } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
-import { Input, Label, Textarea, RadioGroup, FieldError } from "@/components/ui/input";
+import { SearchSelect } from "@/components/ui/search-select";
+import { Input, Label, Textarea, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { createAppointment } from "@/lib/scheduling/actions";
+import { createAppointment, createClientForBooking } from "@/lib/scheduling/actions";
 import { isoWeekday } from "@/lib/domain/helpers";
 import type { BusinessHours } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
@@ -48,7 +49,14 @@ export function CreateAppointmentModal({
 }) {
   const { toast } = useToast();
   const [pending, start] = useTransition();
+  const [creating, startCreate] = useTransition();
   const [attempted, setAttempted] = useState(false);
+
+  // Local client list so a newly-created client appears + can be selected immediately.
+  const [clients, setClients] = useState(options.clients);
+  const [newClientOpen, setNewClientOpen] = useState(false);
+  const [nc, setNc] = useState({ name: "", phone: "", email: "" });
+  const [ncError, setNcError] = useState<string | null>(null);
 
   const [clientId, setClientId] = useState<string | null>(null);
   const [serviceId, setServiceId] = useState<string | null>(null);
@@ -64,6 +72,7 @@ export function CreateAppointmentModal({
   const [sendConfirmation, setSendConfirmation] = useState(true);
 
   const isOnline = type === "Online";
+  const primaryCounsellorName = options.counsellors.find((c) => c.id === (counsellorId ?? options.defaultCounsellorId ?? options.counsellors[0]?.id))?.name ?? "the booking counsellor";
 
   const onService = (id: string) => {
     setServiceId(id);
@@ -121,10 +130,27 @@ export function CreateAppointmentModal({
         sendConfirmation,
       });
       if (!res.ok) return toast({ tone: "error", title: res.error });
-      const name = options.clients.find((c) => c.id === clientId)?.name ?? "client";
+      const name = clients.find((c) => c.id === clientId)?.name ?? "client";
       const seriesNote = recurring ? (recurringCount ? ` · ${recurringCount}-session series` : " · ongoing series") : "";
-      toast({ tone: "success", title: "Appointment created", description: (sendConfirmation ? `${name} will be sent a confirmation once messaging is set up.` : `Booked for ${name}.`) + seriesNote });
+      toast({ tone: "success", title: "Appointment created", description: (sendConfirmation ? `${name} was notified by email + in-app.` : `Booked for ${name}.`) + seriesNote });
       onClose();
+    });
+  };
+
+  // Create a client inline — the chosen counsellor (or the default) becomes their primary.
+  const addNewClient = () => {
+    setNcError(null);
+    const forCounsellor = counsellorId ?? options.defaultCounsellorId ?? options.counsellors[0]?.id;
+    if (!forCounsellor) { setNcError("Add a counsellor to the practice first."); return; }
+    startCreate(async () => {
+      const res = await createClientForBooking({ orgId: options.orgId, name: nc.name, phone: nc.phone, email: nc.email, counsellorId: forCounsellor });
+      if (!res.ok) { setNcError(res.error); return; }
+      setClients((prev) => [{ id: res.client.id, name: res.client.name }, ...prev]);
+      setClientId(res.client.id);
+      if (!counsellorId) setCounsellorId(forCounsellor);
+      setNewClientOpen(false);
+      setNc({ name: "", phone: "", email: "" });
+      toast({ tone: "success", title: `${res.client.name} added`, description: "Selected for this booking." });
     });
   };
 
@@ -142,18 +168,53 @@ export function CreateAppointmentModal({
       }
     >
       <div className="space-y-4">
-        <Row label="Client" error={attempted ? errors.client : undefined}>
-          <Select value={clientId} onChange={setClientId} invalid={Boolean(attempted && errors.client)} placeholder="Choose a client" options={options.clients.map((c) => ({ value: c.id, label: c.name }))} />
+        <Row label="Client" error={attempted && !newClientOpen ? errors.client : undefined}>
+          {newClientOpen ? (
+            <div className="space-y-2.5 rounded-control border border-accent/30 bg-accent-soft/15 p-3">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 text-[12.5px] font-[620] text-text"><UserPlus className="size-3.5 text-accent" strokeWidth={2} aria-hidden /> New client</span>
+                <button type="button" onClick={() => { setNewClientOpen(false); setNcError(null); }} className="text-text-3 transition-colors hover:text-text" aria-label="Cancel new client"><X className="size-4" strokeWidth={2} aria-hidden /></button>
+              </div>
+              <Input value={nc.name} onChange={(e) => setNc((v) => ({ ...v, name: e.target.value }))} placeholder="Full name" aria-label="Client full name" />
+              <div className="grid grid-cols-2 gap-2">
+                <Input value={nc.phone} onChange={(e) => setNc((v) => ({ ...v, phone: e.target.value }))} placeholder="Phone · 082…" aria-label="Client phone" />
+                <Input value={nc.email} onChange={(e) => setNc((v) => ({ ...v, email: e.target.value }))} placeholder="Email" aria-label="Client email" />
+              </div>
+              {ncError && <p className="flex items-center gap-1.5 text-[12px] text-danger"><AlertCircle className="size-3.5 shrink-0" strokeWidth={2} aria-hidden /> {ncError}</p>}
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] text-text-3">Primary counsellor: <span className="text-text-2">{primaryCounsellorName}</span></span>
+                <Button size="sm" onClick={addNewClient} loading={creating} disabled={!nc.name.trim()}>Add client</Button>
+              </div>
+            </div>
+          ) : (
+            <SearchSelect
+              value={clientId}
+              onChange={setClientId}
+              invalid={Boolean(attempted && errors.client)}
+              placeholder="Choose a client"
+              searchPlaceholder="Search clients…"
+              ariaLabel="Client"
+              options={clients.map((c) => ({ value: c.id, label: c.name }))}
+              footer={(close) => (
+                <button type="button" onClick={() => { close(); setNewClientOpen(true); setNcError(null); }} className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-[13px] font-[620] text-accent transition-colors hover:bg-accent-soft/40">
+                  <Plus className="size-4" strokeWidth={2.2} aria-hidden /> New client
+                </button>
+              )}
+            />
+          )}
         </Row>
         <Row label="Service" error={attempted ? errors.service : undefined}>
           <Select value={serviceId} onChange={onService} invalid={Boolean(attempted && errors.service)} placeholder="Choose a service" options={options.services.map((s) => ({ value: s.id, label: s.name, hint: `${s.durationMin} min` }))} />
         </Row>
         <Row label="Counsellor" error={attempted ? errors.counsellor : undefined}>
-          <Select value={counsellorId} onChange={setCounsellorId} invalid={Boolean(attempted && errors.counsellor)} placeholder="Choose a counsellor" options={options.counsellors.map((c) => ({ value: c.id, label: c.name }))} />
+          <SearchSelect value={counsellorId} onChange={setCounsellorId} invalid={Boolean(attempted && errors.counsellor)} placeholder="Choose a counsellor" searchPlaceholder="Search counsellors…" ariaLabel="Counsellor" options={options.counsellors.map((c) => ({ value: c.id, label: c.name }))} />
         </Row>
 
         <Row label="Where">
-          <RadioGroup options={["In person", "Online"]} value={type} onChange={(v) => { setType(v as "In person" | "Online"); if (v === "Online") setRoomId(null); }} />
+          <div className="grid grid-cols-2 gap-2.5">
+            <WhereCard active={!isOnline} icon={MapPin} title="In person" desc="At your practice room" onClick={() => setType("In person")} />
+            <WhereCard active={isOnline} icon={Video} title="Online" desc="Secure video room" onClick={() => { setType("Online"); setRoomId(null); }} />
+          </div>
         </Row>
         {!isOnline && (
           <Row label="Room" error={attempted ? errors.room : undefined}>
@@ -197,9 +258,31 @@ export function CreateAppointmentModal({
           <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Anything the counsellor should know (optional)" className="min-h-[72px]" />
         </Row>
 
-        <Toggle label="Send a confirmation" checked={sendConfirmation} onChange={setSendConfirmation} hint="WhatsApp + email, when messaging is set up." />
+        <Toggle label="Notify client & counsellor" checked={sendConfirmation} onChange={setSendConfirmation} hint="In-app now + an email confirmation (SMS is opt-in)." />
       </div>
     </Dialog>
+  );
+}
+
+function WhereCard({ active, icon: Icon, title, desc, onClick }: { active: boolean; icon: typeof MapPin; title: string; desc: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "flex items-start gap-2.5 rounded-control border p-3 text-left transition-colors",
+        active ? "border-accent bg-accent-soft/40 ring-1 ring-accent/30" : "border-border bg-surface hover:bg-surface-hover",
+      )}
+    >
+      <span className={cn("mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors", active ? "bg-accent text-white" : "bg-surface-2 text-text-2")}>
+        <Icon className="size-4" strokeWidth={2} aria-hidden />
+      </span>
+      <span className="min-w-0">
+        <span className="flex items-center gap-1.5 text-[13.5px] font-[620] text-text">{title}{active && <Check className="size-3.5 text-accent" strokeWidth={2.6} aria-hidden />}</span>
+        <span className="mt-0.5 block text-[11.5px] leading-snug text-text-3">{desc}</span>
+      </span>
+    </button>
   );
 }
 

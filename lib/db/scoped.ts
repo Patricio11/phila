@@ -2,8 +2,10 @@ import "server-only";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { sql } from "drizzle-orm";
+import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import * as schema from "@/db/schema";
+import { getDb } from "@/db/client";
 
 /**
  * RLS-scoped database access (Workstream 0.2 — the runtime cutover).
@@ -15,21 +17,20 @@ import * as schema from "@/db/schema";
  * beneath the app-layer `where org_id = …` checks — defence in depth.
  *
  * We scope **per operation**, not per request: each `runScoped` call opens one
- * short transaction, sets the org GUC locally, runs its queries, and commits.
- * That avoids holding a connection open across an entire RSC render (which could
- * span a multi-second AI/LLM call) while still guaranteeing every query in the
- * operation sees the same tenant context.
+ * short transaction, sets the org GUC locally, runs its queries, and commits — so
+ * we never hold a connection across a whole RSC render (which could span a
+ * multi-second AI/LLM call). The tenant context is passed **explicitly** (the DAL
+ * already has the caller's `orgId`), which is more robust than trying to smuggle
+ * it through `AsyncLocalStorage.enterWith` across an awaited guard boundary.
  */
 
-/** The tenant context for the current async request, set by the auth guards. */
+/** The tenant context for a scoped operation. */
 export interface OrgContext {
-  /** The caller's org, or null for a super-admin (who uses `isSuper`). */
+  /** The caller's org, or null for a super-admin (who sets `isSuper`). */
   orgId: string | null;
   /** Platform super-admin — the RLS policies let this cross orgs, still audited. */
   isSuper: boolean;
 }
-
-const store = new AsyncLocalStorage<OrgContext>();
 
 // Node 21+ exposes a global WebSocket; the neon serverless Pool needs it wired.
 if (!neonConfig.webSocketConstructor && typeof globalThis.WebSocket !== "undefined") {
@@ -52,44 +53,42 @@ function getAppDb() {
   return appDb;
 }
 
-/**
- * Declare the tenant context for the rest of the current request. Called by the
- * auth guards once they've resolved the principal + membership. Uses `enterWith`
- * so no callback-wrapping is needed — the context is request-local (each request
- * runs in its own async context) and read by `runScoped` below.
- */
-export function enterOrgContext(ctx: OrgContext): void {
-  store.enterWith(ctx);
-}
-
-/** The current tenant context, or null if none has been entered (e.g. bootstrap). */
-export function getOrgContext(): OrgContext | null {
-  return store.getStore() ?? null;
-}
-
-/** Run `fn` with an explicit context (mainly for tests + one-off elevated ops). */
-export function withOrgContext<T>(ctx: OrgContext, fn: () => Promise<T>): Promise<T> {
-  return store.run(ctx, fn);
-}
-
 export type ScopedDb = Parameters<Parameters<ReturnType<typeof getAppDb>["transaction"]>[0]>[0];
 
+/** The scoped transaction in flight for the current `runScoped`, if any. */
+const dbStore = new AsyncLocalStorage<ScopedDb>();
+
 /**
- * Run a unit of DB work as `phila_app`, scoped to the current org context. Opens a
- * short transaction, sets `app.org_id` / `app.is_super` locally, then runs `fn`.
- * **Fails closed:** with no context entered, it throws rather than run unscoped.
- * Keep `fn` free of external (non-DB) awaits so the transaction stays short.
+ * The database handle for the current work: the RLS-scoped transaction when inside
+ * a `runScoped` call, otherwise the owner connection. This lets shared DAL helpers
+ * stay written against one accessor — a migrated (wrapped) call path runs them
+ * through `phila_app` with the org GUC set; an unmigrated path runs them on the
+ * owner exactly as before (no behaviour change until a method opts in).
+ *
+ * The scoped tx (neon-serverless) and the owner db (neon-http) share the same
+ * drizzle query-builder API, so the cast is safe; only the driver differs.
  */
-export async function runScoped<T>(fn: (db: ScopedDb) => Promise<T>): Promise<T> {
-  const ctx = store.getStore();
-  if (!ctx) {
-    throw new Error(
-      "runScoped() called with no org context. A guard must call enterOrgContext() first (or use the owner connection for a bootstrap/cross-org path).",
-    );
-  }
+export function activeDb(): NeonHttpDatabase<typeof schema> {
+  const scoped = dbStore.getStore();
+  if (scoped) return scoped as unknown as NeonHttpDatabase<typeof schema>;
+  return getDb();
+}
+
+/**
+ * Run a unit of DB work as `phila_app`, scoped to `ctx`. Opens a short transaction,
+ * sets `app.org_id` / `app.is_super` locally, publishes the tx as the ambient
+ * `activeDb()` (so shared helpers run on it), then runs `fn`. Keep `fn` free of
+ * external (non-DB) awaits so the transaction stays short.
+ */
+export async function runScoped<T>(ctx: OrgContext, fn: (db: ScopedDb) => Promise<T>): Promise<T> {
   return getAppDb().transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.org_id', ${ctx.orgId ?? ""}, true)`);
     await tx.execute(sql`select set_config('app.is_super', ${ctx.isSuper ? "on" : "off"}, true)`);
-    return fn(tx);
+    return dbStore.run(tx, () => fn(tx));
   });
+}
+
+/** Convenience for the common org-staff case: scope to one org, not super-admin. */
+export function runForOrg<T>(orgId: string, fn: (db: ScopedDb) => Promise<T>): Promise<T> {
+  return runScoped({ orgId, isSuper: false }, fn);
 }

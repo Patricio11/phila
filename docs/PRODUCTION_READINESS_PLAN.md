@@ -59,22 +59,24 @@ with **no `require*` guard** — any caller can mutate any org's appointments an
 `db/rls.sql` is correct but bypassed: `db/client.ts` connects as `neondb_owner` (`BYPASSRLS`), the org
 GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't survive.
 
-**W0.2a — scoped primitive + proof + plumbing ✅ (2026-07-05):**
+**W0.2a — scoped primitive + proof ✅ (2026-07-05):**
 - [x] Session-capable driver: `lib/db/scoped.ts` uses the neon-serverless `Pool` (WebSocket, wired to the
       Node 22 global `WebSocket`) as the non-owner `phila_app` role via `DATABASE_URL_APP`.
-- [x] Per-**operation** scoping (not one long per-request tx): `runScoped(fn)` opens a short transaction, sets
-      `app.org_id` / `app.is_super` locally from an `AsyncLocalStorage` context, then runs `fn`. Fails **closed**
-      (throws) if no context was entered — never runs unscoped. (Avoids holding a connection across LLM/AI awaits.)
-- [x] Guards enter the context: `requireOrg` / `requireHub` → `{orgId, isSuper:false}`; `requireSuperAdmin` →
-      `{orgId:null, isSuper:true}`. Owner connection (`db/client.ts`) stays for bootstrapping (session/membership
-      resolution), webhooks, cron, and seed.
+- [x] Per-**operation** scoping (not one long per-request tx): `runScoped(ctx, fn)` opens a short transaction,
+      sets `app.org_id` / `app.is_super` locally, then runs `fn`. The context is passed **explicitly** (the DAL
+      already has `orgId`) — more robust than `enterWith` from a guard, which doesn't propagate across the awaited
+      guard boundary. `runForOrg(orgId, fn)` is the org-staff shorthand. Avoids holding a connection across LLM awaits.
+- [x] `activeDb()` accessor: shared DAL helpers use it — inside `runScoped` they run on the scoped tx (via an
+      `AsyncLocalStorage` the tx publishes reliably to its own callback tree); outside, they run on the owner
+      connection unchanged. Owner (`db/client.ts`) stays for bootstrapping, webhooks, cron, seed.
 - [x] Leak proof: `tests/integration/rls-scoped.test.ts` proves `runScoped` sees only its own org, denies a
-      bogus org (0 rows), lets super-admin cross orgs, and fails closed with no context. (Complements the raw-SQL
-      policy proof in `rls.test.ts`.) Empirically confirmed RLS is already `enable`+`force` on the live DB and
-      `phila_app` has no BYPASSRLS.
+      bogus org (0 rows), and lets super-admin cross orgs. (Complements the raw-SQL policy proof in `rls.test.ts`.)
+      Empirically confirmed RLS is already `enable`+`force` on the live DB and `phila_app` has no BYPASSRLS.
 
 **W0.2b — migrate the DAL onto `runScoped`, cluster by cluster (each independently tested):**
-- [ ] Clients read cluster (`listOrgClients`, dossier, removed, duplicates) → `runScoped`, e2e + screenshot.
+- [x] Clients read cluster: `listOrgClients` / `listRemovedClients` / `findDuplicateClients` → `runForOrg`,
+      verified live (hub clients page renders all 39 through `phila_app`; server log clean; 6 e2e paths green + screenshot).
+      `getClientDossier` deferred (no `orgId` param to scope by — migrates once its org is threaded).
 - [ ] Remaining hub read clusters (services, rooms, forms, documents, invoicing, insights, funders/grants).
 - [ ] Write paths (each already org-scoped in the app layer; add `runScoped` for defence in depth).
 - [ ] Client-portal + funder read paths (enter context in `requireClient` / `requireFunder` with their org).

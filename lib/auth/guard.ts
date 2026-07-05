@@ -9,7 +9,6 @@ import {
   type Principal,
 } from "@/lib/auth/session";
 import { getDataProvider } from "@/lib/data-provider";
-import { enterOrgContext } from "@/lib/db/scoped";
 
 /**
  * Route/RBAC guard scaffold (ROADMAP Task 0.2). Three layers protect every
@@ -72,7 +71,6 @@ export async function requireHub(): Promise<{ principal: Principal; membership: 
   const membership = activeMembership(principal);
   if (!membership || membership.teamRole !== "org_admin")
     throw new ForbiddenError("Requires an org-admin account");
-  enterOrgContext({ orgId: membership.orgId, isSuper: false });
   return { principal, membership };
 }
 
@@ -85,7 +83,6 @@ export async function requireOrg(
   if (!membership) throw new ForbiddenError("No active organisation");
   if (oneOf && !oneOf.includes(membership.teamRole))
     throw new ForbiddenError(`Requires org role: ${oneOf.join(" | ")}`);
-  enterOrgContext({ orgId: membership.orgId, isSuper: false });
   return { principal, membership };
 }
 
@@ -130,8 +127,5 @@ export async function requireFunder(): Promise<Principal> {
 export async function requireSuperAdmin(): Promise<Principal> {
   const principal = await requireAuth();
   if (principal.platformRole !== "super_admin") throw new ForbiddenError("Requires the platform console");
-  // Super-admin is cross-org by design (every crossing is audited); RLS lets the
-  // scoped path see all tenants when `is_super` is on.
-  enterOrgContext({ orgId: null, isSuper: true });
   return principal;
 }

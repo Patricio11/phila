@@ -28,6 +28,7 @@ import type { PaymentStatus } from "@/lib/domain/enums";
 import type { AppointmentState, AppointmentType, ConsentPurpose, ConsentState, CredentialBody, CredentialStatus, Province, RoomStatus } from "@/lib/domain/enums";
 import { mockProvider } from "@/lib/mock/provider";
 import { getDb } from "@/db/client";
+import { runForOrg, activeDb } from "@/lib/db/scoped";
 import {
   orgs as orgsTable,
   consents as consentsTable,
@@ -88,7 +89,7 @@ async function counsellorApptViews(counsellorId: string): Promise<AppointmentVie
 
 /** All of an org's appointments as joined views (client/service/counsellor/room names). */
 async function orgApptViews(orgId: string): Promise<AppointmentView[]> {
-  const rows = await getDb()
+  const rows = await activeDb()
     .select({ a: appointmentsTable, clientName: clientsTable.name, serviceName: servicesTable.name, counsellorName: counsellorsTable.name, roomName: roomsTable.name })
     .from(appointmentsTable)
     .leftJoin(clientsTable, eq(appointmentsTable.clientId, clientsTable.id))
@@ -119,7 +120,7 @@ function caseStatusFrom(client: Client, appts: AppointmentView[], nowMs: number)
 
 /** Org clients as hub rows. `removed` selects the Removed tab (soft-deleted) vs the live caseload. */
 async function orgClientRowsDb(orgId: string, now: string, removed: boolean): Promise<OrgClientRow[]> {
-  const db = getDb();
+  const db = activeDb();
   const [clientRows, counsellorRows, views] = await Promise.all([
     db.select().from(clientsTable).where(and(eq(clientsTable.orgId, orgId), removed ? isNotNull(clientsTable.deletedAt) : isNull(clientsTable.deletedAt))),
     db.select().from(counsellorsTable).where(eq(counsellorsTable.orgId, orgId)),
@@ -446,9 +447,15 @@ export const dbProvider: DataProvider = {
   },
 
   // ── Hub clients  org caseload, dossier, and duplicate detection (DB) ──
-  listOrgClients: (orgId: string, now: string) => orgClientRowsDb(orgId, now, false),
-  listRemovedClients: (orgId: string, now: string) => orgClientRowsDb(orgId, now, true),
+  // RLS-scoped: `runForOrg` runs these as `phila_app` with `app.org_id` set to the
+  // caller's org, so Postgres RLS enforces the tenant boundary beneath the app-layer
+  // `where org_id` filters (defence in depth). The org is passed explicitly (these
+  // methods already receive it) rather than smuggled through async-local state.
+  listOrgClients: (orgId: string, now: string) => runForOrg(orgId, () => orgClientRowsDb(orgId, now, false)),
+  listRemovedClients: (orgId: string, now: string) => runForOrg(orgId, () => orgClientRowsDb(orgId, now, true)),
 
+  // Not yet RLS-scoped: no orgId param to scope by (migrates once the dossier org is
+  // threaded). Owner connection + the app-layer client/org checks remain the boundary.
   getClientDossier: async (clientId: string): Promise<ClientDossier | null> => {
     const db = getDb();
     const [cRow] = await db.select().from(clientsTable).where(eq(clientsTable.id, clientId)).limit(1);
@@ -496,8 +503,8 @@ export const dbProvider: DataProvider = {
     };
   },
 
-  findDuplicateClients: async (orgId: string): Promise<DuplicateGroup[]> => {
-    const db = getDb();
+  findDuplicateClients: (orgId: string): Promise<DuplicateGroup[]> => runForOrg(orgId, async (): Promise<DuplicateGroup[]> => {
+    const db = activeDb();
     const [clientRows, counsellorRows, views] = await Promise.all([
       db.select().from(clientsTable).where(and(eq(clientsTable.orgId, orgId), isNull(clientsTable.deletedAt))),
       db.select().from(counsellorsTable).where(eq(counsellorsTable.orgId, orgId)),
@@ -539,7 +546,7 @@ export const dbProvider: DataProvider = {
       });
     }
     return result;
-  },
+  }),
 
   // ── Composite dashboard  counsellor home, aggregated from DB rows ─────
   getCounsellorDashboard: async (counsellorId: string, now: string): Promise<CounsellorDashboard | null> => {

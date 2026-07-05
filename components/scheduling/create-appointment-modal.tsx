@@ -72,7 +72,6 @@ export function CreateAppointmentModal({
   const [sendConfirmation, setSendConfirmation] = useState(true);
 
   const isOnline = type === "Online";
-  const primaryCounsellorName = options.counsellors.find((c) => c.id === (counsellorId ?? options.defaultCounsellorId ?? options.counsellors[0]?.id))?.name ?? "the booking counsellor";
 
   const onService = (id: string) => {
     setServiceId(id);
@@ -137,17 +136,15 @@ export function CreateAppointmentModal({
     });
   };
 
-  // Create a client inline — the chosen counsellor (or the default) becomes their primary.
+  // Create a client inline — the counsellor selected below becomes their primary.
   const addNewClient = () => {
     setNcError(null);
-    const forCounsellor = counsellorId ?? options.defaultCounsellorId ?? options.counsellors[0]?.id;
-    if (!forCounsellor) { setNcError("Add a counsellor to the practice first."); return; }
+    if (!counsellorId) { setNcError("Choose the counsellor below first — they become this client's primary counsellor."); return; }
     startCreate(async () => {
-      const res = await createClientForBooking({ orgId: options.orgId, name: nc.name, phone: nc.phone, email: nc.email, counsellorId: forCounsellor });
+      const res = await createClientForBooking({ orgId: options.orgId, name: nc.name, phone: nc.phone, email: nc.email, counsellorId });
       if (!res.ok) { setNcError(res.error); return; }
       setClients((prev) => [{ id: res.client.id, name: res.client.name }, ...prev]);
       setClientId(res.client.id);
-      if (!counsellorId) setCounsellorId(forCounsellor);
       setNewClientOpen(false);
       setNc({ name: "", phone: "", email: "" });
       toast({ tone: "success", title: `${res.client.name} added`, description: "Selected for this booking." });
@@ -182,7 +179,7 @@ export function CreateAppointmentModal({
               </div>
               {ncError && <p className="flex items-center gap-1.5 text-[12px] text-danger"><AlertCircle className="size-3.5 shrink-0" strokeWidth={2} aria-hidden /> {ncError}</p>}
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[11px] text-text-3">Primary counsellor: <span className="text-text-2">{primaryCounsellorName}</span></span>
+                <span className="text-[11px] text-text-3">The counsellor you pick below becomes their primary.</span>
                 <Button size="sm" onClick={addNewClient} loading={creating} disabled={!nc.name.trim()}>Add client</Button>
               </div>
             </div>

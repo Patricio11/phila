@@ -591,8 +591,8 @@ export const dbProvider: DataProvider = {
   }),
 
   // ── Composite dashboard  Hub overview, aggregated from DB rows ───────
-  getHubOverview: async (orgId: string, now: string): Promise<HubOverview | null> => {
-    const db = getDb();
+  getHubOverview: (orgId: string, now: string): Promise<HubOverview | null> => runForOrg(orgId, async () => {
+    const db = activeDb();
     const [org] = await db.select({ id: orgsTable.id }).from(orgsTable).where(eq(orgsTable.id, orgId)).limit(1);
     if (!org) return null;
     const [counsellorRows, clientRows, apptRows, invoiceRows, serviceRows, outcomeRows] = await Promise.all([
@@ -612,7 +612,7 @@ export const dbProvider: DataProvider = {
       measuredClientIds: new Set(outcomeRows.map((r) => r.clientId)),
       now,
     });
-  },
+  }),
 
   // ── Funders & grants  funder list + funder-scoped grants ─────────────
   listFunders: (orgId: string): Promise<Funder[]> => runForOrg(orgId, async () => {

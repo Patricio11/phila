@@ -85,8 +85,10 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
       **services / sites / rooms / rooms-overview** (inline), **insights + reporting** (`analytics.ts` `loadCohort`),
       **forms** (`listForms` / `getForm` / `getFormResponses`), **documents** (`listOrgDocuments` / folders /
       requests / storage), **funders + grants list** (`listFunders` / `listGrants`).
-- [ ] Remaining: `getHubOverview`; id-based reads (`getRoomDetail`, `getGrantView`, `getClientDossier`);
-      team threads; client-portal + funder reads; write paths; RLS on the 3 uncovered tables.
+- [x] `getHubOverview` (hub landing dashboard) → `runForOrg`; verified live (dashboards e2e sets a risk flag
+      in the DB and the RLS-scoped overview reflects it). **The whole hub org-scoped read surface is now RLS-enforced.**
+- [ ] Remaining: id-based reads (`getRoomDetail`, `getGrantView`, `getClientDossier` — need org threaded);
+      team threads; client-portal + funder reads; write paths (defence in depth); RLS on the 3 uncovered tables.
 - [ ] Write paths (each already org-scoped in the app layer; add `runScoped` for defence in depth).
 - [ ] Client-portal + funder read paths (enter context in `requireClient` / `requireFunder` with their org).
 - [ ] Confirm public/booking/webhook/cron paths stay on the owner connection (no context → correct by design).

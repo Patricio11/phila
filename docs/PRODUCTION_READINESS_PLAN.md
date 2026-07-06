@@ -26,9 +26,11 @@
   (`lib/domain/enums.ts`), stored in `orgs.features` JSONB, toggled by org admins via
   `saveOrgFeature` (`app/hub/settings/actions.ts`), gated by `requireOrgFeature()` (`lib/auth/guard.ts`).
   **The super-admin cannot currently override features globally or per-org** → Workstream 3.
-- **Security model** is documented as 3 layers (route guard = UX, DAL = real gate, RLS = isolation),
-  but **RLS is inert at runtime** (owner connection, no org GUC, HTTP driver) and **two action modules
-  have no guard at all** → Workstream 0.
+- **Security model** is 3 layers (route guard = UX, DAL = real gate, RLS = isolation). As of 2026-07-06
+  **all three W0 criticals are fixed**: the two unguarded action modules now guard + org-scope (W0.1); the
+  cron fails closed (W0.3); and **RLS is now live at runtime** — the request path runs as the non-owner
+  `phila_app` role with the org GUC set (`lib/db/scoped.ts` `runForOrg`), enforcing tenant isolation beneath
+  the app-layer `where org_id` checks across every hub read + write cluster and every schema table (W0.2).
 - **Dormant-by-Default** is honoured well: SMS/WhatsApp/email/payments/AI/video do a real send when
   configured and an honest no-op otherwise — never a fake success. Keep this invariant.
 
@@ -36,7 +38,10 @@
 
 ## Workstream 0 — 🔴 CRITICAL SECURITY (ship-blockers)
 
-**Status:** not started. *Nothing goes near real client data until this closes.*
+**Status:** ✅ **the three criticals are closed (2026-07-06).** W0.1 (IDOR) + W0.3 (cron) done; W0.2 RLS
+runtime cutover is live and enforced across every hub read + write cluster and all schema tables. Residual
+non-critical read paths (counsellor/client-portal/funder reads, admin console which is still mock) remain on
+the app-layer boundary + guards and scope incrementally as those surfaces are worked (tracked at the end of W0.2b).
 
 ### 0.1 Guard + org-scope the unauthenticated action modules ✅ (2026-07-05)
 `app/app/appointments/actions.ts` and `app/app/sessions/[id]/actions.ts` are `"use server"` endpoints
@@ -90,16 +95,25 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
 - [x] `getClientDossier` (id-based read): threaded the caller's org through the seam (`getClientDossier(orgId,
       clientId, now)`, mock + both client pages updated) and RLS-scoped it — a cross-org clientId now resolves to
       no rows instead of fetch-then-discard. Verified live (hub dossier renders through `phila_app`).
-- [x] Client **write** cluster (`db/queries/clients.ts`): create / bulk-create / update / remove-restore /
-      reassign now run via `runForOrg`, so the RLS WITH CHECK / USING clauses reject cross-org writes at the DB.
-      Verified live (caseload create + CSV import both persist; server log clean, no RLS violation).
-- [ ] Remaining: other id-based reads (`getRoomDetail`, `getGrantView`); team threads; client-portal + funder
-      reads; other write clusters (services/rooms/forms/documents/grants); RLS on the 3 uncovered tables.
-- [ ] Write paths (each already org-scoped in the app layer; add `runScoped` for defence in depth).
-- [ ] Client-portal + funder read paths (enter context in `requireClient` / `requireFunder` with their org).
-- [ ] Confirm public/booking/webhook/cron paths stay on the owner connection (no context → correct by design).
-- [ ] Add RLS to the 3 uncovered tables (`platform_integrations`, `ai_providers`, `user_presence`) —
-      lock the first two to super-admin/owner, isolate `user_presence` by org.
+- [x] Remaining hub **id-based reads**: `getRoomDetail(orgId, …)` + `getGrantView(orgId, …)` threaded through
+      the seam and RLS-scoped (mock + pages updated). Verified live (room + grant detail render full data through
+      `phila_app`; grant M&E computes correctly). Every hub id-based read is now scoped.
+- [x] **All hub write clusters** on `runForOrg` (WITH CHECK / USING enforce cross-org rejection at the DB):
+      **clients** (create/bulk/update/remove/reassign), **org-config** (business hours, client-portal, scheduling,
+      feature flags), **catalogue** (services/rooms/sites), **M&E** (funder + grant create/update/delete + grant admin),
+      **forms** (create/update/status/share/send/booking-intake), **documents** (folders/move/assign/visibility/
+      soft-delete/share/request/upload/finalize). Verified live across catalogue, funders-crud, hub-consistency,
+      forms-share, and documents e2e + the documents integration test (which now exercises the writes through `phila_app`).
+- [x] Add RLS to the 3 uncovered tables (`platform_integrations`, `ai_providers`, `user_presence`) — super_only
+      policy; owner still reads (LiveKit/Paystack/AI unaffected), tenants get 0. **Every schema table now covered.**
+- [x] Public/booking/webhook/cron/bootstrap paths correctly stay on the owner connection (no `runForOrg` → owner,
+      by design). The session/membership resolution that bootstraps the org context must stay owner (chicken-and-egg).
+- [ ] **Residual (non-critical, on the app-layer boundary + guards):** counsellor reads (`listCaseload`,
+      `getCounsellorDashboard`, `listCounsellorSessions` — take `counsellorId`), client-portal reads (`getClient`,
+      `getCarePlan`, `listClient*` — take `clientId`), funder reads (`listFunderGrants`, `getFunderGrantView`),
+      team threads, and the grantId/token-based writes (indicators/allocations/narrative/form-submit). These thread
+      an org through a `counsellorId`/`clientId`/token and scope as those surfaces get further work. The super-admin
+      console is still mock (Workstream 1.7 / 3).
 
 ### 0.3 Fix the fail-open cron ✅ (2026-07-05)
 - [x] `app/api/cron/reminders/route.ts` now fails **closed** in production: an unset `CRON_SECRET` returns

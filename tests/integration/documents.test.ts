@@ -6,8 +6,11 @@ import { readFileSync } from "node:fs";
  * Phase 18  document flows against the real DB: assign → client-visible, the
  * request → fulfil loop, the counsellor lane (own + shared), and the scan gate.
  */
-const DATABASE_URL = (readFileSync(".env.local", "utf8").match(/^DATABASE_URL=(.+)$/m)?.[1] ?? "").trim();
+const envFile = readFileSync(".env.local", "utf8");
+const DATABASE_URL = (envFile.match(/^DATABASE_URL=(.+)$/m)?.[1] ?? "").trim();
 process.env.DATABASE_URL = DATABASE_URL;
+// The doc write helpers now run via runForOrg (phila_app); give it its connection.
+process.env.DATABASE_URL_APP = (envFile.match(/^DATABASE_URL_APP=(.+)$/m)?.[1] ?? "").trim();
 const sql = neon(DATABASE_URL);
 
 import {

@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 /** Phase 16  the real analytics layer computes from the seeded clinical data. */
 const env = readFileSync(".env.local", "utf8");
 process.env.DATABASE_URL = env.match(/^DATABASE_URL=(.+)$/m)?.[1]?.trim();
+// postGrantNarrativeDb now runs via runForGrant (phila_app); give it its connection.
+process.env.DATABASE_URL_APP = env.match(/^DATABASE_URL_APP=(.+)$/m)?.[1]?.trim();
 
 import { neon } from "@neondatabase/serverless";
 import { getReportingDb, getHubInsightsDb } from "@/db/queries/analytics";

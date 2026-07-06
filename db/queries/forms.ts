@@ -2,7 +2,7 @@ import "server-only";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { getDb } from "@/db/client";
-import { activeDb } from "@/lib/db/scoped";
+import { activeDb, runForOrg } from "@/lib/db/scoped";
 import { clients, counsellors, forms, formAssignments, orgs } from "@/db/schema";
 import type { Form, FormField, FormSnapshot, FormTheme } from "@/lib/domain/types";
 import type {
@@ -130,13 +130,15 @@ export async function getFormByTokenDb(tok: string): Promise<FormTokenView | nul
 
 /** Enable/disable the open share link (mints a token on first enable). */
 export async function setFormShareDb(orgId: string, formId: string, enabled: boolean, now: string): Promise<{ shareToken: string | null; shareEnabled: boolean } | null> {
-  const db = getDb();
-  const form = await getFormDb(orgId, formId);
-  if (!form) return null;
-  const shareToken = form.shareToken ?? (enabled ? `s_${randomUUID().replace(/-/g, "")}` : null);
-  await db.update(forms).set({ shareToken, shareEnabled: enabled, updatedAt: new Date(now) })
-    .where(and(eq(forms.id, formId), eq(forms.orgId, orgId)));
-  return { shareToken, shareEnabled: enabled };
+  return runForOrg(orgId, async () => {
+    const db = activeDb();
+    const form = await getFormDb(orgId, formId);
+    if (!form) return null;
+    const shareToken = form.shareToken ?? (enabled ? `s_${randomUUID().replace(/-/g, "")}` : null);
+    await db.update(forms).set({ shareToken, shareEnabled: enabled, updatedAt: new Date(now) })
+      .where(and(eq(forms.id, formId), eq(forms.orgId, orgId)));
+    return { shareToken, shareEnabled: enabled };
+  });
 }
 
 export async function listClientFormsDb(clientId: string): Promise<ClientFormRow[]> {
@@ -155,17 +157,17 @@ export async function listClientFormsDb(clientId: string): Promise<ClientFormRow
 export async function createFormDb(orgId: string, draft: FormDraft, createdBy: string, now: string): Promise<{ id: string }> {
   const id = `form_${randomUUID().slice(0, 12)}`;
   const at = new Date(now);
-  await getDb().insert(forms).values({
+  await runForOrg(orgId, () => activeDb().insert(forms).values({
     id, orgId, kind: draft.kind, title: draft.title, intro: draft.intro ?? null,
     fields: draft.fields, theme: draft.theme ?? null, status: "active", createdBy, createdAt: at, updatedAt: at,
-  });
+  }));
   return { id };
 }
 
 export async function updateFormDb(orgId: string, formId: string, draft: FormDraft, now: string): Promise<{ ok: boolean }> {
-  const res = await getDb().update(forms)
+  const res = await runForOrg(orgId, () => activeDb().update(forms)
     .set({ kind: draft.kind, title: draft.title, intro: draft.intro ?? null, fields: draft.fields, theme: draft.theme ?? null, updatedAt: new Date(now) })
-    .where(and(eq(forms.id, formId), eq(forms.orgId, orgId))).returning({ id: forms.id });
+    .where(and(eq(forms.id, formId), eq(forms.orgId, orgId))).returning({ id: forms.id }));
   return { ok: res.length > 0 };
 }
 
@@ -176,13 +178,14 @@ export async function duplicateFormDb(orgId: string, formId: string, now: string
 }
 
 export async function setFormStatusDb(orgId: string, formId: string, status: FormStatus, now: string): Promise<{ ok: boolean }> {
-  const res = await getDb().update(forms).set({ status, updatedAt: new Date(now) })
-    .where(and(eq(forms.id, formId), eq(forms.orgId, orgId))).returning({ id: forms.id });
+  const res = await runForOrg(orgId, () => activeDb().update(forms).set({ status, updatedAt: new Date(now) })
+    .where(and(eq(forms.id, formId), eq(forms.orgId, orgId))).returning({ id: forms.id }));
   return { ok: res.length > 0 };
 }
 
 export async function sendFormToClientsDb(orgId: string, formId: string, clientIds: string[], sentBy: string, now: string): Promise<{ sent: number; assignments: { clientId: string; token: string }[] }> {
-  const db = getDb();
+  return runForOrg(orgId, async () => {
+  const db = activeDb();
   const form = await getFormDb(orgId, formId);
   if (!form) return { sent: 0, assignments: [] };
   const snapshot = snapshotOf(form);
@@ -202,6 +205,7 @@ export async function sendFormToClientsDb(orgId: string, formId: string, clientI
     }
   }
   return { sent: out.length, assignments: out };
+  });
 }
 
 /** Best-effort respondent name for an open submission (a field that looks like a name). */
@@ -220,11 +224,11 @@ export async function recordBookingIntakeDb(orgId: string, clientId: string, ans
   const form = await getActiveIntakeFormDb(orgId);
   if (!form) return;
   const at = new Date(now);
-  await getDb().insert(formAssignments).values({
+  await runForOrg(orgId, () => activeDb().insert(formAssignments).values({
     id: `fa_${randomUUID().slice(0, 12)}`, orgId, formId: form.id, clientId,
     token: `r_${randomUUID().replace(/-/g, "")}`, status: "completed",
     snapshot: snapshotOf(form), answers, sentBy: null, sentAt: at, submittedAt: at,
-  });
+  }));
 }
 
 export async function submitFormResponseDb(tok: string, answers: Record<string, string>, now: string): Promise<{ ok: true } | { ok: false; error: string }> {

@@ -2,7 +2,7 @@ import "server-only";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { getDb } from "@/db/client";
-import { activeDb } from "@/lib/db/scoped";
+import { activeDb, runForOrg } from "@/lib/db/scoped";
 import {
   clients,
   documents,
@@ -86,17 +86,17 @@ export async function createFolderDb(
   input: { name: string; parentId: string | null; scope?: FolderScope; clientId?: string | null; createdBy?: string | null },
 ): Promise<string> {
   const id = `fold_${randomUUID()}`;
-  await getDb().insert(documentFolders).values({
+  await runForOrg(orgId, () => activeDb().insert(documentFolders).values({
     id, orgId, name: input.name, parentId: input.parentId ?? null,
     scope: input.scope ?? "org", clientId: input.clientId ?? null,
     createdBy: input.createdBy ?? null, createdAt: new Date(),
-  });
+  }));
   return id;
 }
 
 export async function renameFolderDb(orgId: string, folderId: string, name: string): Promise<void> {
-  await getDb().update(documentFolders).set({ name })
-    .where(and(eq(documentFolders.orgId, orgId), eq(documentFolders.id, folderId)));
+  await runForOrg(orgId, () => activeDb().update(documentFolders).set({ name })
+    .where(and(eq(documentFolders.orgId, orgId), eq(documentFolders.id, folderId))));
 }
 
 /** Move documents and/or folders into a target folder (null = root). One metadata write. */
@@ -105,56 +105,60 @@ export async function moveItemsDb(
   items: { documentIds: string[]; folderIds: string[] },
   targetFolderId: string | null,
 ): Promise<void> {
-  const db = getDb();
-  if (items.documentIds.length)
-    await db.update(documents).set({ folderId: targetFolderId })
-      .where(and(eq(documents.orgId, orgId), inArray(documents.id, items.documentIds)));
-  if (items.folderIds.length)
-    await db.update(documentFolders).set({ parentId: targetFolderId })
-      .where(and(eq(documentFolders.orgId, orgId), inArray(documentFolders.id, items.folderIds)));
+  await runForOrg(orgId, async () => {
+    const db = activeDb();
+    if (items.documentIds.length)
+      await db.update(documents).set({ folderId: targetFolderId })
+        .where(and(eq(documents.orgId, orgId), inArray(documents.id, items.documentIds)));
+    if (items.folderIds.length)
+      await db.update(documentFolders).set({ parentId: targetFolderId })
+        .where(and(eq(documentFolders.orgId, orgId), inArray(documentFolders.id, items.folderIds)));
+  });
 }
 
 /** Assigning a document to a client puts it on their record AND makes it visible
  * to them (so the client portal shows it and the share notification is truthful). */
 export async function assignToClientDb(orgId: string, documentIds: string[], clientId: string): Promise<void> {
   if (!documentIds.length) return;
-  await getDb().update(documents).set({ clientId, visibility: "client_visible" })
-    .where(and(eq(documents.orgId, orgId), inArray(documents.id, documentIds)));
+  await runForOrg(orgId, () => activeDb().update(documents).set({ clientId, visibility: "client_visible" })
+    .where(and(eq(documents.orgId, orgId), inArray(documents.id, documentIds))));
 }
 
 export async function setVisibilityDb(orgId: string, documentIds: string[], visibility: DocumentVisibility): Promise<void> {
   if (!documentIds.length) return;
-  await getDb().update(documents).set({ visibility })
-    .where(and(eq(documents.orgId, orgId), inArray(documents.id, documentIds)));
+  await runForOrg(orgId, () => activeDb().update(documents).set({ visibility })
+    .where(and(eq(documents.orgId, orgId), inArray(documents.id, documentIds))));
 }
 
 export async function softDeleteItemsDb(orgId: string, items: { documentIds: string[]; folderIds: string[] }): Promise<void> {
-  const db = getDb();
-  const now = new Date();
-  if (items.documentIds.length)
-    await db.update(documents).set({ deletedAt: now })
-      .where(and(eq(documents.orgId, orgId), inArray(documents.id, items.documentIds)));
-  if (items.folderIds.length)
-    await db.update(documentFolders).set({ deletedAt: now })
-      .where(and(eq(documentFolders.orgId, orgId), inArray(documentFolders.id, items.folderIds)));
+  await runForOrg(orgId, async () => {
+    const db = activeDb();
+    const now = new Date();
+    if (items.documentIds.length)
+      await db.update(documents).set({ deletedAt: now })
+        .where(and(eq(documents.orgId, orgId), inArray(documents.id, items.documentIds)));
+    if (items.folderIds.length)
+      await db.update(documentFolders).set({ deletedAt: now })
+        .where(and(eq(documentFolders.orgId, orgId), inArray(documentFolders.id, items.folderIds)));
+  });
 }
 
 export async function shareWithCounsellorDb(
   orgId: string, targetType: ShareTargetType, targetId: string, sharedWith: string, grantedBy: string,
 ): Promise<void> {
-  await getDb().insert(documentShares).values({
+  await runForOrg(orgId, () => activeDb().insert(documentShares).values({
     id: `share_${randomUUID()}`, orgId, targetType, targetId, sharedWith, grantedBy, createdAt: new Date(),
-  }).onConflictDoNothing();
+  }).onConflictDoNothing());
 }
 
 export async function createRequestDb(
   orgId: string, input: { clientId: string; requestedBy: string; title: string; note?: string | null },
 ): Promise<string> {
   const id = `docreq_${randomUUID()}`;
-  await getDb().insert(documentRequests).values({
+  await runForOrg(orgId, () => activeDb().insert(documentRequests).values({
     id, orgId, clientId: input.clientId, requestedBy: input.requestedBy,
     title: input.title, note: input.note ?? null, status: "pending", createdAt: new Date(),
-  });
+  }));
   return id;
 }
 
@@ -177,17 +181,17 @@ export async function insertPendingDocument(input: {
   id: string; orgId: string; folderId: string | null; name: string; contentType: string;
   storageKey: string; uploadedBy: string | null;
 }): Promise<void> {
-  await getDb().insert(documents).values({
+  await runForOrg(input.orgId, () => activeDb().insert(documents).values({
     id: input.id, orgId: input.orgId, folderId: input.folderId, name: input.name,
     kind: "upload", visibility: "internal", storageProvider: "supabase", storageKey: input.storageKey,
     contentType: input.contentType, bytes: 0, sizeLabel: "…", scanStatus: "pending",
     uploadedBy: input.uploadedBy, sharedBy: "org", createdAt: new Date(),
-  });
+  }));
 }
 
 export async function finalizeDocument(orgId: string, documentId: string, bytes: number, scanStatus: ScanStatus): Promise<void> {
-  await getDb().update(documents).set({ bytes, sizeLabel: sizeLabel(bytes), scanStatus })
-    .where(and(eq(documents.orgId, orgId), eq(documents.id, documentId)));
+  await runForOrg(orgId, () => activeDb().update(documents).set({ bytes, sizeLabel: sizeLabel(bytes), scanStatus })
+    .where(and(eq(documents.orgId, orgId), eq(documents.id, documentId))));
 }
 
 /* ── Counsellor lane: own-clients' docs + shared-with-me ──────────────── */

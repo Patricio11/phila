@@ -98,3 +98,19 @@ alter table funder_contacts force row level security;
 drop policy if exists org_isolation on funder_contacts;
 --##
 create policy org_isolation on funder_contacts using (app_is_super() or exists (select 1 from funders f where f.id = funder_contacts.funder_id and f.org_id = app_current_org())) with check (app_is_super() or exists (select 1 from funders f where f.id = funder_contacts.funder_id and f.org_id = app_current_org()));
+--##
+-- Platform-global tables: hold cross-tenant secrets / config with no org_id, so no
+-- tenant may read them. Only the platform super-admin (or the owner connection,
+-- which BYPASSRLS for migrations/seed/webhooks) can. `user_presence` has no org_id
+-- either and isn't on the tenant request path; deny it to tenant sessions too.
+do $$
+declare t text;
+begin
+  foreach t in array array['platform_integrations','ai_providers','user_presence']
+  loop
+    execute format('alter table %I enable row level security', t);
+    execute format('alter table %I force row level security', t);
+    execute format('drop policy if exists super_only on %I', t);
+    execute format('create policy super_only on %I using (app_is_super()) with check (app_is_super())', t);
+  end loop;
+end $$;

@@ -59,13 +59,14 @@ export type EditScope = "this" | "following";
  * Every read + write is scoped by `orgId` (the tenant boundary), so a caller can
  * only ever move their own org's appointments — a cross-org id resolves to 0.
  */
-export async function rescheduleAppointment(orgId: string, appointmentId: string, newStart: string, scope: EditScope = "this"): Promise<number> {
+export async function rescheduleAppointment(orgId: string, appointmentId: string, newStart: string, scope: EditScope = "this", note?: string | null): Promise<number> {
   const db = getDb();
   const [appt] = await db.select().from(appointments).where(and(eq(appointments.id, appointmentId), eq(appointments.orgId, orgId))).limit(1);
   if (!appt) return 0;
+  const rescheduleNote = note?.trim() ? note.trim() : null;
 
   if (scope === "this" || !appt.seriesId) {
-    await db.update(appointments).set({ startsAt: new Date(newStart) }).where(and(eq(appointments.id, appointmentId), eq(appointments.orgId, orgId)));
+    await db.update(appointments).set({ startsAt: new Date(newStart), ...(rescheduleNote ? { rescheduleNote } : {}) }).where(and(eq(appointments.id, appointmentId), eq(appointments.orgId, orgId)));
     return 1;
   }
 
@@ -78,6 +79,8 @@ export async function rescheduleAppointment(orgId: string, appointmentId: string
     .set({ startsAt: sql`${appointments.startsAt} + make_interval(secs => ${deltaSec})` })
     .where(and(eq(appointments.orgId, orgId), eq(appointments.seriesId, appt.seriesId), gte(appointments.startsAt, appt.startsAt), ne(appointments.state, "cancelled")))
     .returning({ id: appointments.id });
+  // The reason lives on the anchor session that was moved (kept on the record).
+  if (rescheduleNote) await db.update(appointments).set({ rescheduleNote }).where(and(eq(appointments.id, appointmentId), eq(appointments.orgId, orgId)));
   return res.length;
 }
 

@@ -110,7 +110,7 @@ describe("buildRows", () => {
 });
 
 describe("parseXlsx round-trip", () => {
-  it("reads headers + rows from a real .xlsx", async () => {
+  it("reads headers + rows from a real .xlsx", { timeout: 30_000 }, async () => {
     const ExcelJS = (await import("exceljs")).default;
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet("Clients");

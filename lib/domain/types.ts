@@ -191,6 +191,8 @@ export interface Appointment {
   tags?: string[];
   /** Set on every appointment in a recurring series (enables edit-this/all). */
   seriesId?: string | null;
+  /** Optional reason recorded when the session was rescheduled. */
+  rescheduleNote?: string | null;
 }
 
 /** The **private** clinical note  author + supervisor only; Hub access audited. */

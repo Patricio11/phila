@@ -6,6 +6,8 @@ import { getDataProvider } from "@/lib/data-provider";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 import { TEAM_ROLES } from "@/lib/domain/enums";
+import { transferCaseloadDb } from "@/db/queries/clients";
+import { notifyCounsellor } from "@/db/queries/notifications";
 
 /**
  * Team management (W1.4, DB-backed). Membership lives in `org_members` (+ the
@@ -126,4 +128,48 @@ export async function inviteMember(
   });
   revalidatePath("/hub/team");
   return { ok: true };
+}
+
+/**
+ * Transfer a counsellor's whole caseload to another counsellor (Phase 18.8) — for
+ * an intern leaving or a terminated contract. Every active client's primary
+ * counsellor is re-pointed and all FUTURE scheduled sessions move; the clinical
+ * history (past sessions, notes, outcomes, documents) stays exactly as it was.
+ * The receiving counsellor gets an in-app notification. Audited.
+ */
+const transferInput = z.object({
+  fromCounsellorId: z.string().min(1),
+  toCounsellorId: z.string().min(1, "Pick the receiving counsellor."),
+});
+
+export async function transferCaseload(
+  raw: z.infer<typeof transferInput>,
+): Promise<{ ok: true; clients: number; movedSessions: number; skippedSessions: number } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = transferInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Pick the receiving counsellor." };
+  if (parsed.data.fromCounsellorId === parsed.data.toCounsellorId) return { ok: false, error: "Pick a different counsellor to receive the caseload." };
+
+  let result = { clients: 0, moved: 0, skipped: 0 };
+  if (process.env.DATA_PROVIDER === "db") {
+    result = await transferCaseloadDb(membership.orgId, parsed.data.fromCounsellorId, parsed.data.toCounsellorId);
+    if (result.clients === 0 && result.moved === 0) return { ok: false, error: "This counsellor has no active clients or upcoming sessions to transfer." };
+    await notifyCounsellor(parsed.data.toCounsellorId, {
+      kind: "caseload_transferred",
+      title: `${result.clients} client${result.clients === 1 ? "" : "s"} transferred to you`,
+      body: `${result.moved} upcoming session${result.moved === 1 ? "" : "s"} moved to your diary${result.skipped > 0 ? ` · ${result.skipped} clashed — please reschedule` : ""}. Full histories included.`,
+      href: "/app/clients",
+    });
+  }
+
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `counsellor:${parsed.data.fromCounsellorId}/caseload→${parsed.data.toCounsellorId}`,
+    reason: `transfer_caseload:${result.clients}c_${result.moved}s`,
+  });
+  revalidatePath("/hub/team");
+  revalidatePath("/hub/clients");
+  return { ok: true, clients: result.clients, movedSessions: result.moved, skippedSessions: result.skipped };
 }

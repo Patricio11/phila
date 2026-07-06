@@ -270,12 +270,14 @@ const reassignInput = z.object({
 
 export async function reassignClient(
   raw: z.infer<typeof reassignInput>,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<{ ok: true; movedSessions: number; skippedSessions: number } | { ok: false; error: string }> {
   const { principal, membership } = await requireHub();
   const parsed = reassignInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Pick a counsellor." };
 
-  if (isDb()) await reassignClientDb(membership.orgId, parsed.data.clientId, parsed.data.counsellorId);
+  let movedSessions = 0;
+  let skippedSessions = 0;
+  if (isDb()) ({ moved: movedSessions, skipped: skippedSessions } = await reassignClientDb(membership.orgId, parsed.data.clientId, parsed.data.counsellorId));
   await logAccess({
     action: "admin.action",
     actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
@@ -285,5 +287,5 @@ export async function reassignClient(
   });
   revalidatePath("/hub/clients");
   revalidatePath(`/hub/clients/${parsed.data.clientId}`);
-  return { ok: true };
+  return { ok: true, movedSessions, skippedSessions };
 }

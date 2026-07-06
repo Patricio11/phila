@@ -1,7 +1,8 @@
 import "server-only";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt, isNull } from "drizzle-orm";
 import { activeDb, runForOrg } from "@/lib/db/scoped";
-import { clients } from "@/db/schema";
+import { appointments, clients } from "@/db/schema";
+import { isSlotTakenError } from "@/db/queries/errors";
 import type { Province } from "@/lib/domain/enums";
 
 /**
@@ -101,10 +102,68 @@ export async function setClientRemovedDb(orgId: string, clientId: string, remove
     .where(and(eq(clients.id, clientId), eq(clients.orgId, orgId))));
 }
 
-/** Move a client to another primary counsellor (their history moves with them). */
-export async function reassignClientDb(orgId: string, clientId: string, counsellorId: string): Promise<void> {
+/**
+ * Move a set of FUTURE scheduled sessions to another counsellor, one row at a time
+ * so a diary clash (the GiST no-double-booking constraint) skips just that session
+ * instead of failing the whole transfer. Past sessions are never touched — the
+ * clinical history (notes, outcomes, attendance) stays exactly as it happened.
+ */
+async function moveFutureSessions(orgId: string, where: { clientId?: string; fromCounsellorId: string }, toCounsellorId: string): Promise<{ moved: number; skipped: number }> {
+  const rows = await runForOrg(orgId, () => activeDb()
+    .select({ id: appointments.id })
+    .from(appointments)
+    .where(and(
+      eq(appointments.orgId, orgId),
+      eq(appointments.counsellorId, where.fromCounsellorId),
+      ...(where.clientId ? [eq(appointments.clientId, where.clientId)] : []),
+      eq(appointments.state, "scheduled"),
+      gt(appointments.startsAt, new Date()),
+    )));
+  let moved = 0;
+  let skipped = 0;
+  for (const r of rows) {
+    try {
+      await runForOrg(orgId, () => activeDb()
+        .update(appointments)
+        .set({ counsellorId: toCounsellorId })
+        .where(and(eq(appointments.id, r.id), eq(appointments.orgId, orgId))));
+      moved++;
+    } catch (e) {
+      if (isSlotTakenError(e)) { skipped++; continue; } // new counsellor busy at that time
+      throw e;
+    }
+  }
+  return { moved, skipped };
+}
+
+/** Move a client to another primary counsellor. Their FUTURE scheduled sessions move
+ * too; the full history (past sessions, notes, outcomes) stays intact. */
+export async function reassignClientDb(orgId: string, clientId: string, counsellorId: string): Promise<{ moved: number; skipped: number }> {
+  const [row] = await runForOrg(orgId, () => activeDb()
+    .select({ prev: clients.primaryCounsellorId })
+    .from(clients)
+    .where(and(eq(clients.id, clientId), eq(clients.orgId, orgId)))
+    .limit(1));
   await runForOrg(orgId, () => activeDb()
     .update(clients)
     .set({ primaryCounsellorId: counsellorId })
     .where(and(eq(clients.id, clientId), eq(clients.orgId, orgId))));
+  if (!row?.prev || row.prev === counsellorId) return { moved: 0, skipped: 0 };
+  return moveFutureSessions(orgId, { clientId, fromCounsellorId: row.prev }, counsellorId);
+}
+
+/**
+ * Transfer a counsellor's WHOLE caseload to another counsellor (Phase 18.8) — for
+ * an intern leaving or a terminated contract. Re-points every active client's
+ * primary counsellor and moves all future scheduled sessions; everything that
+ * already happened (sessions, notes, outcomes, documents) remains untouched.
+ */
+export async function transferCaseloadDb(orgId: string, fromCounsellorId: string, toCounsellorId: string): Promise<{ clients: number; moved: number; skipped: number }> {
+  const reassigned = await runForOrg(orgId, () => activeDb()
+    .update(clients)
+    .set({ primaryCounsellorId: toCounsellorId })
+    .where(and(eq(clients.orgId, orgId), eq(clients.primaryCounsellorId, fromCounsellorId), isNull(clients.deletedAt)))
+    .returning({ id: clients.id }));
+  const sessions = await moveFutureSessions(orgId, { fromCounsellorId }, toCounsellorId);
+  return { clients: reassigned.length, ...sessions };
 }

@@ -40,6 +40,8 @@ const rescheduleInput = z.object({
   appointmentId: z.string().min(1),
   newStart: z.string().min(1),
   scope,
+  /** Optional reason — kept on the session record. */
+  note: z.string().trim().max(500).optional(),
 });
 
 export async function rescheduleAppointment(
@@ -51,7 +53,7 @@ export async function rescheduleAppointment(
   let moved = 1;
   if (process.env.DATA_PROVIDER === "db") {
     try {
-      moved = await persistReschedule(membership.orgId, parsed.data.appointmentId, parsed.data.newStart, parsed.data.scope);
+      moved = await persistReschedule(membership.orgId, parsed.data.appointmentId, parsed.data.newStart, parsed.data.scope, parsed.data.note ?? null);
     } catch (e) {
       if (isSlotTakenError(e)) return { ok: false, error: SLOT_TAKEN_MESSAGE };
       throw e;

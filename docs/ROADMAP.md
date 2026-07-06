@@ -985,6 +985,30 @@ is recorded to `audit_log` and the copy link points at the client activation pag
 
 ---
 
+## 🔁 PHASE 18.8: CASELOAD TRANSFER + RESCHEDULE REASON ✅ (2026-07-06)
+*Goal: when a counsellor leaves (intern rotation, contract ends), the org hands their whole caseload
+over in one smooth step  and any reschedule can carry a reason kept on the record.*
+
+- [x] **Transfer caseload (bulk)** — on the team member page (`/hub/team/[id]` → Caseload → **Transfer
+  all**): pick the receiving counsellor (searchable), one confirm. `transferCaseloadDb` re-points every
+  active client's **primary counsellor** and moves all **future scheduled sessions**; sessions that clash
+  with the receiver's diary are **skipped + reported** (per-row move, the GiST no-double-booking constraint
+  stays authoritative). The receiver gets an **in-app handover notification**. Audited.
+- [x] **History stays intact** — past sessions, notes, outcomes, and documents are never touched; only the
+  client's primary pointer + future diary entries move. Proven by test (a completed past session keeps its
+  original counsellor + state).
+- [x] **Per-client reassign upgraded** — the existing client "Reassign" now also brings the client's
+  future sessions to the new counsellor (same clash-skip), with honest toast counts.
+- [x] **Reschedule with optional reason** — the appointment detail's Move form takes an optional note
+  (`reschedule_note`, migration 0039), shown on the record ("Rescheduled  reason"); works for counsellor
+  and org (both use the same detail modal).
+- [x] Fix: `isSlotTakenError` now walks the error **cause chain** (deferred exclusion constraints surface
+  at COMMIT wrapped in a driver error).
+- [x] Tests: transfer integrity (clients + future moved, clash skipped, history untouched), single-client
+  reassign brings sessions, reschedule note round-trip.
+
+---
+
 ## 🔒 PHASE 19: TRUST, SECURITY & POPIA HARDENING
 *Goal: be allowed in the room with the most sensitive data there is.*
 - [ ] **Data residency:** migrate Postgres to an SA region (AWS `af-south-1` / Azure SA North) on the `db/client.ts` swap; confirm storage + AI inference residency posture; document cross-border flows.

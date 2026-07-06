@@ -13,6 +13,7 @@ import { StatusDot } from "@/components/ui/status-dot";
 import { CredentialChip } from "@/components/ui/credential-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TeamRoleChip, ROLE_REACH } from "@/components/hub/team-role-chip";
+import { TransferCaseloadButton } from "@/components/hub/transfer-caseload-button";
 import { ManageMemberButton } from "@/components/hub/manage-member-modal";
 import { SendSetupLinkButton } from "@/components/hub/send-setup-link-button";
 import { now as clockNow } from "@/lib/clock";
@@ -143,7 +144,18 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
 
           {caseload.length > 0 && (
             <Card>
-              <CardHead title="Caseload" count={caseload.length} />
+              <CardHead
+                title="Caseload"
+                count={caseload.length}
+                action={detail.counsellorId ? (
+                  <TransferCaseloadButton
+                    fromCounsellorId={detail.counsellorId}
+                    fromName={member.name}
+                    caseloadCount={caseload.length}
+                    counsellors={counsellors.map((c) => ({ id: c.id, name: c.name }))}
+                  />
+                ) : undefined}
+              />
               <div className="grid gap-2 px-[17px] pb-[17px] sm:grid-cols-2">
                 {caseload.map((c) => (
                   <Link key={c.id} href={`/hub/clients/${c.id}`} className="flex items-center gap-2.5 rounded-control border border-border p-2.5 transition-colors hover:bg-surface-hover">

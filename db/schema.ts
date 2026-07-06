@@ -236,6 +236,7 @@ export const appointments = pgTable("appointments", {
   tags: jsonb("tags").$type<string[]>().default([]).notNull(),
   seriesId: text("series_id"), // links a recurring series (edit-this/all)
   cancelReason: text("cancel_reason"),
+  rescheduleNote: text("reschedule_note"), // optional reason when a session is moved
   reminded24h: boolean("reminded_24h").default(false).notNull(), // reminder sweep dedup
   reminded1h: boolean("reminded_1h").default(false).notNull(),
 });

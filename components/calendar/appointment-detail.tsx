@@ -65,6 +65,7 @@ export function AppointmentDetail({
   const router = useRouter();
   const [pending, start] = useTransition();
   const [showReschedule, setShowReschedule] = useState(false);
+  const [moveNote, setMoveNote] = useState("");
   const [showCancel, setShowCancel] = useState(false);
   const [date, setDate] = useState(appt?.startsAt.slice(0, 10) ?? "");
   const [time, setTime] = useState(appt?.startsAt.slice(11, 16) ?? "");
@@ -111,14 +112,15 @@ export function AppointmentDetail({
     const newStart = proposedStart;
     const useScope: EditScope = isSeries ? scope : "this";
     start(async () => {
-      const res = await rescheduleAppointment({ appointmentId: appt.id, newStart, scope: useScope });
+      const res = await rescheduleAppointment({ appointmentId: appt.id, newStart, scope: useScope, note: moveNote.trim() || undefined });
       if (!res.ok) return toast({ tone: "error", title: res.error });
-      onUpdated?.({ ...appt, startsAt: newStart, state: "scheduled" });
+      onUpdated?.({ ...appt, startsAt: newStart, state: "scheduled", rescheduleNote: moveNote.trim() || appt.rescheduleNote });
       if (useScope === "following") router.refresh();
       setShowReschedule(false);
       setOverride(false);
       setScope("this");
-      toast({ tone: "success", title: res.moved > 1 ? `${res.moved} sessions moved` : "Session moved", description: "No message was sent  that happens once messaging is set up." });
+      setMoveNote("");
+      toast({ tone: "success", title: res.moved > 1 ? `${res.moved} sessions moved` : "Session moved", description: "The client is notified by email + in-app." });
     });
   };
 
@@ -192,6 +194,7 @@ export function AppointmentDetail({
               label={appt.type === "online" ? "Online" : "Location"}
               value={appt.type === "online" ? "Secure video room" : (appt.roomName ?? "In person")}
             />
+            {appt.rescheduleNote && <Row icon={NotebookPen} label="Rescheduled  reason" value={appt.rescheduleNote} wide />}
           </dl>
 
           {/* Online join link — the counsellor joins, or copies the invite for the client */}
@@ -219,13 +222,14 @@ export function AppointmentDetail({
                     <Input type="time" value={time} onChange={(e) => { setTime(e.target.value); setOverride(false); }} aria-label="New time" />
                   </div>
                   {isSeries && <ScopeToggle scope={scope} onChange={setScope} kind="move" />}
+                  <Textarea value={moveNote} onChange={(e) => setMoveNote(e.target.value)} rows={2} placeholder="Reason (optional)  kept on the record" aria-label="Reschedule reason" />
                   {conflict && (
                     <div className="flex items-start gap-2 rounded-control border border-warn/30 bg-warn-soft px-2.5 py-2 text-[12px] text-warn">
                       <AlertTriangle className="mt-0.5 size-3.5 shrink-0" strokeWidth={2} aria-hidden /> {conflict}
                     </div>
                   )}
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => { setShowReschedule(false); setOverride(false); setScope("this"); }} disabled={pending}>Cancel</Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setShowReschedule(false); setOverride(false); setScope("this"); setMoveNote(""); }} disabled={pending}>Cancel</Button>
                     <Button size="sm" onClick={doReschedule} loading={pending}>{conflict ? (override ? "Move anyway" : "Check & move") : "Move session"}</Button>
                   </div>
                 </div>

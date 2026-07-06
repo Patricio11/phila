@@ -217,12 +217,24 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
       merges through the UI scoped to its own card, asserts one survivor) + screenshots. Confirmed the demo's real
       seeded Lerato duplicate is left untouched.
 
-### 1.7 Super-admin console (lower user-visibility; overlaps Workstream 3)
-- [ ] `getPlatformOverview`, `listPlatformOrgs`, `getPlatformOrgDetail` → DB.
-- [ ] `getAiRail`, `listIntegrations`, `listPlatformAudit` → DB.
-- [ ] `listOnboardingRequirements` / `getOrgOnboardingReview` → DB; `saveOnboardingRequirements` /
-      `reviewOnboardingDoc` → persist.
-- [ ] `listOrgSlugs` → DB (public micro-site static params).
+### 1.7 Super-admin console — ✅ done
+- [x] `getPlatformOverview` / `listPlatformOrgs` / `getPlatformOrgDetail` → DB (`db/queries/platform.ts`, owner
+      connection): every tenant computed **live** from orgs + subscriptions + org_members + appointments (7-day
+      sessions) + ai_usage (month spend). Seeded 4 extra tenants (Thrive/Ubuntu/MindWell/Khula) so the console shows
+      a real, varied multi-tenant view; **cleaned up 19 junk `org_test_*` tenants** left by unclean signup e2e runs.
+- [x] `listPlatformAudit` → DB (recent `audit_log` joined to org + actor names). `listOrgSlugs` → DB (live org slugs
+      for the public micro-site static params).
+- [x] `getAiRail` → DB (enabled `ai_providers` row + month's `ai_usage` spend). `listIntegrations` → DB (catalogue
+      with status derived from `platform_integrations`: paystack/livekit/sms/email; dormant-by-default otherwise).
+- [x] Onboarding is now real: two tables (`onboarding_requirements`, `org_onboarding_docs`, migration 0036, RLS
+      platform-only). `listOnboardingRequirements` / `getOrgOnboardingReview` → DB; `saveOnboardingRequirements`
+      (replace checklist) / `reviewOnboardingDoc` (verify/reject) persist behind `DATA_PROVIDER==="db"`.
+- [x] Verified: tsc + eslint + build + unit **157/157** (5 new platform integration tests) + e2e
+      (`tests/e2e/platform.spec.ts`: overview/orgs/audit render from DB) + screenshots.
+
+> **W1 is complete.** Every super-admin console method used by a shipped page is now a DB override; onboarding
+> persists. Next: the end-to-end **signup → email verification → org onboarding upload → admin review → approval**
+> flow (builds on the onboarding tables above) — see Workstream 1.8 below.
 
 > **Definition of done for W1:** grep for `"(mock)"` / `"Phase .. persists"` in `app/**/actions.ts`
 > returns nothing that runs under `isDb()`, and every `DataProvider` method used by a shipped page is

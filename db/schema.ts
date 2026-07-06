@@ -67,6 +67,24 @@ export const platformSettings = pgTable("platform_settings", {
   vatRatePercent: integer("vat_rate_percent").notNull(),
 });
 
+/** The onboarding checklist every new practice must meet (super-admin owns it). */
+export const onboardingRequirements = pgTable("onboarding_requirements", {
+  id: text("id").primaryKey(),
+  label: text("label").notNull(),
+  description: text("description").notNull(),
+  required: boolean("required").default(true).notNull(),
+  sort: integer("sort").default(0).notNull(),
+});
+
+/** What each org has submitted against a requirement + the super-admin's decision. */
+export const orgOnboardingDocs = pgTable("org_onboarding_docs", {
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  requirementId: text("requirement_id").notNull(),
+  status: text("status").notNull(), // verified | pending | rejected
+  fileName: text("file_name"),
+  uploadedAt: timestamp("uploaded_at", { withTimezone: true }),
+}, (t) => [uniqueIndex("org_onboarding_uq").on(t.orgId, t.requirementId)]);
+
 /** Org staff membership  a user's role within an org (a user may belong to many). */
 export const orgMembers = pgTable(
   "org_members",

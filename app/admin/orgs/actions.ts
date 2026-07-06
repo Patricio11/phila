@@ -1,9 +1,11 @@
 "use server";
 
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { requireSuperAdmin } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 import { applyCredit } from "@/db/queries/messaging";
+import { reviewOnboardingDocDb } from "@/db/queries/platform";
 
 /**
  * Manually grant notification credits to an org (Phase 12.5)  the bridge until
@@ -45,6 +47,12 @@ export async function reviewOnboardingDoc(
   const principal = await requireSuperAdmin();
   const parsed = input.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid request." };
+
+  if (process.env.DATA_PROVIDER === "db") {
+    const res = await reviewOnboardingDocDb(parsed.data.orgId, parsed.data.requirementId, parsed.data.decision);
+    if (!res.ok) return { ok: false, error: "That document is not awaiting review." };
+  }
+
   await logAccess({
     action: "admin.action",
     actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null },
@@ -52,5 +60,6 @@ export async function reviewOnboardingDoc(
     target: `org:${parsed.data.orgId}/doc:${parsed.data.requirementId}`,
     reason: parsed.data.decision === "verify" ? "verify_document" : "reject_document",
   });
+  revalidatePath(`/admin/orgs/${parsed.data.orgId}`);
   return { ok: true };
 }

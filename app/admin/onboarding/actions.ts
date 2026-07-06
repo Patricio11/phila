@@ -1,8 +1,10 @@
 "use server";
 
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { requireSuperAdmin } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
+import { saveOnboardingRequirementsDb } from "@/db/queries/platform";
 
 /**
  * Configure the onboarding document requirements every new practice must meet
@@ -21,6 +23,11 @@ export async function saveOnboardingRequirements(
   const principal = await requireSuperAdmin();
   const parsed = input.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the requirements." };
+
+  if (process.env.DATA_PROVIDER === "db") {
+    await saveOnboardingRequirementsDb(parsed.data.requirements);
+  }
+
   await logAccess({
     action: "admin.action",
     actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null },
@@ -28,5 +35,6 @@ export async function saveOnboardingRequirements(
     target: "platform:onboarding_requirements",
     reason: "update_onboarding_requirements",
   });
+  revalidatePath("/admin/onboarding");
   return { ok: true };
 }

@@ -41,6 +41,8 @@ import {
   formAssignments as formAssignmentsFx,
   bookingSettings as bookingSettingsFx,
   platformSettings as platformSettingsFx,
+  onboardingRequirements as onboardingReqFx,
+  orgOnboardingDocs as onboardingDocsFx,
 } from "@/lib/mock/fixtures";
 import { CHANNELS, TRIGGERS, DEFAULT_TEMPLATES } from "@/lib/messaging/templates";
 
@@ -377,6 +379,59 @@ async function main() {
       enabled: true,
       updatedAt: msgNow,
     }).onConflictDoNothing();
+  }
+
+  // ── Platform onboarding checklist (super-admin) ───────────────────────
+  for (let i = 0; i < onboardingReqFx.length; i++) {
+    const r = onboardingReqFx[i]!;
+    await db.insert(schema.onboardingRequirements).values({ id: r.id, label: r.label, description: r.description, required: r.required, sort: i }).onConflictDoNothing();
+  }
+
+  // ── Extra tenants so the platform console shows a real, varied multi-tenant view ──
+  // Lightweight but honest: an org row + subscription + a few staff + recent sessions +
+  // (for AI-plan orgs) usage. Stats on /admin are then computed from these real rows.
+  const EXTRA_ORGS = [
+    { id: "org_thrive", name: "Thrive EAP", slug: "thrive-eap", province: "Western Cape", planId: "p_enterprise", status: "active" as const, createdAt: "2023-11-15", members: 5, sessions7d: 9, aiSpendCents: 124300 },
+    { id: "org_ubuntu", name: "Ubuntu Community Care", slug: "ubuntu-community-care", province: "KwaZulu-Natal", planId: "p_community", status: "trialing" as const, createdAt: "2026-06-10", members: 4, sessions7d: 6, aiSpendCents: 4200 },
+    { id: "org_mindwell", name: "MindWell Wellness", slug: "mindwell-wellness", province: "Gauteng", planId: "p_practice", status: "past_due" as const, createdAt: "2025-03-20", members: 3, sessions7d: 3, aiSpendCents: 0 },
+    { id: "org_khula", name: "Khula Trust", slug: "khula-trust", province: "Eastern Cape", planId: "p_community", status: "cancelled" as const, createdAt: "2024-09-01", members: 2, sessions7d: 0, aiSpendCents: 0 },
+  ];
+  const EXTRA_ROLES = ["org_admin", "counsellor", "counsellor", "front_desk", "finance"] as const;
+  for (const o of EXTRA_ORGS) {
+    await db.insert(schema.orgs).values({
+      id: o.id, name: o.name, slug: o.slug, province: o.province, timezone: "Africa/Johannesburg",
+      features: {}, scheduling: {}, clientPortal: {}, createdAt: new Date(`${o.createdAt}T08:00:00+02:00`),
+    }).onConflictDoNothing();
+    await db.insert(schema.subscriptions).values({ orgId: o.id, planId: o.planId, status: o.status, currentPeriodEnd: periodEnd, providerRef: "seed", updatedAt: msgNow }).onConflictDoNothing();
+    // Staff (ghost users) → real member count.
+    for (let i = 0; i < o.members; i++) {
+      const uid = `${o.id}_u${i}`;
+      await db.insert(schema.user).values({ id: uid, name: `${o.name} Staff ${i + 1}`, email: `staff${i + 1}@${o.slug}.example`, emailVerified: true, createdAt: msgNow, updatedAt: msgNow, platformRole: null, clientId: null }).onConflictDoNothing();
+      await db.insert(schema.account).values({ id: `acct_${uid}`, accountId: uid, providerId: "credential", userId: uid, password: hash, createdAt: msgNow, updatedAt: msgNow }).onConflictDoNothing();
+      await db.insert(schema.orgMembers).values({ orgId: o.id, userId: uid, teamRole: EXTRA_ROLES[i % EXTRA_ROLES.length]!, isSupervisor: false, status: "active", createdAt: msgNow }).onConflictDoNothing();
+    }
+    // Recent sessions → sessions7d (spread across the last 6 days).
+    for (let i = 0; i < o.sessions7d; i++) {
+      await db.insert(schema.appointments).values({
+        id: `${o.id}_appt${i}`, orgId: o.id, clientId: `${o.id}_cl${i}`, counsellorId: `${o.id}_co${i}`, serviceId: "svc_generic",
+        // Distinct counsellor + distinct time per row → never trips the overlap exclusion constraint.
+        type: "online", roomId: null, startsAt: new Date(msgNow.getTime() - (i + 1) * 4 * 3_600_000), durationMin: 60, state: "completed", tags: [],
+      }).onConflictDoNothing({ target: schema.appointments.id });
+    }
+    // AI usage this month → aiSpendCents (orgs on an AI-capable plan).
+    if (o.aiSpendCents > 0) {
+      await db.insert(schema.aiUsage).values({ orgId: o.id, kind: "note", model: "claude-sonnet-4-6", inputTokens: 0, outputTokens: 0, costCents: o.aiSpendCents, at: msgNow }).onConflictDoNothing();
+    }
+  }
+
+  // ── Per-org onboarding submissions (after every org exists, for the FK) ──
+  for (const [orgId, docs] of Object.entries(onboardingDocsFx)) {
+    for (const [reqId, d] of Object.entries(docs)) {
+      await db.insert(schema.orgOnboardingDocs).values({
+        orgId, requirementId: reqId, status: d.status, fileName: d.fileName,
+        uploadedAt: new Date(msgNow.getTime() - d.daysAgo * 86_400_000),
+      }).onConflictDoNothing();
+    }
   }
 
   const sql = neon(url!);

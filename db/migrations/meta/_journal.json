@@ -253,6 +253,13 @@
       "when": 1783346181513,
       "tag": "0035_exotic_ozymandias",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1783353251281,
+      "tag": "0036_tricky_gargoyle",
+      "breakpoints": true
     }
   ]
 }

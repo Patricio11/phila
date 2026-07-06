@@ -16,6 +16,10 @@ import { getSessionNoteDb } from "@/db/queries/session-notes";
 import { getSupervisionQueueDb, getSupervisionOverviewDb } from "@/db/queries/supervision";
 import { getInvoiceSettingsDb, getPlatformSettingsDb } from "@/db/queries/settings";
 import { getBookingSettingsDb } from "@/db/queries/booking-settings";
+import {
+  getPlatformOverviewDb, listPlatformOrgsDb, getPlatformOrgDetailDb, listPlatformAuditDb,
+  listOrgSlugsDb, getAiRailDb, listIntegrationsDb, listOnboardingRequirementsDb, getOrgOnboardingReviewDb,
+} from "@/db/queries/platform";
 import { getClientProfileDb } from "@/db/queries/client-profile";
 import { listTeamDb, getTeamMemberDetailDb, saveTeamMemberDb, setMemberStatusDb, inviteMemberDb } from "@/db/queries/team";
 import { PLANS, planById } from "@/lib/billing/plans";
@@ -608,6 +612,17 @@ export const dbProvider: DataProvider = {
 
   // ── Platform VAT (super-admin, single row) ────────────────────────────
   getPlatformSettings: () => getPlatformSettingsDb(),
+
+  // ── Super-admin console — every tenant, computed live from the real tables ──
+  getPlatformOverview: () => getPlatformOverviewDb(),
+  listPlatformOrgs: () => listPlatformOrgsDb(),
+  getPlatformOrgDetail: (orgId) => getPlatformOrgDetailDb(orgId),
+  listPlatformAudit: () => listPlatformAuditDb(),
+  listOrgSlugs: () => listOrgSlugsDb(),
+  getAiRail: () => getAiRailDb(),
+  listIntegrations: () => listIntegrationsDb(),
+  listOnboardingRequirements: () => listOnboardingRequirementsDb(),
+  getOrgOnboardingReview: (orgId) => getOrgOnboardingReviewDb(orgId),
 
   // ── Org settings: real org row + payment-connection status (dormant by default) ──
   getOrgSettings: async (orgId): Promise<OrgSettings | null> => {

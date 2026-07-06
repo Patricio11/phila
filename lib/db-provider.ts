@@ -16,6 +16,7 @@ import { getSessionNoteDb } from "@/db/queries/session-notes";
 import { getSupervisionQueueDb, getSupervisionOverviewDb } from "@/db/queries/supervision";
 import { getInvoiceSettingsDb } from "@/db/queries/settings";
 import { getClientProfileDb } from "@/db/queries/client-profile";
+import { listTeamDb, getTeamMemberDetailDb, saveTeamMemberDb, setMemberStatusDb, inviteMemberDb } from "@/db/queries/team";
 import { PLANS, planById } from "@/lib/billing/plans";
 import { getSubscriptionRow, listSubscriptions } from "@/db/queries/subscriptions";
 import { getReportingDb, getHubInsightsDb } from "@/db/queries/analytics";
@@ -590,6 +591,13 @@ export const dbProvider: DataProvider = {
       .map((m) => ({ label: new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", month: "short" }).format(m.takenAt), value: m.score }));
     return computeCounsellorDashboard({ counsellor: toCounsellor(cRow), org: toOrg(orgRow), appointments, counsellorClients, measuredClientIds, outcomePoints, now });
   }),
+
+  // ── Hub team  membership + roles from org_members/user/counsellors ────
+  listTeam: (orgId) => listTeamDb(orgId),
+  getTeamMemberDetail: (orgId, userId, now) => getTeamMemberDetailDb(orgId, userId, now),
+  saveTeamMember: (orgId, input) => saveTeamMemberDb(orgId, input),
+  setMemberStatus: (orgId, userId, status) => setMemberStatusDb(orgId, userId, status),
+  inviteTeamMember: (orgId, input, now) => inviteMemberDb(orgId, input, now),
 
   // ── Org invoicing config (VAT + banking) from the org row ─────────────
   getInvoiceSettings: (orgId) => getInvoiceSettingsDb(orgId).then((s) => ({ orgId, ...s })),

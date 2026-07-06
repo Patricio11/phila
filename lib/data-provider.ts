@@ -333,15 +333,22 @@ export interface OrgClientRow {
   status: CaseloadStatus;
 }
 
+export type MemberStatus = "active" | "invited" | "archived";
 export interface TeamMemberView {
   userId: string;
   name: string;
   email: string;
   teamRole: import("@/lib/domain/enums").TeamRole;
   isSupervisor: boolean;
+  /** Lifecycle. `active` is kept as a convenience (= status === "active"). */
+  status: MemberStatus;
   active: boolean;
   credential: { body: import("@/lib/domain/enums").CredentialBody; status: import("@/lib/domain/enums").CredentialStatus } | null;
   joinedAt: string;
+  /** Counsellors only: live caseload size (for the roster). */
+  caseload?: number;
+  /** Counsellors only: the `counsellors.id` (lets a quick role edit mirror the supervisor flag). */
+  counsellorId?: string | null;
 }
 
 export interface TeamMemberDetail {
@@ -834,6 +841,9 @@ export interface DataProvider {
   findDuplicateClients(orgId: string, now: string): Promise<DuplicateGroup[]>;
   listTeam(orgId: string): Promise<TeamMemberView[]>;
   getTeamMemberDetail(orgId: string, userId: string, now: string): Promise<TeamMemberDetail | null>;
+  saveTeamMember(orgId: string, input: { userId: string; teamRole: import("@/lib/domain/enums").TeamRole; isSupervisor: boolean; supervisorCounsellorId?: string | null; counsellorId?: string | null }): Promise<{ ok: boolean }>;
+  setMemberStatus(orgId: string, userId: string, status: MemberStatus): Promise<{ ok: boolean }>;
+  inviteTeamMember(orgId: string, input: { name: string; email: string; teamRole: import("@/lib/domain/enums").TeamRole }, now: string): Promise<{ userId: string; existing: boolean }>;
   getRoomsOverview(orgId: string, now: string): Promise<RoomView[]>;
   getRoomDetail(orgId: string, roomId: string, now: string): Promise<RoomDetail | null>;
   listSites(orgId: string): Promise<Site[]>;

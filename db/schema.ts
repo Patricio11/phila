@@ -70,6 +70,9 @@ export const orgMembers = pgTable(
       .references(() => user.id),
     teamRole: teamRoleEnum("team_role").notNull(),
     isSupervisor: boolean("is_supervisor").default(false).notNull(),
+    /** Lifecycle: active | invited (awaiting first sign-in) | archived (access revoked). */
+    status: text("status").default("active").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [uniqueIndex("org_members_org_user_uq").on(t.orgId, t.userId)],
 );

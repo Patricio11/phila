@@ -74,17 +74,23 @@ const DEMO_USERS = [
   { id: "user_aisha", name: "Aisha Patel", email: "aisha@masizakhe.org.za", platformRole: null, clientId: null },
   { id: "user_pieter", name: "Pieter van der Merwe", email: "pieter@masizakhe.org.za", platformRole: null, clientId: null },
   { id: "user_thandeka", name: "Thandeka Mbeki", email: "thandeka@masizakhe.org.za", platformRole: null, clientId: null },
+  { id: "user_lindiwe", name: "Lindiwe Khoza", email: "frontdesk@masizakhe.org.za", platformRole: null, clientId: null },
+  { id: "user_riaan", name: "Riaan Steyn", email: "finance@masizakhe.org.za", platformRole: null, clientId: null },
+  { id: "user_bongani", name: "Bongani Nkosi", email: "programmes@masizakhe.org.za", platformRole: null, clientId: null },
   { id: "user_lerato", name: "Lerato Mahlangu", email: "lerato.m@example.co.za", platformRole: "client", clientId: "cl_lerato" },
   { id: "user_funder", name: "Palesa Mokoena", email: "palesa.mokoena@dsd.example.gov.za", platformRole: "funder", clientId: null },
   { id: "user_operator", name: "Sizwe Ndlovu", email: "ops@philasa.com", platformRole: "super_admin", clientId: null },
 ];
 
 const MEMBERS = [
-  { userId: "user_nomsa", teamRole: "counsellor", isSupervisor: true },
-  { userId: "user_thabo", teamRole: "counsellor", isSupervisor: false },
-  { userId: "user_aisha", teamRole: "counsellor", isSupervisor: false },
-  { userId: "user_pieter", teamRole: "counsellor", isSupervisor: false },
-  { userId: "user_thandeka", teamRole: "org_admin", isSupervisor: false },
+  { userId: "user_nomsa", teamRole: "counsellor", isSupervisor: true, status: "active" },
+  { userId: "user_thabo", teamRole: "counsellor", isSupervisor: false, status: "active" },
+  { userId: "user_aisha", teamRole: "counsellor", isSupervisor: false, status: "active" },
+  { userId: "user_pieter", teamRole: "counsellor", isSupervisor: false, status: "active" },
+  { userId: "user_thandeka", teamRole: "org_admin", isSupervisor: false, status: "active" },
+  { userId: "user_lindiwe", teamRole: "front_desk", isSupervisor: false, status: "active" },
+  { userId: "user_riaan", teamRole: "finance", isSupervisor: false, status: "active" },
+  { userId: "user_bongani", teamRole: "programme_manager", isSupervisor: false, status: "archived" },
 ] as const;
 
 async function main() {
@@ -112,7 +118,7 @@ async function main() {
     await db.insert(schema.account).values({ id: `acct_${u.id}`, accountId: u.id, providerId: "credential", userId: u.id, password: hash, createdAt: now, updatedAt: now }).onConflictDoNothing();
   }
   for (const m of MEMBERS) {
-    await db.insert(schema.orgMembers).values({ orgId: ORG, userId: m.userId, teamRole: m.teamRole, isSupervisor: m.isSupervisor }).onConflictDoNothing();
+    await db.insert(schema.orgMembers).values({ orgId: ORG, userId: m.userId, teamRole: m.teamRole, isSupervisor: m.isSupervisor, status: m.status, createdAt: now }).onConflictDoNothing();
   }
 
   // ── Directory cluster ─────────────────────────────────────────────────

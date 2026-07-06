@@ -172,9 +172,19 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
 - [ ] Client↔counsellor messaging channel (distinct from staff `message_threads`) — `listConversations` still mock
       (a new feature, not just persistence; deferred).
 
-### 1.4 Hub team management
-- [ ] `listTeam` / `getTeamMemberDetail` → DB.
-- [ ] `saveTeamMember` / `inviteMember` / `sendSetupLink` (`app/hub/team/actions.ts`) → persist membership + role.
+### 1.4 Hub team management — ✅ done
+- [x] `org_members` got a `status` (`active`/`invited`/`archived`) + `createdAt` (migration 0034); seeded the three
+      missing role users — **front_desk** (Lindiwe), **finance** (Riaan), **programme_manager** (Bongani, archived) —
+      so every role is represented with real data.
+- [x] `listTeam` / `getTeamMemberDetail` → DB (`db/queries/team.ts`, RLS-scoped via `runForOrg`); `TeamMemberView`
+      now carries `status`, live `caseload`, and `counsellorId` (lets a quick role edit mirror the supervisor flag).
+- [x] `saveTeamMember` / `setMemberStatus` (archive/restore) / `inviteTeamMember` / `sendSetupLink`
+      (`app/hub/team/actions.ts`) → persist membership + role through the provider seam; audited; revalidate `/hub/team`.
+- [x] **Team page redesign** (the "make some magic" ask): a `RoleGuide` legend (all five roles, exactly what each
+      reaches + the one thing it can never touch), Active/Invited/Archived tabs with counts, search, and rich per-row
+      actions (Open, Manage role & access, Resend invite, Archive/Restore) via a row menu. Beautiful + smooth.
+- [x] Verified: tsc + eslint + build + unit (147/148, one pre-existing parallel-flake) + e2e round-trip
+      (`tests/e2e/team.spec.ts`: roster, role guide, archive→restore) + screenshots.
 
 ### 1.5 Org / platform settings (stop discarding saves)
 - [x] `saveOrgProfile` → persists to `orgs.profile` (migration 0031); **hardcoded fake registration/practice

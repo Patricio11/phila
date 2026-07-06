@@ -1,7 +1,7 @@
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { PageHead } from "@/components/shell/page-head";
-import { TeamTable } from "@/components/hub/team-table";
+import { TeamBoard } from "@/components/hub/team-board";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Team" };
@@ -15,9 +15,9 @@ export default async function HubTeamPage() {
     <div className="rise space-y-6">
       <PageHead
         title="Team & roles"
-        summary="Each member's role sets exactly what they can reach  clinical notes stay with the counsellor and their supervisor."
+        summary="Invite colleagues, set what each role can reach, and manage access — clinical notes stay with the counsellor and their supervisor."
       />
-      <TeamTable members={members} />
+      <TeamBoard members={members} />
     </div>
   );
 }

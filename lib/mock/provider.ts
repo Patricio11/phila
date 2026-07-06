@@ -1097,15 +1097,19 @@ export const mockProvider: DataProvider = {
     return ok(
       teamMembers.map((m) => {
         const counsellor = m.counsellorId ? allCounsellors.find((c) => c.id === m.counsellorId) : undefined;
+        const status = m.active ? "active" as const : "archived" as const;
         return {
           userId: m.userId,
           name: m.name,
           email: m.email,
           teamRole: m.teamRole,
           isSupervisor: m.isSupervisor,
+          status,
           active: m.active,
           credential: counsellor ? { body: counsellor.credential.body, status: counsellor.credential.status } : null,
           joinedAt: m.joinedAt,
+          caseload: counsellor ? liveOnly(allClients.filter((cl) => cl.primaryCounsellorId === counsellor.id)).length : undefined,
+          counsellorId: counsellor?.id ?? null,
         };
       }),
     );
@@ -1121,9 +1125,12 @@ export const mockProvider: DataProvider = {
       email: m.email,
       teamRole: m.teamRole,
       isSupervisor: m.isSupervisor,
+      status: (m.active ? "active" : "archived") as "active" | "invited" | "archived",
       active: m.active,
       credential: counsellor ? { body: counsellor.credential.body, status: counsellor.credential.status } : null,
       joinedAt: m.joinedAt,
+      caseload: counsellor ? liveOnly(allClients.filter((cl) => cl.primaryCounsellorId === counsellor.id)).length : undefined,
+      counsellorId: counsellor?.id ?? null,
     };
 
     let caseload: { id: string; name: string; riskFlag: boolean }[] = [];
@@ -1165,6 +1172,29 @@ export const mockProvider: DataProvider = {
       upcoming,
       stats,
     });
+  },
+
+  saveTeamMember: (orgId, input): Promise<{ ok: boolean }> => {
+    void orgId;
+    const m = teamMembers.find((t) => t.userId === input.userId);
+    if (!m) return ok({ ok: false });
+    m.teamRole = input.teamRole;
+    m.isSupervisor = input.isSupervisor;
+    return ok({ ok: true });
+  },
+
+  setMemberStatus: (orgId, userId, status): Promise<{ ok: boolean }> => {
+    void orgId;
+    const m = teamMembers.find((t) => t.userId === userId);
+    if (!m) return ok({ ok: false });
+    m.active = status === "active";
+    return ok({ ok: true });
+  },
+
+  inviteTeamMember: (orgId, input, now): Promise<{ userId: string; existing: boolean }> => {
+    void orgId; void input; void now;
+    // Demo: membership is seeded; a mock invite is a no-op beyond audit.
+    return ok({ userId: "user_invited_mock", existing: false });
   },
 
   getRoomsOverview: (orgId, now): Promise<RoomView[]> => {
@@ -1622,9 +1652,12 @@ export const mockProvider: DataProvider = {
             email: m.email,
             teamRole: m.teamRole,
             isSupervisor: m.isSupervisor,
+            status: (m.active ? "active" : "archived") as "active" | "invited" | "archived",
             active: m.active,
             credential: counsellor ? { body: counsellor.credential.body, status: counsellor.credential.status } : null,
             joinedAt: m.joinedAt,
+            caseload: counsellor ? liveOnly(allClients.filter((cl) => cl.primaryCounsellorId === counsellor.id)).length : undefined,
+            counsellorId: counsellor?.id ?? null,
           };
         })
       : [];

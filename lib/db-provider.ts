@@ -13,6 +13,7 @@
 import { and, eq, gte, isNotNull, isNull, lte } from "drizzle-orm";
 import type { AppointmentView, CaseloadRow, CaseloadStatus, ClientDossier, CounsellorDashboard, DataProvider, DuplicateGroup, HubOverview, OutcomePoint, OrgClientRow, OrgSubscription, PlanWithUsage, RoomView, RoomDetail, SessionEditorData } from "@/lib/data-provider";
 import { getSessionNoteDb } from "@/db/queries/session-notes";
+import { getSupervisionQueueDb, getSupervisionOverviewDb } from "@/db/queries/supervision";
 import { PLANS, planById } from "@/lib/billing/plans";
 import { getSubscriptionRow, listSubscriptions } from "@/db/queries/subscriptions";
 import { getReportingDb, getHubInsightsDb } from "@/db/queries/analytics";
@@ -584,6 +585,10 @@ export const dbProvider: DataProvider = {
       .map((m) => ({ label: new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", month: "short" }).format(m.takenAt), value: m.score }));
     return computeCounsellorDashboard({ counsellor: toCounsellor(cRow), org: toOrg(orgRow), appointments, counsellorClients, measuredClientIds, outcomePoints, now });
   }),
+
+  // ── Supervision  supervisor's sign-off queue + overview from real notes ──
+  getSupervisionQueue: (orgId, supervisorId) => getSupervisionQueueDb(orgId, supervisorId),
+  getSupervisionOverview: (orgId, supervisorId, now) => getSupervisionOverviewDb(orgId, supervisorId, now),
 
   // ── Session editor payload  assembled from the real clinical tables ──
   getSession: (orgId: string, appointmentId: string): Promise<SessionEditorData | null> => runForOrg(orgId, async (): Promise<SessionEditorData | null> => {

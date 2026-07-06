@@ -804,8 +804,8 @@ export interface DataProvider {
   getClientDossier(orgId: string, clientId: string, now: string): Promise<ClientDossier | null>;
   listCounsellorSessions(orgId: string, counsellorId: string, now: string): Promise<AppointmentView[]>;
   getSession(orgId: string, appointmentId: string, now: string): Promise<SessionEditorData | null>;
-  getSupervisionQueue(supervisorId: string, now: string): Promise<SupervisionItem[]>;
-  getSupervisionOverview(supervisorId: string, now: string): Promise<SupervisionOverview>;
+  getSupervisionQueue(orgId: string, supervisorId: string, now: string): Promise<SupervisionItem[]>;
+  getSupervisionOverview(orgId: string, supervisorId: string, now: string): Promise<SupervisionOverview>;
   listConversations(counsellorId: string): Promise<Conversation[]>;
   listTeamThreads(userId: string, orgId: string): Promise<TeamThread[]>;
   getCounsellorRooms(counsellorId: string, now: string): Promise<CounsellorRoomsView>;

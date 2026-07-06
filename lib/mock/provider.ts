@@ -856,7 +856,7 @@ export const mockProvider: DataProvider = {
     return ok(orgInvoicesFor(counsellor.orgId).filter((i) => clientIds.has(i.clientId)));
   },
 
-  getSupervisionQueue: (supervisorId, now) => {
+  getSupervisionQueue: (_orgId, supervisorId, now) => {
     const superviseeIds = new Set(
       allCounsellors.filter((c) => c.supervisorId === supervisorId).map((c) => c.id),
     );
@@ -882,7 +882,7 @@ export const mockProvider: DataProvider = {
     return ok(items);
   },
 
-  getSupervisionOverview: (supervisorId, now): Promise<SupervisionOverview> => {
+  getSupervisionOverview: (_orgId, supervisorId, now): Promise<SupervisionOverview> => {
     void now;
     const supervisees = allCounsellors.filter((c) => c.supervisorId === supervisorId);
     const pendingBy = (cid: string) => supervisionTemplates.filter((t) => t.superviseeId === cid).length;

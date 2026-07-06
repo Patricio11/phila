@@ -206,6 +206,11 @@ export const sessionNotes = pgTable("session_notes", {
   body: text("body").notNull(),
   aiGenerated: boolean("ai_generated").default(false).notNull(),
   signedAt: timestamp("signed_at", { withTimezone: true }),
+  // Supervision sign-off (W1.1): a supervisor reviews a supervisee's signed note.
+  supervisorId: text("supervisor_id"),
+  supervisorSignedAt: timestamp("supervisor_signed_at", { withTimezone: true }),
+  supervisorDecision: text("supervisor_decision"), // approved | changes_requested
+  supervisorComment: text("supervisor_comment"),
 });
 
 /** The client-SHARED care plan (distinct from the private note). */

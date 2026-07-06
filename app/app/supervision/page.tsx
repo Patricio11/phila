@@ -36,8 +36,8 @@ export default async function SupervisionPage() {
 
   const now = clockNow();
   const [items, overview] = await Promise.all([
-    provider.getSupervisionQueue(me.id, now),
-    provider.getSupervisionOverview(me.id, now),
+    provider.getSupervisionQueue(membership.orgId, me.id, now),
+    provider.getSupervisionOverview(membership.orgId, me.id, now),
   ]);
 
   await logAccess({

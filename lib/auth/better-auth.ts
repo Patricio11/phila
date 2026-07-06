@@ -5,6 +5,8 @@ import { nextCookies } from "better-auth/next-js";
 import { twoFactor } from "better-auth/plugins";
 import { getDb } from "@/db/client";
 import * as schema from "@/db/schema";
+import { sendPlatformEmail } from "@/lib/email/platform-email";
+import { verificationEmail } from "@/lib/email/templates";
 
 /**
  * Better Auth  the real identity layer (Phase 9). Email + password over the
@@ -21,9 +23,18 @@ export const auth = betterAuth({
   database: drizzleAdapter(getDb(), { provider: "pg", schema }),
   emailAndPassword: {
     enabled: true,
-    // Verification + reset are wired to the notifications adapter in Phase 12.
-    requireEmailVerification: false,
+    // Sign-in is refused until the address is verified (W1.8) — protects deliverability
+    // and blocks junk signups. The verification email is sent on sign-up below.
+    requireEmailVerification: true,
     minPasswordLength: 8,
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    // Better Auth builds `url` (verify endpoint + callback); we deliver the branded email.
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendPlatformEmail({ to: user.email, ...verificationEmail(url, user.name) });
+    },
   },
   user: {
     additionalFields: {

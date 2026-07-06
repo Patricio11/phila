@@ -8,7 +8,8 @@ import { auth } from "@/lib/auth/better-auth";
 import { getCurrentPrincipal } from "@/lib/auth/session";
 import { logAccess } from "@/lib/audit";
 import { getDb } from "@/db/client";
-import { orgMembers, orgs } from "@/db/schema";
+import { orgMembers, orgs, subscriptions } from "@/db/schema";
+import { planById } from "@/lib/billing/plans";
 
 /**
  * Auth flows. Sign-in is **real** (Better Auth) as of Phase 9; the rest validate
@@ -38,7 +39,11 @@ async function homeForUser(userId: string, platformRole: string | null): Promise
 
 export async function signIn(
   raw: z.infer<typeof signInInput>,
-): Promise<{ ok: true; redirect: string } | { ok: true; twoFactor: true } | { ok: false; error: string }> {
+): Promise<
+  | { ok: true; redirect: string }
+  | { ok: true; twoFactor: true }
+  | { ok: false; error: string; needsVerification?: true; email?: string }
+> {
   const parsed = signInInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check your details." };
 
@@ -48,7 +53,14 @@ export async function signIn(
       body: { email: parsed.data.email, password: parsed.data.password },
       headers: await headers(),
     })) as typeof res;
-  } catch {
+  } catch (e) {
+    // Unverified address: refuse sign-in and guide them to verify (Better Auth also
+    // re-sends the verification email on this failed attempt).
+    const code = (e as { body?: { code?: string }; status?: number | string })?.body?.code;
+    const msg = e instanceof Error ? e.message.toLowerCase() : "";
+    if (code === "EMAIL_NOT_VERIFIED" || msg.includes("not verified")) {
+      return { ok: false, error: "Please verify your email first — we've sent you a fresh link.", needsVerification: true, email: parsed.data.email };
+    }
     return { ok: false, error: "Wrong email or password." };
   }
 
@@ -74,6 +86,8 @@ const registerInput = z.object({
   email: z.string().email("Enter a valid work email."),
   password: z.string().min(8, "Use at least 8 characters."),
   province: z.enum(PROVINCES),
+  /** Optionally carried from a plan choice on the landing page; the trial runs on it. */
+  planId: z.string().optional(),
   agree: z.literal(true, { message: "Please accept the terms to continue." }),
 });
 
@@ -105,14 +119,22 @@ async function uniqueSlug(db: ReturnType<typeof getDb>, base: string): Promise<s
  * also signs them in) and their **org** + membership, then the form routes to
  * onboarding. The org starts Dormant-by-Default  every paid feature off.
  */
-export async function registerPractice(raw: z.infer<typeof registerInput>): Promise<Result> {
+const TRIAL_DAYS = 17;
+
+export async function registerPractice(
+  raw: z.infer<typeof registerInput>,
+): Promise<{ ok: true; email: string } | { ok: false; error: string }> {
   const parsed = registerInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check your details." };
   const { practiceName, name, email, password, province } = parsed.data;
+  // Honour a plan chosen on the landing page; otherwise the trial runs on Community.
+  const planId = planById(parsed.data.planId ?? "") ? parsed.data.planId! : "p_community";
 
   let userId: string;
   try {
-    const res = await auth.api.signUpEmail({ body: { email, password, name }, headers: await headers() });
+    // requireEmailVerification is on, so this creates the user + sends the branded
+    // verification email (Better Auth `sendOnSignUp`) but establishes NO session.
+    const res = await auth.api.signUpEmail({ body: { email, password, name, callbackURL: "/welcome" }, headers: await headers() });
     userId = res.user.id;
   } catch {
     return { ok: false, error: "That email may already be registered. Try signing in." };
@@ -130,8 +152,16 @@ export async function registerPractice(raw: z.infer<typeof registerInput>): Prom
     timezone: "Africa/Johannesburg",
     features: { ai: false, video: false, whatsapp: false, sms: false, payments: false },
     scheduling: { defaultDurationMin: 60, bufferMin: 10, businessHours: DEFAULT_HOURS },
+    onboardingStatus: "not_started",
   });
   await db.insert(orgMembers).values({ orgId, userId, teamRole: "org_admin", isSupervisor: false });
+
+  // Start the free trial (no card). Access is real from day one; verification just
+  // unlocks payouts + funder sharing.
+  const trialEnd = new Date(Date.now() + TRIAL_DAYS * 86_400_000);
+  await db.insert(subscriptions).values({
+    orgId, planId, status: "trialing", currentPeriodEnd: trialEnd, providerRef: "trial", updatedAt: new Date(),
+  }).onConflictDoNothing();
 
   await logAccess({
     action: "admin.action",
@@ -140,6 +170,18 @@ export async function registerPractice(raw: z.infer<typeof registerInput>): Prom
     target: `org:${orgId}`,
     reason: "register_practice",
   });
+  return { ok: true, email };
+}
+
+/** Resend the verification email (from the "check your email" screen or the login gate). */
+export async function resendVerification(raw: { email: string }): Promise<Result> {
+  const parsed = emailInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Enter a valid email." };
+  try {
+    await auth.api.sendVerificationEmail({ body: { email: parsed.data.email, callbackURL: "/welcome" }, headers: await headers() });
+  } catch {
+    // Don't reveal whether the address exists — always report success.
+  }
   return { ok: true };
 }
 

@@ -242,6 +242,41 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
 
 ---
 
+## Workstream 1.8 — 🟢 SIGNUP → VERIFY → ONBOARDING → APPROVAL (trial-first)
+
+**Why:** onboard real practices smoothly. A paid product with a **17-day free trial** (no card): keep
+signup low-friction, but collect real company data + documents and let the platform admin verify.
+
+**Decisions (with the user):** no hard approval gate (trials must work). **Email verification is
+mandatory.** After verify + sign-in they land in the hub with the trial live; a friendly gate nudges them
+to **complete the company profile + upload the admin-set required documents** to go fully live (unlock
+payouts + funder sharing). A plan chosen on the landing page (`?plan=`) carries into the trial and is
+shown on signup (no picker on the form — too much friction). Plan catalogue is **platform-admin managed**.
+
+### 1.8a Mandatory email verification + trial start — ✅ done
+- [x] Better Auth `requireEmailVerification: true` + `emailVerification` (sendOnSignUp, autoSignInAfterVerification);
+      branded verification email via Resend (`lib/email/platform-email.ts` + `templates.ts`), honest dormant fallback.
+- [x] `registerPractice`: creates the org (`onboardingStatus: not_started`) + a **trialing** subscription
+      (17 days) on the chosen plan (`?plan=` honoured, else Community); returns a "check your email" state.
+- [x] Login gate: `signIn` refuses unverified addresses and surfaces a **resend** affordance; `resendVerification`
+      action; post-verify `/welcome` landing → hub. Org lifecycle columns on `orgs`
+      (`onboarding_status`, `onboarding_submitted_at`, `onboarding_reviewed_at`; migration 0037).
+- [x] Verified: tsc + eslint + build + e2e (`tests/e2e/verify-signup.spec.ts`: check-email, trial on chosen
+      plan, login gated until verified, verified admin gets in) + screenshots.
+
+### 1.8b Company profile + document onboarding (the go-live gate) — ⏳ next
+- [ ] Hub banner/gate when `onboardingStatus != verified/submitted`: a guided **company profile** (registration no,
+      VAT/tax, HPCSA practice no, POPIA Information Officer, physical + postal address, banking for payouts) +
+      **upload the admin-set required documents** (real Supabase storage → `org_onboarding_docs`), then **submit**
+      (`onboardingStatus = submitted`).
+
+### 1.8c Admin review + approval — ⏳ next
+- [ ] Admin console shows each org's lifecycle (*Email pending · Onboarding pending · Submitted · Verified ·
+      Action needed*); admin reviews company info + docs, verify/reject each, and **approve** the org
+      (`onboardingStatus = verified`) → branded **approval email**; reject → **action-needed email**.
+
+---
+
 ## Workstream 2 — 🟠 SECURITY HARDENING (Phase 19)
 
 **Status:** not started.

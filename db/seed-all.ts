@@ -114,6 +114,7 @@ async function main() {
     scheduling: org.scheduling as unknown as Record<string, unknown>,
     clientPortal: org.clientPortal as unknown as Record<string, boolean>,
     bookingSettings: (bookingSettingsFx[org.id] ?? {}) as unknown as Record<string, unknown>,
+    onboardingStatus: "verified", // the established demo practice is fully verified
     createdAt: now,
   }).onConflictDoNothing();
 
@@ -391,16 +392,18 @@ async function main() {
   // Lightweight but honest: an org row + subscription + a few staff + recent sessions +
   // (for AI-plan orgs) usage. Stats on /admin are then computed from these real rows.
   const EXTRA_ORGS = [
-    { id: "org_thrive", name: "Thrive EAP", slug: "thrive-eap", province: "Western Cape", planId: "p_enterprise", status: "active" as const, createdAt: "2023-11-15", members: 5, sessions7d: 9, aiSpendCents: 124300 },
-    { id: "org_ubuntu", name: "Ubuntu Community Care", slug: "ubuntu-community-care", province: "KwaZulu-Natal", planId: "p_community", status: "trialing" as const, createdAt: "2026-06-10", members: 4, sessions7d: 6, aiSpendCents: 4200 },
-    { id: "org_mindwell", name: "MindWell Wellness", slug: "mindwell-wellness", province: "Gauteng", planId: "p_practice", status: "past_due" as const, createdAt: "2025-03-20", members: 3, sessions7d: 3, aiSpendCents: 0 },
-    { id: "org_khula", name: "Khula Trust", slug: "khula-trust", province: "Eastern Cape", planId: "p_community", status: "cancelled" as const, createdAt: "2024-09-01", members: 2, sessions7d: 0, aiSpendCents: 0 },
+    { id: "org_thrive", name: "Thrive EAP", slug: "thrive-eap", province: "Western Cape", planId: "p_enterprise", status: "active" as const, createdAt: "2023-11-15", members: 5, sessions7d: 9, aiSpendCents: 124300, onboarding: "submitted" },
+    { id: "org_ubuntu", name: "Ubuntu Community Care", slug: "ubuntu-community-care", province: "KwaZulu-Natal", planId: "p_community", status: "trialing" as const, createdAt: "2026-06-10", members: 4, sessions7d: 6, aiSpendCents: 4200, onboarding: "not_started" },
+    { id: "org_mindwell", name: "MindWell Wellness", slug: "mindwell-wellness", province: "Gauteng", planId: "p_practice", status: "past_due" as const, createdAt: "2025-03-20", members: 3, sessions7d: 3, aiSpendCents: 0, onboarding: "action_needed" },
+    { id: "org_khula", name: "Khula Trust", slug: "khula-trust", province: "Eastern Cape", planId: "p_community", status: "cancelled" as const, createdAt: "2024-09-01", members: 2, sessions7d: 0, aiSpendCents: 0, onboarding: "verified" },
   ];
   const EXTRA_ROLES = ["org_admin", "counsellor", "counsellor", "front_desk", "finance"] as const;
   for (const o of EXTRA_ORGS) {
     await db.insert(schema.orgs).values({
       id: o.id, name: o.name, slug: o.slug, province: o.province, timezone: "Africa/Johannesburg",
-      features: {}, scheduling: {}, clientPortal: {}, createdAt: new Date(`${o.createdAt}T08:00:00+02:00`),
+      features: {}, scheduling: {}, clientPortal: {}, onboardingStatus: o.onboarding,
+      onboardingSubmittedAt: o.onboarding === "submitted" ? msgNow : null,
+      createdAt: new Date(`${o.createdAt}T08:00:00+02:00`),
     }).onConflictDoNothing();
     await db.insert(schema.subscriptions).values({ orgId: o.id, planId: o.planId, status: o.status, currentPeriodEnd: periodEnd, providerRef: "seed", updatedAt: msgNow }).onConflictDoNothing();
     // Staff (ghost users) → real member count.

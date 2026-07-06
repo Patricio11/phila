@@ -57,6 +57,10 @@ export const orgs = pgTable("orgs", {
   bookingSettings: jsonb("booking_settings").$type<Record<string, unknown>>().default({}).notNull(),
   /** Payment-gateway connection (Dormant-by-Default): { provider, status }. Empty until an admin connects one. */
   payments: jsonb("payments").$type<Record<string, unknown>>().default({}).notNull(),
+  /** Verification lifecycle (W1.8): not_started → submitted → verified | action_needed. */
+  onboardingStatus: text("onboarding_status").default("not_started").notNull(),
+  onboardingSubmittedAt: timestamp("onboarding_submitted_at", { withTimezone: true }),
+  onboardingReviewedAt: timestamp("onboarding_reviewed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 });

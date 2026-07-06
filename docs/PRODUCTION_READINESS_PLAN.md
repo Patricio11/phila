@@ -171,10 +171,12 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
 - [ ] `saveTeamMember` / `inviteMember` / `sendSetupLink` (`app/hub/team/actions.ts`) → persist membership + role.
 
 ### 1.5 Org / platform settings (stop discarding saves)
-- [ ] `saveOrgProfile` (`app/hub/settings/actions.ts`) → persist to the org row; **remove the hardcoded fake
-      registration/practice numbers** in `app/hub/settings/page.tsx` (credibility + POPIA risk).
-- [ ] `saveInvoiceSettings` → persist VAT/banking/invoice-prefix; `getInvoiceSettings` → DB.
-- [ ] Public booking policy: `getBookingSettings` → DB + booking-settings save persists (pairs with §6 IA).
+- [x] `saveOrgProfile` → persists to `orgs.profile` (migration 0031); **hardcoded fake registration/practice
+      numbers removed** from the settings page (now reads the real profile). Verified via e2e.
+- [x] `saveInvoiceSettings` → persists VAT/banking/invoice-prefix to `orgs.invoice_settings` (migration 0032);
+      `getInvoiceSettings` is a DB override merged over defaults. Same proven JSONB pattern as the profile.
+- [ ] Public booking policy: `getBookingSettings` → DB + booking-settings save persists (carries per-service/
+      counsellor bookability arrays — more involved; pairs with §6 booking IA).
 - [ ] `getOrgSettings` (payment-connection status), `getPlatformSettings` (VAT) → DB.
 
 ### 1.6 Client merge

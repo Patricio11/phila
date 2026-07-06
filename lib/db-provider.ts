@@ -14,6 +14,7 @@ import { and, eq, gte, isNotNull, isNull, lte } from "drizzle-orm";
 import type { AppointmentView, CaseloadRow, CaseloadStatus, ClientDossier, CounsellorDashboard, DataProvider, DuplicateGroup, HubOverview, OutcomePoint, OrgClientRow, OrgSubscription, PlanWithUsage, RoomView, RoomDetail, SessionEditorData } from "@/lib/data-provider";
 import { getSessionNoteDb } from "@/db/queries/session-notes";
 import { getSupervisionQueueDb, getSupervisionOverviewDb } from "@/db/queries/supervision";
+import { getInvoiceSettingsDb } from "@/db/queries/settings";
 import { PLANS, planById } from "@/lib/billing/plans";
 import { getSubscriptionRow, listSubscriptions } from "@/db/queries/subscriptions";
 import { getReportingDb, getHubInsightsDb } from "@/db/queries/analytics";
@@ -586,6 +587,9 @@ export const dbProvider: DataProvider = {
       .map((m) => ({ label: new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", month: "short" }).format(m.takenAt), value: m.score }));
     return computeCounsellorDashboard({ counsellor: toCounsellor(cRow), org: toOrg(orgRow), appointments, counsellorClients, measuredClientIds, outcomePoints, now });
   }),
+
+  // ── Org invoicing config (VAT + banking) from the org row ─────────────
+  getInvoiceSettings: (orgId) => getInvoiceSettingsDb(orgId).then((s) => ({ orgId, ...s })),
 
   // ── Supervision  supervisor's sign-off queue + overview from real notes ──
   getSupervisionQueue: (orgId, supervisorId) => getSupervisionQueueDb(orgId, supervisorId),

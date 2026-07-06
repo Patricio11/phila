@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
-import { saveBusinessHours as persistBusinessHours, saveClientPortal as persistClientPortal, setOrgFeature as persistOrgFeature, saveSchedulingDefaults as persistSchedulingDefaults, saveOrgProfileDb } from "@/db/queries/settings";
+import { saveBusinessHours as persistBusinessHours, saveClientPortal as persistClientPortal, setOrgFeature as persistOrgFeature, saveSchedulingDefaults as persistSchedulingDefaults, saveOrgProfileDb, saveInvoiceSettingsDb as persistInvoiceSettings } from "@/db/queries/settings";
 import { saveVideoSettings } from "@/db/queries/video";
 import { saveAiSettings } from "@/db/queries/ai";
 import { ORG_FEATURES } from "@/lib/domain/enums";
@@ -229,6 +229,15 @@ export async function saveInvoiceSettings(
   if (parsed.data.vatRegistered && !parsed.data.vatNumber?.trim()) {
     return { ok: false, error: "Add your VAT number, or switch VAT registration off." };
   }
+  if (process.env.DATA_PROVIDER === "db") {
+    const d = parsed.data;
+    await persistInvoiceSettings(membership.orgId, {
+      vatRegistered: d.vatRegistered, vatNumber: d.vatNumber ?? "", pricesIncludeVat: d.pricesIncludeVat,
+      invoicePrefix: d.invoicePrefix, paymentTermsDays: d.paymentTermsDays, bankName: d.bankName ?? "",
+      accountName: d.accountName ?? "", accountNumber: d.accountNumber ?? "", branchCode: d.branchCode ?? "",
+      showPayButton: d.showPayButton,
+    });
+  }
   await logAccess({
     action: "admin.action",
     actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
@@ -236,6 +245,8 @@ export async function saveInvoiceSettings(
     target: `org:${membership.orgId}/invoice_settings`,
     reason: "update_invoice_settings",
   });
+  revalidatePath("/hub/settings");
+  revalidatePath("/hub/invoicing");
   return { ok: true };
 }
 

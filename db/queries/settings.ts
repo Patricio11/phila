@@ -49,6 +49,29 @@ export async function saveOrgProfileDb(orgId: string, name: string, profile: Rec
   await runForOrg(orgId, () => activeDb().update(orgs).set({ name, profile }).where(eq(orgs.id, orgId)));
 }
 
+export interface InvoiceSettingsRow {
+  vatRegistered: boolean; vatNumber: string; pricesIncludeVat: boolean; invoicePrefix: string;
+  paymentTermsDays: number; bankName: string; accountName: string; accountNumber: string;
+  branchCode: string; showPayButton: boolean;
+}
+const INVOICE_DEFAULTS: InvoiceSettingsRow = {
+  vatRegistered: false, vatNumber: "", pricesIncludeVat: false, invoicePrefix: "INV",
+  paymentTermsDays: 14, bankName: "", accountName: "", accountNumber: "", branchCode: "", showPayButton: false,
+};
+
+/** The org's invoicing config, merged over sensible defaults. RLS-scoped. */
+export async function getInvoiceSettingsDb(orgId: string): Promise<InvoiceSettingsRow> {
+  return runForOrg(orgId, async () => {
+    const [row] = await activeDb().select({ s: orgs.invoiceSettings }).from(orgs).where(eq(orgs.id, orgId)).limit(1);
+    return { ...INVOICE_DEFAULTS, ...((row?.s as Partial<InvoiceSettingsRow>) ?? {}) };
+  });
+}
+
+/** Persist the org's invoicing config. RLS-scoped. */
+export async function saveInvoiceSettingsDb(orgId: string, settings: InvoiceSettingsRow): Promise<void> {
+  await runForOrg(orgId, () => activeDb().update(orgs).set({ invoiceSettings: { ...settings } }).where(eq(orgs.id, orgId)));
+}
+
 /** Enable/disable one org feature flag, merged into the features JSONB (dormant-by-default). RLS-scoped. */
 export async function setOrgFeature(orgId: string, feature: string, enabled: boolean): Promise<void> {
   await runForOrg(orgId, async () => {

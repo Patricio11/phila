@@ -51,6 +51,8 @@ export const orgs = pgTable("orgs", {
   clientPortal: jsonb("client_portal").$type<Record<string, boolean>>().default({}).notNull(),
   /** Practice profile: { tradingName, registrationNo, practiceNo, email, phone, website, address }. */
   profile: jsonb("profile").$type<Record<string, string>>().default({}).notNull(),
+  /** Invoicing config: VAT registration/number, prices-incl-VAT, prefix, terms, banking, pay button. */
+  invoiceSettings: jsonb("invoice_settings").$type<Record<string, unknown>>().default({}).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 });

@@ -1,0 +1,1 @@
+ALTER TABLE "orgs" ADD COLUMN "invoice_settings" jsonb DEFAULT '{}'::jsonb NOT NULL;

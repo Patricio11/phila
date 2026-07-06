@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { ClipboardList, ShieldAlert } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
+import { recordOutcome } from "@/app/app/sessions/[id]/actions";
 import { cn } from "@/lib/utils";
 
 const OPTIONS = ["Not at all", "Several days", "More than half the days", "Nearly every day"];
@@ -48,8 +50,10 @@ function band(tool: Tool, score: number): string {
 }
 
 /** PHQ-9 / GAD-7 capture (Task 7.5). The validated instruments; severity is honest. */
-export function OutcomeCaptureButton({ clientName }: { clientName: string }) {
+export function OutcomeCaptureButton({ clientId, clientName }: { clientId: string; clientName: string }) {
   const { toast } = useToast();
+  const router = useRouter();
+  const [pending, start] = useTransition();
   const [open, setOpen] = useState(false);
   const [tool, setTool] = useState<Tool>("PHQ-9");
   const [answers, setAnswers] = useState<Record<number, number>>({});
@@ -66,9 +70,14 @@ export function OutcomeCaptureButton({ clientName }: { clientName: string }) {
   };
 
   const save = () => {
-    toast({ tone: "success", title: `${tool} recorded`, description: `Score ${score} · ${band(tool, score)}. It joins ${clientName.split(" ")[0]}'s outcome trend.` });
-    setOpen(false);
-    setAnswers({});
+    start(async () => {
+      const res = await recordOutcome({ clientId, tool, score });
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      toast({ tone: "success", title: `${tool} recorded`, description: `Score ${score} · ${band(tool, score)}. It joins ${clientName.split(" ")[0]}'s outcome trend.` });
+      setOpen(false);
+      setAnswers({});
+      router.refresh();
+    });
   };
 
   return (
@@ -88,7 +97,7 @@ export function OutcomeCaptureButton({ clientName }: { clientName: string }) {
               Score <span className="font-bold tabular-nums text-text">{score}</span>
               {answeredAll && <span className="ml-1.5 text-text-3">· {band(tool, score)}</span>}
             </span>
-            <Button onClick={save} disabled={!answeredAll}>Save measure</Button>
+            <Button onClick={save} loading={pending} disabled={!answeredAll}>Save measure</Button>
           </div>
         }
       >

@@ -349,7 +349,7 @@ export function SessionEditor({
             <div className="text-[13px] font-[600] text-text">Outcome measure</div>
             <p className="mt-1 text-[12px] text-text-2">Capture a PHQ-9 or GAD-7 to track progress over time.</p>
             <div className="mt-3">
-              <OutcomeCaptureButton clientName={client.name} />
+              <OutcomeCaptureButton clientId={client.id} clientName={client.name} />
             </div>
           </Card>
 

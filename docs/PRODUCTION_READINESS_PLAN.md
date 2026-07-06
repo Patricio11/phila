@@ -138,7 +138,7 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
 
 ## Workstream 1 — 🟠 KILL THE MOCK (real data everywhere, no fake saves)
 
-**Status:** not started. *These "look real, silently discard data" — the most dangerous class.*
+**Status:** in progress (2026-07-06). *These "look real, silently discard data" — the most dangerous class.*
 
 ### 1.1 Clinical (highest user impact)
 - [ ] `getSession` → DB read of the real session + note (`db-provider.ts` override + `db/queries`).
@@ -147,9 +147,13 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
 - [ ] `addCarePlanStep` (`app/app/clients/actions.ts`) → persist the step (stop returning a fake id).
 - [ ] Supervision: `getSupervisionQueue` / `getSupervisionOverview` → DB; `signOffNote` → persist decision + comment.
 
-### 1.2 Outcomes (small, high value — makes the dashboard real)
-- [ ] `components/outcomes/outcome-capture.tsx` `save()` → write `outcome_measures` (table + sparkline
-      already exist; only the server action is missing). Unlocks the counsellor trend chart.
+### 1.2 Outcomes (small, high value — makes the dashboard real) ✅ (2026-07-06)
+- [x] `components/outcomes/outcome-capture.tsx` `save()` now calls a real `recordOutcome` action
+      (`app/app/sessions/[id]/actions.ts`) → `createOutcomeMeasureDb` (`db/queries/outcomes.ts`) writes
+      `outcome_measures` via `runForOrg` (the RLS child policy rejects a cross-org client). The component takes
+      `clientId` and `router.refresh()`es so the dashboard sparkline + reporting update. Verified: integration test
+      (persist + cross-org rejection) and an e2e that records a PHQ-9 in the session editor and reads score=9 back
+      from Postgres.
 
 ### 1.3 Client portal
 - [ ] `getClientProfile` + `listAppointmentsForClient` → DB.

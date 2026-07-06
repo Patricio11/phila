@@ -11,7 +11,10 @@ import { notifyAppointment } from "@/lib/messaging/notify";
 import { getDb } from "@/db/client";
 import { appointments, clients } from "@/db/schema";
 import { getAiSettings, getAiSpendThisMonth, recordAiUsage } from "@/db/queries/ai";
+import { createOutcomeMeasureDb } from "@/db/queries/outcomes";
 import { draftNote, draftCarePlan } from "@/lib/ai/scribe";
+
+const isDb = () => process.env.DATA_PROVIDER === "db";
 
 /** Who may run the session editor / AI scribe: the counsellor or the org admin. */
 const CLINICIANS = ["counsellor", "org_admin"] as const;
@@ -168,6 +171,41 @@ export async function shareCarePlan(
     orgId: membership.orgId,
     target: `client:${parsed.data.clientId}/care_plan`,
     reason: "share_care_plan",
+  });
+  return { ok: true };
+}
+
+const outcomeInput = z.object({
+  clientId: z.string().min(1),
+  tool: z.enum(["PHQ-9", "GAD-7"]),
+  score: z.number().int().min(0).max(27),
+});
+
+/**
+ * Record a PHQ-9 / GAD-7 measure for a client. Persisted to `outcome_measures`, which
+ * feeds the counsellor dashboard trend + reporting. The RLS child policy (via
+ * `clients.org_id`) rejects a client outside the caller's org, so a cross-org clientId
+ * can't be scored. Never auto-actions safeguarding — that stays a human decision.
+ */
+export async function recordOutcome(
+  raw: z.infer<typeof outcomeInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg([...CLINICIANS]);
+  const parsed = outcomeInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Couldn't record the measure." };
+  if (isDb()) {
+    try {
+      await createOutcomeMeasureDb(membership.orgId, parsed.data, clockNow());
+    } catch {
+      return { ok: false, error: "That client isn't on your caseload." };
+    }
+  }
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
+    orgId: membership.orgId,
+    target: `client:${parsed.data.clientId}/outcome`,
+    reason: `record_${parsed.data.tool}`,
   });
   return { ok: true };
 }

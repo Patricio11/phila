@@ -25,8 +25,10 @@ test("hub funders page reflects a funder written to the DB", async ({ page }) =>
     await signIn(page, "thandeka@masizakhe.org.za");
     await page.waitForURL("**/hub", { timeout: 30_000 });
     await page.goto("/hub/funders");
-    // The page summarises "{N} funders" from listFunders  3 seeded + 1 inserted.
-    await expect(page.getByText(/\b4 funders\b/)).toBeVisible({ timeout: 15_000 });
+    // The page lists funders from listFunders (3 seeded + this one). Assert the
+    // inserted funder's card surfaced, and that the "Funders · N" summary shows 4.
+    await expect(page.getByText(name)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/Funders\s*·\s*4/i)).toBeVisible();
     await page.screenshot({ path: "screenshots/funders-db.png", fullPage: true });
   } finally {
     await sql`DELETE FROM funders WHERE id = ${id}`;

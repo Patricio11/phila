@@ -108,12 +108,27 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
       policy; owner still reads (LiveKit/Paystack/AI unaffected), tenants get 0. **Every schema table now covered.**
 - [x] Public/booking/webhook/cron/bootstrap paths correctly stay on the owner connection (no `runForOrg` → owner,
       by design). The session/membership resolution that bootstraps the org context must stay owner (chicken-and-egg).
-- [ ] **Residual (non-critical, on the app-layer boundary + guards):** counsellor reads (`listCaseload`,
-      `getCounsellorDashboard`, `listCounsellorSessions` — take `counsellorId`), client-portal reads (`getClient`,
-      `getCarePlan`, `listClient*` — take `clientId`), funder reads (`listFunderGrants`, `getFunderGrantView`),
-      team threads, and the grantId/token-based writes (indicators/allocations/narrative/form-submit). These thread
-      an org through a `counsellorId`/`clientId`/token and scope as those surfaces get further work. The super-admin
-      console is still mock (Workstream 1.7 / 3).
+- [x] **Residual now RLS-scoped (2026-07-06):**
+      - **Counsellor reads** (`getCounsellorDashboard` / `listCaseload` / `listCounsellorSessions`) — org threaded
+        through the seam + `runForOrg`; all six callers pass `membership.orgId`. Verified live.
+      - **Team threads** (`listTeamThreads`) — already had `orgId`; wrapped in `runForOrg`. Verified live.
+      - **Client-portal reads** (`getClient` / `getCarePlan` / `listClientDocuments` / `listClientVisibleDocuments` /
+        `listClientDocumentRequests` / `listClientInvoices` / `getClientConsents` / `listClientForms`) — a
+        `runForClient(clientId, …)` helper resolves the authenticated client's own org and scopes the read.
+        Verified live (/me documents/billing/consent).
+      - **GrantId-based writes** (`setGrantIndicatorsDb` / `setGrantAllocationsDb` / `postGrantNarrativeDb`) — a
+        `runForGrant(grantId, …)` helper resolves the grant's org (via `getGrantOrgId`) and scopes; child RLS
+        policies (via `grants.org_id`) enforce it. Verified via funders-crud e2e.
+- [x] **Intentionally on the owner connection (correct by design, not gaps):**
+      - **Public tokenized writes** — `submitFormResponseDb` (form share/assignment token) is the same
+        capability-token model as pay/booking/webhooks, which the security audit confirmed correctly stay on owner.
+        The token is the capability; the write carries `orgId` from the resolved row.
+      - **Funder reads** (`listFunderGrants` / `getFunderGrantView`) — the funder is an **external, read-only role**
+        whose isolation is the `funder_contacts` grant-scope join (a funder user can be scoped to grants across
+        orgs), so org-membership RLS is a model mismatch; the app-layer grant-scope join is the correct boundary.
+      - **Bootstrap** — session/membership resolution and the org lookups that *feed* `runForOrg`/`runForClient`/
+        `runForGrant` must use owner (chicken-and-egg: they resolve the org before a context exists).
+- [ ] The super-admin console is still **mock** in db mode (Workstream 1.7 / 3) — migrates + RLS-scopes there.
 
 ### 0.3 Fix the fail-open cron ✅ (2026-07-05)
 - [x] `app/api/cron/reminders/route.ts` now fails **closed** in production: an unset `CRON_SECRET` returns

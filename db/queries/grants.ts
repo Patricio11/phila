@@ -115,9 +115,18 @@ export async function getGrantOrgId(grantId: string): Promise<string | null> {
   return g?.orgId ?? null;
 }
 
-/** Post a grant narrative (Phase 16)  persists; org-side authorship checked by the caller. */
+/** Resolve a grant's org (owner) and run `fn` RLS-scoped to it. Grant-child writes take
+ * a grantId, not an orgId; scoping to the grant's org lets the child RLS policies (via
+ * grants.org_id) enforce the boundary at the DB. No-ops if the grant can't be resolved. */
+async function runForGrant(grantId: string, fn: () => Promise<void>): Promise<void> {
+  const orgId = await getGrantOrgId(grantId);
+  if (!orgId) return;
+  await runForOrg(orgId, fn);
+}
+
+/** Post a grant narrative (Phase 16)  persists; org-side authorship checked by the caller. RLS-scoped. */
 export async function postGrantNarrativeDb(grantId: string, author: string, body: string): Promise<void> {
-  await getDb().insert(grantNarratives).values({ id: `narr_${crypto.randomUUID().slice(0, 12)}`, grantId, author, body, postedAt: new Date() });
+  await runForGrant(grantId, () => activeDb().insert(grantNarratives).values({ id: `narr_${crypto.randomUUID().slice(0, 12)}`, grantId, author, body, postedAt: new Date() }).then(() => undefined));
 }
 
 /* ── Writes (Phase 18.8)  org builds its own funders, grants, indicators + allocations.
@@ -177,23 +186,27 @@ export async function deleteGrantDb(orgId: string, grantId: string): Promise<voi
   });
 }
 
-/** Replace a grant's indicators wholesale (the edit form owns the whole set). */
+/** Replace a grant's indicators wholesale (the edit form owns the whole set). RLS-scoped. */
 export async function setGrantIndicatorsDb(grantId: string, indicators: IndicatorInput[]): Promise<void> {
-  const db = getDb();
-  await db.delete(grantIndicators).where(eq(grantIndicators.grantId, grantId));
-  if (indicators.length) {
-    await db.insert(grantIndicators).values(indicators.map((i) => ({ id: rid("ind"), grantId, name: i.name, type: i.type, metric: i.metric, target: i.target, unit: i.unit, rule: i.rule })));
-  }
+  await runForGrant(grantId, async () => {
+    const db = activeDb();
+    await db.delete(grantIndicators).where(eq(grantIndicators.grantId, grantId));
+    if (indicators.length) {
+      await db.insert(grantIndicators).values(indicators.map((i) => ({ id: rid("ind"), grantId, name: i.name, type: i.type, metric: i.metric, target: i.target, unit: i.unit, rule: i.rule })));
+    }
+  });
 }
 
-/** Replace the clients tagged to a grant (which clients count toward its targets). */
+/** Replace the clients tagged to a grant (which clients count toward its targets). RLS-scoped. */
 export async function setGrantAllocationsDb(grantId: string, clientIds: string[]): Promise<void> {
-  const db = getDb();
-  await db.delete(grantAllocations).where(eq(grantAllocations.grantId, grantId));
-  const unique = [...new Set(clientIds)];
-  if (unique.length) {
-    await db.insert(grantAllocations).values(unique.map((clientId) => ({ grantId, clientId })));
-  }
+  await runForGrant(grantId, async () => {
+    const db = activeDb();
+    await db.delete(grantAllocations).where(eq(grantAllocations.grantId, grantId));
+    const unique = [...new Set(clientIds)];
+    if (unique.length) {
+      await db.insert(grantAllocations).values(unique.map((clientId) => ({ grantId, clientId })));
+    }
+  });
 }
 
 /**

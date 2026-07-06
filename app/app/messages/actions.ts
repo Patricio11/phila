@@ -99,7 +99,7 @@ export async function requestChatUpload(raw: z.infer<typeof chatUploadInput>): P
   const { membership } = await requireOrg();
   const parsed = chatUploadInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Check the file." };
-  const v = validateUpload({ contentType: parsed.data.contentType, bytes: parsed.data.bytes });
+  const v = validateUpload({ contentType: parsed.data.contentType, bytes: parsed.data.bytes, name: parsed.data.name });
   if (!v.ok) return v;
   if (!isDb()) return { ok: false, error: "Attachments aren't available in this demo." };
 

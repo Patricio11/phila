@@ -1,7 +1,21 @@
 import { NextResponse } from "next/server";
-import { addOptOut, getOrgByWhatsappPhone, whatsappVerifyTokenExists, updateMessageStatus } from "@/db/queries/messaging";
+import { createHmac, timingSafeEqual } from "node:crypto";
+import { addOptOut, getOrgByWhatsappPhone, getWhatsappAppSecretByPhone, whatsappVerifyTokenExists, updateMessageStatus } from "@/db/queries/messaging";
 
 export const dynamic = "force-dynamic";
+
+/** Verify Meta's `X-Hub-Signature-256` HMAC over the raw body with the org's app secret. */
+function signatureValid(appSecret: string, rawBody: string, header: string | null): boolean {
+  if (!appSecret || !header || !header.startsWith("sha256=")) return false;
+  const got = header.slice("sha256=".length);
+  const want = createHmac("sha256", appSecret).update(rawBody, "utf8").digest("hex");
+  if (got.length !== want.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(got, "hex"), Buffer.from(want, "hex"));
+  } catch {
+    return false;
+  }
+}
 
 /**
  * WhatsApp Cloud API webhook (Phase 12.6). One URL for every org; routed by the
@@ -23,11 +37,22 @@ export async function GET(req: Request) {
 const OPT_OUT_WORDS = new Set(["stop", "stopp", "unsubscribe", "cancel", "opt out", "optout"]);
 
 export async function POST(req: Request) {
+  // Read the RAW body first — the HMAC is over the exact bytes Meta sent.
+  const rawBody = await req.text();
   let payload: WhatsAppWebhook;
   try {
-    payload = (await req.json()) as WhatsAppWebhook;
+    payload = JSON.parse(rawBody) as WhatsAppWebhook;
   } catch {
     return NextResponse.json({ ok: true }); // ignore malformed; Meta retries
+  }
+
+  // Verify the signature with the receiving org's app secret (routed by phone_number_id).
+  // Single-URL multi-tenant webhook: the routing id is read from the body, then the
+  // signature is checked against that org's secret before we act on anything.
+  const routePhoneId = payload.entry?.[0]?.changes?.[0]?.value?.metadata?.phone_number_id;
+  const appSecret = routePhoneId ? await getWhatsappAppSecretByPhone(routePhoneId) : null;
+  if (!appSecret || !signatureValid(appSecret, rawBody, req.headers.get("x-hub-signature-256"))) {
+    return NextResponse.json({ error: "invalid signature" }, { status: 401 });
   }
 
   for (const entry of payload.entry ?? []) {

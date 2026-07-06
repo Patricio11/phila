@@ -170,7 +170,7 @@ export async function requestFormImageUpload(raw: z.infer<typeof imgInput>): Pro
   const parsed = imgInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Check the image." };
   if (!parsed.data.contentType.startsWith("image/")) return { ok: false, error: "Please choose an image file." };
-  const v = validateUpload({ contentType: parsed.data.contentType, bytes: parsed.data.bytes });
+  const v = validateUpload({ contentType: parsed.data.contentType, bytes: parsed.data.bytes, name: parsed.data.name });
   if (!v.ok) return v;
 
   const storage = await getStorageProvider();

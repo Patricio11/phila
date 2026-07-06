@@ -174,7 +174,7 @@ export async function requestUpload(raw: z.infer<typeof uploadInput>): Promise<{
   const { principal, membership } = await requireHub();
   const parsed = uploadInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Check the file." };
-  const v = validateUpload({ contentType: parsed.data.contentType, bytes: parsed.data.bytes });
+  const v = validateUpload({ contentType: parsed.data.contentType, bytes: parsed.data.bytes, name: parsed.data.name });
   if (!v.ok) return v;
 
   const storage = await getStorageProvider();

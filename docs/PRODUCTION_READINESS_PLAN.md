@@ -296,33 +296,39 @@ shown on signup (no picker on the form — too much friction). Plan catalogue is
 
 ## Workstream 2 — 🟠 SECURITY HARDENING (Phase 19)
 
-**Status:** not started.
+**Status:** in progress (batch 1 landed).
 
-- [ ] **Security headers / middleware.** Add a `headers()` block (or `middleware.ts`): HSTS, CSP
-      (incl. `frame-ancestors 'none'` except the room page), `X-Frame-Options: DENY`,
+- [x] **Security headers.** `next.config.ts` `headers()` now sets HSTS, `X-Frame-Options: DENY`,
       `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`,
-      `Permissions-Policy`. Currently `next.config.ts` sets none and there is no middleware.
+      `Permissions-Policy` (camera/mic/geo off by default; camera+mic re-enabled only on `/room/*`), and a
+      nonce-free CSP (`frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'`).
+      Verified shipping via `curl -I`. A full nonce-based `script-src` CSP is a deliberate follow-up.
 - [ ] **Prompt (don't enforce) 2FA.** After sign-in, if a privileged user (super-admin / org-admin /
       supervisor) hasn't enabled 2FA, show a **skippable** prompt encouraging setup — never block access.
       Skipping proceeds straight to the dashboard; "remind me later" is fine. The user can enable/disable
       2FA any time from **Settings → Security** (already exists). Do **not** wire `requiresTwoFactor()` into
       the guards as a hard gate. (Optional: let the super-admin set a soft org-policy "recommend 2FA" that
       only changes prompt copy, still skippable.)
-- [ ] **Email verification.** Reconsider `requireEmailVerification:false` for org-admin self-registration.
-- [ ] **WhatsApp webhook signature.** Verify `X-Hub-Signature-256` HMAC before processing
-      (`app/api/webhooks/whatsapp/route.ts`) — currently unauthenticated (Paystack webhook is the model).
+- [x] **Email verification.** `requireEmailVerification: true` (W1.8a) — org-admin self-registration now
+      verifies before sign-in, with a branded email + resend.
+- [x] **WhatsApp webhook signature.** POST now reads the raw body, routes by `phone_number_id`, and verifies
+      Meta's `X-Hub-Signature-256` HMAC-SHA256 against the org's app secret (constant-time) before acting;
+      rejects with 401 otherwise (`app/api/webhooks/whatsapp/route.ts`).
 - [ ] **Video join links.** Add expiry + nonce to `signJoin` (`lib/video/livekit.ts`); invalidate on
       cancel/reschedule; scope host to assigned counsellor / supervisor / org_admin, not any org member.
+      *(verifyJoin is now constant-time; expiry/nonce still pending — batch 2.)*
 - [ ] **Rate limiting.** Add IP/token throttling (Upstash/Vercel KV or Better Auth `rateLimit`) on login,
       booking (`app/o/[slug]/book`), form submit (`app/f/[token]`), pay, `public-events`, and AI actions.
-- [ ] **Timing-safe comparisons.** Use `timingSafeEqual` in `paystackSignatureValid` and `verifyJoin`
-      (mirror `invoice-link.ts`).
-- [ ] **Audit integrity.** `signNote` / `markProgress` write real `orgId` + actor; make clinical-access
-      audit **fail-strict** (`lib/audit/index.ts` currently swallows write failures).
+- [x] **Timing-safe comparisons.** `paystackSignatureValid` and `verifyJoin` now use `timingSafeEqual`
+      (length-guarded, mirror `invoice-link.ts`). Unit-tested (`tests/unit/security.test.ts`).
+- [x] **Audit integrity.** Clinical-access audits (`note.read`, `note.read_hub_override`, `demographics.read`,
+      `pii.export`) are now **fail-strict** — `lib/audit/index.ts` re-throws if the write fails, so a read
+      can't proceed unlogged. Operational actions stay best-effort.
 - [ ] **Password reset / activation.** Wire the no-op stubs (`app/(auth)/actions.ts`) to Better Auth with
-      single-use expiring tokens.
-- [ ] **Uploads.** Server-side content-type sniff / pin the signed content-type (`lib/documents/quota.ts`
-      trusts the client); confirm `scanObject` is a real AV hook before launch.
+      single-use expiring tokens. *(batch 2)*
+- [x] **Uploads.** `validateUpload` now rejects a filename extension that doesn't match the declared
+      content-type (all five upload actions pass the name). The declared type is still client-supplied, so a
+      post-upload magic-byte/AV `scanObject` remains the real gate — confirm it's a live AV hook before launch.
 - [ ] **Secrets.** Rotate `BETTER_AUTH_SECRET`, `PHILA_FIELD_KEY`, DB passwords before go-live; keep prod
       secrets out of the OneDrive-synced tree.
 - [ ] **`exportGrantReport`** — verify grant→org ownership before it logs a `pii.export`.

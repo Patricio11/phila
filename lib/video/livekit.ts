@@ -1,5 +1,5 @@
 import "server-only";
-import { createHmac } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { AccessToken, RoomServiceClient } from "livekit-server-sdk";
 import { getPlatformIntegration } from "@/db/queries/platform-integrations";
 
@@ -70,7 +70,15 @@ export function signJoin(appointmentId: string): string {
   return createHmac("sha256", joinSecret()).update(`join:${appointmentId}`).digest("base64url").slice(0, 24);
 }
 export function verifyJoin(appointmentId: string, sig: string | null | undefined): boolean {
-  return Boolean(sig) && sig === signJoin(appointmentId);
+  if (!sig) return false;
+  const want = signJoin(appointmentId);
+  // Constant-time compare so the join token can't be brute-forced by timing.
+  if (sig.length !== want.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(sig), Buffer.from(want));
+  } catch {
+    return false;
+  }
 }
 
 /** The Phila room page for an appointment (the "link"  carries a signed token). */

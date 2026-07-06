@@ -32,11 +32,37 @@ export const ALLOWED_CONTENT_TYPES = new Set<string>([
   "text/csv",
 ]);
 
-/** Validate an upload's declared type + size before minting a presigned URL. Pure. */
-export function validateUpload(input: { contentType: string; bytes: number }): { ok: true } | { ok: false; error: string } {
+/** Which filename extensions are legitimate for each allowed content type. */
+const EXT_FOR_TYPE: Record<string, string[]> = {
+  "application/pdf": ["pdf"],
+  "image/png": ["png"],
+  "image/jpeg": ["jpg", "jpeg"],
+  "image/webp": ["webp"],
+  "image/heic": ["heic", "heif"],
+  "image/gif": ["gif"],
+  "application/msword": ["doc"],
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ["docx"],
+  "application/vnd.ms-excel": ["xls"],
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ["xlsx"],
+  "text/plain": ["txt"],
+  "text/csv": ["csv"],
+};
+
+/**
+ * Validate an upload's declared type + size (and, when the name is known, that the
+ * filename extension matches the declared type) before minting a presigned URL. The
+ * declared content-type is still client-supplied, so a post-upload magic-byte/AV scan
+ * (`scanObject`) remains the real gate — this closes the trivial mislabel. Pure.
+ */
+export function validateUpload(input: { contentType: string; bytes: number; name?: string }): { ok: true } | { ok: false; error: string } {
   if (!ALLOWED_CONTENT_TYPES.has(input.contentType)) return { ok: false, error: "That file type isn't supported." };
   if (input.bytes <= 0) return { ok: false, error: "That file looks empty." };
   if (input.bytes > MAX_FILE_BYTES) return { ok: false, error: `Files must be under ${Math.round(MAX_FILE_BYTES / 1024 / 1024)} MB.` };
+  if (input.name) {
+    const ext = input.name.toLowerCase().split(".").pop() ?? "";
+    const allowed = EXT_FOR_TYPE[input.contentType] ?? [];
+    if (!allowed.includes(ext)) return { ok: false, error: "The file's extension doesn't match its type." };
+  }
   return { ok: true };
 }
 

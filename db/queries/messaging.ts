@@ -2,7 +2,7 @@ import "server-only";
 import { and, desc, eq, isNull, or } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { orgMessagingSettings, whatsappConnections, creditBalances, creditLedger, messageTemplates, messageLog, messageOptOuts } from "@/db/schema";
-import { encryptField } from "@/lib/crypto";
+import { encryptField, decryptField } from "@/lib/crypto";
 import { CHANNELS, TRIGGERS, DEFAULT_TEMPLATES, type Channel, type MessageTrigger } from "@/lib/messaging/templates";
 
 export interface MessagingSettings {
@@ -179,6 +179,17 @@ export async function addOptOut(orgId: string, channel: Channel, target: string,
 export async function getOrgByWhatsappPhone(phoneNumberId: string): Promise<string | null> {
   const [row] = await getDb().select({ orgId: whatsappConnections.orgId }).from(whatsappConnections).where(eq(whatsappConnections.phoneNumberId, phoneNumberId)).limit(1);
   return row?.orgId ?? null;
+}
+
+/** The org's Meta app secret (decrypted) for a phone number — to verify the webhook HMAC. */
+export async function getWhatsappAppSecretByPhone(phoneNumberId: string): Promise<string | null> {
+  const [row] = await getDb().select({ enc: whatsappConnections.appSecretEnc }).from(whatsappConnections).where(eq(whatsappConnections.phoneNumberId, phoneNumberId)).limit(1);
+  if (!row?.enc) return null;
+  try {
+    return decryptField(row.enc);
+  } catch {
+    return null;
+  }
 }
 
 /** Does any org use this WhatsApp verify token? (webhook GET verification). */

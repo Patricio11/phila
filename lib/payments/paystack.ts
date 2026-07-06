@@ -1,5 +1,5 @@
 import "server-only";
-import { createHmac } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { getPaystackSecret } from "@/db/queries/platform-integrations";
 
 /**
@@ -42,7 +42,14 @@ export async function paystackVerify(secretKey: string, reference: string): Prom
 
 export function paystackSignatureValid(secretKey: string, rawBody: string, signature: string | null): boolean {
   if (!secretKey || !signature) return false;
-  return createHmac("sha512", secretKey).update(rawBody).digest("hex") === signature;
+  const want = createHmac("sha512", secretKey).update(rawBody).digest("hex");
+  // Constant-time compare so a forged signature can't be tuned byte-by-byte.
+  if (want.length !== signature.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(want), Buffer.from(signature));
+  } catch {
+    return false;
+  }
 }
 
 /** Test a candidate key against Paystack  used by both "Test connection" buttons. */

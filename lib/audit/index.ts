@@ -65,10 +65,23 @@ class MemoryAuditSink implements AuditSink {
 }
 
 /**
+ * Actions where an unrecorded access is worse than a failed one (Protected & Audited
+ * Rule): reading a clinical note or special-category demographics, and any PII export.
+ * For these the audit write is **fail-strict** — if we can't record it, the caller's
+ * read is refused. Call these AFTER authorization but BEFORE returning the data so a
+ * throw fails closed. Operational actions stay best-effort (logged, never blocking).
+ */
+const FAIL_STRICT: ReadonlySet<AuditAction> = new Set<AuditAction>([
+  "note.read",
+  "note.read_hub_override",
+  "demographics.read",
+  "pii.export",
+]);
+
+/**
  * Persistent sink  writes to the `audit_log` table (Phase 9). Lazily imports the
- * DB client so this module never forces a server-only import on the client, and
- * never fails the user's action if a log write hiccups (it logs the error instead;
- * fail-strict auditing is a Phase-10 hardening decision).
+ * DB client so this module never forces a server-only import on the client. Clinical
+ * reads/exports fail strict (re-throw); everything else is best-effort.
  */
 class DbAuditSink implements AuditSink {
   async write(event: AuditEvent): Promise<void> {
@@ -85,6 +98,10 @@ class DbAuditSink implements AuditSink {
       });
     } catch (err) {
       console.error("[audit] failed to persist event", event.action, event.target, err);
+      // Fail closed for protected clinical access — never reveal what we can't record.
+      if (FAIL_STRICT.has(event.action)) {
+        throw new Error(`Audit write failed for protected action ${event.action}; access refused.`);
+      }
     }
   }
 }

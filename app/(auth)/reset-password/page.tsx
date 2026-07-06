@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
@@ -7,7 +8,10 @@ export const metadata: Metadata = { title: "Set a new password · Phila", robots
 export default function ResetPasswordPage() {
   return (
     <AuthShell title="Set a new password" subtitle="Choose a strong password you don't use anywhere else.">
-      <ResetPasswordForm />
+      {/* ResetPasswordForm reads the token from the query string (useSearchParams). */}
+      <Suspense fallback={null}>
+        <ResetPasswordForm />
+      </Suspense>
     </AuthShell>
   );
 }

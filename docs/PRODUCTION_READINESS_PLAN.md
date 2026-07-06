@@ -317,21 +317,27 @@ shown on signup (no picker on the form — too much friction). Plan catalogue is
 - [ ] **Video join links.** Add expiry + nonce to `signJoin` (`lib/video/livekit.ts`); invalidate on
       cancel/reschedule; scope host to assigned counsellor / supervisor / org_admin, not any org member.
       *(verifyJoin is now constant-time; expiry/nonce still pending — batch 2.)*
-- [ ] **Rate limiting.** Add IP/token throttling (Upstash/Vercel KV or Better Auth `rateLimit`) on login,
-      booking (`app/o/[slug]/book`), form submit (`app/f/[token]`), pay, `public-events`, and AI actions.
+- [~] **Rate limiting.** Better Auth `rateLimit` enabled (W2 batch 2): a modest global IP cap + tighter custom
+      rules on `/sign-in/email`, `/sign-up/email`, `/request-password-reset`, `/forget-password`, `/two-factor/
+      verify-totp`. In-memory per instance. **Still pending:** a shared store (Upstash/KV) + throttling on the
+      non-auth public surfaces (booking, `/f/[token]` submit, pay, public-events, AI actions).
 - [x] **Timing-safe comparisons.** `paystackSignatureValid` and `verifyJoin` now use `timingSafeEqual`
       (length-guarded, mirror `invoice-link.ts`). Unit-tested (`tests/unit/security.test.ts`).
 - [x] **Audit integrity.** Clinical-access audits (`note.read`, `note.read_hub_override`, `demographics.read`,
       `pii.export`) are now **fail-strict** — `lib/audit/index.ts` re-throws if the write fails, so a read
       can't proceed unlogged. Operational actions stay best-effort.
-- [ ] **Password reset / activation.** Wire the no-op stubs (`app/(auth)/actions.ts`) to Better Auth with
-      single-use expiring tokens. *(batch 2)*
+- [x] **Password reset.** Wired to Better Auth (W2 batch 2): `requestPasswordReset` sends a **branded** email
+      with a single-use, 1-hour token; `/reset-password?token=` exchanges it via `auth.api.resetPassword`. The
+      request path never leaks account existence; a missing/expired token shows a friendly "request a new link"
+      state. Proven end-to-end (`tests/integration/password-reset.test.ts`: old→reset→new, old rejected).
+      *(Invited-member **activation** — the `activateAccount`/`sendSetupLink` stubs — remains, batch 3.)*
 - [x] **Uploads.** `validateUpload` now rejects a filename extension that doesn't match the declared
       content-type (all five upload actions pass the name). The declared type is still client-supplied, so a
       post-upload magic-byte/AV `scanObject` remains the real gate — confirm it's a live AV hook before launch.
 - [ ] **Secrets.** Rotate `BETTER_AUTH_SECRET`, `PHILA_FIELD_KEY`, DB passwords before go-live; keep prod
       secrets out of the OneDrive-synced tree.
-- [ ] **`exportGrantReport`** — verify grant→org ownership before it logs a `pii.export`.
+- [x] **`exportGrantReport`** — now verifies grant→org ownership (`getGrantOrgId`) before logging the
+      `pii.export`, so no cross-org export and no spurious audit entry for someone else's grant (W2 batch 2).
 - [ ] **Retention clocks (POPIA × HPCSA).** Soft-delete must honour HPCSA Booklet 9 retention (≥6y dormant,
       minors→21, incapacity→lifetime) and reconcile with POPIA deletion requests — per-record-type clock,
       not hard delete. Feeds the data-subject export/erasure tooling.

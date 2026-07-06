@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { CheckCircle2, TriangleAlert } from "lucide-react";
 import { Label, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PasswordField, strength } from "@/components/auth/password-field";
@@ -12,6 +12,8 @@ import { resetPassword } from "@/app/(auth)/actions";
 
 export function ResetPasswordForm() {
   const router = useRouter();
+  const params = useSearchParams();
+  const token = params.get("token") ?? "";
   const { toast } = useToast();
   const [pending, start] = useTransition();
   const [attempted, setAttempted] = useState(false);
@@ -28,11 +30,29 @@ export function ResetPasswordForm() {
     setAttempted(true);
     if (errors.password || errors.confirm) return;
     start(async () => {
-      const res = await resetPassword({ password, confirm });
+      const res = await resetPassword({ token, password, confirm });
       if (!res.ok) return toast({ tone: "error", title: res.error });
       setDone(true);
     });
   };
+
+  // No token → the link is malformed/expired; guide them to request a fresh one.
+  if (!token) {
+    return (
+      <div className="space-y-5">
+        <div className="flex flex-col items-center gap-3 rounded-card border border-warn/30 bg-warn-soft/40 p-6 text-center">
+          <span className="inline-flex size-12 items-center justify-center rounded-full bg-warn-soft text-warn">
+            <TriangleAlert className="size-6" strokeWidth={2} aria-hidden />
+          </span>
+          <div>
+            <div className="text-[15px] font-[640] text-text">This reset link isn&apos;t valid</div>
+            <p className="mt-1 text-[13px] text-text-2">It may have expired or already been used. Request a fresh link to continue.</p>
+          </div>
+        </div>
+        <Button onClick={() => router.push("/forgot-password")} className="w-full">Request a new link</Button>
+      </div>
+    );
+  }
 
   if (done) {
     return (

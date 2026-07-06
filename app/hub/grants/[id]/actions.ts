@@ -53,15 +53,27 @@ export async function postNarrative(
   };
 }
 
+const exportInput = z.object({ grantId: z.string().min(1), format: z.enum(["pdf", "csv"]) });
+
 export async function exportGrantReport(
-  raw: { grantId: string; format: "pdf" | "csv" },
-): Promise<{ ok: true }> {
+  raw: z.infer<typeof exportInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
   const { principal, membership } = await requireHub();
+  const parsed = exportInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid export request." };
+
+  // Confirm the grant belongs to this org BEFORE we log a pii.export against it —
+  // no cross-org export, and no spurious audit entry for someone else's grant.
+  if (isDb()) {
+    const owner = await getGrantOrgId(parsed.data.grantId);
+    if (owner !== membership.orgId) return { ok: false, error: "Grant not found." };
+  }
+
   await logAccess({
     action: "pii.export",
     actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
     orgId: membership.orgId,
-    target: `grant:${raw.grantId}/report.${raw.format}`,
+    target: `grant:${parsed.data.grantId}/report.${parsed.data.format}`,
     reason: "funder_report_k_anon",
   });
   return { ok: true };

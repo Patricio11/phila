@@ -187,21 +187,34 @@ export async function resendVerification(raw: { email: string }): Promise<Result
 
 const emailInput = z.object({ email: z.string().email("Enter a valid email.") });
 
+/** Send a password-reset email (W2). Always reports success — never reveals whether an account exists. */
 export async function requestPasswordReset(raw: z.infer<typeof emailInput>): Promise<Result> {
   const parsed = emailInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Enter a valid email." };
+  try {
+    await auth.api.requestPasswordReset({ body: { email: parsed.data.email, redirectTo: "/reset-password" }, headers: await headers() });
+  } catch {
+    // Swallow — don't leak account existence via error/timing shape.
+  }
   return { ok: true };
 }
 
 const resetInput = z.object({
+  token: z.string().min(1, "This reset link is invalid or has expired."),
   password: z.string().min(8, "Use at least 8 characters."),
   confirm: z.string().min(1),
 });
 
+/** Exchange a single-use reset token for a new password (W2, Better Auth). */
 export async function resetPassword(raw: z.infer<typeof resetInput>): Promise<Result> {
   const parsed = resetInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the form." };
   if (parsed.data.password !== parsed.data.confirm) return { ok: false, error: "The passwords don't match." };
+  try {
+    await auth.api.resetPassword({ body: { newPassword: parsed.data.password, token: parsed.data.token }, headers: await headers() });
+  } catch {
+    return { ok: false, error: "This reset link is invalid or has expired. Request a new one." };
+  }
   return { ok: true };
 }
 

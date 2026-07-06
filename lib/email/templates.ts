@@ -71,6 +71,22 @@ export function verificationEmail(url: string, name: string | null): Email {
   };
 }
 
+/** Sent when a user requests a password reset. */
+export function resetPasswordEmail(url: string, name: string | null): Email {
+  const first = (name ?? "").trim().split(/\s+/)[0] || "there";
+  return {
+    subject: "Reset your Phila password",
+    html: shell({
+      preheader: "Use this link to set a new password.",
+      heading: "Reset your password",
+      body: `Hi ${first}, we got a request to reset your Phila password. Click below to choose a new one. If this wasn't you, you can safely ignore this email — your password won't change.`,
+      cta: { label: "Set a new password", url },
+      footnote: `If the button doesn't work, paste this link into your browser:<br><a href="${url}" style="color:${GREEN};word-break:break-all;">${url}</a><br><br>This link expires in 1 hour.`,
+    }),
+    text: `Reset your Phila password.\n\nChoose a new password:\n${url}\n\nThis link expires in 1 hour. If you didn't request this, ignore this email.`,
+  };
+}
+
 /** Sent when the super-admin approves a practice's onboarding verification. */
 export function approvalEmail(opts: { name: string | null; orgName: string; loginUrl: string }): Email {
   const first = (opts.name ?? "").trim().split(/\s+/)[0] || "there";

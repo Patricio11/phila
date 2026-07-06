@@ -132,7 +132,8 @@ export function ReportExport({ grantId }: { grantId: string }) {
 
   const run = (format: "pdf" | "csv") =>
     start(async () => {
-      await exportGrantReport({ grantId, format });
+      const res = await exportGrantReport({ grantId, format });
+      if (!res.ok) return toast({ tone: "error", title: res.error });
       toast({ tone: "success", title: `Period report exported (${format.toUpperCase()})`, description: "k-anonymised  nothing identifiable, mapped to the funder's template." });
     });
 

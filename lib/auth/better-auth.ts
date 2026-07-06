@@ -6,7 +6,9 @@ import { twoFactor } from "better-auth/plugins";
 import { getDb } from "@/db/client";
 import * as schema from "@/db/schema";
 import { sendPlatformEmail } from "@/lib/email/platform-email";
-import { verificationEmail } from "@/lib/email/templates";
+import { verificationEmail, resetPasswordEmail } from "@/lib/email/templates";
+
+const APP_URL = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
 
 /**
  * Better Auth  the real identity layer (Phase 9). Email + password over the
@@ -27,6 +29,11 @@ export const auth = betterAuth({
     // and blocks junk signups. The verification email is sent on sign-up below.
     requireEmailVerification: true,
     minPasswordLength: 8,
+    // Self-service password reset (W2) — the branded email carries a single-use,
+    // expiring token; the /reset-password page exchanges it for a new password.
+    sendResetPassword: async ({ user, token }) => {
+      await sendPlatformEmail({ to: user.email, ...resetPasswordEmail(`${APP_URL}/reset-password?token=${token}`, user.name) });
+    },
   },
   emailVerification: {
     sendOnSignUp: true,
@@ -45,6 +52,21 @@ export const auth = betterAuth({
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     cookieCache: { enabled: true, maxAge: 60 * 5 },
+  },
+  // Throttle the auth endpoints by IP (W2). A modest global cap, with tighter limits
+  // on the brute-forceable ones. In-memory per instance now; a shared store (Upstash/
+  // KV) for the full app surface is the broader follow-up in the plan.
+  rateLimit: {
+    enabled: true,
+    window: 60,
+    max: 40,
+    customRules: {
+      "/sign-in/email": { window: 60, max: 8 },
+      "/sign-up/email": { window: 300, max: 6 },
+      "/request-password-reset": { window: 300, max: 4 },
+      "/forget-password": { window: 300, max: 4 },
+      "/two-factor/verify-totp": { window: 60, max: 8 },
+    },
   },
   // TOTP 2FA (enforced for super_admin / org_admin / supervisors in the UI).
   // nextCookies() must be last so it can set cookies after every plugin runs.

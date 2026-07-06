@@ -170,6 +170,7 @@ function toOrg(row: OrgRow): Org {
       inviteOnBooking: Boolean((row.clientPortal as Record<string, boolean>)?.inviteOnBooking),
       inviteOnCreate: Boolean((row.clientPortal as Record<string, boolean>)?.inviteOnCreate),
     },
+    profile: (row.profile as Org["profile"]) ?? {},
   };
 }
 

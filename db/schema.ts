@@ -49,6 +49,8 @@ export const orgs = pgTable("orgs", {
   scheduling: jsonb("scheduling").$type<Record<string, unknown>>().default({}).notNull(),
   /** Client-portal onboarding policy: { inviteOnBooking, inviteOnCreate } (both default off). */
   clientPortal: jsonb("client_portal").$type<Record<string, boolean>>().default({}).notNull(),
+  /** Practice profile: { tradingName, registrationNo, practiceNo, email, phone, website, address }. */
+  profile: jsonb("profile").$type<Record<string, string>>().default({}).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 });

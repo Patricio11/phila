@@ -74,6 +74,18 @@ export interface Org {
     /** Default state of the "Send portal invite" switch on the Add-client modal. */
     inviteOnCreate: boolean;
   };
+  /** Practice profile shown on Settings + invoices/letters. Optional; empty until set. */
+  profile?: OrgProfileData;
+}
+
+export interface OrgProfileData {
+  tradingName?: string;
+  registrationNo?: string;
+  practiceNo?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  address?: string;
 }
 
 /** Per-weekday business hours; `null` means closed that day. Monday = 1. */

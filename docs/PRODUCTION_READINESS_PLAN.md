@@ -140,12 +140,16 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
 
 **Status:** in progress (2026-07-06). *These "look real, silently discard data" — the most dangerous class.*
 
-### 1.1 Clinical (highest user impact)
-- [ ] `getSession` → DB read of the real session + note (`db-provider.ts` override + `db/queries`).
-- [ ] `signNote` (`app/app/sessions/[id]/actions.ts`) → **persist** the note body + signature; today audit-only.
-- [ ] `shareCarePlan` → persist the share.
-- [ ] `addCarePlanStep` (`app/app/clients/actions.ts`) → persist the step (stop returning a fake id).
-- [ ] Supervision: `getSupervisionQueue` / `getSupervisionOverview` → DB; `signOffNote` → persist decision + comment.
+### 1.1 Clinical (highest user impact) ✅ (2026-07-06)
+- [x] `getSession` → real DB override assembling the editor payload (appointment, client, consent, note,
+      care plan, outcomes, continuity) from the clinical tables, RLS-scoped; orgId threaded through the seam.
+- [x] `signNote` → persists body + signature to `session_notes`; **real debounced autosave** (`saveNoteDraft`)
+      so a draft survives navigate-away (the "autosave" was previously a local indicator only).
+- [x] `shareCarePlan` → `shareCarePlanDb` upserts + stamps `sharedAt`.
+- [x] `addCarePlanStep` → `addCarePlanStepDb` appends a real task (returns its id), creating the plan if absent.
+- [x] Supervision: `getSupervisionQueue` / `getSupervisionOverview` are DB overrides; `signOffNote` persists the
+      decision + comment (migration 0030 added the supervisor sign-off columns). Authorised by the supervisor link.
+      Verified across integration tests for notes, care plans, and supervision + a note-persist-across-reload e2e.
 
 ### 1.2 Outcomes (small, high value — makes the dashboard real) ✅ (2026-07-06)
 - [x] `components/outcomes/outcome-capture.tsx` `save()` now calls a real `recordOutcome` action

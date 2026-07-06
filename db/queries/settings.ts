@@ -44,6 +44,11 @@ export async function saveSchedulingDefaults(orgId: string, defaults: { defaultD
   });
 }
 
+/** Persist the org's name + practice profile (registration/practice no, contact, address). RLS-scoped. */
+export async function saveOrgProfileDb(orgId: string, name: string, profile: Record<string, string>): Promise<void> {
+  await runForOrg(orgId, () => activeDb().update(orgs).set({ name, profile }).where(eq(orgs.id, orgId)));
+}
+
 /** Enable/disable one org feature flag, merged into the features JSONB (dormant-by-default). RLS-scoped. */
 export async function setOrgFeature(orgId: string, feature: string, enabled: boolean): Promise<void> {
   await runForOrg(orgId, async () => {

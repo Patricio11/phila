@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
-import { saveBusinessHours as persistBusinessHours, saveClientPortal as persistClientPortal, setOrgFeature as persistOrgFeature, saveSchedulingDefaults as persistSchedulingDefaults } from "@/db/queries/settings";
+import { saveBusinessHours as persistBusinessHours, saveClientPortal as persistClientPortal, setOrgFeature as persistOrgFeature, saveSchedulingDefaults as persistSchedulingDefaults, saveOrgProfileDb } from "@/db/queries/settings";
 import { saveVideoSettings } from "@/db/queries/video";
 import { saveAiSettings } from "@/db/queries/ai";
 import { ORG_FEATURES } from "@/lib/domain/enums";
@@ -185,6 +185,12 @@ export async function saveOrgProfile(
   const { principal, membership } = await requireHub();
   const parsed = profileInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the details." };
+  if (process.env.DATA_PROVIDER === "db") {
+    const { name, ...profile } = parsed.data;
+    // Drop empty strings so the stored profile stays tidy.
+    const clean = Object.fromEntries(Object.entries(profile).filter(([, v]) => (v ?? "").trim() !== "")) as Record<string, string>;
+    await saveOrgProfileDb(membership.orgId, name.trim(), clean);
+  }
   await logAccess({
     action: "admin.action",
     actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
@@ -192,6 +198,7 @@ export async function saveOrgProfile(
     target: `org:${membership.orgId}/profile`,
     reason: "update_org_profile",
   });
+  revalidatePath("/hub/settings");
   return { ok: true };
 }
 

@@ -52,16 +52,17 @@ export default async function HubSettingsPage() {
   const pageStats = await getPageStats(membership.orgId);
   const bh: BusinessHours = org.scheduling.businessHours;
 
-  // Seeded org profile (Phase 10 reads these from the org row).
+  // The org's real practice profile (persisted on the org row); blank until set.
+  const p = org.profile ?? {};
   const profile: OrgProfile = {
     name: org.name,
-    tradingName: "",
-    registrationNo: "2018/445566/08 · 230-988 NPO",
-    practiceNo: "BHF 0556789",
-    email: `admin@${org.slug}.org.za`,
-    phone: "+27 11 482 7700",
-    website: `www.${org.slug}.org.za`,
-    address: "44 Frost Avenue, Auckland Park, Johannesburg, 2092",
+    tradingName: p.tradingName ?? "",
+    registrationNo: p.registrationNo ?? "",
+    practiceNo: p.practiceNo ?? "",
+    email: p.email ?? "",
+    phone: p.phone ?? "",
+    website: p.website ?? "",
+    address: p.address ?? "",
   };
 
   return (

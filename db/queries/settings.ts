@@ -1,6 +1,7 @@
 import "server-only";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/client";
+import { activeDb, runForOrg } from "@/lib/db/scoped";
 import { invoices, carePlans, orgs } from "@/db/schema";
 
 export async function markInvoicePaid(invoiceId: string): Promise<void> {
@@ -16,34 +17,40 @@ export async function toggleStep(clientId: string, taskId: string, done: boolean
   await db.update(carePlans).set({ tasks }).where(eq(carePlans.id, plan.id));
 }
 
-/** Update the org's weekly business hours (merged into the scheduling JSONB). */
+/** Update the org's weekly business hours (merged into the scheduling JSONB). RLS-scoped. */
 export async function saveBusinessHours(orgId: string, hours: unknown): Promise<void> {
-  const db = getDb();
-  const [org] = await db.select({ scheduling: orgs.scheduling }).from(orgs).where(eq(orgs.id, orgId)).limit(1);
-  if (!org) return;
-  const scheduling = { ...(org.scheduling as Record<string, unknown>), businessHours: hours };
-  await db.update(orgs).set({ scheduling }).where(eq(orgs.id, orgId));
+  await runForOrg(orgId, async () => {
+    const db = activeDb();
+    const [org] = await db.select({ scheduling: orgs.scheduling }).from(orgs).where(eq(orgs.id, orgId)).limit(1);
+    if (!org) return;
+    const scheduling = { ...(org.scheduling as Record<string, unknown>), businessHours: hours };
+    await db.update(orgs).set({ scheduling }).where(eq(orgs.id, orgId));
+  });
 }
 
-/** Update the org's client-portal onboarding policy (the client_portal JSONB). */
+/** Update the org's client-portal onboarding policy (the client_portal JSONB). RLS-scoped. */
 export async function saveClientPortal(orgId: string, settings: { inviteOnBooking: boolean; inviteOnCreate: boolean }): Promise<void> {
-  await getDb().update(orgs).set({ clientPortal: settings }).where(eq(orgs.id, orgId));
+  await runForOrg(orgId, () => activeDb().update(orgs).set({ clientPortal: settings }).where(eq(orgs.id, orgId)));
 }
 
-/** Update the org's scheduling defaults (default session length + inter-session interval), merged into scheduling JSONB. */
+/** Update the org's scheduling defaults (default session length + inter-session interval), merged into scheduling JSONB. RLS-scoped. */
 export async function saveSchedulingDefaults(orgId: string, defaults: { defaultDurationMin: number; bufferMin: number }): Promise<void> {
-  const db = getDb();
-  const [org] = await db.select({ scheduling: orgs.scheduling }).from(orgs).where(eq(orgs.id, orgId)).limit(1);
-  if (!org) return;
-  const scheduling = { ...(org.scheduling as Record<string, unknown>), defaultDurationMin: defaults.defaultDurationMin, bufferMin: defaults.bufferMin };
-  await db.update(orgs).set({ scheduling }).where(eq(orgs.id, orgId));
+  await runForOrg(orgId, async () => {
+    const db = activeDb();
+    const [org] = await db.select({ scheduling: orgs.scheduling }).from(orgs).where(eq(orgs.id, orgId)).limit(1);
+    if (!org) return;
+    const scheduling = { ...(org.scheduling as Record<string, unknown>), defaultDurationMin: defaults.defaultDurationMin, bufferMin: defaults.bufferMin };
+    await db.update(orgs).set({ scheduling }).where(eq(orgs.id, orgId));
+  });
 }
 
-/** Enable/disable one org feature flag, merged into the features JSONB (dormant-by-default). */
+/** Enable/disable one org feature flag, merged into the features JSONB (dormant-by-default). RLS-scoped. */
 export async function setOrgFeature(orgId: string, feature: string, enabled: boolean): Promise<void> {
-  const db = getDb();
-  const [org] = await db.select({ features: orgs.features }).from(orgs).where(eq(orgs.id, orgId)).limit(1);
-  if (!org) return;
-  const features = { ...(org.features as Record<string, boolean>), [feature]: enabled };
-  await db.update(orgs).set({ features }).where(eq(orgs.id, orgId));
+  await runForOrg(orgId, async () => {
+    const db = activeDb();
+    const [org] = await db.select({ features: orgs.features }).from(orgs).where(eq(orgs.id, orgId)).limit(1);
+    if (!org) return;
+    const features = { ...(org.features as Record<string, boolean>), [feature]: enabled };
+    await db.update(orgs).set({ features }).where(eq(orgs.id, orgId));
+  });
 }

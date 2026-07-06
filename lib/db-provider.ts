@@ -268,7 +268,7 @@ export const dbProvider: DataProvider = {
   getHubInsights: (orgId, now, filters) => runForOrg(orgId, () => getHubInsightsDb(orgId, now, filters)),
   listGrants: (orgId) => runForOrg(orgId, () => listGrantsDb(orgId)),
   getGrantView: (orgId, grantId, now) => runForOrg(orgId, () => getGrantViewDb(grantId, now)),
-  getGrantAdmin: (orgId, grantId) => getGrantAdminDb(orgId, grantId),
+  getGrantAdmin: (orgId, grantId) => runForOrg(orgId, () => getGrantAdminDb(orgId, grantId)),
   getFunderGrantView: (funderUserId, grantId, now) => getFunderGrantViewDb(funderUserId, grantId, now),
 
   // Documents (Phase 18)  the org's document workspace, RLS-scoped DB reads.

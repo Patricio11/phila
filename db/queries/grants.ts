@@ -1,7 +1,7 @@
 import "server-only";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db/client";
-import { activeDb } from "@/lib/db/scoped";
+import { activeDb, runForOrg } from "@/lib/db/scoped";
 import { funders, grants, grantIndicators, grantAllocations, grantNarratives, funderContacts, orgs, appointments } from "@/db/schema";
 import { user } from "@/db/auth-schema";
 import type { Funder, Grant, GrantIndicator, GrantNarrative } from "@/lib/domain/types";
@@ -131,17 +131,18 @@ export interface IndicatorInput { name: string; type: string; metric: string; ta
 
 export async function createFunderDb(orgId: string, input: FunderInput): Promise<{ id: string }> {
   const id = rid("f");
-  await getDb().insert(funders).values({ id, orgId, name: input.name, type: input.type, contactName: input.contactName, contactEmail: input.contactEmail });
+  await runForOrg(orgId, () => activeDb().insert(funders).values({ id, orgId, name: input.name, type: input.type, contactName: input.contactName, contactEmail: input.contactEmail }));
   return { id };
 }
 
 export async function updateFunderDb(orgId: string, funderId: string, input: FunderInput): Promise<void> {
-  await getDb().update(funders).set({ name: input.name, type: input.type, contactName: input.contactName, contactEmail: input.contactEmail }).where(and(eq(funders.id, funderId), eq(funders.orgId, orgId)));
+  await runForOrg(orgId, () => activeDb().update(funders).set({ name: input.name, type: input.type, contactName: input.contactName, contactEmail: input.contactEmail }).where(and(eq(funders.id, funderId), eq(funders.orgId, orgId))));
 }
 
-/** Remove a funder and cascade its grants (+ indicators/allocations/narratives). */
+/** Remove a funder and cascade its grants (+ indicators/allocations/narratives). RLS-scoped. */
 export async function deleteFunderDb(orgId: string, funderId: string): Promise<void> {
-  const db = getDb();
+  await runForOrg(orgId, async () => {
+  const db = activeDb();
   const gs = await db.select({ id: grants.id }).from(grants).where(and(eq(grants.funderId, funderId), eq(grants.orgId, orgId)));
   const gids = gs.map((g) => g.id);
   if (gids.length) {
@@ -151,26 +152,29 @@ export async function deleteFunderDb(orgId: string, funderId: string): Promise<v
     await db.delete(grants).where(inArray(grants.id, gids));
   }
   await db.delete(funders).where(and(eq(funders.id, funderId), eq(funders.orgId, orgId)));
+  });
 }
 
 export async function createGrantDb(orgId: string, input: GrantInput): Promise<{ id: string }> {
   const id = rid("g");
-  await getDb().insert(grants).values({ id, orgId, funderId: input.funderId, title: input.title, periodStart: input.periodStart, periodEnd: input.periodEnd, amountCents: input.amountCents, restricted: input.restricted, reportingSchedule: input.reportingSchedule, status: input.status });
+  await runForOrg(orgId, () => activeDb().insert(grants).values({ id, orgId, funderId: input.funderId, title: input.title, periodStart: input.periodStart, periodEnd: input.periodEnd, amountCents: input.amountCents, restricted: input.restricted, reportingSchedule: input.reportingSchedule, status: input.status }));
   return { id };
 }
 
 export async function updateGrantDb(orgId: string, grantId: string, input: GrantInput): Promise<void> {
-  await getDb().update(grants).set({ funderId: input.funderId, title: input.title, periodStart: input.periodStart, periodEnd: input.periodEnd, amountCents: input.amountCents, restricted: input.restricted, reportingSchedule: input.reportingSchedule, status: input.status }).where(and(eq(grants.id, grantId), eq(grants.orgId, orgId)));
+  await runForOrg(orgId, () => activeDb().update(grants).set({ funderId: input.funderId, title: input.title, periodStart: input.periodStart, periodEnd: input.periodEnd, amountCents: input.amountCents, restricted: input.restricted, reportingSchedule: input.reportingSchedule, status: input.status }).where(and(eq(grants.id, grantId), eq(grants.orgId, orgId))));
 }
 
 export async function deleteGrantDb(orgId: string, grantId: string): Promise<void> {
-  const db = getDb();
-  const owns = (await db.select({ id: grants.id }).from(grants).where(and(eq(grants.id, grantId), eq(grants.orgId, orgId))).limit(1)).length > 0;
-  if (!owns) return;
-  await db.delete(grantAllocations).where(eq(grantAllocations.grantId, grantId));
-  await db.delete(grantIndicators).where(eq(grantIndicators.grantId, grantId));
-  await db.delete(grantNarratives).where(eq(grantNarratives.grantId, grantId));
-  await db.delete(grants).where(eq(grants.id, grantId));
+  await runForOrg(orgId, async () => {
+    const db = activeDb();
+    const owns = (await db.select({ id: grants.id }).from(grants).where(and(eq(grants.id, grantId), eq(grants.orgId, orgId))).limit(1)).length > 0;
+    if (!owns) return;
+    await db.delete(grantAllocations).where(eq(grantAllocations.grantId, grantId));
+    await db.delete(grantIndicators).where(eq(grantIndicators.grantId, grantId));
+    await db.delete(grantNarratives).where(eq(grantNarratives.grantId, grantId));
+    await db.delete(grants).where(eq(grants.id, grantId));
+  });
 }
 
 /** Replace a grant's indicators wholesale (the edit form owns the whole set). */
@@ -215,7 +219,7 @@ export async function inviteFunderContactDb(funderId: string, grantIds: string[]
 
 /** The grant's indicators + tagged client ids  for the edit surfaces. */
 export async function getGrantAdminDb(orgId: string, grantId: string): Promise<{ indicators: GrantIndicator[]; allocatedClientIds: string[] } | null> {
-  const db = getDb();
+  const db = activeDb();
   const [g] = await db.select({ id: grants.id }).from(grants).where(and(eq(grants.id, grantId), eq(grants.orgId, orgId))).limit(1);
   if (!g) return null;
   const [indRows, allocRows] = await Promise.all([

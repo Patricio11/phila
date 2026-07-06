@@ -20,7 +20,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
     provider.getOrg(membership.orgId),
   ]);
   const me = counsellors.find((c) => c.userId === principal.userId);
-  const data = await provider.getSession(id, now);
+  const data = await provider.getSession(membership.orgId, id, now);
   if (!me || !data || data.appointment.orgId !== membership.orgId) notFound();
 
   // Clinical-note access decision (Care-Confidentiality Rule). The author and

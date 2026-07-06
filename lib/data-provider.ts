@@ -803,7 +803,7 @@ export interface DataProvider {
   listCaseload(orgId: string, counsellorId: string, now: string): Promise<CaseloadRow[]>;
   getClientDossier(orgId: string, clientId: string, now: string): Promise<ClientDossier | null>;
   listCounsellorSessions(orgId: string, counsellorId: string, now: string): Promise<AppointmentView[]>;
-  getSession(appointmentId: string, now: string): Promise<SessionEditorData | null>;
+  getSession(orgId: string, appointmentId: string, now: string): Promise<SessionEditorData | null>;
   getSupervisionQueue(supervisorId: string, now: string): Promise<SupervisionItem[]>;
   getSupervisionOverview(supervisorId: string, now: string): Promise<SupervisionOverview>;
   listConversations(counsellorId: string): Promise<Conversation[]>;

@@ -29,6 +29,7 @@ import {
   generateAiDraft,
   generateCarePlanDraft,
   markProgress,
+  saveNoteDraft,
   shareCarePlan,
   signNote,
   type AiExtraction,
@@ -96,13 +97,21 @@ export function SessionEditor({
     e.target.value = "";
   };
 
-  // Local "autosave" indicator  never blocks typing. Phase 10 wires real autosave.
+  // Debounced autosave  never blocks typing; the draft persists so it survives a
+  // navigate-away. Signing later stamps the signature (see onSign).
+  const persistDraft = (value: string, ai: boolean) => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    setSaveState("saving");
+    saveTimer.current = setTimeout(async () => {
+      const res = await saveNoteDraft({ appointmentId: appt.id, body: value, aiGenerated: ai });
+      setSaveState(res.ok ? "saved" : "idle");
+    }, 900);
+  };
   const onBodyChange = (value: string) => {
     setBody(value);
     if (signedAt) setSignedAt(null); // editing after signing re-opens the draft
-    setSaveState("saving");
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => setSaveState("saved"), 700);
+    if (aiGenerated) setAiGenerated(false); // hand-edited → no longer a pure AI draft
+    persistDraft(value, aiGenerated && value === body);
   };
 
   const insertTemplate = (tpl: string) => onBodyChange(body.trim() ? `${body}\n\n${tpl}` : tpl);
@@ -117,7 +126,7 @@ export function SessionEditor({
       setExtraction(res.extraction);
       setAiGenerated(true);
       setSignedAt(null);
-      setSaveState("saved");
+      persistDraft(res.draft, true); // save the AI draft so it survives navigate-away
       toast({ tone: "success", title: "AI draft ready", description: "Review and edit it  you're the author. Sign when it's right." });
     });
 

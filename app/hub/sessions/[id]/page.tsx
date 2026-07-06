@@ -27,7 +27,7 @@ export default async function HubSessionNotePage({ params }: { params: Promise<{
   const provider = await getDataProvider();
   const now = clockNow();
 
-  const data = await provider.getSession(id, now);
+  const data = await provider.getSession(membership.orgId, id, now);
   if (!data || data.appointment.orgId !== membership.orgId) notFound();
 
   // The clinic owns the record  the Hub has full access, and every note read is

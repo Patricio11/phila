@@ -11,7 +11,8 @@
  * as the write paths migrate (docs/SECURITY.md).
  */
 import { and, eq, gte, isNotNull, isNull, lte } from "drizzle-orm";
-import type { AppointmentView, CaseloadRow, CaseloadStatus, ClientDossier, CounsellorDashboard, DataProvider, DuplicateGroup, HubOverview, OutcomePoint, OrgClientRow, OrgSubscription, PlanWithUsage, RoomView, RoomDetail } from "@/lib/data-provider";
+import type { AppointmentView, CaseloadRow, CaseloadStatus, ClientDossier, CounsellorDashboard, DataProvider, DuplicateGroup, HubOverview, OutcomePoint, OrgClientRow, OrgSubscription, PlanWithUsage, RoomView, RoomDetail, SessionEditorData } from "@/lib/data-provider";
+import { getSessionNoteDb } from "@/db/queries/session-notes";
 import { PLANS, planById } from "@/lib/billing/plans";
 import { getSubscriptionRow, listSubscriptions } from "@/db/queries/subscriptions";
 import { getReportingDb, getHubInsightsDb } from "@/db/queries/analytics";
@@ -582,6 +583,49 @@ export const dbProvider: DataProvider = {
       .sort((a, b) => a.takenAt.getTime() - b.takenAt.getTime())
       .map((m) => ({ label: new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", month: "short" }).format(m.takenAt), value: m.score }));
     return computeCounsellorDashboard({ counsellor: toCounsellor(cRow), org: toOrg(orgRow), appointments, counsellorClients, measuredClientIds, outcomePoints, now });
+  }),
+
+  // ── Session editor payload  assembled from the real clinical tables ──
+  getSession: (orgId: string, appointmentId: string): Promise<SessionEditorData | null> => runForOrg(orgId, async (): Promise<SessionEditorData | null> => {
+    const views = await orgApptViews(orgId);
+    const view = views.find((v) => v.id === appointmentId);
+    if (!view) return null;
+    const db = activeDb();
+    const [cRow] = await db.select().from(clientsTable).where(eq(clientsTable.id, view.clientId)).limit(1);
+    if (!cRow) return null;
+    const client = toClient(cRow);
+    const [consentRows, cpRows, outcomeRows, note] = await Promise.all([
+      db.select().from(consentsTable).where(eq(consentsTable.clientId, client.id)),
+      db.select().from(carePlansTable).where(eq(carePlansTable.clientId, client.id)).limit(1),
+      db.select().from(outcomeMeasuresTable).where(eq(outcomeMeasuresTable.clientId, client.id)),
+      getSessionNoteDb(appointmentId),
+    ]);
+    const demographicsConsented = consentRows.some((c) => c.purpose === "demographics" && c.state === "granted");
+    const cp = cpRows[0];
+    const carePlan = cp ? { id: cp.id, clientId: cp.clientId, authorCounsellorId: cp.authorCounsellorId, summary: cp.summary, tasks: cp.tasks, resources: cp.resources, nextStep: cp.nextStep, sharedAt: cp.sharedAt ? cp.sharedAt.toISOString() : null } : null;
+    const outcomes: OutcomeMeasure[] = outcomeRows.map((o) => ({ id: o.id, clientId: o.clientId, tool: o.tool as OutcomeMeasure["tool"], score: o.score, takenAt: o.takenAt.toISOString() }));
+
+    // Continuity of care  where this session sits in the client's journey.
+    const HELD = ["completed", "discharged", "risk_flagged"];
+    const journey = views.filter((v) => v.clientId === client.id).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+    const idx = journey.findIndex((a) => a.id === appointmentId);
+    const prior = [...journey].reverse().find((a) => a.startsAt < view.startsAt && HELD.includes(a.state));
+    const priorNote = prior ? await getSessionNoteDb(prior.id) : null;
+    return {
+      appointment: view,
+      client,
+      demographicsConsented,
+      note,
+      carePlan,
+      outcomes,
+      continuity: {
+        sessionNumber: idx >= 0 ? idx + 1 : journey.length,
+        totalSessions: journey.length,
+        previousDate: prior?.startsAt ?? null,
+        previousSummary: priorNote?.body ? (priorNote.body.length > 240 ? `${priorNote.body.slice(0, 240).trimEnd()}…` : priorNote.body) : null,
+        openGoals: carePlan ? carePlan.tasks.filter((t) => !t.done).map((t) => t.text) : [],
+      },
+    };
   }),
 
   // ── Clinical cluster  care plan (shared) + documents ─────────────────

@@ -757,7 +757,7 @@ export const mockProvider: DataProvider = {
         .sort((a, b) => b.startsAt.localeCompare(a.startsAt)),
     ),
 
-  getSession: (appointmentId, now) => {
+  getSession: (_orgId, appointmentId, now) => {
     const appt = findAppointment(appointmentId, now);
     if (!appt) return ok(null);
     const client = allClients.find((c) => c.id === appt.clientId);

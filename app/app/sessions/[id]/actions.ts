@@ -12,12 +12,23 @@ import { getDb } from "@/db/client";
 import { appointments, clients } from "@/db/schema";
 import { getAiSettings, getAiSpendThisMonth, recordAiUsage } from "@/db/queries/ai";
 import { createOutcomeMeasureDb } from "@/db/queries/outcomes";
+import { saveSessionNoteDb, counsellorIdForUser } from "@/db/queries/session-notes";
 import { draftNote, draftCarePlan } from "@/lib/ai/scribe";
 
 const isDb = () => process.env.DATA_PROVIDER === "db";
 
 /** Who may run the session editor / AI scribe: the counsellor or the org admin. */
 const CLINICIANS = ["counsellor", "org_admin"] as const;
+
+/** The note's author: the acting counsellor, falling back to the session's assigned
+ *  counsellor (e.g. when an org_admin saves on their behalf). */
+async function noteAuthorId(orgId: string, userId: string, appointmentId: string): Promise<string | null> {
+  const cid = await counsellorIdForUser(orgId, userId);
+  if (cid) return cid;
+  const [row] = await getDb().select({ c: appointments.counsellorId }).from(appointments)
+    .where(and(eq(appointments.id, appointmentId), eq(appointments.orgId, orgId))).limit(1);
+  return row?.c ?? null;
+}
 
 /**
  * Resolve the client name for an appointment **within the caller's org**, and gate
@@ -116,7 +127,17 @@ export async function signNote(
   const parsed = signInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Cannot sign" };
 
-  const signedAt = clockNow();
+  let signedAt = clockNow();
+  if (isDb()) {
+    const authorId = await noteAuthorId(membership.orgId, principal.userId, parsed.data.appointmentId);
+    if (!authorId) return { ok: false, error: "Couldn't find the session to sign." };
+    const res = await saveSessionNoteDb(
+      membership.orgId,
+      { appointmentId: parsed.data.appointmentId, authorCounsellorId: authorId, body: parsed.data.body, sign: true },
+      signedAt,
+    );
+    signedAt = res.signedAt ?? signedAt;
+  }
   await logAccess({
     action: "note.read",
     actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
@@ -125,6 +146,32 @@ export async function signNote(
     reason: "sign_note",
   });
   return { ok: true, signedAt };
+}
+
+const draftSaveInput = z.object({
+  appointmentId: z.string().min(1),
+  body: z.string().max(20000),
+  aiGenerated: z.boolean().optional(),
+});
+
+/** Autosave the working note (no signature). Fires on a debounce from the editor, so
+ *  a draft is never lost on navigate-away. Signing later stamps `signedAt`. */
+export async function saveNoteDraft(
+  raw: z.infer<typeof draftSaveInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { membership, principal } = await requireOrg([...CLINICIANS]);
+  const parsed = draftSaveInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Couldn't save the draft." };
+  if (isDb()) {
+    const authorId = await noteAuthorId(membership.orgId, principal.userId, parsed.data.appointmentId);
+    if (!authorId) return { ok: false, error: "Couldn't find the session." };
+    await saveSessionNoteDb(
+      membership.orgId,
+      { appointmentId: parsed.data.appointmentId, authorCounsellorId: authorId, body: parsed.data.body, aiGenerated: parsed.data.aiGenerated },
+      clockNow(),
+    );
+  }
+  return { ok: true };
 }
 
 const progressInput = z.object({

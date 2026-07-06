@@ -738,6 +738,10 @@ export interface PlatformOrgDetail {
   clientCount: number;
   /** Only the seeded org has a full member directory in Part A. */
   fullyModeled: boolean;
+  /** The company profile the practice submitted during verification (W1.8). */
+  profile?: Record<string, string>;
+  /** Verification lifecycle status. */
+  onboardingStatus?: string;
 }
 
 /** Funder-portal view  read-only, k-anon, no client list, nothing identifiable. */

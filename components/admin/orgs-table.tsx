@@ -22,6 +22,17 @@ function rands(cents: number): string {
   return `R${Math.round(cents / 100).toLocaleString("en-ZA")}`;
 }
 
+/** The verification lifecycle stage (email → onboarding → submitted → verified). */
+function stageOf(org: PlatformOrgRow["org"]): { label: string; cls: string; order: number } {
+  if (org.adminEmailVerified === false) return { label: "Email pending", cls: "bg-surface-2 text-text-3", order: 0 };
+  switch (org.onboardingStatus) {
+    case "verified": return { label: "Verified", cls: "bg-accent-soft text-accent", order: 4 };
+    case "submitted": return { label: "Submitted", cls: "bg-info-soft text-info", order: 2 };
+    case "action_needed": return { label: "Action needed", cls: "bg-warn-soft text-warn", order: 3 };
+    default: return { label: "Onboarding", cls: "bg-surface-2 text-text-2", order: 1 };
+  }
+}
+
 export function OrgsTable({ rows }: { rows: PlatformOrgRow[] }) {
   const { toast } = useToast();
   const [suspended, setSuspended] = useState<Set<string>>(
@@ -56,6 +67,16 @@ export function OrgsTable({ rows }: { rows: PlatformOrgRow[] }) {
             {isSuspended ? "Suspended" : s.label}
           </span>
         );
+      },
+    },
+    {
+      key: "verification",
+      header: "Verification",
+      hideBelow: "md",
+      sortValue: (r) => stageOf(r.org).order,
+      render: (r) => {
+        const v = stageOf(r.org);
+        return <span className={cn("inline-flex rounded-chip px-2 py-0.5 text-[11.5px] font-semibold", v.cls)}>{v.label}</span>;
       },
     },
     { key: "members", header: "Members", align: "right", hideBelow: "md", sortValue: (r) => r.org.members, render: (r) => <span className="tabular-nums text-text-2">{r.org.members}</span> },

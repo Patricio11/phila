@@ -529,6 +529,10 @@ export interface PlatformOrg {
   aiSpendCents: number;
   createdAt: ISODate;
   suspended: boolean;
+  /** Verification lifecycle (W1.8): not_started | submitted | verified | action_needed. */
+  onboardingStatus?: string;
+  /** Whether the org's admin has verified their email. */
+  adminEmailVerified?: boolean;
 }
 
 export interface AiRailConfig {

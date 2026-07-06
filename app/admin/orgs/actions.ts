@@ -5,7 +5,13 @@ import { revalidatePath } from "next/cache";
 import { requireSuperAdmin } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 import { applyCredit } from "@/db/queries/messaging";
-import { reviewOnboardingDocDb } from "@/db/queries/platform";
+import { reviewOnboardingDocDb, approveOrgDb, sendBackOnboardingDb, getOrgAdminContactDb, getAdminOnboardingDocKeyDb } from "@/db/queries/platform";
+import { getStorageProvider } from "@/lib/storage";
+import { sendPlatformEmail } from "@/lib/email/platform-email";
+import { approvalEmail, actionNeededEmail } from "@/lib/email/templates";
+
+const isDb = () => process.env.DATA_PROVIDER === "db";
+const appUrl = () => process.env.BETTER_AUTH_URL ?? "https://philasa.com";
 
 /**
  * Manually grant notification credits to an org (Phase 12.5)  the bridge until
@@ -39,6 +45,7 @@ const input = z.object({
   orgId: z.string().min(1),
   requirementId: z.string().min(1),
   decision: z.enum(["verify", "reject"]),
+  note: z.string().trim().max(300).optional(),
 });
 
 export async function reviewOnboardingDoc(
@@ -48,8 +55,8 @@ export async function reviewOnboardingDoc(
   const parsed = input.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid request." };
 
-  if (process.env.DATA_PROVIDER === "db") {
-    const res = await reviewOnboardingDocDb(parsed.data.orgId, parsed.data.requirementId, parsed.data.decision);
+  if (isDb()) {
+    const res = await reviewOnboardingDocDb(parsed.data.orgId, parsed.data.requirementId, parsed.data.decision, parsed.data.note);
     if (!res.ok) return { ok: false, error: "That document is not awaiting review." };
   }
 
@@ -62,4 +69,63 @@ export async function reviewOnboardingDoc(
   });
   revalidatePath(`/admin/orgs/${parsed.data.orgId}`);
   return { ok: true };
+}
+
+const decisionInput = z.object({ orgId: z.string().min(1), reason: z.string().trim().max(300).optional() });
+
+/** Approve a practice's verification and email the good news. */
+export async function approveOrg(raw: z.infer<typeof decisionInput>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const principal = await requireSuperAdmin();
+  const parsed = decisionInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid request." };
+  if (!isDb()) return { ok: true };
+
+  const res = await approveOrgDb(parsed.data.orgId);
+  if (!res.ok) return { ok: false, error: "That organisation could not be found." };
+
+  const contact = await getOrgAdminContactDb(parsed.data.orgId);
+  if (contact) {
+    await sendPlatformEmail({ to: contact.email, ...approvalEmail({ name: contact.name, orgName: contact.orgName, loginUrl: `${appUrl()}/hub` }) });
+  }
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: parsed.data.orgId, target: `org:${parsed.data.orgId}`, reason: "approve_verification" });
+  revalidatePath(`/admin/orgs/${parsed.data.orgId}`);
+  revalidatePath("/admin/orgs");
+  return { ok: true };
+}
+
+/** Send a practice's onboarding back for changes and email why. */
+export async function sendBackOnboarding(raw: z.infer<typeof decisionInput>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const principal = await requireSuperAdmin();
+  const parsed = decisionInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid request." };
+  const reason = parsed.data.reason?.trim() || "Some details need another look.";
+  if (!isDb()) return { ok: true };
+
+  const res = await sendBackOnboardingDb(parsed.data.orgId);
+  if (!res.ok) return { ok: false, error: "That organisation could not be found." };
+
+  const contact = await getOrgAdminContactDb(parsed.data.orgId);
+  if (contact) {
+    await sendPlatformEmail({ to: contact.email, ...actionNeededEmail({ name: contact.name, orgName: contact.orgName, reason, onboardingUrl: `${appUrl()}/hub/verification` }) });
+  }
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: parsed.data.orgId, target: `org:${parsed.data.orgId}`, reason: "send_back_onboarding" });
+  revalidatePath(`/admin/orgs/${parsed.data.orgId}`);
+  revalidatePath("/admin/orgs");
+  return { ok: true };
+}
+
+/** A signed URL to open one of an org's uploaded onboarding documents. */
+export async function signAdminOnboardingDoc(raw: { orgId: string; requirementId: string }): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  const principal = await requireSuperAdmin();
+  if (!isDb()) return { ok: false, error: "Not available in this demo." };
+  const key = await getAdminOnboardingDocKeyDb(String(raw?.orgId ?? ""), String(raw?.requirementId ?? ""));
+  if (!key) return { ok: false, error: "Not found." };
+  const storage = await getStorageProvider();
+  if (storage.status !== "live") return { ok: false, error: "Storage isn't switched on." };
+  await logAccess({ action: "file.access", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: raw.orgId, target: `onboarding:${raw.requirementId}`, reason: "admin_review_download" });
+  try {
+    return { ok: true, url: await storage.signedDownloadUrl(key) };
+  } catch {
+    return { ok: false, error: "Could not open the document." };
+  }
 }

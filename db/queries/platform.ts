@@ -41,17 +41,22 @@ async function platformOrgs(): Promise<PlatformOrg[]> {
   const db = getDb();
   const weekAgo = new Date(Date.now() - 7 * 86_400_000);
   const monthStart = monthStartUtc();
-  const [orgRows, subRows, memberRows, sessionRows, spendRows] = await Promise.all([
+  const [orgRows, subRows, memberRows, sessionRows, spendRows, adminRows] = await Promise.all([
     db.select().from(orgs).where(isNull(orgs.deletedAt)),
     db.select({ orgId: subscriptions.orgId, planId: subscriptions.planId, status: subscriptions.status }).from(subscriptions),
     db.select({ orgId: orgMembers.orgId, c: sql<number>`count(*)::int` }).from(orgMembers).groupBy(orgMembers.orgId),
     db.select({ orgId: appointments.orgId, c: sql<number>`count(*)::int` }).from(appointments).where(gte(appointments.startsAt, weekAgo)).groupBy(appointments.orgId),
     db.select({ orgId: aiUsage.orgId, c: sql<number>`coalesce(sum(${aiUsage.costCents}),0)::int` }).from(aiUsage).where(gte(aiUsage.at, monthStart)).groupBy(aiUsage.orgId),
+    // Whether each org's admin(s) have verified their email — true only if all admins are verified.
+    db.select({ orgId: orgMembers.orgId, verified: sql<boolean>`bool_and(${user.emailVerified})` })
+      .from(orgMembers).innerJoin(user, eq(orgMembers.userId, user.id))
+      .where(eq(orgMembers.teamRole, "org_admin")).groupBy(orgMembers.orgId),
   ]);
   const subOf = new Map(subRows.map((s) => [s.orgId, s]));
   const memberOf = new Map(memberRows.map((r) => [r.orgId, r.c]));
   const sessionOf = new Map(sessionRows.map((r) => [r.orgId, r.c]));
   const spendOf = new Map(spendRows.map((r) => [r.orgId, r.c]));
+  const adminVerifiedOf = new Map(adminRows.map((r) => [r.orgId, r.verified]));
   return orgRows.map((o): PlatformOrg => {
     const sub = subOf.get(o.id);
     const status = (sub?.status ?? "trialing") as SubscriptionStatus;
@@ -66,6 +71,8 @@ async function platformOrgs(): Promise<PlatformOrg[]> {
       aiSpendCents: spendOf.get(o.id) ?? 0,
       createdAt: o.createdAt.toISOString().slice(0, 10),
       suspended: status === "cancelled",
+      onboardingStatus: o.onboardingStatus,
+      adminEmailVerified: adminVerifiedOf.get(o.id) ?? true,
     };
   }).sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -97,12 +104,13 @@ export async function getPlatformOrgDetailDb(orgId: string): Promise<PlatformOrg
   const org = list.find((o) => o.id === orgId);
   if (!org) return null;
   const db = getDb();
-  const [teamRows, clientCountRows] = await Promise.all([
+  const [teamRows, clientCountRows, profileRows] = await Promise.all([
     db.select({
       userId: orgMembers.userId, role: orgMembers.teamRole, isSupervisor: orgMembers.isSupervisor,
       status: orgMembers.status, createdAt: orgMembers.createdAt, name: user.name, email: user.email,
     }).from(orgMembers).innerJoin(user, eq(orgMembers.userId, user.id)).where(eq(orgMembers.orgId, orgId)),
     db.select({ c: sql<number>`count(*)::int` }).from(appointments).where(eq(appointments.orgId, orgId)),
+    db.select({ profile: orgs.profile }).from(orgs).where(eq(orgs.id, orgId)).limit(1),
   ]);
   const team: TeamMemberView[] = teamRows.map((r) => ({
     userId: r.userId, name: r.name ?? "", email: r.email ?? "",
@@ -113,6 +121,8 @@ export async function getPlatformOrgDetailDb(orgId: string): Promise<PlatformOrg
   return {
     org, planName: planName(org.planId), planPriceCents: planPriceCents(org.planId),
     team, clientCount: clientCountRows[0]?.c ?? 0, fullyModeled: team.length > 0,
+    profile: (profileRows[0]?.profile as Record<string, string>) ?? {},
+    onboardingStatus: org.onboardingStatus,
   };
 }
 
@@ -247,11 +257,48 @@ export async function saveOnboardingRequirementsDb(list: OnboardingRequirement[]
 }
 
 /** Record the super-admin's verify/reject decision on an org's uploaded document. */
-export async function reviewOnboardingDocDb(orgId: string, requirementId: string, decision: "verify" | "reject"): Promise<{ ok: boolean }> {
+export async function reviewOnboardingDocDb(orgId: string, requirementId: string, decision: "verify" | "reject", note?: string): Promise<{ ok: boolean }> {
   const status = decision === "verify" ? "verified" : "rejected";
   const res = await getDb().update(orgOnboardingDocs)
-    .set({ status })
+    .set({ status, reviewNote: decision === "reject" ? (note ?? null) : null })
     .where(and(eq(orgOnboardingDocs.orgId, orgId), eq(orgOnboardingDocs.requirementId, requirementId)))
     .returning({ orgId: orgOnboardingDocs.orgId });
   return { ok: res.length > 0 };
+}
+
+/** The org's admin contact (for the approval / action-needed email). */
+export async function getOrgAdminContactDb(orgId: string): Promise<{ email: string; name: string | null; orgName: string } | null> {
+  const [row] = await getDb()
+    .select({ email: user.email, name: user.name, orgName: orgs.name })
+    .from(orgMembers)
+    .innerJoin(user, eq(orgMembers.userId, user.id))
+    .innerJoin(orgs, eq(orgMembers.orgId, orgs.id))
+    .where(and(eq(orgMembers.orgId, orgId), eq(orgMembers.teamRole, "org_admin")))
+    .limit(1);
+  return row ? { email: row.email, name: row.name, orgName: row.orgName } : null;
+}
+
+/** Approve a practice's verification — flips the org to verified. */
+export async function approveOrgDb(orgId: string): Promise<{ ok: boolean }> {
+  const res = await getDb().update(orgs)
+    .set({ onboardingStatus: "verified", onboardingReviewedAt: new Date() })
+    .where(eq(orgs.id, orgId))
+    .returning({ id: orgs.id });
+  return { ok: res.length > 0 };
+}
+
+/** Send a practice's onboarding back for changes. */
+export async function sendBackOnboardingDb(orgId: string): Promise<{ ok: boolean }> {
+  const res = await getDb().update(orgs)
+    .set({ onboardingStatus: "action_needed", onboardingReviewedAt: new Date() })
+    .where(eq(orgs.id, orgId))
+    .returning({ id: orgs.id });
+  return { ok: res.length > 0 };
+}
+
+/** A signed download URL for one of an org's onboarding documents (super-admin). */
+export async function getAdminOnboardingDocKeyDb(orgId: string, requirementId: string): Promise<string | null> {
+  const [row] = await getDb().select({ key: orgOnboardingDocs.storageKey }).from(orgOnboardingDocs)
+    .where(and(eq(orgOnboardingDocs.orgId, orgId), eq(orgOnboardingDocs.requirementId, requirementId))).limit(1);
+  return row?.key ?? null;
 }

@@ -264,16 +264,23 @@ shown on signup (no picker on the form — too much friction). Plan catalogue is
 - [x] Verified: tsc + eslint + build + e2e (`tests/e2e/verify-signup.spec.ts`: check-email, trial on chosen
       plan, login gated until verified, verified admin gets in) + screenshots.
 
-### 1.8b Company profile + document onboarding (the go-live gate) — ⏳ next
-- [ ] Hub banner/gate when `onboardingStatus != verified/submitted`: a guided **company profile** (registration no,
-      VAT/tax, HPCSA practice no, POPIA Information Officer, physical + postal address, banking for payouts) +
-      **upload the admin-set required documents** (real Supabase storage → `org_onboarding_docs`), then **submit**
-      (`onboardingStatus = submitted`).
+### 1.8b Company profile + document onboarding (the go-live gate) — ✅ done
+- [x] Hub gate banner (`VerificationBanner`) on the overview — a nudge, not a wall — until the practice is verified,
+      status-aware (start / under review / action needed). New **Verification** nav item + `/hub/verification` page.
+- [x] `CompanyVerification`: a guided **company profile** (registration no, VAT, income tax, HPCSA practice no,
+      POPIA Information Officer + email, phone, website, physical + postal address) → `orgs.profile`; **required-doc
+      uploads** stream straight to Phila Storage via presigned URLs → `org_onboarding_docs` (org-scoped RLS; migration
+      0038 adds `storage_key`/`bytes`/`review_note`); **submit** gated on the core fields + all required docs
+      (`onboardingStatus = submitted`). Read-only once submitted/verified.
 
-### 1.8c Admin review + approval — ⏳ next
-- [ ] Admin console shows each org's lifecycle (*Email pending · Onboarding pending · Submitted · Verified ·
-      Action needed*); admin reviews company info + docs, verify/reject each, and **approve** the org
-      (`onboardingStatus = verified`) → branded **approval email**; reject → **action-needed email**.
+### 1.8c Admin review + approval — ✅ done
+- [x] Orgs list shows each org's lifecycle stage (*Email pending · Onboarding · Submitted · Action needed · Verified*),
+      computed from `orgs.onboarding_status` + the admin's `email_verified`. Detail page shows the submitted **company
+      information** + document review (open/verify/send-back-with-note) + org-level **Approve & verify** / **Send back**.
+- [x] `approveOrg` → `verified` + branded **approval email**; `sendBackOnboarding` → `action_needed` + **action-needed
+      email** (reason included); doc send-back carries a note the practice sees. Emails via Resend, honest dormant fallback.
+- [x] Verified: tsc + eslint + build + unit **161/161** (4 new onboarding-lifecycle integration tests) + e2e
+      (`tests/e2e/onboarding.spec.ts`: hub gate + company form save, admin stages + review + approve controls) + screenshots.
 
 ---
 

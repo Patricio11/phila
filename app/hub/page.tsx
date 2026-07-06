@@ -22,6 +22,8 @@ import { StatCard } from "@/components/ui/stat-card";
 import { Avatar } from "@/components/ui/avatar";
 import { CredentialChip } from "@/components/ui/credential-chip";
 import { AttentionList } from "@/components/dashboard/attention-list";
+import { VerificationBanner } from "@/components/hub/verification-banner";
+import { getOnboardingStatusDb } from "@/db/queries/onboarding";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -47,6 +49,9 @@ export default async function HubOverviewPage() {
 
   const credits = await getCreditBalances(membership.orgId);
   const lowCredits = (["sms", "email"] as const).filter((c) => credits[c] < LOW_CREDIT_THRESHOLD);
+
+  // Verification gate — a nudge (not a wall) until the practice is verified.
+  const onboardingStatus = process.env.DATA_PROVIDER === "db" ? await getOnboardingStatusDb(membership.orgId) : "verified";
 
   // Staffing load  who's stretched, who has capacity (this week, Mon–Sun).
   const counsellors = await provider.listCounsellors(membership.orgId);
@@ -79,6 +84,8 @@ export default async function HubOverviewPage() {
         title={`${greeting()}, ${firstName}`}
         summary={`${membership.orgName} at a glance  ${overview.clientsWeek} clients seen this week.`}
       />
+
+      <VerificationBanner status={onboardingStatus} />
 
       {lowCredits.length > 0 && (
         <Link href="/hub/billing" className="flex items-center gap-2.5 rounded-card border border-warn/40 bg-warn-soft px-4 py-2.5 text-[13px] text-warn transition-colors hover:bg-warn-soft/70">

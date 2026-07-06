@@ -10,6 +10,7 @@ import { logAccess } from "@/lib/audit";
 import { PageHead } from "@/components/shell/page-head";
 import { Card, CardHead } from "@/components/ui/card";
 import { OrgDocReview } from "@/components/admin/org-doc-review";
+import { OrgVerificationActions } from "@/components/admin/org-verification-actions";
 import { Avatar } from "@/components/ui/avatar";
 import { Tag } from "@/components/ui/tag";
 import { CredentialChip } from "@/components/ui/credential-chip";
@@ -27,6 +28,20 @@ const GROUPS: { title: string; roles: TeamRole[] }[] = [
   { title: "Operations", roles: ["front_desk", "finance", "programme_manager"] },
 ];
 
+/** Company-profile fields shown on the admin review (label per stored key). */
+const COMPANY_FIELDS: [string, string][] = [
+  ["registrationNo", "Registration no."],
+  ["vatNo", "VAT number"],
+  ["taxNo", "Income tax no."],
+  ["practiceNo", "HPCSA practice no."],
+  ["infoOfficerName", "Information Officer"],
+  ["infoOfficerEmail", "Officer email"],
+  ["phone", "Phone"],
+  ["website", "Website"],
+  ["physicalAddress", "Physical address"],
+  ["postalAddress", "Postal address"],
+];
+
 export default async function AdminOrgDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const principal = await requireSuperAdmin();
@@ -38,12 +53,14 @@ export default async function AdminOrgDetailPage({ params }: { params: Promise<{
   ]);
   if (!detail) notFound();
 
-  const VERIFY: Record<typeof review.verification, { label: string; tone: "accent" | "warn" | "danger" }> = {
+  // The org's lifecycle stage (coherent with the orgs list), not the per-doc roll-up.
+  const STAGE: Record<string, { label: string; tone: "accent" | "warn" | "danger" | "info" | "neutral" }> = {
     verified: { label: "Verified", tone: "accent" },
-    pending: { label: "Verification pending", tone: "warn" },
+    submitted: { label: "Submitted for review", tone: "info" },
     action_needed: { label: "Action needed", tone: "danger" },
+    not_started: { label: "Onboarding", tone: "neutral" },
   };
-  const vstate = VERIFY[review.verification];
+  const vstate = STAGE[detail.onboardingStatus ?? "not_started"] ?? STAGE.not_started!;
 
   await logAccess({
     action: "admin.action",
@@ -85,12 +102,34 @@ export default async function AdminOrgDetailPage({ params }: { params: Promise<{
         <Stat value={rands(org.aiSpendCents)} label="AI spend" />
       </div>
 
-      {/* Verification documents */}
+      {/* Company information the practice submitted */}
+      {detail.profile && Object.values(detail.profile).some(Boolean) && (
+        <Card>
+          <CardHead title="Company information" />
+          <div className="grid gap-x-6 gap-y-3 px-[17px] pb-[17px] sm:grid-cols-2">
+            {COMPANY_FIELDS.map(([key, label]) => {
+              const val = detail.profile?.[key];
+              if (!val) return null;
+              return (
+                <div key={key} className="min-w-0">
+                  <div className="text-[11px] font-medium uppercase tracking-wide text-text-3">{label}</div>
+                  <div className="truncate text-[13px] text-text">{val}</div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {/* Verification decision + documents */}
       <Card>
         <CardHead title="Verification documents" action={<Tag tone={vstate.tone}>{vstate.label}</Tag>} />
-        <div className="px-[17px] pb-[17px]">
-          <p className="mb-3 text-[12.5px] text-text-2">What this practice uploaded during onboarding. Verify each, or send one back. Verification gates payouts and funder sharing.</p>
+        <div className="space-y-4 px-[17px] pb-[17px]">
+          <p className="text-[12.5px] text-text-2">What this practice uploaded during onboarding. Verify each, or send one back. Verification gates payouts and funder sharing.</p>
           <OrgDocReview orgId={id} docs={review.docs} />
+          <div className="border-t border-border pt-4">
+            <OrgVerificationActions orgId={id} status={detail.onboardingStatus ?? "not_started"} />
+          </div>
         </div>
       </Card>
 

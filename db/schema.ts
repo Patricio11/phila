@@ -86,6 +86,9 @@ export const orgOnboardingDocs = pgTable("org_onboarding_docs", {
   requirementId: text("requirement_id").notNull(),
   status: text("status").notNull(), // verified | pending | rejected
   fileName: text("file_name"),
+  storageKey: text("storage_key"), // the object in Phila Storage (null until uploaded)
+  bytes: bigint("bytes", { mode: "number" }).default(0).notNull(),
+  reviewNote: text("review_note"), // why a doc was sent back
   uploadedAt: timestamp("uploaded_at", { withTimezone: true }),
 }, (t) => [uniqueIndex("org_onboarding_uq").on(t.orgId, t.requirementId)]);
 

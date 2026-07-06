@@ -202,6 +202,19 @@ function toRoom(r: typeof roomsTable.$inferSelect): Room {
   return { id: r.id, orgId: r.orgId, siteId: r.siteId, name: r.name, capacity: r.capacity, equipment: r.equipment, status: r.status as RoomStatus, colour: r.colour };
 }
 
+/**
+ * Resolve a client's org (owner read, since we don't have a context yet) and run
+ * `fn` RLS-scoped to it. Client-portal reads take only the *authenticated* client's
+ * own id, so scoping to that client's org is the correct isolation — a defence-in-
+ * depth layer beneath the app-layer clientId filter. Returns `fallback` if the
+ * client can't be resolved.
+ */
+async function runForClient<T>(clientId: string, fallback: T, fn: () => Promise<T>): Promise<T> {
+  const [r] = await getDb().select({ orgId: clientsTable.orgId }).from(clientsTable).where(eq(clientsTable.id, clientId)).limit(1);
+  if (!r) return fallback;
+  return runForOrg(r.orgId, fn);
+}
+
 export const dbProvider: DataProvider = {
   ...mockProvider,
 
@@ -276,8 +289,8 @@ export const dbProvider: DataProvider = {
   listOrgFolders: (orgId) => runForOrg(orgId, () => listOrgFoldersDb(orgId)),
   listDocumentRequests: (orgId) => runForOrg(orgId, () => listDocumentRequestsDb(orgId)),
   getStorageUsage: (orgId) => runForOrg(orgId, () => getStorageUsageDb(orgId)),
-  listClientVisibleDocuments: (clientId) => listClientVisibleDocumentsDb(clientId),
-  listClientDocumentRequests: (clientId) => listClientRequestsDb(clientId),
+  listClientVisibleDocuments: (clientId) => runForClient(clientId, [], () => listClientVisibleDocumentsDb(clientId)),
+  listClientDocumentRequests: (clientId) => runForClient(clientId, [], () => listClientRequestsDb(clientId)),
   listCounsellorDocuments: (counsellorId) => listCounsellorDocumentsDb(counsellorId),
   listTeamThreads: (userId, orgId) => runForOrg(orgId, () => listTeamThreadsDb(userId, orgId)),
 
@@ -294,7 +307,7 @@ export const dbProvider: DataProvider = {
   setFormShare: (orgId, formId, enabled, now) => setFormShareDb(orgId, formId, enabled, now),
   getFormByToken: (tok) => getFormByTokenDb(tok),
   submitFormResponse: (tok, answers, now) => submitFormResponseDb(tok, answers, now),
-  listClientForms: (clientId) => listClientFormsDb(clientId),
+  listClientForms: (clientId) => runForClient(clientId, [], () => listClientFormsDb(clientId)),
   getIntakeForm: async (orgId) => (await getActiveIntakeFormDb(orgId)) ?? mockProvider.getIntakeForm(orgId),
 
   // The public booking config keeps its mock-sourced settings (booking policy +
@@ -320,10 +333,10 @@ export const dbProvider: DataProvider = {
     const rows = await getDb().select().from(clientsTable).where(and(eq(clientsTable.orgId, orgId), isNull(clientsTable.deletedAt)));
     return rows.map(toClient);
   },
-  getClient: async (clientId: string): Promise<Client | null> => {
-    const [r] = await getDb().select().from(clientsTable).where(eq(clientsTable.id, clientId)).limit(1);
+  getClient: (clientId: string): Promise<Client | null> => runForClient(clientId, null, async () => {
+    const [r] = await activeDb().select().from(clientsTable).where(eq(clientsTable.id, clientId)).limit(1);
     return r && !r.deletedAt ? toClient(r) : null;
-  },
+  }),
   listServices: (orgId: string): Promise<Service[]> => runForOrg(orgId, async () => {
     const rows = await activeDb().select().from(servicesTable).where(eq(servicesTable.orgId, orgId));
     return rows.map((s) => ({ id: s.id, orgId: s.orgId, name: s.name, durationMin: s.durationMin, priceCents: s.priceCents }));
@@ -572,20 +585,20 @@ export const dbProvider: DataProvider = {
   }),
 
   // ── Clinical cluster  care plan (shared) + documents ─────────────────
-  getCarePlan: async (clientId: string): Promise<CarePlan | null> => {
-    const [r] = await getDb().select().from(carePlansTable).where(eq(carePlansTable.clientId, clientId)).limit(1);
+  getCarePlan: (clientId: string): Promise<CarePlan | null> => runForClient(clientId, null, async () => {
+    const [r] = await activeDb().select().from(carePlansTable).where(eq(carePlansTable.clientId, clientId)).limit(1);
     return r ? { id: r.id, clientId: r.clientId, authorCounsellorId: r.authorCounsellorId, summary: r.summary, tasks: r.tasks, resources: r.resources, nextStep: r.nextStep, sharedAt: r.sharedAt ? r.sharedAt.toISOString() : null } : null;
-  },
-  listClientDocuments: async (clientId: string): Promise<ClientDocument[]> => {
-    const rows = await getDb().select().from(clientDocumentsTable).where(eq(clientDocumentsTable.clientId, clientId));
+  }),
+  listClientDocuments: (clientId: string): Promise<ClientDocument[]> => runForClient(clientId, [], async () => {
+    const rows = await activeDb().select().from(clientDocumentsTable).where(eq(clientDocumentsTable.clientId, clientId));
     return rows.map((d) => ({ id: d.id, clientId: d.clientId, orgId: d.orgId, name: d.name, kind: d.kind as ClientDocument["kind"], sizeLabel: d.sizeLabel, sharedBy: d.sharedBy as ClientDocument["sharedBy"], createdAt: d.createdAt.toISOString() }));
-  },
+  }),
 
   // ── Billing cluster  invoices ────────────────────────────────────────
-  listClientInvoices: async (clientId: string): Promise<Invoice[]> => {
-    const rows = await getDb().select().from(invoicesTable).where(eq(invoicesTable.clientId, clientId)).orderBy(desc(invoicesTable.issuedAt));
+  listClientInvoices: (clientId: string): Promise<Invoice[]> => runForClient(clientId, [], async () => {
+    const rows = await activeDb().select().from(invoicesTable).where(eq(invoicesTable.clientId, clientId)).orderBy(desc(invoicesTable.issuedAt));
     return rows.map(toInvoice);
-  },
+  }),
   listOrgInvoices: (orgId: string): Promise<Invoice[]> => runForOrg(orgId, async () => {
     const rows = await activeDb().select().from(invoicesTable).where(eq(invoicesTable.orgId, orgId)).orderBy(desc(invoicesTable.issuedAt));
     return rows.map(toInvoice);
@@ -635,9 +648,8 @@ export const dbProvider: DataProvider = {
   },
 
   // Consent  persisted, versioned, purpose-bound (the lawful basis for reads).
-  getClientConsents: async (clientId: string): Promise<ConsentRecord[]> => {
-    const db = getDb();
-    const rows = await db.select().from(consentsTable).where(eq(consentsTable.clientId, clientId));
+  getClientConsents: (clientId: string): Promise<ConsentRecord[]> => runForClient(clientId, [], async () => {
+    const rows = await activeDb().select().from(consentsTable).where(eq(consentsTable.clientId, clientId));
     return rows.map((r) => ({
       clientId: r.clientId,
       purpose: r.purpose as ConsentPurpose,
@@ -645,5 +657,5 @@ export const dbProvider: DataProvider = {
       version: r.version,
       updatedAt: r.updatedAt.toISOString(),
     }));
-  },
+  }),
 };

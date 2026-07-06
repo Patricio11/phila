@@ -229,7 +229,7 @@ export async function listCounsellorDocumentsDb(counsellorId: string): Promise<{
 
 /** Documents a client may see: assigned to them, client-visible, scanned clean. */
 export async function listClientVisibleDocumentsDb(clientId: string): Promise<Document[]> {
-  const rows = await getDb().select().from(documents).where(and(
+  const rows = await activeDb().select().from(documents).where(and(
     eq(documents.clientId, clientId),
     eq(documents.visibility, "client_visible"),
     eq(documents.scanStatus, "clean"),
@@ -240,7 +240,7 @@ export async function listClientVisibleDocumentsDb(clientId: string): Promise<Do
 
 /** A client's OPEN upload requests (the only way a client may upload). */
 export async function listClientRequestsDb(clientId: string): Promise<DocumentRequest[]> {
-  const rows = await getDb().select().from(documentRequests)
+  const rows = await activeDb().select().from(documentRequests)
     .where(and(eq(documentRequests.clientId, clientId), eq(documentRequests.status, "pending")));
   return rows.map(toRequest);
 }

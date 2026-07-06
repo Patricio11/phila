@@ -142,7 +142,7 @@ export async function setFormShareDb(orgId: string, formId: string, enabled: boo
 }
 
 export async function listClientFormsDb(clientId: string): Promise<ClientFormRow[]> {
-  const rows = await getDb().select().from(formAssignments).where(eq(formAssignments.clientId, clientId));
+  const rows = await activeDb().select().from(formAssignments).where(eq(formAssignments.clientId, clientId));
   return rows
     .filter((a) => a.status !== "revoked")
     .map((a): ClientFormRow => {

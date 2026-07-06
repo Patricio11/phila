@@ -8,6 +8,7 @@ import { PROVINCES } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
 import { getDataProvider } from "@/lib/data-provider";
 import { createClientDb, createClientsDb, updateClientDb, setClientRemovedDb, reassignClientDb } from "@/db/queries/clients";
+import { mergeClientsDb } from "@/db/queries/merge";
 
 const isDb = () => process.env.DATA_PROVIDER === "db";
 
@@ -204,10 +205,10 @@ const mergeInput = z.object({
 });
 
 /**
- * Merge duplicate client records (mock). Keeps one record; the others are
- * soft-merged into it. Phase 10 re-points sessions/notes/invoices/consents to
- * the kept id and soft-deletes the rest  history is never lost or duplicated
- * (Outcome-Honesty Rule).
+ * Merge duplicate client records. Keeps one record; the others are merged into it:
+ * every child record (sessions + their notes, care plans, outcomes, invoices,
+ * documents, requests, forms) is re-pointed to the kept id and the losers are
+ * soft-deleted  history is never lost or duplicated (Outcome-Honesty Rule).
  */
 export async function mergeClients(
   raw: z.infer<typeof mergeInput>,
@@ -217,6 +218,11 @@ export async function mergeClients(
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the merge." };
   if (parsed.data.mergeIds.includes(parsed.data.keepId)) return { ok: false, error: "Can't merge a record into itself." };
 
+  if (isDb()) {
+    const res = await mergeClientsDb(membership.orgId, parsed.data.keepId, parsed.data.mergeIds);
+    if (!res.ok) return { ok: false, error: "Those records could not be merged  check they're all active clients in your practice." };
+  }
+
   await logAccess({
     action: "admin.action",
     actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
@@ -224,6 +230,8 @@ export async function mergeClients(
     target: `client:${parsed.data.keepId}`,
     reason: `merge_clients:${parsed.data.mergeIds.join(",")}`,
   });
+  revalidatePath("/hub/clients");
+  revalidatePath(`/hub/clients/${parsed.data.keepId}`);
   return { ok: true };
 }
 

@@ -202,9 +202,20 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
 - [x] Verified: tsc + eslint + build + unit (150/150, incl. 2 new W1.5 round-trip integration tests) + e2e
       (`tests/e2e/settings-w15.spec.ts`: booking policy renders from DB & saves, VAT reads from DB) + screenshots.
 
-### 1.6 Client merge
-- [ ] `mergeClients` (`app/hub/clients/actions.ts`) → actually re-point sessions/notes/invoices/consents to
-      the kept id and soft-delete the losers (detection via `findDuplicateClients` is already real).
+### 1.6 Client merge — ✅ done
+- [x] `mergeClients` (`app/hub/clients/actions.ts`) now runs `mergeClientsDb` (`db/queries/merge.ts`) behind
+      `isDb()`: one RLS-scoped, atomic transaction that **re-points every child record** onto the kept id —
+      appointments (and their session notes, which follow the appointment), care plans, outcome measures,
+      invoices, client_documents, documents/folders/requests, form assignments — then **soft-deletes the losers**
+      (retained + restorable). Detection via `findDuplicateClients` was already real.
+- [x] Uniqueness-constrained tables (consents `(client_id,purpose)`, grant_allocations `(grant_id,client_id)`,
+      demographics `client_id` PK) fill only the **gaps** the keeper lacks (one loser row per key, most recent
+      wins) so the keeper's record always wins and no index is violated. The keeper's missing phone/email is
+      backfilled from a loser (a merge consolidates, never loses, a contact).
+- [x] Verified: tsc + eslint + build + unit **152/152** (2 new merge integration tests: full re-point/backfill/
+      soft-delete round-trip + the negative case) + e2e (`tests/e2e/merge.spec.ts`: seeds a duplicate pair,
+      merges through the UI scoped to its own card, asserts one survivor) + screenshots. Confirmed the demo's real
+      seeded Lerato duplicate is left untouched.
 
 ### 1.7 Super-admin console (lower user-visibility; overlaps Workstream 3)
 - [ ] `getPlatformOverview`, `listPlatformOrgs`, `getPlatformOrgDetail` → DB.

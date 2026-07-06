@@ -35,7 +35,7 @@ afterAll(async () => {
 describe("booking settings", () => {
   it("composes from the org row + live services/counsellors, and the save round-trips", async () => {
     const [row] = await sql`SELECT booking_settings::text AS bs FROM orgs WHERE id=${ORG}`;
-    originalBooking = row.bs;
+    originalBooking = row!.bs as string;
 
     const before = await getBookingSettingsDb(ORG);
     // Seeded overrides are reflected (trauma isn't publicly bookable; couples is in-person only).

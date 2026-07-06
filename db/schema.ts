@@ -53,8 +53,18 @@ export const orgs = pgTable("orgs", {
   profile: jsonb("profile").$type<Record<string, string>>().default({}).notNull(),
   /** Invoicing config: VAT registration/number, prices-incl-VAT, prefix, terms, banking, pay button. */
   invoiceSettings: jsonb("invoice_settings").$type<Record<string, unknown>>().default({}).notNull(),
+  /** Public-booking policy: master switch, notice/horizon, intake/deposit, per-service + per-counsellor overrides. */
+  bookingSettings: jsonb("booking_settings").$type<Record<string, unknown>>().default({}).notNull(),
+  /** Payment-gateway connection (Dormant-by-Default): { provider, status }. Empty until an admin connects one. */
+  payments: jsonb("payments").$type<Record<string, unknown>>().default({}).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
+});
+
+/** Platform-wide config (super-admin). Single row (`id = 'global'`); the national VAT rate lives here. */
+export const platformSettings = pgTable("platform_settings", {
+  id: text("id").primaryKey(),
+  vatRatePercent: integer("vat_rate_percent").notNull(),
 });
 
 /** Org staff membership  a user's role within an org (a user may belong to many). */

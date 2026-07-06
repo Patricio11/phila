@@ -2,7 +2,21 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { activeDb, runForOrg } from "@/lib/db/scoped";
-import { invoices, carePlans, orgs } from "@/db/schema";
+import { invoices, carePlans, orgs, platformSettings } from "@/db/schema";
+
+const PLATFORM_ID = "global";
+
+/** The platform-wide VAT rate (super-admin, single row). Falls back to 15% if unseeded. */
+export async function getPlatformSettingsDb(): Promise<{ vatRatePercent: number }> {
+  const [row] = await getDb().select().from(platformSettings).where(eq(platformSettings.id, PLATFORM_ID)).limit(1);
+  return { vatRatePercent: row?.vatRatePercent ?? 15 };
+}
+
+/** Persist the national VAT rate — one super-admin change, every org's invoices follow. */
+export async function savePlatformVatDb(vatRatePercent: number): Promise<void> {
+  await getDb().insert(platformSettings).values({ id: PLATFORM_ID, vatRatePercent })
+    .onConflictDoUpdate({ target: platformSettings.id, set: { vatRatePercent } });
+}
 
 export async function markInvoicePaid(invoiceId: string): Promise<void> {
   await getDb().update(invoices).set({ status: "paid" }).where(eq(invoices.id, invoiceId));

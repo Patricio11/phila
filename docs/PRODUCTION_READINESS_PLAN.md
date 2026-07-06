@@ -191,9 +191,16 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
       numbers removed** from the settings page (now reads the real profile). Verified via e2e.
 - [x] `saveInvoiceSettings` → persists VAT/banking/invoice-prefix to `orgs.invoice_settings` (migration 0032);
       `getInvoiceSettings` is a DB override merged over defaults. Same proven JSONB pattern as the profile.
-- [ ] Public booking policy: `getBookingSettings` → DB + booking-settings save persists (carries per-service/
-      counsellor bookability arrays — more involved; pairs with §6 booking IA).
-- [ ] `getOrgSettings` (payment-connection status), `getPlatformSettings` (VAT) → DB.
+- [x] Public booking policy: `getBookingSettings` → DB (`db/queries/booking-settings.ts`, RLS-scoped) — composes
+      the policy from the org row (`orgs.booking_settings` JSONB) over the **live** services/counsellors, so a newly
+      added service inherits sensible defaults. `saveBookingSettings` persists the whole blob (migration 0035);
+      `app/hub/booking/actions.ts` writes it behind `DATA_PROVIDER==="db"` + revalidates.
+- [x] `getPlatformSettings` (VAT) → DB: national rate now lives in a single-row `platform_settings` table
+      (migration 0035, seeded 15%); `savePlatformVat` upserts it (`app/admin/settings/actions.ts`).
+- [x] `getOrgSettings` (payment-connection status) → DB: reads the real org row + `orgs.payments` JSONB
+      (`{ provider, status }`), Dormant-by-Default (`off` until an admin connects a gateway).
+- [x] Verified: tsc + eslint + build + unit (150/150, incl. 2 new W1.5 round-trip integration tests) + e2e
+      (`tests/e2e/settings-w15.spec.ts`: booking policy renders from DB & saves, VAT reads from DB) + screenshots.
 
 ### 1.6 Client merge
 - [ ] `mergeClients` (`app/hub/clients/actions.ts`) → actually re-point sessions/notes/invoices/consents to

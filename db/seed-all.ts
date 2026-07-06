@@ -39,6 +39,8 @@ import {
   teamThreads as teamThreadsFx,
   orgForms as orgFormsFx,
   formAssignments as formAssignmentsFx,
+  bookingSettings as bookingSettingsFx,
+  platformSettings as platformSettingsFx,
 } from "@/lib/mock/fixtures";
 import { CHANNELS, TRIGGERS, DEFAULT_TEMPLATES } from "@/lib/messaging/templates";
 
@@ -109,8 +111,12 @@ async function main() {
     features: org.features as Record<string, boolean>,
     scheduling: org.scheduling as unknown as Record<string, unknown>,
     clientPortal: org.clientPortal as unknown as Record<string, boolean>,
+    bookingSettings: (bookingSettingsFx[org.id] ?? {}) as unknown as Record<string, unknown>,
     createdAt: now,
   }).onConflictDoNothing();
+
+  // ── Platform config (super-admin): national VAT rate ──────────────────
+  await db.insert(schema.platformSettings).values({ id: "global", vatRatePercent: platformSettingsFx.vatRatePercent }).onConflictDoNothing();
 
   // ── Identity (users + credentials + memberships) ──────────────────────
   for (const u of DEMO_USERS) {

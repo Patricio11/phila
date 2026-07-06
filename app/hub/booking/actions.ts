@@ -1,8 +1,10 @@
 "use server";
 
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
+import { saveBookingSettingsDb } from "@/db/queries/booking-settings";
 
 /**
  * Public-booking settings (mock). The Hub shapes its own /o/[slug]/book here.
@@ -57,6 +59,10 @@ export async function saveBookingSettings(
     return { ok: false, error: "Set a deposit amount, or turn the deposit off." };
   }
 
+  if (process.env.DATA_PROVIDER === "db") {
+    await saveBookingSettingsDb(membership.orgId, { orgId: membership.orgId, ...s });
+  }
+
   await logAccess({
     action: "admin.action",
     actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
@@ -64,5 +70,6 @@ export async function saveBookingSettings(
     target: `org:${membership.orgId}/booking_settings`,
     reason: "update_booking_settings",
   });
+  revalidatePath("/hub/booking");
   return { ok: true };
 }

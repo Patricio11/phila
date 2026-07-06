@@ -11,10 +11,11 @@
  * as the write paths migrate (docs/SECURITY.md).
  */
 import { and, eq, gte, isNotNull, isNull, lte } from "drizzle-orm";
-import type { AppointmentView, CaseloadRow, CaseloadStatus, ClientDossier, CounsellorDashboard, DataProvider, DuplicateGroup, HubOverview, OutcomePoint, OrgClientRow, OrgSubscription, PlanWithUsage, RoomView, RoomDetail, SessionEditorData } from "@/lib/data-provider";
+import type { AppointmentView, CaseloadRow, CaseloadStatus, ClientDossier, CounsellorDashboard, DataProvider, DuplicateGroup, HubOverview, OutcomePoint, OrgClientRow, OrgSettings, OrgSubscription, PlanWithUsage, RoomView, RoomDetail, SessionEditorData } from "@/lib/data-provider";
 import { getSessionNoteDb } from "@/db/queries/session-notes";
 import { getSupervisionQueueDb, getSupervisionOverviewDb } from "@/db/queries/supervision";
-import { getInvoiceSettingsDb } from "@/db/queries/settings";
+import { getInvoiceSettingsDb, getPlatformSettingsDb } from "@/db/queries/settings";
+import { getBookingSettingsDb } from "@/db/queries/booking-settings";
 import { getClientProfileDb } from "@/db/queries/client-profile";
 import { listTeamDb, getTeamMemberDetailDb, saveTeamMemberDb, setMemberStatusDb, inviteMemberDb } from "@/db/queries/team";
 import { PLANS, planById } from "@/lib/billing/plans";
@@ -29,7 +30,7 @@ import type { OrgPublicPage } from "@/lib/data-provider";
 import { computeHubOverview, computeCounsellorDashboard } from "@/lib/domain/dashboards";
 import { desc, inArray } from "drizzle-orm";
 import type { Appointment, CarePlan, Client, ClientDocument, ConsentRecord, Counsellor, Demographics, Funder, Grant, Invoice, Org, OutcomeMeasure, Room, Service, Site } from "@/lib/domain/types";
-import type { PaymentStatus } from "@/lib/domain/enums";
+import type { PaymentProvider, PaymentStatus } from "@/lib/domain/enums";
 import type { AppointmentState, AppointmentType, ConsentPurpose, ConsentState, CredentialBody, CredentialStatus, Province, RoomStatus } from "@/lib/domain/enums";
 import { mockProvider } from "@/lib/mock/provider";
 import { getDb } from "@/db/client";
@@ -601,6 +602,24 @@ export const dbProvider: DataProvider = {
 
   // ── Org invoicing config (VAT + banking) from the org row ─────────────
   getInvoiceSettings: (orgId) => getInvoiceSettingsDb(orgId).then((s) => ({ orgId, ...s })),
+
+  // ── Public-booking policy composed from the org row + live services/counsellors ──
+  getBookingSettings: (orgId) => getBookingSettingsDb(orgId),
+
+  // ── Platform VAT (super-admin, single row) ────────────────────────────
+  getPlatformSettings: () => getPlatformSettingsDb(),
+
+  // ── Org settings: real org row + payment-connection status (dormant by default) ──
+  getOrgSettings: async (orgId): Promise<OrgSettings | null> => {
+    const [row] = await getDb().select().from(orgsTable).where(eq(orgsTable.id, orgId)).limit(1);
+    if (!row || row.deletedAt) return null;
+    const pay = (row.payments as { provider?: string; status?: string } | undefined) ?? {};
+    return {
+      org: toOrg(row),
+      paymentProvider: (pay.provider as PaymentProvider | undefined) ?? null,
+      paymentStatus: (pay.status as OrgSettings["paymentStatus"] | undefined) ?? "off",
+    };
+  },
 
   // ── Supervision  supervisor's sign-off queue + overview from real notes ──
   getSupervisionQueue: (orgId, supervisorId) => getSupervisionQueueDb(orgId, supervisorId),

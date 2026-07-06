@@ -23,9 +23,11 @@ const STATUS: Record<OrgSubscription["status"], { label: string; cls: string }> 
  * Deliberately separate from "Payments  your own gateway" (which is the org's
  * BYO gateway for client invoices). Two gateways, two purposes.
  */
-export function YourPlanCard({ subscription }: { subscription: OrgSubscription }) {
+export function YourPlanCard({ subscription, daysLeft }: { subscription: OrgSubscription; daysLeft?: number }) {
   const { plan, status, nextBillingAt, billedVia } = subscription;
   const s = STATUS[status];
+  const trialing = status === "trialing";
+  const trialDays = Math.max(0, daysLeft ?? 0);
 
   const includes = [
     `${plan.seats} team seats`,
@@ -42,15 +44,27 @@ export function YourPlanCard({ subscription }: { subscription: OrgSubscription }
           <div className="flex items-center gap-2">
             <Sparkles className="size-4 text-accent" strokeWidth={2} aria-hidden />
             <span className="text-[15px] font-[680] text-text">{plan.name}</span>
-            <span className={`rounded-chip px-1.5 py-0.5 text-[10.5px] font-semibold ${s.cls}`}>{s.label}</span>
+            <span className={`rounded-chip px-1.5 py-0.5 text-[10.5px] font-semibold ${s.cls}`}>
+              {trialing ? `Trial · ${trialDays} day${trialDays === 1 ? "" : "s"} left` : s.label}
+            </span>
           </div>
           <div className="mt-1 text-[12.5px] text-text-2">{plan.tagline}</div>
         </div>
         <div className="text-right">
           <div className="text-[20px] font-bold tabular-nums text-text">{rands(plan.priceCents)}<span className="text-[12px] font-medium text-text-3"> /mo</span></div>
-          <div className="mt-0.5 text-[11.5px] text-text-3">Renews {monthYear(nextBillingAt)}</div>
+          <div className="mt-0.5 text-[11.5px] text-text-3">{trialing ? `Trial ends ${monthYear(nextBillingAt)}` : `Renews ${monthYear(nextBillingAt)}`}</div>
         </div>
       </div>
+
+      {trialing && (
+        <div className="rounded-control border border-info/25 bg-info-soft/30 px-3.5 py-2.5 text-[12.5px] text-text-2">
+          You&apos;re on a free trial — no card needed.{" "}
+          {trialDays > 0
+            ? <>Your trial has <span className="font-medium text-text">{trialDays} day{trialDays === 1 ? "" : "s"}</span> left.</>
+            : <span className="font-medium text-text">Your trial has ended — choose a plan to keep going.</span>}{" "}
+          Nothing switches off mid-trial.
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-x-4 gap-y-1.5">
         {includes.map((f) => (

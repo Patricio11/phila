@@ -3,11 +3,15 @@ import { requireHub } from "@/lib/auth/guard";
 import { PageHead } from "@/components/shell/page-head";
 import { Card, CardHead } from "@/components/ui/card";
 import { CreditPacks } from "@/components/hub/credit-packs";
+import { YourPlanCard } from "@/components/hub/your-plan-card";
 import { getCreditBalances, listRecentMessages } from "@/db/queries/messaging";
 import { getAiSettings, getAiSpendThisMonth } from "@/db/queries/ai";
 import { listPayments } from "@/db/queries/payments";
 import { verifyTransaction } from "@/lib/payments/paystack";
 import { settlePayment } from "@/db/queries/payments";
+import { getDataProvider } from "@/lib/data-provider";
+import { trialDaysLeft } from "@/lib/billing/plans";
+import { now as clockNow } from "@/lib/clock";
 import { CREDIT_PACKS, LOW_CREDIT_THRESHOLD } from "@/lib/payments/packs";
 
 export const dynamic = "force-dynamic";
@@ -26,12 +30,14 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
     if (r.credited > 0) justCredited = r;
   }
 
-  const [credits, aiSettings, aiSpent, recent, history] = await Promise.all([
+  const provider = await getDataProvider();
+  const [credits, aiSettings, aiSpent, recent, history, subscription] = await Promise.all([
     getCreditBalances(membership.orgId),
     getAiSettings(membership.orgId),
     getAiSpendThisMonth(membership.orgId),
     listRecentMessages(membership.orgId, 8),
     listPayments(membership.orgId, 8),
+    provider.getOrgSubscription(membership.orgId, clockNow()),
   ]);
 
   const low = (["sms", "email"] as const).filter((c) => credits[c] < LOW_CREDIT_THRESHOLD);
@@ -50,6 +56,16 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
         <Banner tone="warn" icon={AlertTriangle}>
           You&apos;re running low on <b>{low.join(" & ")}</b> credits. Top up below so messages keep going out.
         </Banner>
+      )}
+
+      {/* Your Phila plan + trial */}
+      {subscription && (
+        <Card>
+          <CardHead title="Your Phila plan" />
+          <div className="px-[17px] pb-[17px]">
+            <YourPlanCard subscription={subscription} daysLeft={subscription.status === "trialing" ? trialDaysLeft(subscription.nextBillingAt, clockNow()) : undefined} />
+          </div>
+        </Card>
       )}
 
       {/* Credit balances + packs */}

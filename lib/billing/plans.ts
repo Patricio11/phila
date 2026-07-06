@@ -15,3 +15,9 @@ export const PLANS: Plan[] = [
 export function planById(id: string): Plan | undefined {
   return PLANS.find((p) => p.id === id);
 }
+
+/** Whole days left in a trial (0 once it has ended). Pass the app clock as `nowIso`. */
+export function trialDaysLeft(endIso: string, nowIso: string): number {
+  const ms = new Date(endIso).getTime() - new Date(nowIso).getTime();
+  return Math.max(0, Math.ceil(ms / 86_400_000));
+}

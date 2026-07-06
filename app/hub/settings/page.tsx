@@ -15,8 +15,11 @@ import { PublicPageEditor } from "@/components/hub/public-page-editor";
 import { BusinessHoursEditor } from "@/components/hub/business-hours-editor";
 import { SchedulingDefaultsForm } from "@/components/hub/scheduling-defaults-form";
 import { OrgProfileForm, type OrgProfile } from "@/components/hub/org-profile-form";
+import { VerificationStatusCard } from "@/components/hub/verification-status-card";
+import { getOnboardingStatusDb } from "@/db/queries/onboarding";
 import { InvoiceSettingsForm } from "@/components/hub/invoice-settings-form";
 import { YourPlanCard } from "@/components/hub/your-plan-card";
+import { trialDaysLeft } from "@/lib/billing/plans";
 import { SecuritySettings } from "@/components/hub/security-settings";
 import { VideoSettingsCard } from "@/components/hub/video-settings";
 import { getVideoSettings } from "@/db/queries/video";
@@ -50,7 +53,13 @@ export default async function HubSettingsPage() {
   const page = await provider.getOrgPublicPage(org.slug);
   const pageContent = page?.content ?? defaultContent({ intro: page?.intro, about: page?.about });
   const pageStats = await getPageStats(membership.orgId);
-  const bh: BusinessHours = org.scheduling.businessHours;
+  // Fall back to a standard week if an org has no business hours set yet (robust
+  // for lightweight/just-created orgs).
+  const DEFAULT_HOURS = { 1: { start: "08:00", end: "17:00" }, 2: { start: "08:00", end: "17:00" }, 3: { start: "08:00", end: "17:00" }, 4: { start: "08:00", end: "17:00" }, 5: { start: "08:00", end: "17:00" }, 6: null, 7: null };
+  const bh: BusinessHours = (org.scheduling.businessHours ?? DEFAULT_HOURS) as BusinessHours;
+  const scheduling = { defaultDurationMin: org.scheduling.defaultDurationMin ?? 60, bufferMin: org.scheduling.bufferMin ?? 10 };
+
+  const onboardingStatus = process.env.DATA_PROVIDER === "db" ? await getOnboardingStatusDb(membership.orgId) : "verified";
 
   // The org's real practice profile (persisted on the org row); blank until set.
   const p = org.profile ?? {};
@@ -72,6 +81,12 @@ export default async function HubSettingsPage() {
       <SettingsTabs
         organisation={
           <>
+            <Card>
+              <CardHead title="Company verification" />
+              <div className="px-[17px] pb-[17px]">
+                <VerificationStatusCard status={onboardingStatus} profile={p as Record<string, string>} />
+              </div>
+            </Card>
             <Card>
               <CardHead title="Organisation profile" />
               <div className="px-[17px] pb-[17px]">
@@ -96,7 +111,7 @@ export default async function HubSettingsPage() {
           <Card>
             <CardHead title="Scheduling" />
             <div className="space-y-5 px-[17px] pb-[17px]">
-              <SchedulingDefaultsForm initial={{ defaultDurationMin: org.scheduling.defaultDurationMin, bufferMin: org.scheduling.bufferMin }} />
+              <SchedulingDefaultsForm initial={scheduling} />
               <div className="border-t border-border pt-4">
                 <BusinessHoursEditor initial={bh} />
               </div>
@@ -123,7 +138,7 @@ export default async function HubSettingsPage() {
                 <Card>
                   <CardHead title="Your Phila plan" />
                   <div className="px-[17px] pb-[17px]">
-                    <YourPlanCard subscription={subscription} />
+                    <YourPlanCard subscription={subscription} daysLeft={subscription.status === "trialing" ? trialDaysLeft(subscription.nextBillingAt, clockNow()) : undefined} />
                   </div>
                 </Card>
               )}

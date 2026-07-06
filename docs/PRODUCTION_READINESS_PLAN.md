@@ -282,6 +282,16 @@ shown on signup (no picker on the form — too much friction). Plan catalogue is
 - [x] Verified: tsc + eslint + build + unit **161/161** (4 new onboarding-lifecycle integration tests) + e2e
       (`tests/e2e/onboarding.spec.ts`: hub gate + company form save, admin stages + review + approve controls) + screenshots.
 
+### 1.8d Settings + Billing reflect verification + trial — ✅ done
+- [x] **Settings → Organisation** leads with a **Company verification** card (`VerificationStatusCard`): lifecycle
+      status + a summary of the submitted legal details (registration, VAT, HPCSA practice no, Information Officer),
+      linking to `/hub/verification` (the source of truth). Also hardened the settings page for lightweight/just-created
+      orgs (business-hours + scheduling fallbacks) so a fresh practice never hits an error boundary.
+- [x] **Billing + Settings plan card** (`YourPlanCard`) now shows the **trial countdown** — a "Trial · N days left"
+      chip, "Trial ends {date}", and a calm "no card needed · nothing switches off mid-trial" note — driven by
+      `trialDaysLeft(nextBillingAt, now)`. Surfaced on `/hub/billing` too (was credits-only).
+- [x] Verified: tsc + eslint + build + unit 161/161 + e2e (`tests/e2e/trial-billing.spec.ts`) + screenshots.
+
 ---
 
 ## Workstream 2 — 🟠 SECURITY HARDENING (Phase 19)

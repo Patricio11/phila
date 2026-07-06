@@ -3,11 +3,15 @@
 import { z } from "zod";
 import { requireOrg } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
+import { addCarePlanStepDb } from "@/db/queries/care-plans";
+import { counsellorIdForUser } from "@/db/queries/session-notes";
+
+const isDb = () => process.env.DATA_PROVIDER === "db";
 
 /**
- * Add a between-session step to a client's care plan (mock). The counsellor
- * sets gentle, specific steps; the client ticks them off in their portal.
- * Validated + audited; Phase 11 persists to the care plan + notifies the client.
+ * Add a between-session step to a client's care plan. The counsellor sets gentle,
+ * specific steps; the client ticks them off in their portal. Persisted to the
+ * client's care plan (RLS rejects a client outside the caller's org); audited.
  */
 const input = z.object({
   clientId: z.string().min(1),
@@ -20,6 +24,16 @@ export async function addCarePlanStep(
   const { principal, membership } = await requireOrg(["counsellor"]);
   const parsed = input.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the step." };
+  let id = `step_${parsed.data.text.length}_${parsed.data.clientId}`;
+  if (isDb()) {
+    const cid = await counsellorIdForUser(membership.orgId, principal.userId);
+    try {
+      const res = await addCarePlanStepDb(membership.orgId, { clientId: parsed.data.clientId, authorCounsellorId: cid ?? principal.userId, text: parsed.data.text });
+      id = res.id;
+    } catch {
+      return { ok: false, error: "That client isn't on your caseload." };
+    }
+  }
   await logAccess({
     action: "pii.read",
     actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
@@ -27,6 +41,5 @@ export async function addCarePlanStep(
     target: `client:${parsed.data.clientId}/care_step`,
     reason: "add_care_step",
   });
-  // A stable-enough id for the optimistic client (Phase 11 returns the real one).
-  return { ok: true, id: `step_${parsed.data.text.length}_${parsed.data.clientId}` };
+  return { ok: true, id };
 }

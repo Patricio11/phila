@@ -13,6 +13,7 @@ import { appointments, clients } from "@/db/schema";
 import { getAiSettings, getAiSpendThisMonth, recordAiUsage } from "@/db/queries/ai";
 import { createOutcomeMeasureDb } from "@/db/queries/outcomes";
 import { saveSessionNoteDb, counsellorIdForUser } from "@/db/queries/session-notes";
+import { shareCarePlanDb } from "@/db/queries/care-plans";
 import { draftNote, draftCarePlan } from "@/lib/ai/scribe";
 
 const isDb = () => process.env.DATA_PROVIDER === "db";
@@ -212,6 +213,14 @@ export async function shareCarePlan(
   const parsed = careInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Cannot share" };
   // Sharing is an explicit, consented action  the private note is never exposed.
+  if (isDb()) {
+    const cid = await counsellorIdForUser(membership.orgId, principal.userId);
+    try {
+      await shareCarePlanDb(membership.orgId, { clientId: parsed.data.clientId, authorCounsellorId: cid ?? principal.userId, summary: parsed.data.summary }, clockNow());
+    } catch {
+      return { ok: false, error: "That client isn't on your caseload." };
+    }
+  }
   await logAccess({
     action: "admin.action",
     actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },

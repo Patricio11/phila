@@ -39,7 +39,7 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
   const now = clockNow();
 
   const [dossier, counsellors] = await Promise.all([
-    provider.getClientDossier(id, now),
+    provider.getClientDossier(membership.orgId, id, now),
     provider.listCounsellors(membership.orgId),
   ]);
   if (!dossier || dossier.client.orgId !== membership.orgId) notFound();

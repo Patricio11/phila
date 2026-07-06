@@ -38,7 +38,7 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
 
   const now = clockNow();
   const [dossier, counsellors] = await Promise.all([
-    provider.getClientDossier(id, now),
+    provider.getClientDossier(membership.orgId, id, now),
     provider.listCounsellors(membership.orgId),
   ]);
   const me = counsellors.find((c) => c.userId === principal.userId);

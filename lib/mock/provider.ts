@@ -726,8 +726,8 @@ export const mockProvider: DataProvider = {
     return ok(rows);
   },
 
-  getClientDossier: (clientId, now) => {
-    const client = allClients.find((c) => c.id === clientId);
+  getClientDossier: (orgId, clientId, now) => {
+    const client = allClients.find((c) => c.id === clientId && c.orgId === orgId);
     if (!client) return ok(null);
     const org = orgs.find((o) => o.id === client.orgId);
     const counsellor = allCounsellors.find((c) => c.id === client.primaryCounsellorId);

@@ -801,7 +801,7 @@ export interface DataProvider {
 
   // Counsellor workspace
   listCaseload(counsellorId: string, now: string): Promise<CaseloadRow[]>;
-  getClientDossier(clientId: string, now: string): Promise<ClientDossier | null>;
+  getClientDossier(orgId: string, clientId: string, now: string): Promise<ClientDossier | null>;
   listCounsellorSessions(counsellorId: string, now: string): Promise<AppointmentView[]>;
   getSession(appointmentId: string, now: string): Promise<SessionEditorData | null>;
   getSupervisionQueue(supervisorId: string, now: string): Promise<SupervisionItem[]>;

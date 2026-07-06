@@ -454,11 +454,12 @@ export const dbProvider: DataProvider = {
   listOrgClients: (orgId: string, now: string) => runForOrg(orgId, () => orgClientRowsDb(orgId, now, false)),
   listRemovedClients: (orgId: string, now: string) => runForOrg(orgId, () => orgClientRowsDb(orgId, now, true)),
 
-  // Not yet RLS-scoped: no orgId param to scope by (migrates once the dossier org is
-  // threaded). Owner connection + the app-layer client/org checks remain the boundary.
-  getClientDossier: async (clientId: string): Promise<ClientDossier | null> => {
-    const db = getDb();
-    const [cRow] = await db.select().from(clientsTable).where(eq(clientsTable.id, clientId)).limit(1);
+  // RLS-scoped by the caller's org: a cross-org clientId resolves to no rows (and
+  // the query also filters org_id in the app layer). Both callers (hub + counsellor
+  // client pages) pass their `membership.orgId`.
+  getClientDossier: (orgId: string, clientId: string): Promise<ClientDossier | null> => runForOrg(orgId, async () => {
+    const db = activeDb();
+    const [cRow] = await db.select().from(clientsTable).where(and(eq(clientsTable.id, clientId), eq(clientsTable.orgId, orgId))).limit(1);
     if (!cRow) return null;
     const client = toClient(cRow);
     const [orgRow] = await db.select().from(orgsTable).where(eq(orgsTable.id, client.orgId)).limit(1);
@@ -501,7 +502,7 @@ export const dbProvider: DataProvider = {
       documents: docRows.map((d) => ({ id: d.id, clientId: d.clientId, orgId: d.orgId, name: d.name, kind: d.kind as ClientDocument["kind"], sizeLabel: d.sizeLabel, sharedBy: d.sharedBy as ClientDocument["sharedBy"], createdAt: d.createdAt.toISOString() })),
       carePlan: cp ? { id: cp.id, clientId: cp.clientId, authorCounsellorId: cp.authorCounsellorId, summary: cp.summary, tasks: cp.tasks, resources: cp.resources, nextStep: cp.nextStep, sharedAt: cp.sharedAt ? cp.sharedAt.toISOString() : null } : null,
     };
-  },
+  }),
 
   findDuplicateClients: (orgId: string): Promise<DuplicateGroup[]> => runForOrg(orgId, async (): Promise<DuplicateGroup[]> => {
     const db = activeDb();

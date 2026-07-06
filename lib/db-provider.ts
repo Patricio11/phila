@@ -15,6 +15,7 @@ import type { AppointmentView, CaseloadRow, CaseloadStatus, ClientDossier, Couns
 import { getSessionNoteDb } from "@/db/queries/session-notes";
 import { getSupervisionQueueDb, getSupervisionOverviewDb } from "@/db/queries/supervision";
 import { getInvoiceSettingsDb } from "@/db/queries/settings";
+import { getClientProfileDb } from "@/db/queries/client-profile";
 import { PLANS, planById } from "@/lib/billing/plans";
 import { getSubscriptionRow, listSubscriptions } from "@/db/queries/subscriptions";
 import { getReportingDb, getHubInsightsDb } from "@/db/queries/analytics";
@@ -31,7 +32,7 @@ import type { PaymentStatus } from "@/lib/domain/enums";
 import type { AppointmentState, AppointmentType, ConsentPurpose, ConsentState, CredentialBody, CredentialStatus, Province, RoomStatus } from "@/lib/domain/enums";
 import { mockProvider } from "@/lib/mock/provider";
 import { getDb } from "@/db/client";
-import { runForOrg, activeDb } from "@/lib/db/scoped";
+import { runForOrg, runForClient, activeDb } from "@/lib/db/scoped";
 import {
   orgs as orgsTable,
   consents as consentsTable,
@@ -206,19 +207,6 @@ function toRoom(r: typeof roomsTable.$inferSelect): Room {
   return { id: r.id, orgId: r.orgId, siteId: r.siteId, name: r.name, capacity: r.capacity, equipment: r.equipment, status: r.status as RoomStatus, colour: r.colour };
 }
 
-/**
- * Resolve a client's org (owner read, since we don't have a context yet) and run
- * `fn` RLS-scoped to it. Client-portal reads take only the *authenticated* client's
- * own id, so scoping to that client's org is the correct isolation — a defence-in-
- * depth layer beneath the app-layer clientId filter. Returns `fallback` if the
- * client can't be resolved.
- */
-async function runForClient<T>(clientId: string, fallback: T, fn: () => Promise<T>): Promise<T> {
-  const [r] = await getDb().select({ orgId: clientsTable.orgId }).from(clientsTable).where(eq(clientsTable.id, clientId)).limit(1);
-  if (!r) return fallback;
-  return runForOrg(r.orgId, fn);
-}
-
 export const dbProvider: DataProvider = {
   ...mockProvider,
 
@@ -293,6 +281,21 @@ export const dbProvider: DataProvider = {
   listOrgFolders: (orgId) => runForOrg(orgId, () => listOrgFoldersDb(orgId)),
   listDocumentRequests: (orgId) => runForOrg(orgId, () => listDocumentRequestsDb(orgId)),
   getStorageUsage: (orgId) => runForOrg(orgId, () => getStorageUsageDb(orgId)),
+  // Client portal: own profile + own appointments (RLS-scoped to the client's org).
+  getClientProfile: (clientId) => runForClient(clientId, null, () => getClientProfileDb(clientId)),
+  listAppointmentsForClient: (clientId) => runForClient(clientId, [], async () => {
+    const rows = await activeDb()
+      .select({ a: appointmentsTable, clientName: clientsTable.name, serviceName: servicesTable.name, counsellorName: counsellorsTable.name, roomName: roomsTable.name })
+      .from(appointmentsTable)
+      .leftJoin(clientsTable, eq(appointmentsTable.clientId, clientsTable.id))
+      .leftJoin(servicesTable, eq(appointmentsTable.serviceId, servicesTable.id))
+      .leftJoin(counsellorsTable, eq(appointmentsTable.counsellorId, counsellorsTable.id))
+      .leftJoin(roomsTable, eq(appointmentsTable.roomId, roomsTable.id))
+      .where(eq(appointmentsTable.clientId, clientId));
+    return rows
+      .map((r): AppointmentView => ({ ...toAppt(r.a), clientName: r.clientName ?? "", serviceName: r.serviceName ?? "Session", counsellorName: r.counsellorName ?? "", roomName: r.roomName ?? null }))
+      .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  }),
   listClientVisibleDocuments: (clientId) => runForClient(clientId, [], () => listClientVisibleDocumentsDb(clientId)),
   listClientDocumentRequests: (clientId) => runForClient(clientId, [], () => listClientRequestsDb(clientId)),
   listCounsellorDocuments: (counsellorId) => listCounsellorDocumentsDb(counsellorId),

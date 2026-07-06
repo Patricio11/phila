@@ -1,7 +1,7 @@
 import "server-only";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { drizzle } from "drizzle-orm/neon-serverless";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import * as schema from "@/db/schema";
@@ -91,4 +91,15 @@ export async function runScoped<T>(ctx: OrgContext, fn: (db: ScopedDb) => Promis
 /** Convenience for the common org-staff case: scope to one org, not super-admin. */
 export function runForOrg<T>(orgId: string, fn: (db: ScopedDb) => Promise<T>): Promise<T> {
   return runScoped({ orgId, isSuper: false }, fn);
+}
+
+/**
+ * Resolve a client's org (owner read, since there's no context yet) and run `fn`
+ * RLS-scoped to it. For client-portal paths that take only the authenticated
+ * client's own id; returns `fallback` if the client can't be resolved.
+ */
+export async function runForClient<T>(clientId: string, fallback: T, fn: (db: ScopedDb) => Promise<T>): Promise<T> {
+  const [r] = await getDb().select({ orgId: schema.clients.orgId }).from(schema.clients).where(eq(schema.clients.id, clientId)).limit(1);
+  if (!r) return fallback;
+  return runForOrg(r.orgId, fn);
 }

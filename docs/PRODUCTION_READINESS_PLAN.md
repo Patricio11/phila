@@ -159,12 +159,18 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
       (persist + cross-org rejection) and an e2e that records a PHQ-9 in the session editor and reads score=9 back
       from Postgres.
 
-### 1.3 Client portal
-- [ ] `getClientProfile` + `listAppointmentsForClient` → DB.
-- [ ] `saveClientProfile` / `changeClientPassword` / `setClientTwoFactor` (`app/me/profile/actions.ts`) → persist.
-- [ ] Wire portal **Pay** button (`components/client/invoice-list.tsx`) → mint a `/pay/[token]` and open it
-      (the whole pay-link + Paystack webhook machinery already works).
-- [ ] Client↔counsellor messaging channel (distinct from staff `message_threads`) — `listConversations` is mock.
+### 1.3 Client portal ✅ (2026-07-06, except client↔counsellor chat)
+- [x] `getClientProfile` + `listAppointmentsForClient` → DB overrides (RLS-scoped via `runForClient`, now shared
+      in `lib/db/scoped.ts`). The `/me` profile + sessions pages read real data.
+- [x] `saveClientProfile` → persists name/phone/email (columns) + the extras (DOB, address, emergency, preferred
+      channel) to `clients.profile` jsonb (migration 0033). `changeClientPassword` → **real** via Better Auth
+      (`auth.api.changePassword`, verifies current pw + revokes other sessions). `setClientTwoFactor` kept an
+      **honest** placeholder — real 2FA is a TOTP QR/verify enrolment flow (a boolean can't represent it), lands with W2.
+- [x] Portal **Pay** button → the `/me/billing` page mints a signed `/pay/<token>` per unpaid invoice
+      (`invoicePayPath`, server-side) and the button navigates there (was a toast stub). Reuses the existing
+      pay-link + Paystack webhook path. Verified: profile-edit-persists-across-reload e2e; Pay wiring tsc-checked.
+- [ ] Client↔counsellor messaging channel (distinct from staff `message_threads`) — `listConversations` still mock
+      (a new feature, not just persistence; deferred).
 
 ### 1.4 Hub team management
 - [ ] `listTeam` / `getTeamMemberDetail` → DB.

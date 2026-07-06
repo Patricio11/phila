@@ -165,6 +165,8 @@ export const clients = pgTable("clients", {
   province: text("province").notNull(),
   primaryCounsellorId: text("primary_counsellor_id"),
   riskFlag: boolean("risk_flag").default(false).notNull(),
+  /** Client self-service profile: { dateOfBirth, address, emergencyName, emergencyPhone, preferredContact }. */
+  profile: jsonb("profile").$type<Record<string, string>>().default({}).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
   /** Soft-delete  never distorts compiled stats (Outcome-Honesty). */
   deletedAt: timestamp("deleted_at", { withTimezone: true }),

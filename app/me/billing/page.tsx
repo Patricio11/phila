@@ -7,6 +7,7 @@ import { PageHead } from "@/components/shell/page-head";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { InvoiceList } from "@/components/client/invoice-list";
+import { invoicePayPath } from "@/lib/payments/invoice-link";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Billing" };
@@ -32,6 +33,11 @@ export default async function MeBillingPage() {
     reason: "own_record",
   });
 
+  // Signed pay-links for the client's own unpaid invoices (minted server-side).
+  const payPaths = Object.fromEntries(
+    invoices.filter((i) => i.status === "unpaid").map((i) => [i.id, invoicePayPath(i.id)]),
+  );
+
   return (
     <div className="rise space-y-6">
       <PageHead title="Billing" summary="Your invoices from the practice." />
@@ -44,6 +50,7 @@ export default async function MeBillingPage() {
           vatRatePercent={platform.vatRatePercent}
           settings={invoiceSettings}
           paymentsEnabled={Boolean(org?.features.payments)}
+          payPaths={payPaths}
         />
       ) : (
         <Card className="p-2">

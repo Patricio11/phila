@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { CreditCard, FileText, Landmark } from "lucide-react";
 import type { Invoice } from "@/lib/domain/types";
 import type { PaymentStatus } from "@/lib/domain/enums";
@@ -32,6 +33,7 @@ export function InvoiceList({
   vatRatePercent,
   settings,
   paymentsEnabled,
+  payPaths,
 }: {
   invoices: Invoice[];
   clientName: string;
@@ -40,11 +42,23 @@ export function InvoiceList({
   vatRatePercent: number;
   settings: InvoiceSettings;
   paymentsEnabled: boolean;
+  /** Signed `/pay/<token>` per unpaid invoice id (minted server-side). */
+  payPaths?: Record<string, string>;
 }) {
   const { toast } = useToast();
+  const router = useRouter();
   const [preview, setPreview] = useState<Invoice | null>(null);
+  const [paying, setPaying] = useState<string | null>(null);
   const canPayOnline = settings.showPayButton && paymentsEnabled;
   const hasBanking = Boolean(settings.accountNumber);
+
+  const pay = (inv: Invoice) => {
+    const path = payPaths?.[inv.id];
+    if (!path) return toast({ tone: "error", title: "Payment link unavailable", description: "Please try again shortly." });
+    setPaying(inv.id);
+    toast({ tone: "default", title: "Opening secure payment", description: `You'll pay ${orgName} ${money(inv.amountCents)} directly.` });
+    router.push(path);
+  };
 
   return (
     <>
@@ -75,7 +89,7 @@ export function InvoiceList({
                   <FileText className="size-4" strokeWidth={2} aria-hidden /> View invoice
                 </Button>
                 {unpaid && canPayOnline ? (
-                  <Button size="sm" onClick={() => toast({ tone: "default", title: "Opening secure payment", description: `You'll pay ${orgName} ${money(inv.amountCents)} directly.` })}>
+                  <Button size="sm" onClick={() => pay(inv)} loading={paying === inv.id}>
                     <CreditCard className="size-4" strokeWidth={2} aria-hidden /> Pay {money(inv.amountCents)}
                   </Button>
                 ) : unpaid && hasBanking ? (

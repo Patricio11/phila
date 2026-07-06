@@ -87,8 +87,14 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
       requests / storage), **funders + grants list** (`listFunders` / `listGrants`).
 - [x] `getHubOverview` (hub landing dashboard) → `runForOrg`; verified live (dashboards e2e sets a risk flag
       in the DB and the RLS-scoped overview reflects it). **The whole hub org-scoped read surface is now RLS-enforced.**
-- [ ] Remaining: id-based reads (`getRoomDetail`, `getGrantView`, `getClientDossier` — need org threaded);
-      team threads; client-portal + funder reads; write paths (defence in depth); RLS on the 3 uncovered tables.
+- [x] `getClientDossier` (id-based read): threaded the caller's org through the seam (`getClientDossier(orgId,
+      clientId, now)`, mock + both client pages updated) and RLS-scoped it — a cross-org clientId now resolves to
+      no rows instead of fetch-then-discard. Verified live (hub dossier renders through `phila_app`).
+- [x] Client **write** cluster (`db/queries/clients.ts`): create / bulk-create / update / remove-restore /
+      reassign now run via `runForOrg`, so the RLS WITH CHECK / USING clauses reject cross-org writes at the DB.
+      Verified live (caseload create + CSV import both persist; server log clean, no RLS violation).
+- [ ] Remaining: other id-based reads (`getRoomDetail`, `getGrantView`); team threads; client-portal + funder
+      reads; other write clusters (services/rooms/forms/documents/grants); RLS on the 3 uncovered tables.
 - [ ] Write paths (each already org-scoped in the app layer; add `runScoped` for defence in depth).
 - [ ] Client-portal + funder read paths (enter context in `requireClient` / `requireFunder` with their org).
 - [ ] Confirm public/booking/webhook/cron paths stay on the owner connection (no context → correct by design).

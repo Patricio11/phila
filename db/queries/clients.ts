@@ -1,6 +1,6 @@
 import "server-only";
 import { and, eq } from "drizzle-orm";
-import { getDb } from "@/db/client";
+import { activeDb, runForOrg } from "@/lib/db/scoped";
 import { clients } from "@/db/schema";
 import type { Province } from "@/lib/domain/enums";
 
@@ -10,6 +10,10 @@ import type { Province } from "@/lib/domain/enums";
  * hub admin can only ever touch their own org's clients. Removal is a **soft delete**
  * (`deletedAt`)  the record + full history are retained (Outcome-Honesty Rule), and
  * a restore just clears the timestamp.
+ *
+ * Each write runs via `runForOrg`, so it executes as the non-owner `phila_app` role
+ * with `app.org_id` set: the RLS WITH CHECK / USING clauses reject any cross-org
+ * insert or update at the database, beneath the app-layer `where org_id` filters.
  */
 function rid(prefix: string): string {
   return `${prefix}_${crypto.randomUUID().replace(/-/g, "").slice(0, 20)}`;
@@ -32,7 +36,7 @@ export interface ClientWriteInput {
 /** Insert a new client onto the org's caseload. Returns the new id. */
 export async function createClientDb(orgId: string, input: ClientWriteInput, now: string): Promise<{ id: string }> {
   const id = rid("cl");
-  await getDb().insert(clients).values({
+  await runForOrg(orgId, () => activeDb().insert(clients).values({
     id,
     orgId,
     name: input.name.trim(),
@@ -42,7 +46,7 @@ export async function createClientDb(orgId: string, input: ClientWriteInput, now
     primaryCounsellorId: input.counsellorId,
     riskFlag: input.riskFlag,
     createdAt: new Date(now),
-  });
+  }));
   return { id };
 }
 
@@ -65,15 +69,18 @@ export async function createClientsDb(orgId: string, rows: ImportRow[], now: str
   }));
   // Insert in chunks so a very large import doesn't blow the parameter limit.
   const CHUNK = 500;
-  for (let i = 0; i < values.length; i += CHUNK) {
-    await getDb().insert(clients).values(values.slice(i, i + CHUNK));
-  }
+  await runForOrg(orgId, async () => {
+    const db = activeDb();
+    for (let i = 0; i < values.length; i += CHUNK) {
+      await db.insert(clients).values(values.slice(i, i + CHUNK));
+    }
+  });
   return values.length;
 }
 
 /** Update every editable field on a client, scoped to the org. */
 export async function updateClientDb(orgId: string, clientId: string, input: ClientWriteInput): Promise<void> {
-  await getDb()
+  await runForOrg(orgId, () => activeDb()
     .update(clients)
     .set({
       name: input.name.trim(),
@@ -83,21 +90,21 @@ export async function updateClientDb(orgId: string, clientId: string, input: Cli
       primaryCounsellorId: input.counsellorId,
       riskFlag: input.riskFlag,
     })
-    .where(and(eq(clients.id, clientId), eq(clients.orgId, orgId)));
+    .where(and(eq(clients.id, clientId), eq(clients.orgId, orgId))));
 }
 
 /** Soft-delete (removed=true) or restore (removed=false) a client. */
 export async function setClientRemovedDb(orgId: string, clientId: string, removed: boolean, now: string): Promise<void> {
-  await getDb()
+  await runForOrg(orgId, () => activeDb()
     .update(clients)
     .set({ deletedAt: removed ? new Date(now) : null })
-    .where(and(eq(clients.id, clientId), eq(clients.orgId, orgId)));
+    .where(and(eq(clients.id, clientId), eq(clients.orgId, orgId))));
 }
 
 /** Move a client to another primary counsellor (their history moves with them). */
 export async function reassignClientDb(orgId: string, clientId: string, counsellorId: string): Promise<void> {
-  await getDb()
+  await runForOrg(orgId, () => activeDb()
     .update(clients)
     .set({ primaryCounsellorId: counsellorId })
-    .where(and(eq(clients.id, clientId), eq(clients.orgId, orgId)));
+    .where(and(eq(clients.id, clientId), eq(clients.orgId, orgId))));
 }

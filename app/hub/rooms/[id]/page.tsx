@@ -38,7 +38,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
   const now = clockNow();
 
   const [detail, sites, clients, services, rooms, counsellors] = await Promise.all([
-    provider.getRoomDetail(id, now),
+    provider.getRoomDetail(membership.orgId, id, now),
     provider.listSites(membership.orgId),
     provider.listClients(membership.orgId),
     provider.listServices(membership.orgId),

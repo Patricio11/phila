@@ -34,7 +34,7 @@ export default async function GrantPage({ params }: { params: Promise<{ id: stri
   const org = await provider.getOrg(membership.orgId);
   if (!org?.features.funders) redirect("/hub");
 
-  const view = await provider.getGrantView(id, now);
+  const view = await provider.getGrantView(membership.orgId, id, now);
   if (!view || view.grant.orgId !== membership.orgId) notFound();
 
   const [funders, admin, clients] = await Promise.all([

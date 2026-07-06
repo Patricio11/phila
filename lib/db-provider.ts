@@ -267,7 +267,7 @@ export const dbProvider: DataProvider = {
   getReporting: (orgId, now, filters) => runForOrg(orgId, () => getReportingDb(orgId, now, filters)),
   getHubInsights: (orgId, now, filters) => runForOrg(orgId, () => getHubInsightsDb(orgId, now, filters)),
   listGrants: (orgId) => runForOrg(orgId, () => listGrantsDb(orgId)),
-  getGrantView: (grantId, now) => getGrantViewDb(grantId, now),
+  getGrantView: (orgId, grantId, now) => runForOrg(orgId, () => getGrantViewDb(grantId, now)),
   getGrantAdmin: (orgId, grantId) => getGrantAdminDb(orgId, grantId),
   getFunderGrantView: (funderUserId, grantId, now) => getFunderGrantViewDb(funderUserId, grantId, now),
 
@@ -364,9 +364,9 @@ export const dbProvider: DataProvider = {
     });
   }),
 
-  getRoomDetail: async (roomId: string, now: string): Promise<RoomDetail | null> => {
-    const db = getDb();
-    const [roomRow] = await db.select().from(roomsTable).where(eq(roomsTable.id, roomId)).limit(1);
+  getRoomDetail: (orgId: string, roomId: string, now: string): Promise<RoomDetail | null> => runForOrg(orgId, async () => {
+    const db = activeDb();
+    const [roomRow] = await db.select().from(roomsTable).where(and(eq(roomsTable.id, roomId), eq(roomsTable.orgId, orgId))).limit(1);
     if (!roomRow) return null;
     const room = toRoom(roomRow);
     const [[orgRow], siteRows, counsellorRows, views, assignmentRows] = await Promise.all([
@@ -404,7 +404,7 @@ export const dbProvider: DataProvider = {
       assignments: assignmentRows.filter((ra) => ra.roomId === room.id).map((ra) => ({ counsellorName: counsellorRows.find((c) => c.id === ra.counsellorId)?.name ?? "", days: ra.days, start: ra.start, end: ra.end })),
       bookings: roomAppts.filter((a) => weekDates.some((d) => a.startsAt.startsWith(d))).sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
     };
-  },
+  }),
 
   // ── Scheduling cluster  real appointments from the DB ────────────────
   listAppointmentsForCounsellor: async (counsellorId: string, opts?: { from?: string; to?: string }): Promise<Appointment[]> => {

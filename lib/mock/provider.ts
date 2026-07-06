@@ -1203,8 +1203,8 @@ export const mockProvider: DataProvider = {
 
   listSites: (orgId) => ok(allSites.filter((s) => s.orgId === orgId)),
 
-  getRoomDetail: (roomId, now): Promise<RoomDetail | null> => {
-    const room = allRooms.find((r) => r.id === roomId);
+  getRoomDetail: (orgId, roomId, now): Promise<RoomDetail | null> => {
+    const room = allRooms.find((r) => r.id === roomId && r.orgId === orgId);
     if (!room) return ok(null);
     const org = orgs.find((o) => o.id === room.orgId);
     if (!org) return ok(null);
@@ -1495,8 +1495,8 @@ export const mockProvider: DataProvider = {
         })),
     ),
 
-  getGrantView: (grantId, now): Promise<GrantView | null> => {
-    const grant = grants.find((g) => g.id === grantId);
+  getGrantView: (orgId, grantId, now): Promise<GrantView | null> => {
+    const grant = grants.find((g) => g.id === grantId && g.orgId === orgId);
     if (!grant) return ok(null);
     const funder = funders.find((f) => f.id === grant.funderId);
     if (!funder) return ok(null);

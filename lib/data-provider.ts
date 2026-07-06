@@ -835,7 +835,7 @@ export interface DataProvider {
   listTeam(orgId: string): Promise<TeamMemberView[]>;
   getTeamMemberDetail(orgId: string, userId: string, now: string): Promise<TeamMemberDetail | null>;
   getRoomsOverview(orgId: string, now: string): Promise<RoomView[]>;
-  getRoomDetail(roomId: string, now: string): Promise<RoomDetail | null>;
+  getRoomDetail(orgId: string, roomId: string, now: string): Promise<RoomDetail | null>;
   listSites(orgId: string): Promise<Site[]>;
   listIntakeStatus(orgId: string, now: string): Promise<IntakeStatusRow[]>;
   getIntakeBoard(orgId: string, now: string): Promise<IntakeBoard>;
@@ -870,7 +870,7 @@ export interface DataProvider {
   // Funders & grants (M&E)
   listFunders(orgId: string): Promise<Funder[]>;
   listGrants(orgId: string): Promise<GrantSummary[]>;
-  getGrantView(grantId: string, now: string): Promise<GrantView | null>;
+  getGrantView(orgId: string, grantId: string, now: string): Promise<GrantView | null>;
   /** Editable config for a grant: its indicators + the client ids tagged to it. */
   getGrantAdmin(orgId: string, grantId: string): Promise<{ indicators: import("@/lib/domain/types").GrantIndicator[]; allocatedClientIds: string[] } | null>;
   /** Funder portal: the grants a funder user is scoped to (read-only). */

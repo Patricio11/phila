@@ -38,7 +38,7 @@ export async function listGrantsDb(orgId: string): Promise<GrantSummary[]> {
 
 /** Shared compute for a single grant: indicators, breakdowns, outcome, narratives. */
 async function computeGrant(grant: Grant, now: string) {
-  const db = getDb();
+  const db = activeDb();
   const [allocRows, indRows, narrRows, cohort, apptRows] = await Promise.all([
     db.select({ clientId: grantAllocations.clientId }).from(grantAllocations).where(eq(grantAllocations.grantId, grant.id)),
     db.select().from(grantIndicators).where(eq(grantIndicators.grantId, grant.id)),
@@ -69,7 +69,7 @@ async function computeGrant(grant: Grant, now: string) {
 }
 
 export async function getGrantViewDb(grantId: string, now: string): Promise<(GrantView & { headline: string }) | null> {
-  const db = getDb();
+  const db = activeDb();
   const [g] = await db.select().from(grants).where(eq(grants.id, grantId)).limit(1);
   if (!g) return null;
   const [f] = await db.select().from(funders).where(eq(funders.id, g.funderId)).limit(1);

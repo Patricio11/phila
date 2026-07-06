@@ -18,7 +18,7 @@ export default async function ClientsPage() {
   if (!me) notFound();
 
   const now = clockNow();
-  const rows = await provider.listCaseload(me.id, now);
+  const rows = await provider.listCaseload(membership.orgId, me.id, now);
 
   await logAccess({
     action: "pii.read",

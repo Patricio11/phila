@@ -76,7 +76,7 @@ function dayRange(col: typeof appointmentsTable.startsAt, opts?: { from?: string
 
 /** A counsellor's appointments with client/service/room names resolved (joined). */
 async function counsellorApptViews(counsellorId: string): Promise<AppointmentView[]> {
-  const rows = await getDb()
+  const rows = await activeDb()
     .select({ a: appointmentsTable, clientName: clientsTable.name, serviceName: servicesTable.name, counsellorName: counsellorsTable.name, roomName: roomsTable.name })
     .from(appointmentsTable)
     .leftJoin(clientsTable, eq(appointmentsTable.clientId, clientsTable.id))
@@ -279,7 +279,7 @@ export const dbProvider: DataProvider = {
   listClientVisibleDocuments: (clientId) => listClientVisibleDocumentsDb(clientId),
   listClientDocumentRequests: (clientId) => listClientRequestsDb(clientId),
   listCounsellorDocuments: (counsellorId) => listCounsellorDocumentsDb(counsellorId),
-  listTeamThreads: (userId, orgId) => listTeamThreadsDb(userId, orgId),
+  listTeamThreads: (userId, orgId) => runForOrg(orgId, () => listTeamThreadsDb(userId, orgId)),
 
   // Forms library (Phase 18.6)  real DB reads + writes. Intake for booking now
   // resolves the active intake form from `forms` (falls back to mock if unseeded).
@@ -415,15 +415,15 @@ export const dbProvider: DataProvider = {
     const rows = await getDb().select().from(appointmentsTable).where(and(eq(appointmentsTable.orgId, orgId), ...dayRange(appointmentsTable.startsAt, opts)));
     return rows.map(toAppt);
   },
-  listCounsellorSessions: async (counsellorId: string): Promise<AppointmentView[]> => {
+  listCounsellorSessions: (orgId: string, counsellorId: string): Promise<AppointmentView[]> => runForOrg(orgId, async () => {
     const views = await counsellorApptViews(counsellorId);
     return views.sort((a, b) => b.startsAt.localeCompare(a.startsAt));
-  },
+  }),
 
   // ── Counsellor caseload  live clients + their real appointments ──────
-  listCaseload: async (counsellorId: string, now: string): Promise<CaseloadRow[]> => {
+  listCaseload: (orgId: string, counsellorId: string, now: string): Promise<CaseloadRow[]> => runForOrg(orgId, async () => {
     const [clientRows, views] = await Promise.all([
-      getDb().select().from(clientsTable).where(and(eq(clientsTable.primaryCounsellorId, counsellorId), isNull(clientsTable.deletedAt))),
+      activeDb().select().from(clientsTable).where(and(eq(clientsTable.primaryCounsellorId, counsellorId), isNull(clientsTable.deletedAt))),
       counsellorApptViews(counsellorId),
     ]);
     const nowMs = new Date(now).getTime();
@@ -444,7 +444,7 @@ export const dbProvider: DataProvider = {
             : "active";
       return { client, nextSession: future[0] ?? null, lastSession, sessionCount: held.length, status };
     });
-  },
+  }),
 
   // ── Hub clients  org caseload, dossier, and duplicate detection (DB) ──
   // RLS-scoped: `runForOrg` runs these as `phila_app` with `app.org_id` set to the
@@ -550,8 +550,8 @@ export const dbProvider: DataProvider = {
   }),
 
   // ── Composite dashboard  counsellor home, aggregated from DB rows ─────
-  getCounsellorDashboard: async (counsellorId: string, now: string): Promise<CounsellorDashboard | null> => {
-    const db = getDb();
+  getCounsellorDashboard: (orgId: string, counsellorId: string, now: string): Promise<CounsellorDashboard | null> => runForOrg(orgId, async () => {
+    const db = activeDb();
     const [cRow] = await db.select().from(counsellorsTable).where(eq(counsellorsTable.id, counsellorId)).limit(1);
     if (!cRow) return null;
     const [orgRow] = await db.select().from(orgsTable).where(eq(orgsTable.id, cRow.orgId)).limit(1);
@@ -569,7 +569,7 @@ export const dbProvider: DataProvider = {
       .sort((a, b) => a.takenAt.getTime() - b.takenAt.getTime())
       .map((m) => ({ label: new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", month: "short" }).format(m.takenAt), value: m.score }));
     return computeCounsellorDashboard({ counsellor: toCounsellor(cRow), org: toOrg(orgRow), appointments, counsellorClients, measuredClientIds, outcomePoints, now });
-  },
+  }),
 
   // ── Clinical cluster  care plan (shared) + documents ─────────────────
   getCarePlan: async (clientId: string): Promise<CarePlan | null> => {

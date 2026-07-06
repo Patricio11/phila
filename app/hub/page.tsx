@@ -53,7 +53,7 @@ export default async function HubOverviewPage() {
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(now));
   const monday = addDays(today, -(isoWeekday(today) - 1));
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
-  const sessionsByCounsellor = await Promise.all(counsellors.map((c) => provider.listCounsellorSessions(c.id, now)));
+  const sessionsByCounsellor = await Promise.all(counsellors.map((c) => provider.listCounsellorSessions(membership.orgId, c.id, now)));
   const teamLoad = counsellors
     .map((c, i) => {
       const wk = (sessionsByCounsellor[i] ?? []).filter((s) => weekDates.some((d) => s.startsAt.startsWith(d)));

@@ -21,7 +21,7 @@ export default async function CalendarPage() {
 
   const now = clockNow();
   const [events, allClients, services, rooms] = await Promise.all([
-    provider.listCounsellorSessions(me.id, now),
+    provider.listCounsellorSessions(membership.orgId, me.id, now),
     provider.listClients(membership.orgId),
     provider.listServices(membership.orgId),
     provider.listRooms(membership.orgId),

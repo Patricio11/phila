@@ -574,7 +574,7 @@ export const mockProvider: DataProvider = {
     return ok(filterRange(all, opts));
   },
 
-  async getCounsellorDashboard(counsellorId, now): Promise<CounsellorDashboard | null> {
+  async getCounsellorDashboard(_orgId, counsellorId, now): Promise<CounsellorDashboard | null> {
     const counsellor = allCounsellors.find((c) => c.id === counsellorId);
     if (!counsellor) return null;
     const org = orgs.find((o) => o.id === counsellor.orgId);
@@ -699,7 +699,7 @@ export const mockProvider: DataProvider = {
   getClientConsents: (clientId) => ok(allConsents.filter((c) => c.clientId === clientId)),
 
   // ---- Counsellor workspace -------------------------------------------
-  listCaseload: (counsellorId, now) => {
+  listCaseload: (_orgId, counsellorId, now) => {
     const clients = liveOnly(allClients.filter((c) => c.primaryCounsellorId === counsellorId));
     const nowMs = new Date(now).getTime();
     const rows: CaseloadRow[] = clients.map((client) => {
@@ -750,7 +750,7 @@ export const mockProvider: DataProvider = {
     });
   },
 
-  listCounsellorSessions: (counsellorId, now) =>
+  listCounsellorSessions: (_orgId, counsellorId, now) =>
     ok(
       materialise(counsellorId, now)
         .map(toView)

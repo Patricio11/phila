@@ -28,7 +28,7 @@ export default async function DashboardPage() {
   if (!me) notFound();
 
   const now = clockNow();
-  const dash = await provider.getCounsellorDashboard(me.id, now);
+  const dash = await provider.getCounsellorDashboard(membership.orgId, me.id, now);
   if (!dash) notFound();
 
   const [allClients, services, rooms, org] = await Promise.all([

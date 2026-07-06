@@ -20,7 +20,7 @@ export default async function HubCalendarsPage() {
 
   const now = clockNow();
   const [lists, orgClients, services, rooms] = await Promise.all([
-    Promise.all(counsellors.map((c) => provider.listCounsellorSessions(c.id, now))),
+    Promise.all(counsellors.map((c) => provider.listCounsellorSessions(membership.orgId, c.id, now))),
     provider.listClients(membership.orgId),
     provider.listServices(membership.orgId),
     provider.listRooms(membership.orgId),

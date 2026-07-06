@@ -2,6 +2,7 @@ import "server-only";
 import { and, eq, inArray } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { getDb } from "@/db/client";
+import { activeDb } from "@/lib/db/scoped";
 import { messageThreads, threadMembers, teamMessages, orgMembers } from "@/db/schema";
 import { user } from "@/db/auth-schema";
 import type { TeamMessage, TeamThread } from "@/lib/data-provider";
@@ -12,7 +13,7 @@ type Db = ReturnType<typeof getDb>;
 /** The user's threads in an org  direct + group  with messages, unread, and the
  * other member's name/role (direct). Sorted by most-recent activity. */
 export async function listTeamThreadsDb(userId: string, orgId: string): Promise<TeamThread[]> {
-  const db = getDb();
+  const db = activeDb();
   const memberships = await db
     .select({ threadId: threadMembers.threadId, lastReadAt: threadMembers.lastReadAt })
     .from(threadMembers)

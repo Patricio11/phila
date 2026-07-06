@@ -17,7 +17,7 @@ export default async function SessionsPage() {
   if (!me) notFound();
 
   const now = clockNow();
-  const sessions = await provider.listCounsellorSessions(me.id, now);
+  const sessions = await provider.listCounsellorSessions(membership.orgId, me.id, now);
 
   return (
     <div className="rise space-y-6">

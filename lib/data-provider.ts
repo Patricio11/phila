@@ -797,12 +797,12 @@ export interface DataProvider {
   ): Promise<Appointment[]>;
 
   // Composed surfaces
-  getCounsellorDashboard(counsellorId: string, now: string): Promise<CounsellorDashboard | null>;
+  getCounsellorDashboard(orgId: string, counsellorId: string, now: string): Promise<CounsellorDashboard | null>;
 
   // Counsellor workspace
-  listCaseload(counsellorId: string, now: string): Promise<CaseloadRow[]>;
+  listCaseload(orgId: string, counsellorId: string, now: string): Promise<CaseloadRow[]>;
   getClientDossier(orgId: string, clientId: string, now: string): Promise<ClientDossier | null>;
-  listCounsellorSessions(counsellorId: string, now: string): Promise<AppointmentView[]>;
+  listCounsellorSessions(orgId: string, counsellorId: string, now: string): Promise<AppointmentView[]>;
   getSession(appointmentId: string, now: string): Promise<SessionEditorData | null>;
   getSupervisionQueue(supervisorId: string, now: string): Promise<SupervisionItem[]>;
   getSupervisionOverview(supervisorId: string, now: string): Promise<SupervisionOverview>;

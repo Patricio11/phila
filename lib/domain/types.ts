@@ -516,6 +516,8 @@ export interface Plan {
   videoMinutes: number;
   messaging: boolean; // WhatsApp + SMS
   rooms: number | null;
+  /** Included document storage in GB (metered — the org's storage ceiling). */
+  storageGb: number;
   popular?: boolean;
   ngo?: boolean;
 }

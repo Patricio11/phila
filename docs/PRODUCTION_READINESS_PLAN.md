@@ -399,22 +399,25 @@ effective(feature, org) =
       (`setOrgFeatureOverride`) — grant a beta feature to one org, or suspend `ai`/`payments` for an org in breach.
 - [x] Shows the org's plan (in the card header) alongside what resolves. E2e + screenshot.
 
-### 3.4 Admin: subscription & plan management (make it real)
-- [ ] Migrate `listPlans` writes + `getPlatformOrgDetail` to DB (overlaps W1.7).
-- [ ] `app/admin/plans`  CRUD plans: price, included features, and **quotas** (storage GB, SMS/mo,
-      WhatsApp/mo, AI tokens/mo, seats). Persisted + audited.
-- [ ] Assign/upgrade/downgrade an org's plan from `app/admin/orgs/[id]` (`setOrgPlan`), with effect on
-      entitlements + quotas immediately reflected by the resolver.
+### 3.4 Admin: subscription & plan management — ✅ done (c)
+- [x] Plans gained a `storageGb` quota (`Plan` + `PLANS`, reused everywhere — no new catalogue). `listPlans` +
+      `getPlatformOrgDetail` are DB (W1.7).
+- [x] **Assign/upgrade/downgrade an org's plan** from `app/admin/orgs/[id]` — an **OrgPlanControl** card (plan
+      selector + quota summary) → `setOrgPlan`/`setOrgPlanDb` (reuses `upsertSubscription`). Entitlements + quotas
+      are reflected **immediately** by the resolver (proven: moving plans changes the effective storage limit).
+- [ ] *Deferred:* full plan-catalogue CRUD (edit prices/quotas of the plans themselves) — the catalogue stays
+      code-defined for now; moving an org between plans is the high-value capability and is live.
 
-### 3.5 Admin: metered resources & credits (storage / SMS / email / AI)
-- [ ] Unify the existing `credit_balances` / `credit_ledger` (SMS/email) with **storage** and **AI-token**
-      meters under one `org_resource_meters` view.
-- [ ] Extend `grantMessagingCredits` (already real) into `adjustOrgResource(orgId, resource, delta, reason)`
-      covering sms, email, whatsapp, **storage**, ai_tokens  guarded + audited.
-- [ ] `app/admin/orgs/[id]` panel: current usage vs quota per resource, with top-up / set-limit controls;
-      surface `org_storage_usage` (already seeded) here.
-- [ ] Enforcement: when a metered resource is exhausted, the feature no-ops honestly (Dormant-by-Default),
-      and the hub shows an "add credits / upgrade plan" state  never a silent failure or fake success.
+### 3.5 Admin: metered resources & credits — ✅ done (d)
+- [x] `getOrgResourceMetersDb` unifies the real pools — `credit_balances` (SMS/email), `org_storage_usage`
+      (storage used vs the plan/override limit), and `ai_usage` + `org_ai_settings` (AI spend vs monthly cap).
+- [x] `app/admin/orgs/[id]` **Resources & quotas** panel (`OrgResourceMeters`): usage bars + controls to **top up
+      SMS/email credits** (reuses `grantMessagingCredits`), **set/clear a storage-limit override** (`setOrgStorageLimit`
+      → `orgs.resource_limits`, migration 0041), and **set the AI monthly cap** (`setOrgAiCap` → `saveAiSettings`).
+      All guarded + audited.
+- [x] Storage enforcement is now org-aware: `orgStorageLimitBytes(orgId)` (override → plan → default) replaces the
+      flat limit across all five upload paths — so changing the plan/override actually changes what uploads are
+      allowed. Exhaustion still no-ops honestly (Dormant-by-Default). Proven by `tests/integration/org-resources.test.ts`.
 
 ### 3.6 Admin: enabling the new (Workstream 7) features
 - [ ] Every new feature ships **registered in the feature registry (3.1)** and **defaulted OFF**, so the

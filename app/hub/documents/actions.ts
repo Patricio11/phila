@@ -20,7 +20,8 @@ import {
   softDeleteItemsDb,
 } from "@/db/queries/documents";
 import { getStorageProvider, objectKey } from "@/lib/storage";
-import { storageLimitBytes, validateUpload } from "@/lib/documents/quota";
+import { validateUpload } from "@/lib/documents/quota";
+import { orgStorageLimitBytes } from "@/db/queries/resources";
 import { scanObject } from "@/lib/documents/scan";
 import { notifyDocumentShared } from "@/lib/messaging/notify-document";
 import { randomUUID } from "node:crypto";
@@ -181,7 +182,7 @@ export async function requestUpload(raw: z.infer<typeof uploadInput>): Promise<{
   if (storage.status !== "live") return { ok: false, error: "Phila Storage isn't switched on yet." };
 
   const used = await currentStorageBytes(membership.orgId);
-  if (used + parsed.data.bytes > storageLimitBytes())
+  if (used + parsed.data.bytes > await orgStorageLimitBytes(membership.orgId))
     return { ok: false, error: "You've reached your plan's storage. Remove files or upgrade for more." };
 
   const documentId = `doc_${randomUUID()}`;

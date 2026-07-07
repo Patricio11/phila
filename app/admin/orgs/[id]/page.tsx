@@ -2,8 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Info } from "lucide-react";
 import { requireSuperAdmin } from "@/lib/auth/guard";
-import { getCreditBalances } from "@/db/queries/messaging";
-import { GrantCredits } from "@/components/admin/grant-credits";
+import { getOrgResourceMetersDb, type OrgResourceMeters } from "@/db/queries/resources";
+import { OrgPlanControl } from "@/components/admin/org-plan-control";
+import { OrgResourceMeters as OrgResourceMetersPanel } from "@/components/admin/org-resource-meters";
 import { getDataProvider, type TeamMemberView } from "@/lib/data-provider";
 import type { TeamRole } from "@/lib/domain/enums";
 import { logAccess } from "@/lib/audit";
@@ -49,11 +50,12 @@ export default async function AdminOrgDetailPage({ params }: { params: Promise<{
   const { id } = await params;
   const principal = await requireSuperAdmin();
   const provider = await getDataProvider();
-  const [detail, review, credits, featureMap] = await Promise.all([
+  const isDb = process.env.DATA_PROVIDER === "db";
+  const [detail, review, featureMap, meters] = await Promise.all([
     provider.getPlatformOrgDetail(id),
     provider.getOrgOnboardingReview(id),
-    getCreditBalances(id),
-    process.env.DATA_PROVIDER === "db" ? resolveAllFeaturesDb(id) : Promise.resolve(null),
+    isDb ? resolveAllFeaturesDb(id) : Promise.resolve(null),
+    isDb ? getOrgResourceMetersDb(id) : Promise.resolve(null as OrgResourceMeters | null),
   ]);
   if (!detail) notFound();
   const featureResolutions = featureMap ? ORG_FEATURES.map((f) => featureMap[f]) : [];
@@ -149,13 +151,24 @@ export default async function AdminOrgDetailPage({ params }: { params: Promise<{
         </Card>
       )}
 
-      {/* Notification credits (manual top-up until Phase 15.1) */}
-      <Card>
-        <CardHead title="Notification credits" />
-        <div className="px-[17px] pb-[17px]">
-          <GrantCredits orgId={id} balances={credits} />
+      {/* Plan & metered resources (W3.4 / W3.5) */}
+      {meters && (
+        <div className="grid items-start gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHead title="Plan" />
+            <div className="px-[17px] pb-[17px]">
+              <OrgPlanControl orgId={id} planId={meters.planId} />
+            </div>
+          </Card>
+          <Card>
+            <CardHead title="Resources & quotas" />
+            <div className="px-[17px] pb-[17px]">
+              <p className="mb-3 text-[12.5px] text-text-2">Top up credits, cap AI spend, or override storage. When a meter runs out the feature no-ops honestly (Dormant-by-Default) — never a fake success.</p>
+              <OrgResourceMetersPanel orgId={id} meters={meters} />
+            </div>
+          </Card>
         </div>
-      </Card>
+      )}
 
       {detail.fullyModeled ? (
         GROUPS.map((g) => {

@@ -8,7 +8,8 @@ import { logAccess } from "@/lib/audit";
 import { now as clockNow } from "@/lib/clock";
 import { notifyFormSent } from "@/lib/messaging/notify-form";
 import { getStorageProvider, objectKey } from "@/lib/storage";
-import { validateUpload, storageLimitBytes } from "@/lib/documents/quota";
+import { validateUpload } from "@/lib/documents/quota";
+import { orgStorageLimitBytes } from "@/db/queries/resources";
 import { currentStorageBytes, addStorageUsage } from "@/db/queries/documents";
 import { randomUUID } from "node:crypto";
 import { FORM_KINDS, FORM_FIELD_TYPES, FORM_LAYOUTS, FORM_BG_TYPES, FORM_IMAGE_FITS } from "@/lib/domain/enums";
@@ -176,7 +177,7 @@ export async function requestFormImageUpload(raw: z.infer<typeof imgInput>): Pro
   const storage = await getStorageProvider();
   if (storage.status !== "live") return { ok: false, error: "Background images need Phila Storage switched on. You can still use a colour or gradient." };
   const used = await currentStorageBytes(membership.orgId);
-  if (used + parsed.data.bytes > storageLimitBytes()) return { ok: false, error: "Your practice's storage is full  free up space or use a colour." };
+  if (used + parsed.data.bytes > await orgStorageLimitBytes(membership.orgId)) return { ok: false, error: "Your practice's storage is full  free up space or use a colour." };
 
   const key = objectKey(membership.orgId, `formbg_${randomUUID()}`, parsed.data.name);
   try {

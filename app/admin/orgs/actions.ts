@@ -7,6 +7,9 @@ import { logAccess } from "@/lib/audit";
 import { applyCredit } from "@/db/queries/messaging";
 import { reviewOnboardingDocDb, approveOrgDb, sendBackOnboardingDb, getOrgAdminContactDb, getAdminOnboardingDocKeyDb } from "@/db/queries/platform";
 import { setOrgFeatureOverrideDb } from "@/db/queries/features";
+import { setOrgPlanDb, setOrgStorageLimitDb } from "@/db/queries/resources";
+import { getAiSettings, saveAiSettings } from "@/db/queries/ai";
+import { planById } from "@/lib/billing/plans";
 import { getStorageProvider } from "@/lib/storage";
 import { sendPlatformEmail } from "@/lib/email/platform-email";
 import { approvalEmail, actionNeededEmail } from "@/lib/email/templates";
@@ -153,6 +156,54 @@ export async function setOrgFeatureOverride(raw: z.infer<typeof overrideInput>):
     target: `org:${parsed.data.orgId}/feature:${parsed.data.feature}`,
     reason: `override_${parsed.data.state}`,
   });
+  revalidatePath(`/admin/orgs/${parsed.data.orgId}`);
+  return { ok: true };
+}
+
+/* ── Plan & metered resources (W3.4 / W3.5) ──────────────────────────── */
+
+const planInput = z.object({ orgId: z.string().min(1), planId: z.string().min(1) });
+
+/** Move an org between plans (W3.4c) — entitlements + quotas follow immediately. */
+export async function setOrgPlan(raw: z.infer<typeof planInput>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const principal = await requireSuperAdmin();
+  const parsed = planInput.safeParse(raw);
+  if (!parsed.success || !planById(parsed.data.planId)) return { ok: false, error: "Unknown plan." };
+
+  if (isDb()) await setOrgPlanDb(parsed.data.orgId, parsed.data.planId);
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: parsed.data.orgId, target: `org:${parsed.data.orgId}/plan`, reason: `set_plan:${parsed.data.planId}` });
+  revalidatePath(`/admin/orgs/${parsed.data.orgId}`);
+  revalidatePath("/admin/orgs");
+  return { ok: true };
+}
+
+const storageInput = z.object({ orgId: z.string().min(1), gb: z.number().int().min(1).max(100000).nullable() });
+
+/** Set (or clear) a per-org storage-limit override in GB (W3.5). */
+export async function setOrgStorageLimit(raw: z.infer<typeof storageInput>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const principal = await requireSuperAdmin();
+  const parsed = storageInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Enter a valid limit." };
+
+  if (isDb()) await setOrgStorageLimitDb(parsed.data.orgId, parsed.data.gb);
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: parsed.data.orgId, target: `org:${parsed.data.orgId}/storage_limit`, reason: parsed.data.gb === null ? "clear_storage_override" : `set_storage:${parsed.data.gb}gb` });
+  revalidatePath(`/admin/orgs/${parsed.data.orgId}`);
+  return { ok: true };
+}
+
+const aiCapInput = z.object({ orgId: z.string().min(1), capRands: z.number().int().min(0).max(1000000) });
+
+/** Set an org's monthly AI spend cap, in Rands (W3.5). */
+export async function setOrgAiCap(raw: z.infer<typeof aiCapInput>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const principal = await requireSuperAdmin();
+  const parsed = aiCapInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Enter a valid cap." };
+
+  if (isDb()) {
+    const current = await getAiSettings(parsed.data.orgId);
+    await saveAiSettings(parsed.data.orgId, { aiEnabled: current.aiEnabled, monthlyCapCents: parsed.data.capRands * 100 });
+  }
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: parsed.data.orgId, target: `org:${parsed.data.orgId}/ai_cap`, reason: `set_ai_cap:R${parsed.data.capRands}` });
   revalidatePath(`/admin/orgs/${parsed.data.orgId}`);
   return { ok: true };
 }

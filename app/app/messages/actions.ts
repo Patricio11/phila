@@ -7,7 +7,8 @@ import { sendTeamMessageDb, sendToThreadDb, createGroupThreadDb, markThreadReadD
 import { currentStorageBytes, addStorageUsage } from "@/db/queries/documents";
 import { broadcastToThread, broadcastThreadAdded, broadcastMessageUpdate, getRealtimeAuthSecret, signRealtimeToken } from "@/lib/messaging/realtime";
 import { getStorageProvider, objectKey } from "@/lib/storage";
-import { validateUpload, storageLimitBytes } from "@/lib/documents/quota";
+import { validateUpload } from "@/lib/documents/quota";
+import { orgStorageLimitBytes } from "@/db/queries/resources";
 import { randomUUID } from "node:crypto";
 
 /**
@@ -106,7 +107,7 @@ export async function requestChatUpload(raw: z.infer<typeof chatUploadInput>): P
   const storage = await getStorageProvider();
   if (storage.status !== "live") return { ok: false, error: "Attachments aren't switched on yet." };
   const used = await currentStorageBytes(membership.orgId);
-  if (used + parsed.data.bytes > storageLimitBytes())
+  if (used + parsed.data.bytes > await orgStorageLimitBytes(membership.orgId))
     return { ok: false, error: "Your practice's storage is full  free up space or upgrade." };
 
   const key = objectKey(membership.orgId, `chat_${randomUUID()}`, parsed.data.name);

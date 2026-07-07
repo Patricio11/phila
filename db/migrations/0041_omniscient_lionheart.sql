@@ -1,0 +1,1 @@
+ALTER TABLE "orgs" ADD COLUMN "resource_limits" jsonb DEFAULT '{}'::jsonb NOT NULL;

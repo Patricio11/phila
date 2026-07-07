@@ -26,7 +26,7 @@ export async function saveVideoSettings(orgId: string, s: VideoSettings): Promis
  * The join URL for an online appointment: the in-app LiveKit room, or the org's
  * own pasted meeting link when it runs video externally (paste-link fallback).
  */
-export async function resolveVideoJoinUrl(appointmentId: string, orgId: string): Promise<string> {
+export async function resolveVideoJoinUrl(appointmentId: string, orgId: string, startsAtISO: string): Promise<string> {
   const v = await getVideoSettings(orgId);
-  return v.mode === "external" && v.externalUrl ? v.externalUrl : videoJoinPath(appointmentId);
+  return v.mode === "external" && v.externalUrl ? v.externalUrl : videoJoinPath(appointmentId, startsAtISO);
 }

@@ -1,11 +1,12 @@
 "use server";
 
 import { z } from "zod";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { eq } from "drizzle-orm";
 import { PROVINCES } from "@/lib/domain/enums";
 import { auth } from "@/lib/auth/better-auth";
 import { getCurrentPrincipal } from "@/lib/auth/session";
+import { TWO_FA_SKIP_COOKIE } from "@/lib/auth/two-factor-prompt";
 import { logAccess } from "@/lib/audit";
 import { getDb } from "@/db/client";
 import { orgMembers, orgs, subscriptions } from "@/db/schema";
@@ -23,8 +24,8 @@ const signInInput = z.object({
   password: z.string().min(1, "Enter your password."),
 });
 
-/** Where each role lands after sign-in. */
-async function homeForUser(userId: string, platformRole: string | null): Promise<string> {
+/** The dashboard each role lands on. */
+async function baseHome(userId: string, platformRole: string | null): Promise<string> {
   if (platformRole === "client") return "/me";
   if (platformRole === "funder") return "/funder";
   if (platformRole === "super_admin") return "/admin";
@@ -35,6 +36,18 @@ async function homeForUser(userId: string, platformRole: string | null): Promise
     .where(eq(orgMembers.userId, userId))
     .limit(1);
   return m?.role === "org_admin" ? "/hub" : "/app";
+}
+
+/** Where a user lands after sign-in. The 2FA nudge is a dismissible dashboard banner
+ * (see `shouldPromptTwoFactor`), not a redirect — so it never blocks or reroutes. */
+async function homeForUser(userId: string, platformRole: string | null): Promise<string> {
+  return baseHome(userId, platformRole);
+}
+
+/** "Remind me later" on the 2FA banner — remember the choice for two weeks. */
+export async function dismissTwoFactorPrompt(): Promise<{ ok: true }> {
+  (await cookies()).set(TWO_FA_SKIP_COOKIE, "1", { httpOnly: true, sameSite: "lax", maxAge: 60 * 60 * 24 * 14, path: "/" });
+  return { ok: true };
 }
 
 export async function signIn(

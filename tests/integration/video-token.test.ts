@@ -18,12 +18,14 @@ function decodeJwt(jwt: string): Record<string, unknown> {
 }
 
 describe("video join links", () => {
-  it("signs + verifies an appointment, and rejects a forged signature", () => {
-    const sig = signJoin("appt_x");
-    expect(verifyJoin("appt_x", sig)).toBe(true);
-    expect(verifyJoin("appt_x", "wrong")).toBe(false);
-    expect(verifyJoin("appt_y", sig)).toBe(false); // sig is per-appointment
-    expect(videoJoinPath("appt_x")).toBe(`/room/appt_x?t=${sig}`);
+  it("signs + verifies an appointment in-window, and rejects a forged signature", () => {
+    const start = new Date("2027-05-01T10:00:00+02:00").toISOString();
+    const at = new Date(start).getTime();
+    const sig = signJoin("appt_x", start);
+    expect(verifyJoin("appt_x", start, sig, at)).toBe(true);
+    expect(verifyJoin("appt_x", start, "wrong", at)).toBe(false);
+    expect(verifyJoin("appt_y", start, sig, at)).toBe(false); // sig is per-appointment
+    expect(videoJoinPath("appt_x", start)).toBe(`/room/appt_x?t=${sig}`);
   });
 });
 

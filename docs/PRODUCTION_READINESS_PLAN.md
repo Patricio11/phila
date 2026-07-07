@@ -303,20 +303,23 @@ shown on signup (no picker on the form — too much friction). Plan catalogue is
       `Permissions-Policy` (camera/mic/geo off by default; camera+mic re-enabled only on `/room/*`), and a
       nonce-free CSP (`frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'`).
       Verified shipping via `curl -I`. A full nonce-based `script-src` CSP is a deliberate follow-up.
-- [ ] **Prompt (don't enforce) 2FA.** After sign-in, if a privileged user (super-admin / org-admin /
-      supervisor) hasn't enabled 2FA, show a **skippable** prompt encouraging setup — never block access.
-      Skipping proceeds straight to the dashboard; "remind me later" is fine. The user can enable/disable
-      2FA any time from **Settings → Security** (already exists). Do **not** wire `requiresTwoFactor()` into
-      the guards as a hard gate. (Optional: let the super-admin set a soft org-policy "recommend 2FA" that
-      only changes prompt copy, still skippable.)
+- [x] **Prompt (don't enforce) 2FA** (W2 batch 3). Privileged users (super-admin / org-admin / supervising
+      counsellor) without 2FA see a **dismissible dashboard banner** (`TwoFactorBanner`, rendered by the app
+      shell) — never a redirect or block. "Set it up" opens a focused `/setup-security` page (reuses the real
+      `TwoFactorSetup` enrolment); "×" (`dismissTwoFactorPrompt`) remembers the choice for 14 days via cookie.
+      `shouldPromptTwoFactor(principal)` gates it; `requiresTwoFactor()` is **not** wired into the guards.
+      *(Chose a banner over an interstitial redirect so it never disrupts navigation or the e2e suite.)*
 - [x] **Email verification.** `requireEmailVerification: true` (W1.8a) — org-admin self-registration now
       verifies before sign-in, with a branded email + resend.
 - [x] **WhatsApp webhook signature.** POST now reads the raw body, routes by `phone_number_id`, and verifies
       Meta's `X-Hub-Signature-256` HMAC-SHA256 against the org's app secret (constant-time) before acting;
       rejects with 401 otherwise (`app/api/webhooks/whatsapp/route.ts`).
-- [ ] **Video join links.** Add expiry + nonce to `signJoin` (`lib/video/livekit.ts`); invalidate on
-      cancel/reschedule; scope host to assigned counsellor / supervisor / org_admin, not any org member.
-      *(verifyJoin is now constant-time; expiry/nonce still pending — batch 2.)*
+- [x] **Video join links** (W2 batch 3). `signJoin`/`verifyJoin`/`videoJoinPath` now bind the token to the
+      appointment's **start time** — which is both the anti-forgery signature and a **nonce**: a reschedule
+      changes `startsAt` and invalidates every old link. `verifyJoin` also enforces an **expiry window**
+      (openable 15 min before → 3 h after start). Host access tightened from *any org member* to **org-admin or
+      counsellor** of the org (front-desk/finance/programme roles no longer auto-admitted to a therapy room).
+      All 6 call sites thread `startsAt`; unit + integration tests updated + a window/nonce test added.
 - [~] **Rate limiting.** Better Auth `rateLimit` enabled (W2 batch 2): a modest global IP cap + tighter custom
       rules on `/sign-in/email`, `/sign-up/email`, `/request-password-reset`, `/forget-password`, `/two-factor/
       verify-totp`. In-memory per instance. **Still pending:** a shared store (Upstash/KV) + throttling on the
@@ -330,7 +333,8 @@ shown on signup (no picker on the form — too much friction). Plan catalogue is
       with a single-use, 1-hour token; `/reset-password?token=` exchanges it via `auth.api.resetPassword`. The
       request path never leaks account existence; a missing/expired token shows a friendly "request a new link"
       state. Proven end-to-end (`tests/integration/password-reset.test.ts`: old→reset→new, old rejected).
-      *(Invited-member **activation** — the `activateAccount`/`sendSetupLink` stubs — remains, batch 3.)*
+      *(Invited-member **activation** — the `activateAccount`/`sendSetupLink` stubs — still pending: invited users
+      are created without a credential account, so it needs account provisioning + real invite-email delivery.)*
 - [x] **Uploads.** `validateUpload` now rejects a filename extension that doesn't match the declared
       content-type (all five upload actions pass the name). The declared type is still client-supplied, so a
       post-upload magic-byte/AV `scanObject` remains the real gate — confirm it's a live AV hook before launch.

@@ -44,13 +44,26 @@ describe("paystackSignatureValid", () => {
 });
 
 describe("verifyJoin", () => {
-  it("accepts a token produced by signJoin and rejects tampering", () => {
-    const id = "appt_probe_123";
-    const sig = signJoin(id);
-    expect(verifyJoin(id, sig)).toBe(true);
-    expect(verifyJoin(id, sig.slice(0, -1) + (sig.endsWith("A") ? "B" : "A"))).toBe(false);
-    expect(verifyJoin("appt_other", sig)).toBe(false);
-    expect(verifyJoin(id, null)).toBe(false);
-    expect(verifyJoin(id, "short")).toBe(false);
+  const id = "appt_probe_123";
+  const start = new Date("2027-05-01T10:00:00+02:00").toISOString();
+  const atStart = new Date(start).getTime();
+
+  it("accepts a token in-window and rejects tampering / wrong appointment", () => {
+    const sig = signJoin(id, start);
+    expect(verifyJoin(id, start, sig, atStart)).toBe(true);
+    expect(verifyJoin(id, start, sig.slice(0, -1) + (sig.endsWith("A") ? "B" : "A"), atStart)).toBe(false);
+    expect(verifyJoin("appt_other", start, sig, atStart)).toBe(false);
+    expect(verifyJoin(id, start, null, atStart)).toBe(false);
+    expect(verifyJoin(id, start, "short", atStart)).toBe(false);
+  });
+
+  it("enforces the time window (nonce: a rescheduled start invalidates old links)", () => {
+    const sig = signJoin(id, start);
+    // Too early / too late.
+    expect(verifyJoin(id, start, sig, atStart - 60 * 60_000)).toBe(false);
+    expect(verifyJoin(id, start, sig, atStart + 4 * 60 * 60_000)).toBe(false);
+    // A link signed for the OLD time doesn't verify against a rescheduled time.
+    const moved = new Date(atStart + 86_400_000).toISOString();
+    expect(verifyJoin(id, moved, sig, new Date(moved).getTime())).toBe(false);
   });
 });

@@ -28,8 +28,10 @@ export async function POST(req: Request) {
   if (appt.type !== "online") return NextResponse.json({ error: "This session isn't online." }, { status: 400 });
 
   const principal = await getCurrentPrincipal();
-  const isHost = Boolean(principal && principal.memberships.some((m) => m.orgId === appt.orgId));
-  const hasGrant = verifyJoin(appointmentId, body.t);
+  // Host = a clinical/admin member of the appointment's org; other roles + guests must
+  // present the time-bound signed link.
+  const isHost = Boolean(principal && principal.memberships.some((m) => m.orgId === appt.orgId && (m.teamRole === "org_admin" || m.teamRole === "counsellor")));
+  const hasGrant = verifyJoin(appointmentId, appt.startsAt.toISOString(), body.t);
   if (!isHost && !hasGrant) {
     return NextResponse.json({ error: "This join link isn't valid." }, { status: 403 });
   }

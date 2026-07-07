@@ -65,25 +65,41 @@ export function roomNameForAppointment(appointmentId: string): string {
 // never invalidates a client's booking link).
 const joinSecret = () => process.env.BETTER_AUTH_SECRET ?? "phila-dev";
 
-/** Sign an appointment id so a public join link can't be forged or enumerated. */
-export function signJoin(appointmentId: string): string {
-  return createHmac("sha256", joinSecret()).update(`join:${appointmentId}`).digest("base64url").slice(0, 24);
+// The link is only live in a window around the session — openable a little early and
+// for a while after, never before or long after.
+const JOIN_OPEN_EARLY_MS = 15 * 60_000; // 15 minutes before start
+const JOIN_OPEN_LATE_MS = 3 * 60 * 60_000; // up to 3 hours after start
+
+/**
+ * Sign a join token bound to the appointment id AND its start time. The start time is
+ * both a nonce and an expiry anchor: rescheduling changes `startsAt`, which invalidates
+ * every previously-issued link (W2); `verifyJoin` also enforces a time window around it.
+ */
+export function signJoin(appointmentId: string, startsAtISO: string): string {
+  return createHmac("sha256", joinSecret()).update(`join:${appointmentId}:${startsAtISO}`).digest("base64url").slice(0, 24);
 }
-export function verifyJoin(appointmentId: string, sig: string | null | undefined): boolean {
+
+export function verifyJoin(appointmentId: string, startsAtISO: string, sig: string | null | undefined, nowMs: number = Date.now()): boolean {
   if (!sig) return false;
-  const want = signJoin(appointmentId);
+  const want = signJoin(appointmentId, startsAtISO);
   // Constant-time compare so the join token can't be brute-forced by timing.
   if (sig.length !== want.length) return false;
+  let match = false;
   try {
-    return timingSafeEqual(Buffer.from(sig), Buffer.from(want));
+    match = timingSafeEqual(Buffer.from(sig), Buffer.from(want));
   } catch {
     return false;
   }
+  if (!match) return false;
+  // Expiry: only valid in the window around the session.
+  const start = new Date(startsAtISO).getTime();
+  if (Number.isNaN(start)) return false;
+  return nowMs >= start - JOIN_OPEN_EARLY_MS && nowMs <= start + JOIN_OPEN_LATE_MS;
 }
 
-/** The Phila room page for an appointment (the "link"  carries a signed token). */
-export function videoJoinPath(appointmentId: string): string {
-  return `/room/${appointmentId}?t=${signJoin(appointmentId)}`;
+/** The Phila room page for an appointment (the "link"  carries a time-bound signed token). */
+export function videoJoinPath(appointmentId: string, startsAtISO: string): string {
+  return `/room/${appointmentId}?t=${signJoin(appointmentId, startsAtISO)}`;
 }
 
 /**

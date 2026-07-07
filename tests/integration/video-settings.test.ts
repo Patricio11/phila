@@ -26,7 +26,7 @@ describe("video paste-link fallback", () => {
   it("defaults to the in-app LiveKit room", async () => {
     await sql`DELETE FROM org_video_settings WHERE org_id=${ORG}`;
     expect((await getVideoSettings(ORG)).mode).toBe("livekit");
-    const url = await resolveVideoJoinUrl("appt_x", ORG);
+    const url = await resolveVideoJoinUrl("appt_x", ORG, "2027-05-01T10:00:00+02:00");
     expect(url.startsWith("/room/appt_x?t=")).toBe(true);
   });
 
@@ -35,11 +35,11 @@ describe("video paste-link fallback", () => {
     const v = await getVideoSettings(ORG);
     expect(v.mode).toBe("external");
     expect(v.externalUrl).toBe("https://meet.google.com/abc-defg-hij");
-    expect(await resolveVideoJoinUrl("appt_x", ORG)).toBe("https://meet.google.com/abc-defg-hij");
+    expect(await resolveVideoJoinUrl("appt_x", ORG, "2027-05-01T10:00:00+02:00")).toBe("https://meet.google.com/abc-defg-hij");
   });
 
   it("falls back to LiveKit if external is selected but no link is set", async () => {
     await saveVideoSettings(ORG, { mode: "external", externalUrl: null });
-    expect((await resolveVideoJoinUrl("appt_x", ORG)).startsWith("/room/appt_x")).toBe(true);
+    expect((await resolveVideoJoinUrl("appt_x", ORG, "2027-05-01T10:00:00+02:00")).startsWith("/room/appt_x")).toBe(true);
   });
 });

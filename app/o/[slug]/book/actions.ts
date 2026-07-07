@@ -205,8 +205,8 @@ export async function submitBooking(
         consents: input.consents,
       });
       roomName = res.roomName;
-      // Online → a real, signed join link to the LiveKit room for this appointment.
-      if (input.modality === "online") joinUrl = videoJoinPath(res.appointmentId);
+      // Online → a real, time-bound signed join link to the LiveKit room for this appointment.
+      if (input.modality === "online") joinUrl = videoJoinPath(res.appointmentId, input.startsAt);
       // Email (rail) + always-on in-app for the counsellor + client (Phase 17.2).
       await notifyAppointmentBooked(res.appointmentId);
       void recordPageEvent(config.org.id, "booked"); // PII-free conversion (Phase 17)

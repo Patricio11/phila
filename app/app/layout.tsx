@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { AppShell } from "@/components/shell/app-shell";
 import { ToastProvider } from "@/components/ui/toast";
 import { requireOrg } from "@/lib/auth/guard";
+import { shouldPromptTwoFactor } from "@/lib/auth/two-factor-prompt";
 import { TEAM_ROLE_LABELS } from "@/lib/domain/enums";
 
 /**
@@ -22,6 +23,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const roleLabel = membership.isSupervisor
     ? "Counsellor · Supervisor"
     : TEAM_ROLE_LABELS[membership.teamRole];
+  const twoFactorPrompt = await shouldPromptTwoFactor(principal);
 
   return (
     <ToastProvider>
@@ -30,6 +32,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         orgName={membership.orgName}
         user={{ name: principal.name, email: principal.email, roleLabel }}
         settingsHref="/app/settings"
+        twoFactorPrompt={twoFactorPrompt}
       >
         {children}
       </AppShell>

@@ -29,8 +29,10 @@ export default async function RoomPage({ params, searchParams }: { params: Promi
     .limit(1);
 
   const principal = await getCurrentPrincipal();
-  const isHost = Boolean(row && principal && principal.memberships.some((m) => m.orgId === row.a.orgId));
-  const allowed = Boolean(row && row.a.type === "online" && (isHost || verifyJoin(appointmentId, t)));
+  // Host = a clinical/admin member of the appointment's org (not front-desk/finance/
+  // programme roles, who have no business in a therapy room). Guests join via the link.
+  const isHost = Boolean(row && principal && principal.memberships.some((m) => m.orgId === row.a.orgId && (m.teamRole === "org_admin" || m.teamRole === "counsellor")));
+  const allowed = Boolean(row && row.a.type === "online" && (isHost || verifyJoin(appointmentId, row.a.startsAt.toISOString(), t)));
 
   if (!allowed || !row) {
     return <Unavailable configured={await livekitConfigured()} reason={!row ? "not_found" : row.a.type !== "online" ? "not_online" : "bad_link"} />;

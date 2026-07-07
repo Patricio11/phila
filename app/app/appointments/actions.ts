@@ -18,11 +18,11 @@ export async function getAppointmentJoinLink(
   const { membership } = await requireOrg([...SCHEDULERS]);
   const parsed = z.object({ appointmentId: z.string().min(1) }).safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid request" };
-  const [appt] = await getDb().select({ orgId: appointments.orgId, type: appointments.type }).from(appointments).where(eq(appointments.id, parsed.data.appointmentId)).limit(1);
+  const [appt] = await getDb().select({ orgId: appointments.orgId, type: appointments.type, startsAt: appointments.startsAt }).from(appointments).where(eq(appointments.id, parsed.data.appointmentId)).limit(1);
   if (!appt || appt.orgId !== membership.orgId) return { ok: false, error: "Session not found." };
   if (appt.type !== "online") return { ok: false, error: "This session isn't online." };
   const base = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
-  return { ok: true, url: `${base}${videoJoinPath(parsed.data.appointmentId)}` };
+  return { ok: true, url: `${base}${videoJoinPath(parsed.data.appointmentId, appt.startsAt.toISOString())}` };
 }
 
 const scope = z.enum(["this", "following"]).default("this");

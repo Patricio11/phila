@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/shell/sidebar";
 import { TopBar } from "@/components/shell/top-bar";
 import { BottomNav } from "@/components/shell/bottom-nav";
+import { TwoFactorBanner } from "@/components/shell/two-factor-banner";
 import { NAVS, type NavKey, type NavSection } from "@/components/shell/nav-config";
 
 const COLLAPSE_KEY = "phila-sidebar-collapsed";
@@ -52,6 +53,7 @@ export function AppShell({
   user,
   settingsHref,
   features,
+  twoFactorPrompt = false,
   children,
 }: {
   navKey: NavKey;
@@ -60,6 +62,8 @@ export function AppShell({
   settingsHref?: string;
   /** Org feature flags  used to hide feature-gated nav items (e.g. Funders). */
   features?: Record<string, boolean>;
+  /** Show the skippable 2FA nudge banner (privileged users without 2FA). */
+  twoFactorPrompt?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -116,6 +120,7 @@ export function AppShell({
           sections={sections}
           settingsHref={settingsHref}
         />
+        {twoFactorPrompt && <TwoFactorBanner />}
         <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto outline-none">
           {/* Bottom padding on mobile clears the floating tab bar + home-indicator safe area. */}
           <div className="mx-auto w-full max-w-[1320px] px-4 pt-6 pb-[calc(env(safe-area-inset-bottom)+5.75rem)] sm:px-6 sm:pt-8 lg:pb-8">{children}</div>

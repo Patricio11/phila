@@ -63,7 +63,7 @@ export default async function MeHomePage() {
       />
 
       {upcoming ? (
-        <UpcomingSessionCard appt={upcoming} nowISO={now} joinUrl={upcoming.type === "online" ? videoJoinPath(upcoming.id) : null} />
+        <UpcomingSessionCard appt={upcoming} nowISO={now} joinUrl={upcoming.type === "online" ? videoJoinPath(upcoming.id, upcoming.startsAt) : null} />
       ) : (
         <Card className="p-2">
           <EmptyState

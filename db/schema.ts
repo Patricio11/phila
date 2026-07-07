@@ -71,6 +71,24 @@ export const platformSettings = pgTable("platform_settings", {
   vatRatePercent: integer("vat_rate_percent").notNull(),
 });
 
+/** Global feature governance (W3): a super-admin kill-switch per feature. Row present
+ *  only once a feature has been touched; absent = not killed. */
+export const platformFeatureFlags = pgTable("platform_feature_flags", {
+  feature: text("feature").primaryKey(),
+  disabled: boolean("disabled").default(false).notNull(), // force-OFF platform-wide
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/** Per-org feature override (W3): super-admin force-on / force-off / inherit. */
+export const orgFeatureOverrides = pgTable("org_feature_overrides", {
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  feature: text("feature").notNull(),
+  state: text("state").notNull(), // force_on | force_off | inherit
+  reason: text("reason"),
+  setBy: text("set_by"),
+  setAt: timestamp("set_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [uniqueIndex("org_feature_override_uq").on(t.orgId, t.feature)]);
+
 /** The onboarding checklist every new practice must meet (super-admin owns it). */
 export const onboardingRequirements = pgTable("onboarding_requirements", {
   id: text("id").primaryKey(),

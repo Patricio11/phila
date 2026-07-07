@@ -26,6 +26,7 @@ import {
   ShieldCheck,
   Sprout,
   Target,
+  ToggleRight,
   UserCog,
   UserRound,
   Users,
@@ -146,6 +147,7 @@ export const adminNav: NavSection[] = [
   {
     label: "Rails & trust",
     items: [
+      { label: "Feature control", href: "/admin/features", icon: ToggleRight, ready: true },
       { label: "AI rail", href: "/admin/ai", icon: Bot, ready: true },
       { label: "Integrations", href: "/admin/integrations", icon: Blocks, ready: true },
       { label: "Audit", href: "/admin/audit", icon: ScrollText, ready: true },

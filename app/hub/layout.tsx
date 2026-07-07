@@ -3,6 +3,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { shouldPromptTwoFactor } from "@/lib/auth/two-factor-prompt";
+import { effectiveFeaturesDb } from "@/db/queries/features";
 
 /**
  * The Org-admin Hub shell (DESIGN.md §5.4). The guard resolves the org-admin
@@ -14,6 +15,8 @@ export default async function HubLayout({ children }: { children: React.ReactNod
   const { principal, membership } = await requireHub();
   const org = await (await getDataProvider()).getOrg(membership.orgId);
   const twoFactorPrompt = await shouldPromptTwoFactor(principal);
+  // Nav gates on the *effective* features (kill-switch → override → plan → self-toggle).
+  const features = process.env.DATA_PROVIDER === "db" ? await effectiveFeaturesDb(membership.orgId) : org?.features;
 
   return (
     <ToastProvider>
@@ -22,7 +25,7 @@ export default async function HubLayout({ children }: { children: React.ReactNod
         orgName={membership.orgName}
         user={{ name: principal.name, email: principal.email, roleLabel: "Org admin" }}
         settingsHref="/hub/settings"
-        features={org?.features}
+        features={features}
         twoFactorPrompt={twoFactorPrompt}
       >
         {children}

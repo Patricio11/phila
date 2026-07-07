@@ -357,8 +357,9 @@ shown on signup (no picker on the form  too much friction). Plan catalogue is **
 
 ## Workstream 3  🟠 PLATFORM FEATURE GOVERNANCE & ADMIN CONTROL *(explicit ask)*
 
-**Status:** not started. *Give the super-admin full, real control to enable/disable functionality
-globally or per-org, and to manage subscriptions/quotas (storage, SMS, AI, etc.).*
+**Status:** in progress — the entitlement engine + global & per-org feature control (3.1–3.3) are **live**.
+Plan CRUD/quotas (3.4) and unified metered resources (3.5) remain. *Give the super-admin full, real control
+to enable/disable functionality globally or per-org, and to manage subscriptions/quotas.*
 
 ### 3.1 The entitlement model (design first)
 Introduce a clear precedence chain so every feature resolves the same way:
@@ -371,26 +372,32 @@ effective(feature, org) =
   ?  org_self_toggle(org.features, feature)   // org admin's own on/off (today's behaviour)
 ```
 
-- [ ] Extend `ORG_FEATURES` into a **feature registry** (`lib/domain/features.ts`): each feature has
-      `key`, `label`, `description`, `category`, `defaultPlanTiers`, `globallyDisableable`, `dependsOn`,
-      `meteredResource?` (e.g. `sms`, `storage`, `ai_tokens`). New features (Workstream 7) register here.
-- [ ] New tables (migration + RLS): `platform_feature_flags` (global kill-switch + default state per feature),
-      `org_feature_overrides` (`orgId`, `feature`, `state: force_on|force_off|inherit`, `reason`, `setBy`, `setAt`),
-      `plans` entitlements (`plan → features[] + quotas`), and per-org `entitlements`/quota rows.
-- [ ] Central resolver `resolveFeature(orgId, feature)` used by `requireOrgFeature()` and by hub UI so the
-      org's own toggle is disabled/greyed with a reason when the platform or plan overrides it.
-- [ ] Audit every platform/override change (`platform.feature.toggle`, `org.override.set`).
+- [x] **Feature registry** (`lib/domain/features.ts`): `FEATURE_REGISTRY` over the existing `ORG_FEATURES` with
+      `label`, `description`, `category`, `globallyDisableable`, `meteredResource?`. `planIncludesFeature(plan, f)`
+      derives plan entitlement from the existing `Plan` allowances (no duplicate config; fails **open** on an
+      unknown plan). New features register here.
+- [x] New tables + RLS (migration 0040): `platform_feature_flags` (per-feature kill-switch, super-only) and
+      `org_feature_overrides` (`orgId`, `feature`, `state force_on|force_off|inherit`, `reason`, `setBy`,
+      org-scoped so an org can read its own). Added to `db/rls.sql`.
+- [x] Central resolver `resolveAllFeaturesDb` / `resolveFeatureDb` (`db/queries/features.ts`): precedence
+      **kill-switch → per-org override → plan → self-toggle**, returning `{enabled, source, reason,
+      orgControllable}`. Wired into `requireOrgFeature()` (db mode) + hub nav (`effectiveFeaturesDb`); mock
+      falls back to the raw self-toggle. Proven by `tests/integration/feature-governance.test.ts` +
+      `tests/unit/features.test.ts`.
+- [x] Every platform/override change is audited (`kill_feature`/`restore_feature`, `override_*`).
 
-### 3.2 Admin: global feature control
-- [ ] `app/admin/features/page.tsx` (new nav item)  matrix of all features with a **global** on/off/kill
-      switch and default-state control; e.g. disable **AI-scribe** platform-wide instantly.
-- [ ] Actions `setPlatformFeature(feature, state)`  guarded by `requireSuperAdmin`, persisted, audited.
+### 3.2 Admin: global feature control — ✅ done
+- [x] `app/admin/features/page.tsx` + new **Feature control** nav item — a matrix of all features with a
+      **global kill-switch** each (`FeatureMatrix`); e.g. disable **AI scribe** platform-wide instantly.
+      Non-disableable features (funders) show "Always on".
+- [x] `setPlatformFeature(feature, disabled)` — guarded by `requireSuperAdmin`, persisted, audited; revalidates
+      the console. E2e + screenshot.
 
-### 3.3 Admin: per-org feature control
-- [ ] On `app/admin/orgs/[id]/page.tsx`  a feature panel showing each feature's **effective** state and
-      the resolution reason, with per-org **force-on / force-off / inherit** controls (`setOrgFeatureOverride`).
-      Use cases: grant a beta feature to one org; suspend `payments`/`ai` for an org in breach.
-- [ ] Show which plan the org is on and what that plan entitles.
+### 3.3 Admin: per-org feature control — ✅ done
+- [x] `app/admin/orgs/[id]` **Features** card (`OrgFeaturePanel`): each feature's **effective** on/off, the
+      resolution **reason + source**, and a three-way **force-on / force-off / inherit** control
+      (`setOrgFeatureOverride`) — grant a beta feature to one org, or suspend `ai`/`payments` for an org in breach.
+- [x] Shows the org's plan (in the card header) alongside what resolves. E2e + screenshot.
 
 ### 3.4 Admin: subscription & plan management (make it real)
 - [ ] Migrate `listPlans` writes + `getPlatformOrgDetail` to DB (overlaps W1.7).

@@ -11,6 +11,9 @@ import { PageHead } from "@/components/shell/page-head";
 import { Card, CardHead } from "@/components/ui/card";
 import { OrgDocReview } from "@/components/admin/org-doc-review";
 import { OrgVerificationActions } from "@/components/admin/org-verification-actions";
+import { OrgFeaturePanel } from "@/components/admin/org-feature-panel";
+import { resolveAllFeaturesDb } from "@/db/queries/features";
+import { ORG_FEATURES } from "@/lib/domain/enums";
 import { Avatar } from "@/components/ui/avatar";
 import { Tag } from "@/components/ui/tag";
 import { CredentialChip } from "@/components/ui/credential-chip";
@@ -46,12 +49,14 @@ export default async function AdminOrgDetailPage({ params }: { params: Promise<{
   const { id } = await params;
   const principal = await requireSuperAdmin();
   const provider = await getDataProvider();
-  const [detail, review, credits] = await Promise.all([
+  const [detail, review, credits, featureMap] = await Promise.all([
     provider.getPlatformOrgDetail(id),
     provider.getOrgOnboardingReview(id),
     getCreditBalances(id),
+    process.env.DATA_PROVIDER === "db" ? resolveAllFeaturesDb(id) : Promise.resolve(null),
   ]);
   if (!detail) notFound();
+  const featureResolutions = featureMap ? ORG_FEATURES.map((f) => featureMap[f]) : [];
 
   // The org's lifecycle stage (coherent with the orgs list), not the per-doc roll-up.
   const STAGE: Record<string, { label: string; tone: "accent" | "warn" | "danger" | "info" | "neutral" }> = {
@@ -132,6 +137,17 @@ export default async function AdminOrgDetailPage({ params }: { params: Promise<{
           </div>
         </div>
       </Card>
+
+      {/* Feature entitlements — effective state + per-org override (W3.3) */}
+      {featureResolutions.length > 0 && (
+        <Card>
+          <CardHead title="Features" action={<span className="text-[11.5px] text-text-3">{detail.planName} plan</span>} />
+          <div className="px-[17px] pb-[17px]">
+            <p className="mb-1 text-[12.5px] text-text-2">Each feature&apos;s effective state and why. Force-on grants beta access above the plan; force-off suspends it — inherit follows the plan + the practice&apos;s own toggle.</p>
+            <OrgFeaturePanel orgId={id} resolutions={featureResolutions} />
+          </div>
+        </Card>
+      )}
 
       {/* Notification credits (manual top-up until Phase 15.1) */}
       <Card>

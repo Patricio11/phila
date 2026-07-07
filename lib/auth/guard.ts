@@ -102,6 +102,13 @@ export async function requireCapability(
  */
 export async function requireOrgFeature(feature: OrgFeature): Promise<void> {
   const { membership } = await requireOrg();
+  // The entitlement resolver (W3) is the real boundary: platform kill-switch → per-org
+  // override → plan → the org's own toggle. Mock/demo falls back to the raw self-toggle.
+  if (process.env.DATA_PROVIDER === "db") {
+    const { resolveFeatureDb } = await import("@/db/queries/features");
+    if (!(await resolveFeatureDb(membership.orgId, feature)).enabled) throw new FeatureDormantError(feature);
+    return;
+  }
   const provider = await getDataProvider();
   const org = await provider.getOrg(membership.orgId);
   if (!org || !org.features[feature]) throw new FeatureDormantError(feature);

@@ -6,9 +6,11 @@ import { requireSuperAdmin } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 import { applyCredit } from "@/db/queries/messaging";
 import { reviewOnboardingDocDb, approveOrgDb, sendBackOnboardingDb, getOrgAdminContactDb, getAdminOnboardingDocKeyDb } from "@/db/queries/platform";
+import { setOrgFeatureOverrideDb } from "@/db/queries/features";
 import { getStorageProvider } from "@/lib/storage";
 import { sendPlatformEmail } from "@/lib/email/platform-email";
 import { approvalEmail, actionNeededEmail } from "@/lib/email/templates";
+import { ORG_FEATURES } from "@/lib/domain/enums";
 
 const isDb = () => process.env.DATA_PROVIDER === "db";
 const appUrl = () => process.env.BETTER_AUTH_URL ?? "https://philasa.com";
@@ -128,4 +130,29 @@ export async function signAdminOnboardingDoc(raw: { orgId: string; requirementId
   } catch {
     return { ok: false, error: "Could not open the document." };
   }
+}
+
+const overrideInput = z.object({
+  orgId: z.string().min(1),
+  feature: z.enum(ORG_FEATURES),
+  state: z.enum(["force_on", "force_off", "inherit"]),
+  reason: z.string().trim().max(200).optional(),
+});
+
+/** Per-org feature override (W3.3): force-on (beta grant), force-off (suspend), or inherit. */
+export async function setOrgFeatureOverride(raw: z.infer<typeof overrideInput>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const principal = await requireSuperAdmin();
+  const parsed = overrideInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid request." };
+
+  if (isDb()) await setOrgFeatureOverrideDb(parsed.data.orgId, parsed.data.feature, parsed.data.state, parsed.data.reason ?? null, principal.userId);
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null },
+    orgId: parsed.data.orgId,
+    target: `org:${parsed.data.orgId}/feature:${parsed.data.feature}`,
+    reason: `override_${parsed.data.state}`,
+  });
+  revalidatePath(`/admin/orgs/${parsed.data.orgId}`);
+  return { ok: true };
 }

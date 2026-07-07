@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Check, MailCheck, Sparkles } from "lucide-react";
 import { PROVINCES, type Province } from "@/lib/domain/enums";
+import { TRIAL_DAYS } from "@/lib/billing/plans";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -60,7 +61,7 @@ export function SignupForm({ planId = null, planName = null }: { planId?: string
         <div className="space-y-1.5">
           <h2 className="text-[18px] font-[680] tracking-[-0.02em] text-text">Check your email</h2>
           <p className="text-[13.5px] leading-relaxed text-text-2">
-            We&apos;ve sent a verification link to <span className="font-medium text-text">{sentTo}</span>. Click it to activate your practice and start your <span className="font-medium text-text">17-day free trial</span>.
+            We&apos;ve sent a verification link to <span className="font-medium text-text">{sentTo}</span>. Click it to activate your practice and start your <span className="font-medium text-text">{TRIAL_DAYS}-day free trial</span>.
           </p>
         </div>
         <div className="rounded-control border border-border bg-surface-2/50 px-4 py-3 text-left text-[12.5px] text-text-2">
@@ -78,11 +79,11 @@ export function SignupForm({ planId = null, planName = null }: { planId?: string
         <Sparkles className="mt-0.5 size-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
         <div className="min-w-0 text-[12.5px] leading-relaxed text-text-2">
           <span className="font-medium text-text">
-            {planName ? `Starting your 17-day free trial on the ${planName} plan` : "Starting your 17-day free trial"}
-          </span>{" "}
-           no card needed.{" "}
+            {planName ? `Starting your ${TRIAL_DAYS}-day free trial on the ${planName} plan` : `Starting your ${TRIAL_DAYS}-day free trial`}
+          </span>{" · "}
+          no card needed. You can{" "}
           <Link href="/#pricing" className="font-medium text-accent hover:underline">
-            {planName ? "Change plan" : "See plans"}
+            {planName ? "change plan" : "see plans"}
           </Link>{" "}
           any time.
         </div>

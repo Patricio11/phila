@@ -1,6 +1,12 @@
 import type { Plan } from "@/lib/domain/types";
 
 /**
+ * Every new practice starts on a no-card free trial (see `registerPractice`). One
+ * canonical value so the marketing pricing, signup, and billing countdown never drift.
+ */
+export const TRIAL_DAYS = 17;
+
+/**
  * Phila plan catalogue (Phase 15A)  the product's subscription tiers. This is the
  * canonical source (shared client + server); an org's chosen plan lives in the
  * `subscriptions` table. Prices in ZAR cents / month.

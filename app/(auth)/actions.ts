@@ -11,7 +11,7 @@ import { logAccess } from "@/lib/audit";
 import { getDb } from "@/db/client";
 import { orgMembers, orgs, subscriptions } from "@/db/schema";
 import { activateMembershipsDb } from "@/db/queries/team";
-import { planById } from "@/lib/billing/plans";
+import { planById, TRIAL_DAYS } from "@/lib/billing/plans";
 
 /**
  * Auth flows. Sign-in is **real** (Better Auth) as of Phase 9; the rest validate
@@ -137,8 +137,6 @@ async function uniqueSlug(db: ReturnType<typeof getDb>, base: string): Promise<s
  * also signs them in) and their **org** + membership, then the form routes to
  * onboarding. The org starts Dormant-by-Default  every paid feature off.
  */
-const TRIAL_DAYS = 17;
-
 export async function registerPractice(
   raw: z.infer<typeof registerInput>,
 ): Promise<{ ok: true; email: string } | { ok: false; error: string }> {

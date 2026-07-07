@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import type { Plan } from "@/lib/domain/types";
+import { TRIAL_DAYS } from "@/lib/billing/plans";
 import { SectionHeading } from "@/components/marketing/section-heading";
 import { Reveal } from "@/components/marketing/reveal";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,13 @@ export function Pricing({ plans }: { plans: Plan[] }) {
           lead="Pick the tier that fits your team. Variable costs (AI, SMS, video) are metered with a hard cap, so a bill never runs away from you."
         />
 
+        <div className="mt-6 flex justify-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent-soft/50 px-4 py-1.5 text-[13px] font-medium text-accent">
+            <Sparkles className="size-4" strokeWidth={2.2} aria-hidden />
+            Every plan starts with a {TRIAL_DAYS}-day free trial. No card required.
+          </span>
+        </div>
+
         <div className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {plans.map((p, i) => (
             <Reveal key={p.id} delay={(i % 4) * 70}>
@@ -49,6 +57,7 @@ export function Pricing({ plans }: { plans: Plan[] }) {
                   <span className="text-[26px] font-bold tracking-[-0.02em] text-text">{rand(p.priceCents)}</span>
                   <span className="text-[12.5px] text-text-3">/ month</span>
                 </div>
+                <p className="mt-1 text-[11.5px] font-medium text-accent">Free for {TRIAL_DAYS} days, then billed monthly</p>
 
                 <ul className="mt-4 flex-1 space-y-2">
                   {features(p).map((f) => (
@@ -66,14 +75,14 @@ export function Pricing({ plans }: { plans: Plan[] }) {
                     p.popular ? "bg-accent text-accent-ink hover:bg-accent-hover" : "border border-border bg-surface text-text hover:bg-surface-hover",
                   )}
                 >
-                  Get started
+                  Start free trial
                 </Link>
               </div>
             </Reveal>
           ))}
         </div>
 
-        <p className="mt-6 text-center text-[12px] text-text-3">Prices exclude VAT. All tiers include POPIA tooling, the funder portal, and data kept in South Africa.</p>
+        <p className="mt-6 text-center text-[12px] text-text-3">Start free, no card needed. Prices exclude VAT. All tiers include POPIA tooling, the funder portal, and data kept in South Africa.</p>
       </div>
     </section>
   );

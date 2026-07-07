@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { Blocks, Building2, CalendarClock, Receipt, ShieldCheck, type LucideIcon } from "lucide-react";
+import { Blocks, Building2, CalendarClock, MessagesSquare, Receipt, ShieldCheck, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type TabKey = "organisation" | "scheduling" | "billing" | "integrations" | "security";
+type TabKey = "organisation" | "scheduling" | "messaging" | "billing" | "integrations" | "security";
 
 const TABS: { key: TabKey; label: string; icon: LucideIcon }[] = [
   { key: "organisation", label: "Organisation", icon: Building2 },
   { key: "scheduling", label: "Scheduling", icon: CalendarClock },
+  { key: "messaging", label: "Messaging", icon: MessagesSquare },
   { key: "billing", label: "Billing & plan", icon: Receipt },
   { key: "integrations", label: "Integrations", icon: Blocks },
-  { key: "security", label: "Security", icon: ShieldCheck },
+  { key: "security", label: "Security & data", icon: ShieldCheck },
 ];
 
 /**
@@ -23,12 +24,13 @@ const TABS: { key: TabKey; label: string; icon: LucideIcon }[] = [
 export function SettingsTabs({
   organisation,
   scheduling,
+  messaging,
   billing,
   integrations,
   security,
 }: Record<TabKey, React.ReactNode>) {
   const [active, setActive] = useState<TabKey>("organisation");
-  const panels: Record<TabKey, React.ReactNode> = { organisation, scheduling, billing, integrations, security };
+  const panels: Record<TabKey, React.ReactNode> = { organisation, scheduling, messaging, billing, integrations, security };
 
   return (
     <div className="space-y-6">

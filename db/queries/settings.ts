@@ -63,6 +63,11 @@ export async function saveOrgProfileDb(orgId: string, name: string, profile: Rec
   await runForOrg(orgId, () => activeDb().update(orgs).set({ name, profile }).where(eq(orgs.id, orgId)));
 }
 
+/** Persist the org's brand accent (a hex colour, consumed app-wide + on the public page). RLS-scoped. */
+export async function saveOrgBrandingDb(orgId: string, brandAccent: string): Promise<void> {
+  await runForOrg(orgId, () => activeDb().update(orgs).set({ brandAccent }).where(eq(orgs.id, orgId)));
+}
+
 export interface InvoiceSettingsRow {
   vatRegistered: boolean; vatNumber: string; pricesIncludeVat: boolean; invoicePrefix: string;
   paymentTermsDays: number; bankName: string; accountName: string; accountNumber: string;

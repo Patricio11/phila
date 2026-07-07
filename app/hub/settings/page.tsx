@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { Bell } from "lucide-react";
 import { notFound } from "next/navigation";
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
@@ -15,6 +13,9 @@ import { PublicPageEditor } from "@/components/hub/public-page-editor";
 import { BusinessHoursEditor } from "@/components/hub/business-hours-editor";
 import { SchedulingDefaultsForm } from "@/components/hub/scheduling-defaults-form";
 import { OrgProfileForm, type OrgProfile } from "@/components/hub/org-profile-form";
+import { BrandingSettings } from "@/components/hub/branding-settings";
+import { MessagingSummary } from "@/components/hub/messaging-summary";
+import { getMessagingSettings, getCreditBalances } from "@/db/queries/messaging";
 import { VerificationStatusCard } from "@/components/hub/verification-status-card";
 import { getOnboardingStatusDb } from "@/db/queries/onboarding";
 import { InvoiceSettingsForm } from "@/components/hub/invoice-settings-form";
@@ -53,6 +54,10 @@ export default async function HubSettingsPage() {
   const page = await provider.getOrgPublicPage(org.slug);
   const pageContent = page?.content ?? defaultContent({ intro: page?.intro, about: page?.about });
   const pageStats = await getPageStats(membership.orgId);
+  const [messaging, credits] = await Promise.all([
+    getMessagingSettings(membership.orgId),
+    getCreditBalances(membership.orgId),
+  ]);
   // Fall back to a standard week if an org has no business hours set yet (robust
   // for lightweight/just-created orgs).
   const DEFAULT_HOURS = { 1: { start: "08:00", end: "17:00" }, 2: { start: "08:00", end: "17:00" }, 3: { start: "08:00", end: "17:00" }, 4: { start: "08:00", end: "17:00" }, 5: { start: "08:00", end: "17:00" }, 6: null, 7: null };
@@ -91,6 +96,12 @@ export default async function HubSettingsPage() {
               <CardHead title="Organisation profile" />
               <div className="px-[17px] pb-[17px]">
                 <OrgProfileForm initial={profile} />
+              </div>
+            </Card>
+            <Card>
+              <CardHead title="Branding" />
+              <div className="px-[17px] pb-[17px]">
+                <BrandingSettings initial={org.brandAccent} />
               </div>
             </Card>
             <Card>
@@ -145,6 +156,14 @@ export default async function HubSettingsPage() {
             </div>
           </>
         }
+        messaging={
+          <Card>
+            <CardHead title="Messaging & notifications" />
+            <div className="px-[17px] pb-[17px]">
+              <MessagingSummary settings={messaging} credits={credits} quietHours={messaging.quietStart && messaging.quietEnd ? `${messaging.quietStart} to ${messaging.quietEnd}` : null} />
+            </div>
+          </Card>
+        }
         integrations={
           <>
             <Card>
@@ -157,22 +176,13 @@ export default async function HubSettingsPage() {
             </Card>
             <div className="grid items-start gap-6 lg:grid-cols-2">
               <Card>
-                <CardHead title="Notifications" />
-                <div className="px-[17px] pb-[17px]">
-                  <p className="mb-3 text-[12.5px] text-text-2">Booking, reminder and follow-up messages on WhatsApp, SMS and email  routed to each client&apos;s preferred channel. Connect your WhatsApp number, top up SMS/email credits, and edit the wording.</p>
-                  <Link href="/hub/settings/notifications" className="inline-flex h-9 items-center gap-1.5 rounded-control border border-border bg-surface px-3.5 text-[13px] font-medium text-text transition-colors hover:bg-surface-hover">
-                    <Bell className="size-4" strokeWidth={2} aria-hidden /> Manage notifications
-                  </Link>
-                </div>
-              </Card>
-              <Card>
                 <CardHead title="Video sessions" />
                 <div className="px-[17px] pb-[17px]">
                   <p className="mb-3 text-[12.5px] text-text-2">How online sessions happen  a secure in-region Phila room, or your own meeting link.</p>
                   <VideoSettingsCard initial={videoSettings} />
                 </div>
               </Card>
-              <Card className="lg:col-span-2">
+              <Card>
                 <CardHead title="AI assistant" />
                 <div className="px-[17px] pb-[17px]">
                   <p className="mb-3 text-[12.5px] text-text-2">A de-identified scribe that drafts the session note and the funder fields  the counsellor edits and signs.</p>

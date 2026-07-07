@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
-import { saveBusinessHours as persistBusinessHours, saveClientPortal as persistClientPortal, setOrgFeature as persistOrgFeature, saveSchedulingDefaults as persistSchedulingDefaults, saveOrgProfileDb, saveInvoiceSettingsDb as persistInvoiceSettings } from "@/db/queries/settings";
+import { saveBusinessHours as persistBusinessHours, saveClientPortal as persistClientPortal, setOrgFeature as persistOrgFeature, saveSchedulingDefaults as persistSchedulingDefaults, saveOrgProfileDb, saveOrgBrandingDb, saveInvoiceSettingsDb as persistInvoiceSettings } from "@/db/queries/settings";
 import { saveVideoSettings } from "@/db/queries/video";
 import { saveAiSettings } from "@/db/queries/ai";
 import { ORG_FEATURES } from "@/lib/domain/enums";
@@ -199,6 +199,30 @@ export async function saveOrgProfile(
     reason: "update_org_profile",
   });
   revalidatePath("/hub/settings");
+  return { ok: true };
+}
+
+const brandingInput = z.object({
+  brandAccent: z.string().trim().regex(/^#[0-9a-fA-F]{6}$/, "Use a 6-digit hex colour, e.g. #1C7D58."),
+});
+
+/** Set the org's brand accent  the colour used across the hub, the client portal, and the public page. */
+export async function saveOrgBranding(
+  raw: z.infer<typeof brandingInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = brandingInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the colour." };
+  if (process.env.DATA_PROVIDER === "db") await saveOrgBrandingDb(membership.orgId, parsed.data.brandAccent.toUpperCase());
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `org:${membership.orgId}/branding`,
+    reason: "update_org_branding",
+  });
+  revalidatePath("/hub/settings");
+  revalidatePath("/", "layout"); // the accent shows app-wide + on the public page
   return { ok: true };
 }
 

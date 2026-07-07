@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * W1.1 — clinical session notes persist to `session_notes` (previously the sign
+ * W1.1  clinical session notes persist to `session_notes` (previously the sign
  * action was audit-only). Proves draft save → sign upsert (one note per session),
  * read-back, and that the RLS child policy (via appointments.org_id) rejects a
  * note whose appointment is in another org.
@@ -20,7 +20,7 @@ const ORG = "org_masizakhe";
 const OTHER_ORG = "org_note_probe";
 const APPT = "appt_note_probe";
 const OTHER_APPT = "appt_note_other";
-const COUNS = "couns_thabo"; // not couns_nomsa — avoids colliding with series.test's queries
+const COUNS = "couns_thabo"; // not couns_nomsa  avoids colliding with series.test's queries
 
 beforeAll(async () => {
   await sql`INSERT INTO appointments (id, org_id, client_id, counsellor_id, service_id, type, starts_at, duration_min, state, tags)

@@ -85,7 +85,7 @@ export async function changeClientPassword(
 
 /**
  * 2FA for the client. Turning it ON is a real enrolment flow (TOTP QR + verify a
- * code + backup codes) via the Better Auth twoFactor plugin — a boolean toggle can't
+ * code + backup codes) via the Better Auth twoFactor plugin  a boolean toggle can't
  * honestly represent that, so this stays a no-op placeholder (audited) rather than
  * pretend 2FA is active. The real enrolment UI lands with the W2 2FA prompt work.
  */

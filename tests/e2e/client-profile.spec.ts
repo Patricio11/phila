@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * W1.3 — the client edits their own profile and it persists (was audit-only). The
+ * W1.3  the client edits their own profile and it persists (was audit-only). The
  * address lives in clients.profile jsonb. Restores the profile afterwards.
  */
 const DATABASE_URL = (readFileSync(".env.local", "utf8").match(/^DATABASE_URL=(.+)$/m)?.[1] ?? "").trim();

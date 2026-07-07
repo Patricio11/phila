@@ -21,7 +21,7 @@ function Toggle({ on, onClick, disabled }: { on: boolean; onClick: () => void; d
   );
 }
 
-/** The role/supervision/access editor for one member — controlled by the caller. */
+/** The role/supervision/access editor for one member  controlled by the caller. */
 export function ManageMemberDialog({
   member,
   counsellorId = null,
@@ -60,7 +60,7 @@ export function ManageMemberDialog({
         supervisorCounsellorId: canBeSupervised ? supervisorId : null,
       });
       if (!res.ok) return toast({ tone: "error", title: res.error });
-      // Access status is a separate capability boundary — only touch it if it changed.
+      // Access status is a separate capability boundary  only touch it if it changed.
       if (!isInvited && active !== member.active) {
         const s = await setMemberStatus({ userId: member.userId, status: active ? "active" : "archived" });
         if (!s.ok) return toast({ tone: "error", title: s.error });

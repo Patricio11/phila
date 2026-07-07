@@ -19,7 +19,7 @@ test("super-admin console renders tenants, orgs, and audit from the DB", async (
   await expect(page.getByText(/Masizakhe Counselling/).first()).toBeVisible({ timeout: 15_000 });
   await page.screenshot({ path: "screenshots/admin-overview-db.png", fullPage: true });
 
-  // Orgs list — the 5 real tenants.
+  // Orgs list  the 5 real tenants.
   await page.goto("/admin/orgs");
   await expect(page.getByText("Thrive EAP")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText("Khula Trust")).toBeVisible();

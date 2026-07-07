@@ -4,7 +4,7 @@ import { getDb } from "@/db/client";
 import { notifications, counsellors } from "@/db/schema";
 import { user } from "@/db/auth-schema";
 
-/** In-app notifications (the bell) — always-on, no external dependency (Phase 17.2). */
+/** In-app notifications (the bell)  always-on, no external dependency (Phase 17.2). */
 
 export interface NewNotification {
   userId: string;

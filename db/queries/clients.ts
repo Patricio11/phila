@@ -105,7 +105,7 @@ export async function setClientRemovedDb(orgId: string, clientId: string, remove
 /**
  * Move a set of FUTURE scheduled sessions to another counsellor, one row at a time
  * so a diary clash (the GiST no-double-booking constraint) skips just that session
- * instead of failing the whole transfer. Past sessions are never touched — the
+ * instead of failing the whole transfer. Past sessions are never touched  the
  * clinical history (notes, outcomes, attendance) stays exactly as it happened.
  */
 async function moveFutureSessions(orgId: string, where: { clientId?: string; fromCounsellorId: string }, toCounsellorId: string): Promise<{ moved: number; skipped: number }> {
@@ -153,7 +153,7 @@ export async function reassignClientDb(orgId: string, clientId: string, counsell
 }
 
 /**
- * Transfer a counsellor's WHOLE caseload to another counsellor (Phase 18.8) — for
+ * Transfer a counsellor's WHOLE caseload to another counsellor (Phase 18.8)  for
  * an intern leaving or a terminated contract. Re-points every active client's
  * primary counsellor and moves all future scheduled sessions; everything that
  * already happened (sessions, notes, outcomes, documents) remains untouched.

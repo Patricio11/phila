@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * W1.1 — care-plan share + step add persist to `care_plans` (previously audit-only).
+ * W1.1  care-plan share + step add persist to `care_plans` (previously audit-only).
  * Proves share stamps `shared_at`, step-add appends a task, both create the plan if
  * absent, and the RLS child policy (via clients.org_id) rejects a cross-org client.
  */

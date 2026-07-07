@@ -49,7 +49,7 @@ export function SignupForm({ planId = null, planName = null }: { planId?: string
     toast({ tone: "success", title: "Sent again", description: `A fresh link is on its way to ${sentTo}.` });
   });
 
-  // After sign-up: a calm "check your email" state — the account exists but sign-in is
+  // After sign-up: a calm "check your email" state  the account exists but sign-in is
   // gated until the address is verified.
   if (sentTo) {
     return (
@@ -73,14 +73,14 @@ export function SignupForm({ planId = null, planName = null }: { planId?: string
 
   return (
     <div className="space-y-4">
-      {/* Trial reminder — reflects a plan picked on the landing page, changeable later. */}
+      {/* Trial reminder  reflects a plan picked on the landing page, changeable later. */}
       <div className="flex items-start gap-2.5 rounded-control border border-accent/25 bg-accent-soft/40 px-3.5 py-3">
         <Sparkles className="mt-0.5 size-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
         <div className="min-w-0 text-[12.5px] leading-relaxed text-text-2">
           <span className="font-medium text-text">
             {planName ? `Starting your 17-day free trial on the ${planName} plan` : "Starting your 17-day free trial"}
           </span>{" "}
-          — no card needed.{" "}
+           no card needed.{" "}
           <Link href="/#pricing" className="font-medium text-accent hover:underline">
             {planName ? "Change plan" : "See plans"}
           </Link>{" "}

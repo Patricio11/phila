@@ -26,9 +26,9 @@ const FIELDS: { key: string; label: string; placeholder: string; req?: boolean; 
 
 function StatusBanner({ status }: { status: string }) {
   const map: Record<string, { icon: typeof ShieldCheck; tone: string; title: string; body: string }> = {
-    verified: { icon: BadgeCheck, tone: "border-accent/30 bg-accent-soft/40 text-accent", title: "Verified", body: "Your practice is verified — payouts and funder reporting are unlocked." },
-    submitted: { icon: Clock, tone: "border-info/30 bg-info-soft/40 text-info", title: "Under review", body: "Thanks — we're reviewing your details. We'll email you the moment it's approved." },
-    action_needed: { icon: TriangleAlert, tone: "border-warn/40 bg-warn-soft/50 text-warn", title: "Action needed", body: "One or more items need another look — see the notes below, then resubmit." },
+    verified: { icon: BadgeCheck, tone: "border-accent/30 bg-accent-soft/40 text-accent", title: "Verified", body: "Your practice is verified  payouts and funder reporting are unlocked." },
+    submitted: { icon: Clock, tone: "border-info/30 bg-info-soft/40 text-info", title: "Under review", body: "Thanks  we're reviewing your details. We'll email you the moment it's approved." },
+    action_needed: { icon: TriangleAlert, tone: "border-warn/40 bg-warn-soft/50 text-warn", title: "Action needed", body: "One or more items need another look  see the notes below, then resubmit." },
     not_started: { icon: ShieldCheck, tone: "border-border bg-surface-2/50 text-text-2", title: "Get verified", body: "Complete your company profile and upload your documents to unlock payouts and funder reporting. This doesn't affect your free trial." },
   };
   const s = map[status] ?? map.not_started!;
@@ -90,7 +90,7 @@ export function CompanyVerification({ data }: { data: OrgOnboardingData }) {
           <span className="grid size-8 place-items-center rounded-control bg-accent-soft text-accent"><Building2 className="size-4" strokeWidth={2} aria-hidden /></span>
           <div>
             <h2 className="text-[14.5px] font-[640] text-text">Company information</h2>
-            <p className="text-[12px] text-text-3">Your registered details — used on invoices, funder reports, and payouts.</p>
+            <p className="text-[12px] text-text-3">Your registered details  used on invoices, funder reports, and payouts.</p>
           </div>
         </header>
 
@@ -144,7 +144,7 @@ export function CompanyVerification({ data }: { data: OrgOnboardingData }) {
             <Info className="mt-0.5 size-4 shrink-0 text-text-3" strokeWidth={2} aria-hidden />
             <p className="text-[12.5px] leading-relaxed text-text-2">
               {canSubmit
-                ? "Everything's in — submit your practice for verification. You can keep using Phila while we review."
+                ? "Everything's in  submit your practice for verification. You can keep using Phila while we review."
                 : `Complete the required fields and documents to submit${missingFields > 0 ? ` (${missingFields} field${missingFields === 1 ? "" : "s"} left)` : ""}.`}
             </p>
           </div>

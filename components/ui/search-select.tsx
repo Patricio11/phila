@@ -11,7 +11,7 @@ export interface SearchOption {
 }
 
 /**
- * A searchable single-select (combobox) — the reusable version of the inline
+ * A searchable single-select (combobox)  the reusable version of the inline
  * "search team" pattern used in messaging. Type to filter; an optional `footer`
  * render-prop can add an action (e.g. "New client") and close the popover.
  */

@@ -8,16 +8,16 @@ import * as schema from "@/db/schema";
 import { getDb } from "@/db/client";
 
 /**
- * RLS-scoped database access (Workstream 0.2 — the runtime cutover).
+ * RLS-scoped database access (Workstream 0.2  the runtime cutover).
  *
  * The owner connection (`db/client.ts`, `neondb_owner`) has BYPASSRLS and is used
  * for bootstrapping (session/membership resolution), webhooks, cron, and seed.
  * The *request* path instead runs as the non-owner `phila_app` role (no BYPASSRLS)
  * through this module, so Postgres RLS (`db/rls.sql`) is a real second boundary
- * beneath the app-layer `where org_id = …` checks — defence in depth.
+ * beneath the app-layer `where org_id = …` checks  defence in depth.
  *
  * We scope **per operation**, not per request: each `runScoped` call opens one
- * short transaction, sets the org GUC locally, runs its queries, and commits — so
+ * short transaction, sets the org GUC locally, runs its queries, and commits  so
  * we never hold a connection across a whole RSC render (which could span a
  * multi-second AI/LLM call). The tenant context is passed **explicitly** (the DAL
  * already has the caller's `orgId`), which is more robust than trying to smuggle
@@ -28,7 +28,7 @@ import { getDb } from "@/db/client";
 export interface OrgContext {
   /** The caller's org, or null for a super-admin (who sets `isSuper`). */
   orgId: string | null;
-  /** Platform super-admin — the RLS policies let this cross orgs, still audited. */
+  /** Platform super-admin  the RLS policies let this cross orgs, still audited. */
   isSuper: boolean;
 }
 
@@ -61,7 +61,7 @@ const dbStore = new AsyncLocalStorage<ScopedDb>();
 /**
  * The database handle for the current work: the RLS-scoped transaction when inside
  * a `runScoped` call, otherwise the owner connection. This lets shared DAL helpers
- * stay written against one accessor — a migrated (wrapped) call path runs them
+ * stay written against one accessor  a migrated (wrapped) call path runs them
  * through `phila_app` with the org GUC set; an unmigrated path runs them on the
  * owner exactly as before (no behaviour change until a method opts in).
  *

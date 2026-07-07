@@ -11,12 +11,12 @@ export const metadata: Metadata = { title: "Welcome to Phila", robots: { index: 
 /**
  * Post-verification landing (W1.8). Better Auth verifies the email, auto-signs the
  * user in, and redirects here. We greet them, confirm the trial is live, and send
- * them into the hub — where the "complete your company profile" step awaits.
+ * them into the hub  where the "complete your company profile" step awaits.
  */
 export default async function WelcomePage() {
   const principal = await getCurrentPrincipal();
   // If the auto sign-in didn't take (e.g. link opened in another browser), send them
-  // to sign in — their email is now verified so it'll work.
+  // to sign in  their email is now verified so it'll work.
   if (!principal) redirect("/login?verified=1");
 
   const first = (principal.name ?? "").trim().split(/\s+/)[0] || "there";
@@ -35,7 +35,7 @@ export default async function WelcomePage() {
 
         <h1 className="text-[22px] font-[700] tracking-[-0.02em] text-text">You&apos;re in, {first} 🎉</h1>
         <p className="mx-auto mt-2 max-w-sm text-[13.5px] leading-relaxed text-text-2">
-          Your email is verified and your <span className="font-medium text-text">17-day free trial</span> is live — no card needed. Take a look around, then complete your company profile to go fully live.
+          Your email is verified and your <span className="font-medium text-text">17-day free trial</span> is live  no card needed. Take a look around, then complete your company profile to go fully live.
         </p>
 
         <div className="mt-5 flex items-start gap-2.5 rounded-control bg-surface-2/60 px-4 py-3 text-left">

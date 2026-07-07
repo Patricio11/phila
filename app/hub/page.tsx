@@ -50,7 +50,7 @@ export default async function HubOverviewPage() {
   const credits = await getCreditBalances(membership.orgId);
   const lowCredits = (["sms", "email"] as const).filter((c) => credits[c] < LOW_CREDIT_THRESHOLD);
 
-  // Verification gate — a nudge (not a wall) until the practice is verified.
+  // Verification gate  a nudge (not a wall) until the practice is verified.
   const onboardingStatus = process.env.DATA_PROVIDER === "db" ? await getOnboardingStatusDb(membership.orgId) : "verified";
 
   // Staffing load  who's stretched, who has capacity (this week, Mon–Sun).

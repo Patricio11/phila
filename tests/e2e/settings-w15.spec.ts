@@ -21,7 +21,7 @@ test("hub booking settings render from DB and save", async ({ page }) => {
   await expect(page.getByText("Counsellors taking public bookings")).toBeVisible({ timeout: 15_000 });
   await page.screenshot({ path: "screenshots/booking-settings-db.png", fullPage: true });
 
-  // Saving persists (toast confirms) — the action writes booking_settings to the org row.
+  // Saving persists (toast confirms)  the action writes booking_settings to the org row.
   await page.getByRole("button", { name: "Save settings" }).click();
   await expect(page.getByText("Booking settings saved")).toBeVisible({ timeout: 10_000 });
 });

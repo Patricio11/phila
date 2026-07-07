@@ -1,4 +1,4 @@
-# Phila — Production Readiness Plan
+# Phila  Production Readiness Plan
 
 > **Purpose.** Single tracking document for taking Phila from "demo-complete, mock-behind-the-seam"
 > to "production-safe, fully DB-backed, admin-governable, and market-ready." Born out of the
@@ -16,11 +16,11 @@
 
 ---
 
-## 0. Orientation — what's actually true today
+## 0. Orientation  what's actually true today
 
 - **Provider seam.** `lib/data-provider.ts` defines `DataProvider` (84 methods). In `db` mode,
   `lib/db-provider.ts` spreads `mockProvider` and overrides ~59; **25 still return mock fixtures.**
-  No UI reads fixtures directly — every mock surface leaks through an un-overridden provider method,
+  No UI reads fixtures directly  every mock surface leaks through an un-overridden provider method,
   so each gap is a contained "swap the method + wire the action" job, not a rewrite.
 - **Feature flags** are **org-controlled only**: `ORG_FEATURES = ["ai","video","whatsapp","sms","payments","funders"]`
   (`lib/domain/enums.ts`), stored in `orgs.features` JSONB, toggled by org admins via
@@ -28,15 +28,15 @@
   **The super-admin cannot currently override features globally or per-org** → Workstream 3.
 - **Security model** is 3 layers (route guard = UX, DAL = real gate, RLS = isolation). As of 2026-07-06
   **all three W0 criticals are fixed**: the two unguarded action modules now guard + org-scope (W0.1); the
-  cron fails closed (W0.3); and **RLS is now live at runtime** — the request path runs as the non-owner
+  cron fails closed (W0.3); and **RLS is now live at runtime**  the request path runs as the non-owner
   `phila_app` role with the org GUC set (`lib/db/scoped.ts` `runForOrg`), enforcing tenant isolation beneath
   the app-layer `where org_id` checks across every hub read + write cluster and every schema table (W0.2).
 - **Dormant-by-Default** is honoured well: SMS/WhatsApp/email/payments/AI/video do a real send when
-  configured and an honest no-op otherwise — never a fake success. Keep this invariant.
+  configured and an honest no-op otherwise  never a fake success. Keep this invariant.
 
 ---
 
-## Workstream 0 — 🔴 CRITICAL SECURITY (ship-blockers)
+## Workstream 0  🔴 CRITICAL SECURITY (ship-blockers)
 
 **Status:** ✅ **the three criticals are closed (2026-07-06).** W0.1 (IDOR) + W0.3 (cron) done; W0.2 RLS
 runtime cutover is live and enforced across every hub read + write cluster and all schema tables. Residual
@@ -45,7 +45,7 @@ the app-layer boundary + guards and scope incrementally as those surfaces are wo
 
 ### 0.1 Guard + org-scope the unauthenticated action modules ✅ (2026-07-05)
 `app/app/appointments/actions.ts` and `app/app/sessions/[id]/actions.ts` are `"use server"` endpoints
-with **no `require*` guard** — any caller can mutate any org's appointments and burn its AI budget.
+with **no `require*` guard**  any caller can mutate any org's appointments and burn its AI budget.
 
 - [x] Add `const { principal, membership } = await requireOrg([...])` to the top of **every** exported
       action in both files (schedulers = counsellor/org_admin/front_desk; clinicians = counsellor/org_admin).
@@ -55,7 +55,7 @@ with **no `require*` guard** — any caller can mutate any org's appointments an
       `cancelAppointment`, `setAppointmentState`, and every read/write is `and(eq(id), eq(orgId))`-scoped.
 - [x] `generateAiDraft` / `generateCarePlanDraft`: `aiContext(orgId, id)` scopes the lookup by org **before**
       reading the client name or calling the AI / `recordAiUsage`.
-- [x] Audit `teamRole` + `orgId` now derive from the resolved membership — no more hard-coded `"counsellor"`/`null`.
+- [x] Audit `teamRole` + `orgId` now derive from the resolved membership  no more hard-coded `"counsellor"`/`null`.
 - [x] Regression test (`tests/integration/series.test.ts`): a different org's id can't reschedule, cancel, or
       restate an appointment (0 rows, row untouched). Full suite 134 green; legitimate counsellor flows
       (lifecycle/appointments e2e) still persist.
@@ -64,26 +64,26 @@ with **no `require*` guard** — any caller can mutate any org's appointments an
 `db/rls.sql` is correct but bypassed: `db/client.ts` connects as `neondb_owner` (`BYPASSRLS`), the org
 GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't survive.
 
-**W0.2a — scoped primitive + proof ✅ (2026-07-05):**
+**W0.2a  scoped primitive + proof ✅ (2026-07-05):**
 - [x] Session-capable driver: `lib/db/scoped.ts` uses the neon-serverless `Pool` (WebSocket, wired to the
       Node 22 global `WebSocket`) as the non-owner `phila_app` role via `DATABASE_URL_APP`.
 - [x] Per-**operation** scoping (not one long per-request tx): `runScoped(ctx, fn)` opens a short transaction,
       sets `app.org_id` / `app.is_super` locally, then runs `fn`. The context is passed **explicitly** (the DAL
-      already has `orgId`) — more robust than `enterWith` from a guard, which doesn't propagate across the awaited
+      already has `orgId`)  more robust than `enterWith` from a guard, which doesn't propagate across the awaited
       guard boundary. `runForOrg(orgId, fn)` is the org-staff shorthand. Avoids holding a connection across LLM awaits.
-- [x] `activeDb()` accessor: shared DAL helpers use it — inside `runScoped` they run on the scoped tx (via an
+- [x] `activeDb()` accessor: shared DAL helpers use it  inside `runScoped` they run on the scoped tx (via an
       `AsyncLocalStorage` the tx publishes reliably to its own callback tree); outside, they run on the owner
       connection unchanged. Owner (`db/client.ts`) stays for bootstrapping, webhooks, cron, seed.
 - [x] Leak proof: `tests/integration/rls-scoped.test.ts` proves `runScoped` sees only its own org, denies a
       bogus org (0 rows), and lets super-admin cross orgs. (Complements the raw-SQL policy proof in `rls.test.ts`.)
       Empirically confirmed RLS is already `enable`+`force` on the live DB and `phila_app` has no BYPASSRLS.
 
-**W0.2b — migrate the DAL onto `runScoped`, cluster by cluster (each independently tested):**
+**W0.2b  migrate the DAL onto `runScoped`, cluster by cluster (each independently tested):**
 - [x] Clients read cluster: `listOrgClients` / `listRemovedClients` / `findDuplicateClients` → `runForOrg`,
       verified live (hub clients page renders all 39 through `phila_app`; server log clean; 6 e2e paths green + screenshot).
-      `getClientDossier` deferred (no `orgId` param to scope by — migrates once its org is threaded).
+      `getClientDossier` deferred (no `orgId` param to scope by  migrates once its org is threaded).
 - [x] Hub billing reads: `listOrgInvoices` + `getOrgSubscription` → `runForOrg`; `getSubscriptionRow`
-      (`db/queries/subscriptions.ts`) switched to `activeDb()` — proves the `db/queries/*.ts` → `activeDb()`
+      (`db/queries/subscriptions.ts`) switched to `activeDb()`  proves the `db/queries/*.ts` → `activeDb()`
       pattern. Verified live (billing plan + invoicing pages render through `phila_app`; server log clean; 3 e2e green + screenshot).
 - [x] Batch of hub read clusters → `runForOrg` + `activeDb()`, verified live (all 6 surfaces render through
       `phila_app`, server log clean, screenshot of Insights with real charts):
@@ -93,7 +93,7 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
 - [x] `getHubOverview` (hub landing dashboard) → `runForOrg`; verified live (dashboards e2e sets a risk flag
       in the DB and the RLS-scoped overview reflects it). **The whole hub org-scoped read surface is now RLS-enforced.**
 - [x] `getClientDossier` (id-based read): threaded the caller's org through the seam (`getClientDossier(orgId,
-      clientId, now)`, mock + both client pages updated) and RLS-scoped it — a cross-org clientId now resolves to
+      clientId, now)`, mock + both client pages updated) and RLS-scoped it  a cross-org clientId now resolves to
       no rows instead of fetch-then-discard. Verified live (hub dossier renders through `phila_app`).
 - [x] Remaining hub **id-based reads**: `getRoomDetail(orgId, …)` + `getGrantView(orgId, …)` threaded through
       the seam and RLS-scoped (mock + pages updated). Verified live (room + grant detail render full data through
@@ -104,31 +104,31 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
       **forms** (create/update/status/share/send/booking-intake), **documents** (folders/move/assign/visibility/
       soft-delete/share/request/upload/finalize). Verified live across catalogue, funders-crud, hub-consistency,
       forms-share, and documents e2e + the documents integration test (which now exercises the writes through `phila_app`).
-- [x] Add RLS to the 3 uncovered tables (`platform_integrations`, `ai_providers`, `user_presence`) — super_only
+- [x] Add RLS to the 3 uncovered tables (`platform_integrations`, `ai_providers`, `user_presence`)  super_only
       policy; owner still reads (LiveKit/Paystack/AI unaffected), tenants get 0. **Every schema table now covered.**
 - [x] Public/booking/webhook/cron/bootstrap paths correctly stay on the owner connection (no `runForOrg` → owner,
       by design). The session/membership resolution that bootstraps the org context must stay owner (chicken-and-egg).
 - [x] **Residual now RLS-scoped (2026-07-06):**
-      - **Counsellor reads** (`getCounsellorDashboard` / `listCaseload` / `listCounsellorSessions`) — org threaded
+      - **Counsellor reads** (`getCounsellorDashboard` / `listCaseload` / `listCounsellorSessions`)  org threaded
         through the seam + `runForOrg`; all six callers pass `membership.orgId`. Verified live.
-      - **Team threads** (`listTeamThreads`) — already had `orgId`; wrapped in `runForOrg`. Verified live.
+      - **Team threads** (`listTeamThreads`)  already had `orgId`; wrapped in `runForOrg`. Verified live.
       - **Client-portal reads** (`getClient` / `getCarePlan` / `listClientDocuments` / `listClientVisibleDocuments` /
-        `listClientDocumentRequests` / `listClientInvoices` / `getClientConsents` / `listClientForms`) — a
+        `listClientDocumentRequests` / `listClientInvoices` / `getClientConsents` / `listClientForms`)  a
         `runForClient(clientId, …)` helper resolves the authenticated client's own org and scopes the read.
         Verified live (/me documents/billing/consent).
-      - **GrantId-based writes** (`setGrantIndicatorsDb` / `setGrantAllocationsDb` / `postGrantNarrativeDb`) — a
+      - **GrantId-based writes** (`setGrantIndicatorsDb` / `setGrantAllocationsDb` / `postGrantNarrativeDb`)  a
         `runForGrant(grantId, …)` helper resolves the grant's org (via `getGrantOrgId`) and scopes; child RLS
         policies (via `grants.org_id`) enforce it. Verified via funders-crud e2e.
 - [x] **Intentionally on the owner connection (correct by design, not gaps):**
-      - **Public tokenized writes** — `submitFormResponseDb` (form share/assignment token) is the same
+      - **Public tokenized writes**  `submitFormResponseDb` (form share/assignment token) is the same
         capability-token model as pay/booking/webhooks, which the security audit confirmed correctly stay on owner.
         The token is the capability; the write carries `orgId` from the resolved row.
-      - **Funder reads** (`listFunderGrants` / `getFunderGrantView`) — the funder is an **external, read-only role**
+      - **Funder reads** (`listFunderGrants` / `getFunderGrantView`)  the funder is an **external, read-only role**
         whose isolation is the `funder_contacts` grant-scope join (a funder user can be scoped to grants across
         orgs), so org-membership RLS is a model mismatch; the app-layer grant-scope join is the correct boundary.
-      - **Bootstrap** — session/membership resolution and the org lookups that *feed* `runForOrg`/`runForClient`/
+      - **Bootstrap**  session/membership resolution and the org lookups that *feed* `runForOrg`/`runForClient`/
         `runForGrant` must use owner (chicken-and-egg: they resolve the org before a context exists).
-- [ ] The super-admin console is still **mock** in db mode (Workstream 1.7 / 3) — migrates + RLS-scopes there.
+- [ ] The super-admin console is still **mock** in db mode (Workstream 1.7 / 3)  migrates + RLS-scopes there.
 
 ### 0.3 Fix the fail-open cron ✅ (2026-07-05)
 - [x] `app/api/cron/reminders/route.ts` now fails **closed** in production: an unset `CRON_SECRET` returns
@@ -136,9 +136,9 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
 
 ---
 
-## Workstream 1 — 🟠 KILL THE MOCK (real data everywhere, no fake saves)
+## Workstream 1  🟠 KILL THE MOCK (real data everywhere, no fake saves)
 
-**Status:** in progress (2026-07-06). *These "look real, silently discard data" — the most dangerous class.*
+**Status:** in progress (2026-07-06). *These "look real, silently discard data"  the most dangerous class.*
 
 ### 1.1 Clinical (highest user impact) ✅ (2026-07-06)
 - [x] `getSession` → real DB override assembling the editor payload (appointment, client, consent, note,
@@ -151,7 +151,7 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
       decision + comment (migration 0030 added the supervisor sign-off columns). Authorised by the supervisor link.
       Verified across integration tests for notes, care plans, and supervision + a note-persist-across-reload e2e.
 
-### 1.2 Outcomes (small, high value — makes the dashboard real) ✅ (2026-07-06)
+### 1.2 Outcomes (small, high value  makes the dashboard real) ✅ (2026-07-06)
 - [x] `components/outcomes/outcome-capture.tsx` `save()` now calls a real `recordOutcome` action
       (`app/app/sessions/[id]/actions.ts`) → `createOutcomeMeasureDb` (`db/queries/outcomes.ts`) writes
       `outcome_measures` via `runForOrg` (the RLS child policy rejects a cross-org client). The component takes
@@ -165,16 +165,16 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
 - [x] `saveClientProfile` → persists name/phone/email (columns) + the extras (DOB, address, emergency, preferred
       channel) to `clients.profile` jsonb (migration 0033). `changeClientPassword` → **real** via Better Auth
       (`auth.api.changePassword`, verifies current pw + revokes other sessions). `setClientTwoFactor` kept an
-      **honest** placeholder — real 2FA is a TOTP QR/verify enrolment flow (a boolean can't represent it), lands with W2.
+      **honest** placeholder  real 2FA is a TOTP QR/verify enrolment flow (a boolean can't represent it), lands with W2.
 - [x] Portal **Pay** button → the `/me/billing` page mints a signed `/pay/<token>` per unpaid invoice
       (`invoicePayPath`, server-side) and the button navigates there (was a toast stub). Reuses the existing
       pay-link + Paystack webhook path. Verified: profile-edit-persists-across-reload e2e; Pay wiring tsc-checked.
-- [ ] Client↔counsellor messaging channel (distinct from staff `message_threads`) — `listConversations` still mock
+- [ ] Client↔counsellor messaging channel (distinct from staff `message_threads`)  `listConversations` still mock
       (a new feature, not just persistence; deferred).
 
-### 1.4 Hub team management — ✅ done
+### 1.4 Hub team management  ✅ done
 - [x] `org_members` got a `status` (`active`/`invited`/`archived`) + `createdAt` (migration 0034); seeded the three
-      missing role users — **front_desk** (Lindiwe), **finance** (Riaan), **programme_manager** (Bongani, archived) —
+      missing role users  **front_desk** (Lindiwe), **finance** (Riaan), **programme_manager** (Bongani, archived) 
       so every role is represented with real data.
 - [x] `listTeam` / `getTeamMemberDetail` → DB (`db/queries/team.ts`, RLS-scoped via `runForOrg`); `TeamMemberView`
       now carries `status`, live `caseload`, and `counsellorId` (lets a quick role edit mirror the supervisor flag).
@@ -191,7 +191,7 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
       numbers removed** from the settings page (now reads the real profile). Verified via e2e.
 - [x] `saveInvoiceSettings` → persists VAT/banking/invoice-prefix to `orgs.invoice_settings` (migration 0032);
       `getInvoiceSettings` is a DB override merged over defaults. Same proven JSONB pattern as the profile.
-- [x] Public booking policy: `getBookingSettings` → DB (`db/queries/booking-settings.ts`, RLS-scoped) — composes
+- [x] Public booking policy: `getBookingSettings` → DB (`db/queries/booking-settings.ts`, RLS-scoped)  composes
       the policy from the org row (`orgs.booking_settings` JSONB) over the **live** services/counsellors, so a newly
       added service inherits sensible defaults. `saveBookingSettings` persists the whole blob (migration 0035);
       `app/hub/booking/actions.ts` writes it behind `DATA_PROVIDER==="db"` + revalidates.
@@ -202,11 +202,11 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
 - [x] Verified: tsc + eslint + build + unit (150/150, incl. 2 new W1.5 round-trip integration tests) + e2e
       (`tests/e2e/settings-w15.spec.ts`: booking policy renders from DB & saves, VAT reads from DB) + screenshots.
 
-### 1.6 Client merge — ✅ done
+### 1.6 Client merge  ✅ done
 - [x] `mergeClients` (`app/hub/clients/actions.ts`) now runs `mergeClientsDb` (`db/queries/merge.ts`) behind
-      `isDb()`: one RLS-scoped, atomic transaction that **re-points every child record** onto the kept id —
+      `isDb()`: one RLS-scoped, atomic transaction that **re-points every child record** onto the kept id 
       appointments (and their session notes, which follow the appointment), care plans, outcome measures,
-      invoices, client_documents, documents/folders/requests, form assignments — then **soft-deletes the losers**
+      invoices, client_documents, documents/folders/requests, form assignments  then **soft-deletes the losers**
       (retained + restorable). Detection via `findDuplicateClients` was already real.
 - [x] Uniqueness-constrained tables (consents `(client_id,purpose)`, grant_allocations `(grant_id,client_id)`,
       demographics `client_id` PK) fill only the **gaps** the keeper lacks (one loser row per key, most recent
@@ -217,7 +217,7 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
       merges through the UI scoped to its own card, asserts one survivor) + screenshots. Confirmed the demo's real
       seeded Lerato duplicate is left untouched.
 
-### 1.7 Super-admin console — ✅ done
+### 1.7 Super-admin console  ✅ done
 - [x] `getPlatformOverview` / `listPlatformOrgs` / `getPlatformOrgDetail` → DB (`db/queries/platform.ts`, owner
       connection): every tenant computed **live** from orgs + subscriptions + org_members + appointments (7-day
       sessions) + ai_usage (month spend). Seeded 4 extra tenants (Thrive/Ubuntu/MindWell/Khula) so the console shows
@@ -234,7 +234,7 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
 
 > **W1 is complete.** Every super-admin console method used by a shipped page is now a DB override; onboarding
 > persists. Next: the end-to-end **signup → email verification → org onboarding upload → admin review → approval**
-> flow (builds on the onboarding tables above) — see Workstream 1.8 below.
+> flow (builds on the onboarding tables above)  see Workstream 1.8 below.
 
 > **Definition of done for W1:** grep for `"(mock)"` / `"Phase .. persists"` in `app/**/actions.ts`
 > returns nothing that runs under `isDb()`, and every `DataProvider` method used by a shipped page is
@@ -242,7 +242,7 @@ GUC is never set, and `neon-http` is stateless so transaction-local GUCs can't s
 
 ---
 
-## Workstream 1.8 — 🟢 SIGNUP → VERIFY → ONBOARDING → APPROVAL (trial-first)
+## Workstream 1.8  🟢 SIGNUP → VERIFY → ONBOARDING → APPROVAL (trial-first)
 
 **Why:** onboard real practices smoothly. A paid product with a **17-day free trial** (no card): keep
 signup low-friction, but collect real company data + documents and let the platform admin verify.
@@ -251,9 +251,9 @@ signup low-friction, but collect real company data + documents and let the platf
 mandatory.** After verify + sign-in they land in the hub with the trial live; a friendly gate nudges them
 to **complete the company profile + upload the admin-set required documents** to go fully live (unlock
 payouts + funder sharing). A plan chosen on the landing page (`?plan=`) carries into the trial and is
-shown on signup (no picker on the form — too much friction). Plan catalogue is **platform-admin managed**.
+shown on signup (no picker on the form  too much friction). Plan catalogue is **platform-admin managed**.
 
-### 1.8a Mandatory email verification + trial start — ✅ done
+### 1.8a Mandatory email verification + trial start  ✅ done
 - [x] Better Auth `requireEmailVerification: true` + `emailVerification` (sendOnSignUp, autoSignInAfterVerification);
       branded verification email via Resend (`lib/email/platform-email.ts` + `templates.ts`), honest dormant fallback.
 - [x] `registerPractice`: creates the org (`onboardingStatus: not_started`) + a **trialing** subscription
@@ -264,8 +264,8 @@ shown on signup (no picker on the form — too much friction). Plan catalogue is
 - [x] Verified: tsc + eslint + build + e2e (`tests/e2e/verify-signup.spec.ts`: check-email, trial on chosen
       plan, login gated until verified, verified admin gets in) + screenshots.
 
-### 1.8b Company profile + document onboarding (the go-live gate) — ✅ done
-- [x] Hub gate banner (`VerificationBanner`) on the overview — a nudge, not a wall — until the practice is verified,
+### 1.8b Company profile + document onboarding (the go-live gate)  ✅ done
+- [x] Hub gate banner (`VerificationBanner`) on the overview  a nudge, not a wall  until the practice is verified,
       status-aware (start / under review / action needed). New **Verification** nav item + `/hub/verification` page.
 - [x] `CompanyVerification`: a guided **company profile** (registration no, VAT, income tax, HPCSA practice no,
       POPIA Information Officer + email, phone, website, physical + postal address) → `orgs.profile`; **required-doc
@@ -273,7 +273,7 @@ shown on signup (no picker on the form — too much friction). Plan catalogue is
       0038 adds `storage_key`/`bytes`/`review_note`); **submit** gated on the core fields + all required docs
       (`onboardingStatus = submitted`). Read-only once submitted/verified.
 
-### 1.8c Admin review + approval — ✅ done
+### 1.8c Admin review + approval  ✅ done
 - [x] Orgs list shows each org's lifecycle stage (*Email pending · Onboarding · Submitted · Action needed · Verified*),
       computed from `orgs.onboarding_status` + the admin's `email_verified`. Detail page shows the submitted **company
       information** + document review (open/verify/send-back-with-note) + org-level **Approve & verify** / **Send back**.
@@ -282,19 +282,19 @@ shown on signup (no picker on the form — too much friction). Plan catalogue is
 - [x] Verified: tsc + eslint + build + unit **161/161** (4 new onboarding-lifecycle integration tests) + e2e
       (`tests/e2e/onboarding.spec.ts`: hub gate + company form save, admin stages + review + approve controls) + screenshots.
 
-### 1.8d Settings + Billing reflect verification + trial — ✅ done
+### 1.8d Settings + Billing reflect verification + trial  ✅ done
 - [x] **Settings → Organisation** leads with a **Company verification** card (`VerificationStatusCard`): lifecycle
       status + a summary of the submitted legal details (registration, VAT, HPCSA practice no, Information Officer),
       linking to `/hub/verification` (the source of truth). Also hardened the settings page for lightweight/just-created
       orgs (business-hours + scheduling fallbacks) so a fresh practice never hits an error boundary.
-- [x] **Billing + Settings plan card** (`YourPlanCard`) now shows the **trial countdown** — a "Trial · N days left"
-      chip, "Trial ends {date}", and a calm "no card needed · nothing switches off mid-trial" note — driven by
+- [x] **Billing + Settings plan card** (`YourPlanCard`) now shows the **trial countdown**  a "Trial · N days left"
+      chip, "Trial ends {date}", and a calm "no card needed · nothing switches off mid-trial" note  driven by
       `trialDaysLeft(nextBillingAt, now)`. Surfaced on `/hub/billing` too (was credits-only).
 - [x] Verified: tsc + eslint + build + unit 161/161 + e2e (`tests/e2e/trial-billing.spec.ts`) + screenshots.
 
 ---
 
-## Workstream 2 — 🟠 SECURITY HARDENING (Phase 19)
+## Workstream 2  🟠 SECURITY HARDENING (Phase 19)
 
 **Status:** in progress (batch 1 landed).
 
@@ -305,17 +305,17 @@ shown on signup (no picker on the form — too much friction). Plan catalogue is
       Verified shipping via `curl -I`. A full nonce-based `script-src` CSP is a deliberate follow-up.
 - [x] **Prompt (don't enforce) 2FA** (W2 batch 3). Privileged users (super-admin / org-admin / supervising
       counsellor) without 2FA see a **dismissible dashboard banner** (`TwoFactorBanner`, rendered by the app
-      shell) — never a redirect or block. "Set it up" opens a focused `/setup-security` page (reuses the real
+      shell)  never a redirect or block. "Set it up" opens a focused `/setup-security` page (reuses the real
       `TwoFactorSetup` enrolment); "×" (`dismissTwoFactorPrompt`) remembers the choice for 14 days via cookie.
       `shouldPromptTwoFactor(principal)` gates it; `requiresTwoFactor()` is **not** wired into the guards.
       *(Chose a banner over an interstitial redirect so it never disrupts navigation or the e2e suite.)*
-- [x] **Email verification.** `requireEmailVerification: true` (W1.8a) — org-admin self-registration now
+- [x] **Email verification.** `requireEmailVerification: true` (W1.8a)  org-admin self-registration now
       verifies before sign-in, with a branded email + resend.
 - [x] **WhatsApp webhook signature.** POST now reads the raw body, routes by `phone_number_id`, and verifies
       Meta's `X-Hub-Signature-256` HMAC-SHA256 against the org's app secret (constant-time) before acting;
       rejects with 401 otherwise (`app/api/webhooks/whatsapp/route.ts`).
 - [x] **Video join links** (W2 batch 3). `signJoin`/`verifyJoin`/`videoJoinPath` now bind the token to the
-      appointment's **start time** — which is both the anti-forgery signature and a **nonce**: a reschedule
+      appointment's **start time**  which is both the anti-forgery signature and a **nonce**: a reschedule
       changes `startsAt` and invalidates every old link. `verifyJoin` also enforces an **expiry window**
       (openable 15 min before → 3 h after start). Host access tightened from *any org member* to **org-admin or
       counsellor** of the org (front-desk/finance/programme roles no longer auto-admitted to a therapy room).
@@ -327,7 +327,7 @@ shown on signup (no picker on the form — too much friction). Plan catalogue is
 - [x] **Timing-safe comparisons.** `paystackSignatureValid` and `verifyJoin` now use `timingSafeEqual`
       (length-guarded, mirror `invoice-link.ts`). Unit-tested (`tests/unit/security.test.ts`).
 - [x] **Audit integrity.** Clinical-access audits (`note.read`, `note.read_hub_override`, `demographics.read`,
-      `pii.export`) are now **fail-strict** — `lib/audit/index.ts` re-throws if the write fails, so a read
+      `pii.export`) are now **fail-strict**  `lib/audit/index.ts` re-throws if the write fails, so a read
       can't proceed unlogged. Operational actions stay best-effort.
 - [x] **Password reset.** Wired to Better Auth (W2 batch 2): `requestPasswordReset` sends a **branded** email
       with a single-use, 1-hour token; `/reset-password?token=` exchanges it via `auth.api.resetPassword`. The
@@ -341,13 +341,13 @@ shown on signup (no picker on the form — too much friction). Plan catalogue is
       Proven end-to-end (`tests/integration/member-activation.test.ts`).
 - [x] **Uploads.** `validateUpload` now rejects a filename extension that doesn't match the declared
       content-type (all five upload actions pass the name). The declared type is still client-supplied, so a
-      post-upload magic-byte/AV `scanObject` remains the real gate — confirm it's a live AV hook before launch.
+      post-upload magic-byte/AV `scanObject` remains the real gate  confirm it's a live AV hook before launch.
 - [ ] **Secrets.** Rotate `BETTER_AUTH_SECRET`, `PHILA_FIELD_KEY`, DB passwords before go-live; keep prod
       secrets out of the OneDrive-synced tree.
-- [x] **`exportGrantReport`** — now verifies grant→org ownership (`getGrantOrgId`) before logging the
+- [x] **`exportGrantReport`**  now verifies grant→org ownership (`getGrantOrgId`) before logging the
       `pii.export`, so no cross-org export and no spurious audit entry for someone else's grant (W2 batch 2).
 - [ ] **Retention clocks (POPIA × HPCSA).** Soft-delete must honour HPCSA Booklet 9 retention (≥6y dormant,
-      minors→21, incapacity→lifetime) and reconcile with POPIA deletion requests — per-record-type clock,
+      minors→21, incapacity→lifetime) and reconcile with POPIA deletion requests  per-record-type clock,
       not hard delete. Feeds the data-subject export/erasure tooling.
 - [ ] **AI cross-border (POPIA s72).** Confirm the LLM processor contract is zero-retention + POPIA-adequate,
       or rely on explicit consent (the AI toggle already is the s72 consent gate); prefer SA/EU hosting +
@@ -355,7 +355,7 @@ shown on signup (no picker on the form — too much friction). Plan catalogue is
 
 ---
 
-## Workstream 3 — 🟠 PLATFORM FEATURE GOVERNANCE & ADMIN CONTROL *(explicit ask)*
+## Workstream 3  🟠 PLATFORM FEATURE GOVERNANCE & ADMIN CONTROL *(explicit ask)*
 
 **Status:** not started. *Give the super-admin full, real control to enable/disable functionality
 globally or per-org, and to manage subscriptions/quotas (storage, SMS, AI, etc.).*
@@ -382,19 +382,19 @@ effective(feature, org) =
 - [ ] Audit every platform/override change (`platform.feature.toggle`, `org.override.set`).
 
 ### 3.2 Admin: global feature control
-- [ ] `app/admin/features/page.tsx` (new nav item) — matrix of all features with a **global** on/off/kill
+- [ ] `app/admin/features/page.tsx` (new nav item)  matrix of all features with a **global** on/off/kill
       switch and default-state control; e.g. disable **AI-scribe** platform-wide instantly.
-- [ ] Actions `setPlatformFeature(feature, state)` — guarded by `requireSuperAdmin`, persisted, audited.
+- [ ] Actions `setPlatformFeature(feature, state)`  guarded by `requireSuperAdmin`, persisted, audited.
 
 ### 3.3 Admin: per-org feature control
-- [ ] On `app/admin/orgs/[id]/page.tsx` — a feature panel showing each feature's **effective** state and
+- [ ] On `app/admin/orgs/[id]/page.tsx`  a feature panel showing each feature's **effective** state and
       the resolution reason, with per-org **force-on / force-off / inherit** controls (`setOrgFeatureOverride`).
       Use cases: grant a beta feature to one org; suspend `payments`/`ai` for an org in breach.
 - [ ] Show which plan the org is on and what that plan entitles.
 
 ### 3.4 Admin: subscription & plan management (make it real)
 - [ ] Migrate `listPlans` writes + `getPlatformOrgDetail` to DB (overlaps W1.7).
-- [ ] `app/admin/plans` — CRUD plans: price, included features, and **quotas** (storage GB, SMS/mo,
+- [ ] `app/admin/plans`  CRUD plans: price, included features, and **quotas** (storage GB, SMS/mo,
       WhatsApp/mo, AI tokens/mo, seats). Persisted + audited.
 - [ ] Assign/upgrade/downgrade an org's plan from `app/admin/orgs/[id]` (`setOrgPlan`), with effect on
       entitlements + quotas immediately reflected by the resolver.
@@ -403,11 +403,11 @@ effective(feature, org) =
 - [ ] Unify the existing `credit_balances` / `credit_ledger` (SMS/email) with **storage** and **AI-token**
       meters under one `org_resource_meters` view.
 - [ ] Extend `grantMessagingCredits` (already real) into `adjustOrgResource(orgId, resource, delta, reason)`
-      covering sms, email, whatsapp, **storage**, ai_tokens — guarded + audited.
+      covering sms, email, whatsapp, **storage**, ai_tokens  guarded + audited.
 - [ ] `app/admin/orgs/[id]` panel: current usage vs quota per resource, with top-up / set-limit controls;
       surface `org_storage_usage` (already seeded) here.
 - [ ] Enforcement: when a metered resource is exhausted, the feature no-ops honestly (Dormant-by-Default),
-      and the hub shows an "add credits / upgrade plan" state — never a silent failure or fake success.
+      and the hub shows an "add credits / upgrade plan" state  never a silent failure or fake success.
 
 ### 3.6 Admin: enabling the new (Workstream 7) features
 - [ ] Every new feature ships **registered in the feature registry (3.1)** and **defaulted OFF**, so the
@@ -416,11 +416,11 @@ effective(feature, org) =
 > **Definition of done for W3:** from `/admin`, a super-admin can (a) kill AI-scribe platform-wide,
 > (b) force-enable a beta feature for exactly one org, (c) move an org between plans and see its features
 > + quotas change, (d) top up or cap an org's storage/SMS/AI, and (e) roll out a brand-new feature to a
-> chosen cohort — all persisted, audited, and reflected instantly by `requireOrgFeature`.
+> chosen cohort  all persisted, audited, and reflected instantly by `requireOrgFeature`.
 
 ---
 
-## Workstream 4 — 🟡 SEED & DEMO REALNESS
+## Workstream 4  🟡 SEED & DEMO REALNESS
 
 **Status:** not started. *So every page has meaningful data and every role has a login.* (`db/seed-all.ts`)
 
@@ -429,10 +429,10 @@ effective(feature, org) =
 - [ ] Seed `session_notes` from the existing `supervisionTemplates` fixture (never imported) so supervision +
       note history are real.
 - [ ] Add logins (`user` + `account` + `org_members`) for the missing roles: **front_desk** (Lindiwe),
-      **finance** (Riaan), **programme_manager** (Bongani) — also fixes a broken team-thread participant.
+      **finance** (Riaan), **programme_manager** (Bongani)  also fixes a broken team-thread participant.
 - [ ] Seed a **second org** (admin + a few clients/appointments) so tenant-isolation / RLS is demonstrable
       and the admin console has >1 tenant.
-- [ ] Make invoices **`now`-relative** (issue/due as `daysAgo`/`daysAhead`) — hardcoded June–July 2026 dates
+- [ ] Make invoices **`now`-relative** (issue/due as `daysAgo`/`daysAhead`)  hardcoded June–July 2026 dates
       decay "income this month" to R0.
 - [ ] Seed `document_shares` (org→counsellor) so "shared with me" isn't empty.
 - [ ] Polish: a few `audit_log`, `public_page_events`, `payments`, and `org_*_settings` rows so no
@@ -441,7 +441,7 @@ effective(feature, org) =
 
 ---
 
-## Workstream 5 — 🟡 DOCS HYGIENE
+## Workstream 5  🟡 DOCS HYGIENE
 
 **Status:** not started.
 
@@ -453,27 +453,27 @@ effective(feature, org) =
 - [ ] Write the missing `docs/completed/PHASE_18.5_COMPLETE.md` and `PHASE_18.7_COMPLETE.md`; set the 18.7
       plan header to done.
 - [ ] Refresh `SMOKE_TEST.md` (add forms/documents/messaging; the `/hub/reporting` reference redirects to
-      Insights — note it) and add smoke steps for admin feature governance (W3).
+      Insights  note it) and add smoke steps for admin feature governance (W3).
 - [ ] Keep `ROADMAP.md` in sync as each workstream lands; reconcile the `system|light|dark` vs `light|dark`
       theme note.
 
 ---
 
-## Workstream 6 — 🟡 UX & ORG SETTINGS IA
+## Workstream 6  🟡 UX & ORG SETTINGS IA
 
 **Status:** not started.
 
 ### 6.1 Settings page re-architecture (`app/hub/settings`)
 Move from today's 5 tabs to a cleaner IA:
-- [ ] **Organisation** — profile (persisted, W1.5) + **Branding** (accent + logo; `orgs.brandAccent` is already
-      consumed app-wide but only settable in onboarding — add a settings surface + a logo column) + contact.
-- [ ] **Booking & scheduling** — business hours, duration/buffer, **and** the booking-window rules currently
+- [ ] **Organisation**  profile (persisted, W1.5) + **Branding** (accent + logo; `orgs.brandAccent` is already
+      consumed app-wide but only settable in onboarding  add a settings surface + a logo column) + contact.
+- [ ] **Booking & scheduling**  business hours, duration/buffer, **and** the booking-window rules currently
       stranded on `/hub/booking`, plus client-portal onboarding policy + public-page link. One mental model.
-- [ ] **Messaging** — promote from the buried Integrations link-out to a top-level tab: channels, credits,
+- [ ] **Messaging**  promote from the buried Integrations link-out to a top-level tab: channels, credits,
       templates, quiet hours, activity.
-- [ ] **Billing & plan** — invoicing/VAT, own gateway, Phila plan/credits.
-- [ ] **Integrations** — feature flags (now reflecting W3 platform/plan overrides), video, AI scribe.
-- [ ] **Security & data** — 2FA, audit access, **data export** (POPIA subject access), **danger zone**.
+- [ ] **Billing & plan**  invoicing/VAT, own gateway, Phila plan/credits.
+- [ ] **Integrations**  feature flags (now reflecting W3 platform/plan overrides), video, AI scribe.
+- [ ] **Security & data**  2FA, audit access, **data export** (POPIA subject access), **danger zone**.
 
 ### 6.2 Flow quick-wins (small, high smoothness)
 - [ ] "Create invoice" CTA on session-complete → deep-link `/hub/invoicing/new?client=…&service=…` prefilled.
@@ -486,32 +486,32 @@ Move from today's 5 tabs to a cleaner IA:
 
 ---
 
-## Workstream 7 — 🟢 NEW FEATURES (the moat)
+## Workstream 7  🟢 NEW FEATURES (the moat)
 
 **Status:** not started. *Each registers in the W3 feature registry, defaults OFF, admin-rollable.*
 Sizes: S/M/L. Grounded in existing building blocks.
 
-- [ ] **Outcome measures live + trends** (S) — PHQ-9/GAD-7 persisted (W1.2) with per-client trend; GAD-7 schema
+- [ ] **Outcome measures live + trends** (S)  PHQ-9/GAD-7 persisted (W1.2) with per-client trend; GAD-7 schema
       already present. *Differentiator: no SA competitor scores outcomes.*
-- [ ] **No-show follow-up automation** (S) — auto-nudge/rebook using the existing `no_show` trigger.
-- [ ] **Portal pay via pay-link** (S/M) — W1.3.
-- [ ] **Portal reschedule/cancel** (M) — client-guarded wrappers over existing actions.
-- [ ] **Sliding-scale / subsidised fees** (M) — per-client fee override on `services.priceCents` + `invoices`.
+- [ ] **No-show follow-up automation** (S)  auto-nudge/rebook using the existing `no_show` trigger.
+- [ ] **Portal pay via pay-link** (S/M)  W1.3.
+- [ ] **Portal reschedule/cancel** (M)  client-guarded wrappers over existing actions.
+- [ ] **Sliding-scale / subsidised fees** (M)  per-client fee override on `services.priceCents` + `invoices`.
       *NGO reality; no competitor does it.*
-- [ ] **Waitlist auto-fill** (L) — cancelled slot offers itself via the messaging rail; new `waitlist_entries`.
-- [ ] **Referral / source tracking** (S/M) — intake already captures the field; surface in Insights breakdowns.
-- [ ] **Unified client timeline** (M) — one scroll over sessions + documents + outcomes + care-plan.
-- [ ] **WhatsApp-first comms as a headline** (S/M) — ensure it's prominent, not dormant-by-afterthought;
+- [ ] **Waitlist auto-fill** (L)  cancelled slot offers itself via the messaging rail; new `waitlist_entries`.
+- [ ] **Referral / source tracking** (S/M)  intake already captures the field; surface in Insights breakdowns.
+- [ ] **Unified client timeline** (M)  one scroll over sessions + documents + outcomes + care-plan.
+- [ ] **WhatsApp-first comms as a headline** (S/M)  ensure it's prominent, not dormant-by-afterthought;
       engineer reminders into the free 24h service window where possible (marginal cost ≈ 0).
-- [ ] **Funder/M&E depth** (M) — the paid differentiator: generate DSD/NLC-shaped narrative+financial report
+- [ ] **Funder/M&E depth** (M)  the paid differentiator: generate DSD/NLC-shaped narrative+financial report
       packs (get a real grantee template first), DQA-ready session stats.
-- [ ] *(Optional, large) Medical-aid invoice formatting* — BHF practice no. + ICD-10 (with diagnosis-disclosure
+- [ ] *(Optional, large) Medical-aid invoice formatting*  BHF practice no. + ICD-10 (with diagnosis-disclosure
       consent) + tariff code; switch integration (MediSwitch/Healthbridge) is a separate big module. Only if
       chasing paid HPCSA practitioners; **out of scope for the NGO-first core.**
 
 ---
 
-## Workstream 8 — 🟢 MARKET / PRICING / GTM (reference, not code)
+## Workstream 8  🟢 MARKET / PRICING / GTM (reference, not code)
 
 *From the 2026-07 market research. Recorded here so product decisions stay anchored.*
 
@@ -529,17 +529,17 @@ Sizes: S/M/L. Grounded in existing building blocks.
 - **Compliance = moat:** POPIA enforcement is real and rising (DOJ R5m, Lancet R100k health-sector breach,
   WhatsApp/Meta settlement); NPO deregistration drive (15,625 deregistered by Jun 2025) makes funder
   reporting existential. Market Phila as HPCSA-safe + POPIA-native by design (neutral directory listings,
-  no pay-for-ranking — HPCSA anti-canvassing).
+  no pay-for-ranking  HPCSA anti-canvassing).
 
 ---
 
 ## Suggested sequencing
 
-1. **W0** (critical security) — before anything else touches real data.
-2. **W1** (kill the mock) + **W3.1–3.3** (feature governance model + admin global/per-org control) — these
+1. **W0** (critical security)  before anything else touches real data.
+2. **W1** (kill the mock) + **W3.1–3.3** (feature governance model + admin global/per-org control)  these
    pair naturally; the admin console work in W1.7 is the same surface W3 extends.
 3. **W2** (security hardening) + **W3.4–3.6** (plans, quotas, credits, new-feature rollout).
-4. **W4** (seed) + **W5** (docs) — cheap, unblock realistic demos/testing.
+4. **W4** (seed) + **W5** (docs)  cheap, unblock realistic demos/testing.
 5. **W6** (UX + settings IA), then **W7** (moat features), each rolled out via W3.
 
 ## Gates (every commit)

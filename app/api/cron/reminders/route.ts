@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
  *
  * Auth **fails closed in production**: a `CRON_SECRET` is required and the bearer
  * must match, or the endpoint refuses. It only stays open (for local testing) when
- * the secret is unset AND we're not in production — otherwise a missing env var
+ * the secret is unset AND we're not in production  otherwise a missing env var
  * would leave a public endpoint that fans out real, paid reminders on demand.
  */
 async function sweep(req: Request) {

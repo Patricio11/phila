@@ -136,10 +136,10 @@ export function CreateAppointmentModal({
     });
   };
 
-  // Create a client inline — the counsellor selected below becomes their primary.
+  // Create a client inline  the counsellor selected below becomes their primary.
   const addNewClient = () => {
     setNcError(null);
-    if (!counsellorId) { setNcError("Choose the counsellor below first — they become this client's primary counsellor."); return; }
+    if (!counsellorId) { setNcError("Choose the counsellor below first  they become this client's primary counsellor."); return; }
     startCreate(async () => {
       const res = await createClientForBooking({ orgId: options.orgId, name: nc.name, phone: nc.phone, email: nc.email, counsellorId });
       if (!res.ok) { setNcError(res.error); return; }

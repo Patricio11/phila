@@ -62,7 +62,7 @@ describe("onboarding lifecycle", () => {
 
   it("reviews a document with a send-back note", async () => {
     const [firstReq] = await sql`SELECT id FROM onboarding_requirements WHERE required = true ORDER BY sort LIMIT 1`;
-    const res = await reviewOnboardingDocDb(ORG, firstReq!.id as string, "reject", "The scan is blurry — please re-upload.");
+    const res = await reviewOnboardingDocDb(ORG, firstReq!.id as string, "reject", "The scan is blurry  please re-upload.");
     expect(res.ok).toBe(true);
     const [row] = await sql`SELECT status, review_note FROM org_onboarding_docs WHERE org_id=${ORG} AND requirement_id=${firstReq!.id}`;
     expect(row!.status).toBe("rejected");

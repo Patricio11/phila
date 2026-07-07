@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * W1.1 — supervision. A supervisee's signed note appears in their supervisor's
+ * W1.1  supervision. A supervisee's signed note appears in their supervisor's
  * queue; signing it off removes it from the queue and stamps the supervisor fields.
  * Also proves a non-supervisor can't sign it (authorisation by supervisor link).
  */

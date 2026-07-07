@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * W1.2 — recording a PHQ-9/GAD-7 measure persists to `outcome_measures` (which the
+ * W1.2  recording a PHQ-9/GAD-7 measure persists to `outcome_measures` (which the
  * counsellor dashboard + reporting read back). Proves the write lands and that the
  * RLS child policy (via clients.org_id) rejects a client outside the caller's org.
  */

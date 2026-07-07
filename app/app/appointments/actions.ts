@@ -40,7 +40,7 @@ const rescheduleInput = z.object({
   appointmentId: z.string().min(1),
   newStart: z.string().min(1),
   scope,
-  /** Optional reason — kept on the session record. */
+  /** Optional reason  kept on the session record. */
   note: z.string().trim().max(500).optional(),
 });
 

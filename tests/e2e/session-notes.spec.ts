@@ -3,8 +3,8 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * W1.1 — a counsellor's session note now persists (was audit-only). Type it, sign
- * it, reload — the signed note comes back from `session_notes` via getSession.
+ * W1.1  a counsellor's session note now persists (was audit-only). Type it, sign
+ * it, reload  the signed note comes back from `session_notes` via getSession.
  */
 const DATABASE_URL = (readFileSync(".env.local", "utf8").match(/^DATABASE_URL=(.+)$/m)?.[1] ?? "").trim();
 const sql = neon(DATABASE_URL);

@@ -41,7 +41,7 @@ test("hub merges a duplicate client pair through the UI", async ({ page }) => {
     await expect(page.getByRole("heading", { name: "Review duplicates" })).toBeVisible({ timeout: 10_000 });
     await page.screenshot({ path: "screenshots/merge-review-dialog.png" });
 
-    // The demo DB also has a real seeded duplicate — scope the merge strictly to our
+    // The demo DB also has a real seeded duplicate  scope the merge strictly to our
     // Zola group's card so we never touch anyone else's records.
     const zolaCard = page.locator("div.rounded-card.border").filter({ hasText: NAME }).last();
     await zolaCard.getByRole("button", { name: /Merge 2 into one/ }).click();

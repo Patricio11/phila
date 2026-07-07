@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * W1.5 — the org profile is real: no more hardcoded fake registration numbers, and
+ * W1.5  the org profile is real: no more hardcoded fake registration numbers, and
  * an edit persists to the org row + survives a reload. Restores the profile after.
  */
 const DATABASE_URL = (readFileSync(".env.local", "utf8").match(/^DATABASE_URL=(.+)$/m)?.[1] ?? "").trim();

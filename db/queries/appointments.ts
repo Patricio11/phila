@@ -57,7 +57,7 @@ export type EditScope = "this" | "following";
  * exclusion constraints let the whole shift land atomically). Returns the count moved.
  *
  * Every read + write is scoped by `orgId` (the tenant boundary), so a caller can
- * only ever move their own org's appointments — a cross-org id resolves to 0.
+ * only ever move their own org's appointments  a cross-org id resolves to 0.
  */
 export async function rescheduleAppointment(orgId: string, appointmentId: string, newStart: string, scope: EditScope = "this", note?: string | null): Promise<number> {
   const db = getDb();

@@ -7,7 +7,7 @@ import { TEAM_ROLE_LABELS, type TeamRole } from "@/lib/domain/enums";
 import { cn } from "@/lib/utils";
 
 /**
- * The role reference — the redaction matrix (lib/auth/roles.ts) told as a calm,
+ * The role reference  the redaction matrix (lib/auth/roles.ts) told as a calm,
  * honest guide so an org admin can see, at a glance, exactly what each role reaches
  * and what it can never touch. Clinical notes are the load-bearing boundary, so every
  * card names how it treats them.
@@ -17,7 +17,7 @@ interface RoleMeta {
   tone: string; // icon chip
   tagline: string;
   can: string[];
-  guard: string; // the one protective sentence — usually about notes
+  guard: string; // the one protective sentence  usually about notes
 }
 
 const ROLES: Record<TeamRole, RoleMeta> = {
@@ -26,14 +26,14 @@ const ROLES: Record<TeamRole, RoleMeta> = {
     tone: "bg-accent-soft text-accent",
     tagline: "Runs the practice",
     can: ["Manage team, roles & settings", "All schedules, clients & billing", "Funders & reporting"],
-    guard: "Can open a note only when needed — and every such view is logged.",
+    guard: "Can open a note only when needed  and every such view is logged.",
   },
   counsellor: {
     icon: HeartPulse,
     tone: "bg-info-soft text-info",
     tagline: "Sees their own clients",
     can: ["Own schedule & caseload", "Writes notes & care plans", "Messages their clients"],
-    guard: "Notes stay private to them and their supervisor — no one else reads them.",
+    guard: "Notes stay private to them and their supervisor  no one else reads them.",
   },
   front_desk: {
     icon: CalendarDays,
@@ -76,7 +76,7 @@ export function RoleGuide({ defaultOpen = false }: { defaultOpen?: boolean }) {
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-[13.5px] font-semibold text-text">How roles work</div>
-          <div className="text-[12px] text-text-3">Each role reaches only what it needs — clinical notes stay with the counsellor.</div>
+          <div className="text-[12px] text-text-3">Each role reaches only what it needs  clinical notes stay with the counsellor.</div>
         </div>
         <ChevronDown className={cn("size-4 shrink-0 text-text-3 transition-transform", open && "rotate-180")} aria-hidden />
       </button>

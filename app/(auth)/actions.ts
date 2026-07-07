@@ -40,12 +40,12 @@ async function baseHome(userId: string, platformRole: string | null): Promise<st
 }
 
 /** Where a user lands after sign-in. The 2FA nudge is a dismissible dashboard banner
- * (see `shouldPromptTwoFactor`), not a redirect — so it never blocks or reroutes. */
+ * (see `shouldPromptTwoFactor`), not a redirect  so it never blocks or reroutes. */
 async function homeForUser(userId: string, platformRole: string | null): Promise<string> {
   return baseHome(userId, platformRole);
 }
 
-/** "Remind me later" on the 2FA banner — remember the choice for two weeks. */
+/** "Remind me later" on the 2FA banner  remember the choice for two weeks. */
 export async function dismissTwoFactorPrompt(): Promise<{ ok: true }> {
   (await cookies()).set(TWO_FA_SKIP_COOKIE, "1", { httpOnly: true, sameSite: "lax", maxAge: 60 * 60 * 24 * 14, path: "/" });
   return { ok: true };
@@ -73,7 +73,7 @@ export async function signIn(
     const code = (e as { body?: { code?: string }; status?: number | string })?.body?.code;
     const msg = e instanceof Error ? e.message.toLowerCase() : "";
     if (code === "EMAIL_NOT_VERIFIED" || msg.includes("not verified")) {
-      return { ok: false, error: "Please verify your email first — we've sent you a fresh link.", needsVerification: true, email: parsed.data.email };
+      return { ok: false, error: "Please verify your email first  we've sent you a fresh link.", needsVerification: true, email: parsed.data.email };
     }
     return { ok: false, error: "Wrong email or password." };
   }
@@ -198,21 +198,21 @@ export async function resendVerification(raw: { email: string }): Promise<Result
   try {
     await auth.api.sendVerificationEmail({ body: { email: parsed.data.email, callbackURL: "/welcome" }, headers: await headers() });
   } catch {
-    // Don't reveal whether the address exists — always report success.
+    // Don't reveal whether the address exists  always report success.
   }
   return { ok: true };
 }
 
 const emailInput = z.object({ email: z.string().email("Enter a valid email.") });
 
-/** Send a password-reset email (W2). Always reports success — never reveals whether an account exists. */
+/** Send a password-reset email (W2). Always reports success  never reveals whether an account exists. */
 export async function requestPasswordReset(raw: z.infer<typeof emailInput>): Promise<Result> {
   const parsed = emailInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Enter a valid email." };
   try {
     await auth.api.requestPasswordReset({ body: { email: parsed.data.email, redirectTo: "/reset-password" }, headers: await headers() });
   } catch {
-    // Swallow — don't leak account existence via error/timing shape.
+    // Swallow  don't leak account existence via error/timing shape.
   }
   return { ok: true };
 }

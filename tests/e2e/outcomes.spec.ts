@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * W1.2 — a counsellor records a PHQ-9 in the session editor and it persists to
+ * W1.2  a counsellor records a PHQ-9 in the session editor and it persists to
  * `outcome_measures` (previously a toast-only no-op). Cleans up after itself.
  */
 const DATABASE_URL = (readFileSync(".env.local", "utf8").match(/^DATABASE_URL=(.+)$/m)?.[1] ?? "").trim();

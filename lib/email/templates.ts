@@ -55,7 +55,7 @@ function shell(opts: { preheader: string; heading: string; body: string; cta?: {
 </body></html>`;
 }
 
-/** Sent on signup — the mandatory email-verification link. */
+/** Sent on signup  the mandatory email-verification link. */
 export function verificationEmail(url: string, name: string | null): Email {
   const first = (name ?? "").trim().split(/\s+/)[0] || "there";
   return {
@@ -63,7 +63,7 @@ export function verificationEmail(url: string, name: string | null): Email {
     html: shell({
       preheader: "Confirm your email to start your 17-day free trial.",
       heading: `Welcome to Phila, ${first} 👋`,
-      body: "You're one click from your practice. Confirm this is your email address and we'll take you straight in — your <strong>17-day free trial</strong> starts now, no card needed.",
+      body: "You're one click from your practice. Confirm this is your email address and we'll take you straight in  your <strong>17-day free trial</strong> starts now, no card needed.",
       cta: { label: "Verify my email", url },
       footnote: `If the button doesn't work, paste this link into your browser:<br><a href="${url}" style="color:${GREEN};word-break:break-all;">${url}</a><br><br>This link expires in 1 hour. If you didn't create a Phila account, you can safely ignore this email.`,
     }),
@@ -71,7 +71,7 @@ export function verificationEmail(url: string, name: string | null): Email {
   };
 }
 
-/** Sent to an invited team member — the link both sets their password and activates them. */
+/** Sent to an invited team member  the link both sets their password and activates them. */
 export function teamInviteEmail(url: string, name: string | null, orgName: string): Email {
   const first = (name ?? "").trim().split(/\s+/)[0] || "there";
   return {
@@ -79,7 +79,7 @@ export function teamInviteEmail(url: string, name: string | null, orgName: strin
     html: shell({
       preheader: `Set your password to join ${orgName}.`,
       heading: `Welcome to the team, ${first} 👋`,
-      body: `You've been invited to join <strong>${orgName}</strong> on Phila. Set your password to activate your account — then you can sign in and get started.`,
+      body: `You've been invited to join <strong>${orgName}</strong> on Phila. Set your password to activate your account  then you can sign in and get started.`,
       cta: { label: "Set my password", url },
       footnote: `If the button doesn't work, paste this link into your browser:<br><a href="${url}" style="color:${GREEN};word-break:break-all;">${url}</a><br><br>This link expires in 1 hour. If you weren't expecting this invitation, you can safely ignore it.`,
     }),
@@ -87,7 +87,7 @@ export function teamInviteEmail(url: string, name: string | null, orgName: strin
   };
 }
 
-/** Sent to an invited platform operator (super-admin) — sets their password + activates access. */
+/** Sent to an invited platform operator (super-admin)  sets their password + activates access. */
 export function platformInviteEmail(url: string, name: string | null): Email {
   const first = (name ?? "").trim().split(/\s+/)[0] || "there";
   return {
@@ -95,7 +95,7 @@ export function platformInviteEmail(url: string, name: string | null): Email {
     html: shell({
       preheader: "Set your password to activate your operator account.",
       heading: `Welcome aboard, ${first} 🛡️`,
-      body: "You've been given <strong>platform operator</strong> access to Phila — the super-admin console for organisations, plans, and integrations. Set your password to activate your account. We strongly recommend turning on two-factor authentication straight after.",
+      body: "You've been given <strong>platform operator</strong> access to Phila  the super-admin console for organisations, plans, and integrations. Set your password to activate your account. We strongly recommend turning on two-factor authentication straight after.",
       cta: { label: "Set my password", url },
       footnote: `If the button doesn't work, paste this link into your browser:<br><a href="${url}" style="color:${GREEN};word-break:break-all;">${url}</a><br><br>This link expires in 1 hour. If you weren't expecting this, you can ignore it.`,
     }),
@@ -111,7 +111,7 @@ export function resetPasswordEmail(url: string, name: string | null): Email {
     html: shell({
       preheader: "Use this link to set a new password.",
       heading: "Reset your password",
-      body: `Hi ${first}, we got a request to reset your Phila password. Click below to choose a new one. If this wasn't you, you can safely ignore this email — your password won't change.`,
+      body: `Hi ${first}, we got a request to reset your Phila password. Click below to choose a new one. If this wasn't you, you can safely ignore this email  your password won't change.`,
       cta: { label: "Set a new password", url },
       footnote: `If the button doesn't work, paste this link into your browser:<br><a href="${url}" style="color:${GREEN};word-break:break-all;">${url}</a><br><br>This link expires in 1 hour.`,
     }),
@@ -125,11 +125,11 @@ export function approvalEmail(opts: { name: string | null; orgName: string; logi
   return {
     subject: `${opts.orgName} is verified on Phila ✓`,
     html: shell({
-      preheader: `${opts.orgName} has been verified — you're fully set up.`,
+      preheader: `${opts.orgName} has been verified  you're fully set up.`,
       heading: "You're verified 🎉",
-      body: `Good news, ${first} — we've reviewed <strong>${opts.orgName}</strong> and everything checks out. Your practice is now fully verified, which unlocks client payouts and funder reporting. Thank you for getting your details in.`,
+      body: `Good news, ${first}  we've reviewed <strong>${opts.orgName}</strong> and everything checks out. Your practice is now fully verified, which unlocks client payouts and funder reporting. Thank you for getting your details in.`,
       cta: { label: "Go to your dashboard", url: opts.loginUrl },
-      footnote: "Need a hand getting set up? Just reply to this email — a real person will help.",
+      footnote: "Need a hand getting set up? Just reply to this email  a real person will help.",
     }),
     text: `You're verified.\n\n${opts.orgName} has been reviewed and verified on Phila. This unlocks payouts and funder reporting.\n\nSign in: ${opts.loginUrl}`,
   };
@@ -143,7 +143,7 @@ export function actionNeededEmail(opts: { name: string | null; orgName: string; 
     html: shell({
       preheader: "One of your onboarding documents needs another look.",
       heading: "One quick fix needed",
-      body: `Hi ${first}, we reviewed <strong>${opts.orgName}</strong> and one item needs another look: <em>${opts.reason}</em>. Pop back in, update it, and resubmit — we'll review it again right away.`,
+      body: `Hi ${first}, we reviewed <strong>${opts.orgName}</strong> and one item needs another look: <em>${opts.reason}</em>. Pop back in, update it, and resubmit  we'll review it again right away.`,
       cta: { label: "Update my details", url: opts.onboardingUrl },
     }),
     text: `Action needed for ${opts.orgName}.\n\n${opts.reason}\n\nUpdate and resubmit: ${opts.onboardingUrl}`,

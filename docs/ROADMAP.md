@@ -759,25 +759,25 @@ POPIA, test, and launch  **without changing the Part-A UI.***
 *Goal: the Hub appointment flow feels complete  the online link is visible, everyone is notified
 (in-app + email by default), and booking a client is smooth.*
 
-- [x] **Online join link on the appointment detail** — an online session's detail modal now shows the
+- [x] **Online join link on the appointment detail**  an online session's detail modal now shows the
   secure room: **Join now** + **Copy link** (signed, org-gated `getAppointmentJoinLink`). Previously the
   room existed but no link was surfaced.
-- [x] **Real in-app notifications (the bell was mock)** — a `notifications` table (migration 0029) +
+- [x] **Real in-app notifications (the bell was mock)**  a `notifications` table (migration 0029) +
   `db/queries/notifications.ts` + a self-fetching bell (60s poll, unread badge, mark-read on open,
   deep-links). Always-on: no external service needed.
-- [x] **Email + in-app are the default notification channels (SMS opt-in)** — `notifyAppointmentBooked`
+- [x] **Email + in-app are the default notification channels (SMS opt-in)**  `notifyAppointmentBooked`
   fans out on BOTH the Hub's create-appointment **and** the public booking: the client gets an email via
   the rail (real once the admin's Resend integration is on; honestly dormant otherwise) and both the
   counsellor and the client's portal account get an in-app notification.
-- [x] **Searchable pickers** — a reusable **`SearchSelect`** combobox (`components/ui/search-select.tsx`,
+- [x] **Searchable pickers**  a reusable **`SearchSelect`** combobox (`components/ui/search-select.tsx`,
   extracted from the messaging search pattern); the New-appointment modal's **Client** + **Counsellor**
   dropdowns are searchable.
-- [x] **“New client” inline in the client dropdown** — name/phone/email → `createClientForBooking`
-  creates the client with **the selected counsellor as primary** (selection required — no silent
+- [x] **“New client” inline in the client dropdown**  name/phone/email → `createClientForBooking`
+  creates the client with **the selected counsellor as primary** (selection required  no silent
   fallback) and selects them for the booking.
-- [x] **Creative “Where” cards** — In person / Online as icon cards (room vs secure video) instead of
+- [x] **Creative “Where” cards**  In person / Online as icon cards (room vs secure video) instead of
   plain radios.
-- [x] **Notification credits** — seed grants a healthy starter balance (**500 SMS / 1000 email**,
+- [x] **Notification credits**  seed grants a healthy starter balance (**500 SMS / 1000 email**,
   ledgered + idempotent); the super-admin tops up any org at `/admin/orgs/[id]` → **Notification
   credits** (channel + amount, ledgered, audited). Orgs self-serve packs via Billing & usage (15.1).
 - [x] Tests: notifications create/list/unread/mark-read + counsellor resolver; balance resets aligned.
@@ -989,17 +989,17 @@ is recorded to `audit_log` and the copy link points at the client activation pag
 *Goal: when a counsellor leaves (intern rotation, contract ends), the org hands their whole caseload
 over in one smooth step  and any reschedule can carry a reason kept on the record.*
 
-- [x] **Transfer caseload (bulk)** — on the team member page (`/hub/team/[id]` → Caseload → **Transfer
+- [x] **Transfer caseload (bulk)**  on the team member page (`/hub/team/[id]` → Caseload → **Transfer
   all**): pick the receiving counsellor (searchable), one confirm. `transferCaseloadDb` re-points every
   active client's **primary counsellor** and moves all **future scheduled sessions**; sessions that clash
   with the receiver's diary are **skipped + reported** (per-row move, the GiST no-double-booking constraint
   stays authoritative). The receiver gets an **in-app handover notification**. Audited.
-- [x] **History stays intact** — past sessions, notes, outcomes, and documents are never touched; only the
+- [x] **History stays intact**  past sessions, notes, outcomes, and documents are never touched; only the
   client's primary pointer + future diary entries move. Proven by test (a completed past session keeps its
   original counsellor + state).
-- [x] **Per-client reassign upgraded** — the existing client "Reassign" now also brings the client's
+- [x] **Per-client reassign upgraded**  the existing client "Reassign" now also brings the client's
   future sessions to the new counsellor (same clash-skip), with honest toast counts.
-- [x] **Reschedule with optional reason** — the appointment detail's Move form takes an optional note
+- [x] **Reschedule with optional reason**  the appointment detail's Move form takes an optional note
   (`reschedule_note`, migration 0039), shown on the record ("Rescheduled  reason"); works for counsellor
   and org (both use the same detail modal).
 - [x] Fix: `isSlotTakenError` now walks the error **cause chain** (deferred exclusion constraints surface

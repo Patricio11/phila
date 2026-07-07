@@ -20,7 +20,7 @@ async function emailSetupLink(email: string): Promise<void> {
   try {
     await auth.api.requestPasswordReset({ body: { email, redirectTo: "/reset-password" }, headers: await headers() });
   } catch {
-    // Best-effort — never fail the invite/resend on a mail hiccup (honest dormant fallback).
+    // Best-effort  never fail the invite/resend on a mail hiccup (honest dormant fallback).
   }
 }
 
@@ -28,7 +28,7 @@ async function emailSetupLink(email: string): Promise<void> {
  * Team management (W1.4, DB-backed). Membership lives in `org_members` (+ the
  * `counsellors` row for clinical members); every write runs through the provider
  * seam under `runForOrg` so RLS scopes it to the caller's org. A role change is the
- * capability boundary — it never grants retroactive access to clinical notes
+ * capability boundary  it never grants retroactive access to clinical notes
  * (Care-Confidentiality Rule, roles.ts).
  */
 const manageInput = z.object({
@@ -74,7 +74,7 @@ export async function saveTeamMember(
   return { ok: true };
 }
 
-/** Archive (revoke access) or restore a member — access is gated on membership status. */
+/** Archive (revoke access) or restore a member  access is gated on membership status. */
 export async function setMemberStatus(
   raw: { userId: string; status: "active" | "archived" },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
@@ -156,7 +156,7 @@ export async function inviteMember(
 }
 
 /**
- * Transfer a counsellor's whole caseload to another counsellor (Phase 18.8) — for
+ * Transfer a counsellor's whole caseload to another counsellor (Phase 18.8)  for
  * an intern leaving or a terminated contract. Every active client's primary
  * counsellor is re-pointed and all FUTURE scheduled sessions move; the clinical
  * history (past sessions, notes, outcomes, documents) stays exactly as it was.
@@ -182,7 +182,7 @@ export async function transferCaseload(
     await notifyCounsellor(parsed.data.toCounsellorId, {
       kind: "caseload_transferred",
       title: `${result.clients} client${result.clients === 1 ? "" : "s"} transferred to you`,
-      body: `${result.moved} upcoming session${result.moved === 1 ? "" : "s"} moved to your diary${result.skipped > 0 ? ` · ${result.skipped} clashed — please reschedule` : ""}. Full histories included.`,
+      body: `${result.moved} upcoming session${result.moved === 1 ? "" : "s"} moved to your diary${result.skipped > 0 ? ` · ${result.skipped} clashed  please reschedule` : ""}. Full histories included.`,
       href: "/app/clients",
     });
   }

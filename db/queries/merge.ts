@@ -8,15 +8,15 @@ import {
 
 /**
  * Client merge (W1.6). Duplicate detection is real (`findDuplicateClients`); this
- * makes the *action* real. It re-points every child record — sessions (+ their
+ * makes the *action* real. It re-points every child record  sessions (+ their
  * notes, which follow the appointment), care plans, outcomes, invoices, documents,
- * document requests, form assignments — onto the kept id, then soft-deletes the
+ * document requests, form assignments  onto the kept id, then soft-deletes the
  * losers. History is never lost or double-counted (Outcome-Honesty Rule).
  *
  * Runs as one RLS-scoped transaction (`runForOrg` → phila_app): atomic, and Postgres
  * refuses any cross-org write. Three tables carry a uniqueness constraint on the
  * client (consents `(client_id, purpose)`, grant_allocations `(grant_id, client_id)`,
- * demographics `client_id` PK) — for those we fill only the gaps the keeper is
+ * demographics `client_id` PK)  for those we fill only the gaps the keeper is
  * missing, so the keeper's own record always wins and no constraint is violated.
  */
 export async function mergeClientsDb(
@@ -53,11 +53,11 @@ export async function mergeClientsDb(
     await db.update(documentFolders).set({ clientId: keepId }).where(and(inArray(documentFolders.clientId, losers), eq(documentFolders.orgId, orgId)));
     await db.update(documentRequests).set({ clientId: keepId }).where(and(inArray(documentRequests.clientId, losers), eq(documentRequests.orgId, orgId)));
     await db.update(formAssignments).set({ clientId: keepId }).where(and(inArray(formAssignments.clientId, losers), eq(formAssignments.orgId, orgId)));
-    // session_notes follow their appointment (no client_id) — already re-pointed above.
+    // session_notes follow their appointment (no client_id)  already re-pointed above.
 
     // 2) Uniqueness-constrained tables: fill only the purposes/grants the keeper lacks,
     //    picking one loser row per key (most recent wins) so no unique index is violated.
-    //    (Expand the loser ids into a value list — the driver won't bind a JS array to ANY().)
+    //    (Expand the loser ids into a value list  the driver won't bind a JS array to ANY().)
     const loserList = sql.join(losers.map((id) => sql`${id}`), sql`, `);
     await db.execute(sql`
       UPDATE consents SET client_id = ${keepId}
@@ -89,7 +89,7 @@ export async function mergeClientsDb(
       await db.update(clients).set(patch).where(eq(clients.id, keepId));
     }
 
-    // 4) Soft-delete the losers — record + full history retained, restorable.
+    // 4) Soft-delete the losers  record + full history retained, restorable.
     await db.update(clients).set({ deletedAt: new Date() }).where(and(inArray(clients.id, losers), eq(clients.orgId, orgId)));
 
     return { ok: true, merged: losers.length };

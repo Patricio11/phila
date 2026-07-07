@@ -13,7 +13,7 @@ import type { TeamRole, CredentialBody, CredentialStatus, AppointmentState, Appo
  * `counsellors` row for clinical members). All reads/writes run through `runForOrg`
  * so RLS scopes `org_members`/`counsellors`/`clients`/`appointments` to the org; the
  * Better-Auth `user` table has no RLS, so name/email joins resolve. A role change is
- * the capability boundary — it never grants retroactive note access (roles.ts).
+ * the capability boundary  it never grants retroactive note access (roles.ts).
  */
 function rid(prefix: string): string {
   return `${prefix}_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
@@ -111,7 +111,7 @@ export async function inviteMemberDb(
       // (sent to this address) is the only way to set a password, so email control is
       // proven before they can ever sign in.
       await db.insert(user).values({ id: userId, name: input.name, email: input.email, emailVerified: true, platformRole: null, createdAt: new Date(now), updatedAt: new Date(now) });
-      // A credential account with an unguessable placeholder password — the invitee
+      // A credential account with an unguessable placeholder password  the invitee
       // replaces it via the set-password link (Better Auth's reset flow needs an account).
       const placeholder = await hashPassword(`${crypto.randomUUID()}${crypto.randomUUID()}`);
       await db.insert(account).values({ id: `acct_${userId}`, accountId: userId, providerId: "credential", userId, password: placeholder, createdAt: new Date(now), updatedAt: new Date(now) }).onConflictDoNothing();
@@ -124,7 +124,7 @@ export async function inviteMemberDb(
   });
 }
 
-/** A member's email + name (owner read) — for triggering their set-password / setup link. */
+/** A member's email + name (owner read)  for triggering their set-password / setup link. */
 export async function getMemberContactDb(orgId: string, userId: string): Promise<{ email: string; name: string | null } | null> {
   return runForOrg(orgId, async () => {
     const [m] = await activeDb().select({ userId: orgMembers.userId }).from(orgMembers)

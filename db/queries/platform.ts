@@ -19,10 +19,10 @@ import type {
 import type { SubscriptionStatus, Province } from "@/lib/domain/enums";
 
 /**
- * Platform (super-admin) reads — Workstream 1.7. The console spans every tenant, so
+ * Platform (super-admin) reads  Workstream 1.7. The console spans every tenant, so
  * these run on the OWNER connection (BYPASSRLS), never a tenant-scoped one. Stats are
  * computed live from the real tables (orgs, subscriptions, org_members, appointments,
- * ai_usage) — no fixture. Onboarding lives in its own tables and persists here too.
+ * ai_usage)  no fixture. Onboarding lives in its own tables and persists here too.
  */
 
 function monthStartUtc(): Date {
@@ -48,7 +48,7 @@ async function platformOrgs(): Promise<PlatformOrg[]> {
     db.select({ orgId: orgMembers.orgId, c: sql<number>`count(*)::int` }).from(orgMembers).groupBy(orgMembers.orgId),
     db.select({ orgId: appointments.orgId, c: sql<number>`count(*)::int` }).from(appointments).where(gte(appointments.startsAt, weekAgo)).groupBy(appointments.orgId),
     db.select({ orgId: aiUsage.orgId, c: sql<number>`coalesce(sum(${aiUsage.costCents}),0)::int` }).from(aiUsage).where(gte(aiUsage.at, monthStart)).groupBy(aiUsage.orgId),
-    // Whether each org's admin(s) have verified their email — true only if all admins are verified.
+    // Whether each org's admin(s) have verified their email  true only if all admins are verified.
     db.select({ orgId: orgMembers.orgId, verified: sql<boolean>`bool_and(${user.emailVerified})` })
       .from(orgMembers).innerJoin(user, eq(orgMembers.userId, user.id))
       .where(eq(orgMembers.teamRole, "org_admin")).groupBy(orgMembers.orgId),
@@ -150,7 +150,7 @@ export async function listPlatformAuditDb(limit = 60): Promise<PlatformAuditEven
   }));
 }
 
-/** Public micro-site static params — every live org slug. */
+/** Public micro-site static params  every live org slug. */
 export async function listOrgSlugsDb(): Promise<string[]> {
   const rows = await getDb().select({ slug: orgs.slug }).from(orgs).where(isNull(orgs.deletedAt));
   return rows.map((r) => r.slug);
@@ -177,12 +177,12 @@ export async function getAiRailDb(): Promise<AiRailConfig> {
 
 /** The integration catalogue with a status derived from what's actually configured. */
 const INTEGRATION_CATALOGUE: Omit<IntegrationCatalogItem, "status">[] = [
-  { key: "whatsapp", name: "WhatsApp (Meta Cloud API)", category: "messaging", description: "Booking, reminder, and follow-up messages — WhatsApp-first (org BYO)." },
-  { key: "sms", name: "SMS (BulkSMS)", category: "messaging", description: "Phila-provided SMS credits — reminders + notices for clients without WhatsApp." },
-  { key: "email", name: "Email (Resend)", category: "messaging", description: "Transactional email — confirmations, reminders, receipts." },
+  { key: "whatsapp", name: "WhatsApp (Meta Cloud API)", category: "messaging", description: "Booking, reminder, and follow-up messages  WhatsApp-first (org BYO)." },
+  { key: "sms", name: "SMS (BulkSMS)", category: "messaging", description: "Phila-provided SMS credits  reminders + notices for clients without WhatsApp." },
+  { key: "email", name: "Email (Resend)", category: "messaging", description: "Transactional email  confirmations, reminders, receipts." },
   { key: "livekit", name: "LiveKit video", category: "video", description: "Self-hosted, in-region video rooms for online sessions." },
-  { key: "paystack", name: "Paystack", category: "payments", description: "Card payments — orgs connect their own account." },
-  { key: "platform_psp", name: "Phila platform billing", category: "platform", description: "Phila's own PSP — how orgs pay their subscription." },
+  { key: "paystack", name: "Paystack", category: "payments", description: "Card payments  orgs connect their own account." },
+  { key: "platform_psp", name: "Phila platform billing", category: "platform", description: "Phila's own PSP  how orgs pay their subscription." },
 ];
 
 export async function listIntegrationsDb(): Promise<IntegrationCatalogItem[]> {
@@ -279,7 +279,7 @@ export async function getOrgAdminContactDb(orgId: string): Promise<{ email: stri
   return row ? { email: row.email, name: row.name, orgName: row.orgName } : null;
 }
 
-/** Approve a practice's verification — flips the org to verified. */
+/** Approve a practice's verification  flips the org to verified. */
 export async function approveOrgDb(orgId: string): Promise<{ ok: boolean }> {
   const res = await getDb().update(orgs)
     .set({ onboardingStatus: "verified", onboardingReviewedAt: new Date() })
@@ -311,7 +311,7 @@ export interface PlatformOperator {
   name: string;
   email: string;
   twoFactorEnabled: boolean;
-  /** No sign-in yet — still activating via their set-password link. */
+  /** No sign-in yet  still activating via their set-password link. */
   pending: boolean;
   createdAt: string;
 }

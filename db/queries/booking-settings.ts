@@ -6,8 +6,8 @@ import type { BookingSettings } from "@/lib/data-provider";
 
 /**
  * Public-booking policy (W1.5). Stored as one JSONB blob on the org
- * (`orgs.booking_settings`) — the org-level switches plus per-service and
- * per-counsellor override maps — then composed against the live services/
+ * (`orgs.booking_settings`)  the org-level switches plus per-service and
+ * per-counsellor override maps  then composed against the live services/
  * counsellors so a newly-added service inherits sensible defaults (bookable,
  * online only if the org runs video; a counsellor bookable once verified).
  * RLS-scoped via runForOrg.

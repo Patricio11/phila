@@ -280,7 +280,7 @@ function EmptyTab({ tab, onInvite }: { tab: Tab; onInvite: () => void }) {
   const copy: Record<Tab, { title: string; body: string }> = {
     active: { title: "No active members", body: "Invite your first colleague to get started." },
     invited: { title: "No pending invites", body: "Everyone you've invited has joined." },
-    archived: { title: "No archived members", body: "People you archive will appear here — their history stays intact." },
+    archived: { title: "No archived members", body: "People you archive will appear here  their history stays intact." },
   };
   const c = copy[tab];
   return (

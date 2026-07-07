@@ -58,10 +58,10 @@ export function YourPlanCard({ subscription, daysLeft }: { subscription: OrgSubs
 
       {trialing && (
         <div className="rounded-control border border-info/25 bg-info-soft/30 px-3.5 py-2.5 text-[12.5px] text-text-2">
-          You&apos;re on a free trial — no card needed.{" "}
+          You&apos;re on a free trial  no card needed.{" "}
           {trialDays > 0
             ? <>Your trial has <span className="font-medium text-text">{trialDays} day{trialDays === 1 ? "" : "s"}</span> left.</>
-            : <span className="font-medium text-text">Your trial has ended — choose a plan to keep going.</span>}{" "}
+            : <span className="font-medium text-text">Your trial has ended  choose a plan to keep going.</span>}{" "}
           Nothing switches off mid-trial.
         </div>
       )}

@@ -42,7 +42,7 @@ export function OrgVerificationActions({ orgId, status }: { orgId: string; statu
   if (status === "verified") {
     return (
       <div className="flex items-center gap-2 text-[13px] font-medium text-accent">
-        <BadgeCheck className="size-4.5" strokeWidth={2} aria-hidden /> Verified — payouts &amp; funder sharing unlocked.
+        <BadgeCheck className="size-4.5" strokeWidth={2} aria-hidden /> Verified  payouts &amp; funder sharing unlocked.
       </div>
     );
   }

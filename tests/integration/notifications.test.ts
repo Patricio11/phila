@@ -2,7 +2,7 @@ import { describe, it, expect, afterAll } from "vitest";
 import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
-/** Phase 17.2 — in-app notifications: create → list → unread → mark read; and the
+/** Phase 17.2  in-app notifications: create → list → unread → mark read; and the
  * counsellor resolver. No external services; always-on. */
 const env = readFileSync(".env.local", "utf8");
 process.env.DATABASE_URL = env.match(/^DATABASE_URL=(.+)$/m)?.[1]?.trim();

@@ -11,7 +11,7 @@ import { scanObject } from "@/lib/documents/scan";
 import { saveCompanyProfileDb, upsertOnboardingDocDb, submitOnboardingDb, getOnboardingDocKeyDb } from "@/db/queries/onboarding";
 
 /**
- * Company verification onboarding (W1.8b) — the org completes its profile + uploads
+ * Company verification onboarding (W1.8b)  the org completes its profile + uploads
  * the admin-set required documents, then submits for review. Bytes go straight to
  * Phila Storage via a presigned URL (never through a Server Action).
  */

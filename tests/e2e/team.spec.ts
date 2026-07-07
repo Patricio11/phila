@@ -18,7 +18,7 @@ test("hub team: roster, role guide, and archive/restore round-trip", async ({ pa
   await page.waitForURL("**/hub", { timeout: 30_000 });
   await page.goto("/hub/team");
 
-  // Roster is visible (seeded team members). Anchor on a roster-only name — the
+  // Roster is visible (seeded team members). Anchor on a roster-only name  the
   // signed-in admin's own name also appears in the top-right account menu.
   await expect(page.getByText("Aisha Patel")).toBeVisible({ timeout: 15_000 });
 

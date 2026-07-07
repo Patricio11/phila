@@ -35,7 +35,7 @@ describe("recurring series (edit-this/all)", () => {
   it("is org-scoped: another org's id can't reschedule, cancel, or restate an appointment", async () => {
     const [row] = await sql`SELECT id, starts_at, state FROM appointments WHERE counsellor_id='couns_nomsa' AND starts_at >= '2027-03-01T00:00:00+02:00' ORDER BY starts_at LIMIT 1`;
     const id = row!.id as string;
-    // A caller in a different org gets zero rows touched — the cross-org IDOR is closed.
+    // A caller in a different org gets zero rows touched  the cross-org IDOR is closed.
     expect(await rescheduleAppointment("org_intruder", id, "2027-06-01T09:00:00+02:00", "this")).toBe(0);
     expect(await cancelAppointment("org_intruder", id, "nope", "this")).toBe(0);
     expect(await setAppointmentState("org_intruder", id, "cancelled")).toBe(0);

@@ -362,7 +362,7 @@ export const funderContacts = pgTable("funder_contacts", {
 
 /* ---- Messaging / notifications (Phase 12) ---------------------------- */
 
-/** In-app notifications (the bell) — one row per recipient user per event. Always-on
+/** In-app notifications (the bell)  one row per recipient user per event. Always-on
  * (no external dependency); email is a separate, complementary channel. */
 export const notifications = pgTable("notifications", {
   id: uuid("id").defaultRandom().primaryKey(),

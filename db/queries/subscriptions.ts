@@ -14,7 +14,7 @@ export interface SubRow {
 
 export async function getSubscriptionRow(orgId: string): Promise<SubRow | null> {
   // activeDb(): the RLS-scoped tx when called inside runForOrg (hub billing/settings),
-  // else the owner connection — so this read is safe from either kind of caller.
+  // else the owner connection  so this read is safe from either kind of caller.
   const [r] = await activeDb().select().from(subscriptions).where(eq(subscriptions.orgId, orgId)).limit(1);
   if (!r) return null;
   return { orgId: r.orgId, planId: r.planId, status: r.status, currentPeriodEnd: r.currentPeriodEnd?.toISOString() ?? null };

@@ -33,7 +33,7 @@ const HELD: AppointmentState[] = ["completed", "discharged", "risk_flagged"];
 /**
  * The client's session journey as a vertical timeline: a continuous rail with a
  * coloured node per session, grouped by month, newest first. Shared, read-only, and
- * identical for the client (/me), the counsellor, and the hub — a beautiful, honest
+ * identical for the client (/me), the counsellor, and the hub  a beautiful, honest
  * record of the relationship. `hrefFor` turns a row into a link (e.g. the Hub → note).
  */
 export function SessionTimeline({

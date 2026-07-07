@@ -6,7 +6,7 @@ import type { SessionNote } from "@/lib/domain/types";
 
 /**
  * Clinical session notes (W1.1). One note per appointment. `session_notes` has no
- * `org_id` — it's RLS-scoped via `appointments.org_id`, so every read/write here runs
+ * `org_id`  it's RLS-scoped via `appointments.org_id`, so every read/write here runs
  * inside `runForOrg` (the caller's org) and the child policy rejects a note whose
  * appointment isn't in that org. The note is the counsellor's private record; it is
  * never the shared care plan.

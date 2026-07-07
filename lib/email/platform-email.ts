@@ -2,7 +2,7 @@ import "server-only";
 import { getResendCreds } from "@/lib/messaging/transports";
 
 /**
- * Platform (Phila-branded) transactional email — verification, approval, etc. Uses
+ * Platform (Phila-branded) transactional email  verification, approval, etc. Uses
  * the super-admin's Resend credentials (admin/integrations), falling back to env.
  * Dormant-by-Default: when Resend isn't configured it returns an honest "dormant"
  * (never a fake "sent") and logs the intent so the flow is still testable in dev.

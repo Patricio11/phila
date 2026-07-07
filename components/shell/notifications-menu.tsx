@@ -46,7 +46,7 @@ export function NotificationsMenu() {
     return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
   }, [open]);
 
-  // Opening the bell marks everything read (optimistic + persisted) — in the handler.
+  // Opening the bell marks everything read (optimistic + persisted)  in the handler.
   const toggle = () => {
     const next = !open;
     setOpen(next);

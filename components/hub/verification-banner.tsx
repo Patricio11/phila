@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * The hub go-live gate (W1.8). A calm, dismissable-feeling nudge (not a wall) shown
- * until the practice is verified. It never blocks the trial — it points to the
+ * until the practice is verified. It never blocks the trial  it points to the
  * company-verification step that unlocks payouts + funder reporting.
  */
 export function VerificationBanner({ status }: { status: string }) {
@@ -24,7 +24,7 @@ export function VerificationBanner({ status }: { status: string }) {
       wrap: "border-info/30 bg-info-soft/30",
       chip: "bg-info text-white",
       title: "Verification under review",
-      body: "Thanks — we're checking your details and will email you the moment your practice is approved.",
+      body: "Thanks  we're checking your details and will email you the moment your practice is approved.",
       cta: "View status",
     },
     action_needed: {
@@ -32,7 +32,7 @@ export function VerificationBanner({ status }: { status: string }) {
       wrap: "border-warn/40 bg-warn-soft/40",
       chip: "bg-warn text-white",
       title: "Verification needs a quick fix",
-      body: "One or more of your documents were sent back. Update them and resubmit — we'll review again right away.",
+      body: "One or more of your documents were sent back. Update them and resubmit  we'll review again right away.",
       cta: "Fix & resubmit",
     },
   };

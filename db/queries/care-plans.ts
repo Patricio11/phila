@@ -4,8 +4,8 @@ import { activeDb, runForOrg } from "@/lib/db/scoped";
 import { carePlans } from "@/db/schema";
 
 /**
- * Care plans (W1.1) — the client-facing plan (summary + steps + resources), distinct
- * from the private session note. One per client. `care_plans` has no `org_id` — it's
+ * Care plans (W1.1)  the client-facing plan (summary + steps + resources), distinct
+ * from the private session note. One per client. `care_plans` has no `org_id`  it's
  * RLS-scoped via `clients.org_id`, so every write runs inside `runForOrg` and the
  * child WITH CHECK rejects a plan whose client isn't in the caller's org.
  */
@@ -13,7 +13,7 @@ function rid(prefix: string): string {
   return `${prefix}_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
 }
 
-/** Share (or re-share) the care-plan summary with the client — stamps `sharedAt`. */
+/** Share (or re-share) the care-plan summary with the client  stamps `sharedAt`. */
 export async function shareCarePlanDb(
   orgId: string,
   input: { clientId: string; authorCounsellorId: string; summary: string },

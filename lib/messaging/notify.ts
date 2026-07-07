@@ -75,7 +75,7 @@ export async function notifyAppointmentBooked(appointmentId: string): Promise<vo
     const when = `${fmtLong(start)} at ${fmtTime(start)}`;
     const where = row.a.type === "online" ? "online (secure video)" : "in person";
 
-    // 1) Client — email-first through the rail (SMS stays opt-in).
+    // 1) Client  email-first through the rail (SMS stays opt-in).
     await deliver({
       orgId: row.a.orgId,
       trigger: "booked",
@@ -87,7 +87,7 @@ export async function notifyAppointmentBooked(appointmentId: string): Promise<vo
       },
     });
 
-    // 2) Counsellor — always-on in-app.
+    // 2) Counsellor  always-on in-app.
     await notifyCounsellor(row.a.counsellorId, {
       kind: "appointment_booked",
       title: `New session with ${row.clientName ?? "a client"}`,
@@ -95,7 +95,7 @@ export async function notifyAppointmentBooked(appointmentId: string): Promise<vo
       href: `/app/sessions/${appointmentId}`,
     });
 
-    // 3) Client — in-app too, if they have a portal account.
+    // 3) Client  in-app too, if they have a portal account.
     await notifyClientUser(row.a.clientId, row.a.orgId, {
       kind: "appointment_booked",
       title: `Your session is booked`,

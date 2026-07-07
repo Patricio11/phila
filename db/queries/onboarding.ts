@@ -64,7 +64,7 @@ export async function getOrgOnboardingDataDb(orgId: string): Promise<OrgOnboardi
   });
 }
 
-/** Just the org's verification status — for the hub gate banner (cheap). */
+/** Just the org's verification status  for the hub gate banner (cheap). */
 export async function getOnboardingStatusDb(orgId: string): Promise<string> {
   return runForOrg(orgId, async () => {
     const [row] = await activeDb().select({ s: orgs.onboardingStatus }).from(orgs).where(eq(orgs.id, orgId)).limit(1);
@@ -103,7 +103,7 @@ export async function getOnboardingDocKeyDb(orgId: string, requirementId: string
   });
 }
 
-/** Submit the onboarding for review — requires the core company fields + all required docs. */
+/** Submit the onboarding for review  requires the core company fields + all required docs. */
 export async function submitOnboardingDb(orgId: string): Promise<{ ok: boolean; error?: string }> {
   return runForOrg(orgId, async () => {
     const db = activeDb();

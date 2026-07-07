@@ -318,7 +318,7 @@ async function main() {
     orgId: "org_masizakhe", whatsappEnabled: false, smsEnabled: true, emailEnabled: true,
     emailReplyTo: "reception@masizakhe.org.za", emailFromName: "Masizakhe Counselling", quietStart: "21:00", quietEnd: "07:00", updatedAt: msgNow,
   }).onConflictDoNothing();
-  // Notification credits — a healthy starter balance so email confirmations flow
+  // Notification credits  a healthy starter balance so email confirmations flow
   // out of the box (500 SMS + 1000 email). Ledgered; idempotent per grant key.
   const STARTER_CREDITS = { sms: 500, email: 1000 } as const;
   for (const channel of ["sms", "email"] as const) {

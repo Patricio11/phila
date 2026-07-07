@@ -12,7 +12,7 @@ export async function getPlatformSettingsDb(): Promise<{ vatRatePercent: number 
   return { vatRatePercent: row?.vatRatePercent ?? 15 };
 }
 
-/** Persist the national VAT rate — one super-admin change, every org's invoices follow. */
+/** Persist the national VAT rate  one super-admin change, every org's invoices follow. */
 export async function savePlatformVatDb(vatRatePercent: number): Promise<void> {
   await getDb().insert(platformSettings).values({ id: PLATFORM_ID, vatRatePercent })
     .onConflictDoUpdate({ target: platformSettings.id, set: { vatRatePercent } });

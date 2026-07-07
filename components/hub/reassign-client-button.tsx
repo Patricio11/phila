@@ -45,8 +45,8 @@ export function ReassignClientButton({
       const name = counsellors.find((c) => c.id === counsellorId)?.name ?? "";
       setDone(name);
       const sessions = res.movedSessions > 0 ? ` ${res.movedSessions} upcoming session${res.movedSessions === 1 ? "" : "s"} moved too.` : "";
-      const clashes = res.skippedSessions > 0 ? ` ${res.skippedSessions} clashed with ${name.split(" ")[0]}'s diary — reschedule those.` : "";
-      toast({ tone: "success", title: `${clientName.split(" ")[0]} reassigned`, description: `Now with ${name.split(" ")[0]} — history stays intact.${sessions}${clashes}` });
+      const clashes = res.skippedSessions > 0 ? ` ${res.skippedSessions} clashed with ${name.split(" ")[0]}'s diary  reschedule those.` : "";
+      toast({ tone: "success", title: `${clientName.split(" ")[0]} reassigned`, description: `Now with ${name.split(" ")[0]}  history stays intact.${sessions}${clashes}` });
       close();
       router.refresh();
     });

@@ -197,11 +197,11 @@ export function AppointmentDetail({
             {appt.rescheduleNote && <Row icon={NotebookPen} label="Rescheduled  reason" value={appt.rescheduleNote} wide />}
           </dl>
 
-          {/* Online join link — the counsellor joins, or copies the invite for the client */}
+          {/* Online join link  the counsellor joins, or copies the invite for the client */}
           {appt.type === "online" && appt.state !== "cancelled" && (
             <div className="flex flex-wrap items-center gap-2 rounded-card border border-accent/25 bg-accent-soft/20 p-3">
               <Video className="size-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
-              <span className="min-w-0 flex-1 text-[12.5px] text-text-2">{joinUrl ? "Secure Phila video room — ready to join" : "Preparing the room link…"}</span>
+              <span className="min-w-0 flex-1 text-[12.5px] text-text-2">{joinUrl ? "Secure Phila video room  ready to join" : "Preparing the room link…"}</span>
               <Button variant="ghost" size="sm" onClick={copyJoin} disabled={!joinUrl}>
                 {copied ? <Check className="size-3.5 text-accent" strokeWidth={2.4} aria-hidden /> : <Copy className="size-3.5" strokeWidth={2} aria-hidden />} {copied ? "Copied" : "Copy link"}
               </Button>

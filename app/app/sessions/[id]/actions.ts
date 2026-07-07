@@ -241,7 +241,7 @@ const outcomeInput = z.object({
  * Record a PHQ-9 / GAD-7 measure for a client. Persisted to `outcome_measures`, which
  * feeds the counsellor dashboard trend + reporting. The RLS child policy (via
  * `clients.org_id`) rejects a client outside the caller's org, so a cross-org clientId
- * can't be scored. Never auto-actions safeguarding — that stays a human decision.
+ * can't be scored. Never auto-actions safeguarding  that stays a human decision.
  */
 export async function recordOutcome(
   raw: z.infer<typeof outcomeInput>,

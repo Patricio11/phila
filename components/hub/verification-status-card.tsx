@@ -9,9 +9,9 @@ import { cn } from "@/lib/utils";
  */
 export function VerificationStatusCard({ status, profile }: { status: string; profile: Record<string, string> }) {
   const map: Record<string, { icon: typeof ShieldCheck; cls: string; label: string; body: string }> = {
-    verified: { icon: BadgeCheck, cls: "text-accent", label: "Verified", body: "Your practice is verified — payouts and funder reporting are unlocked." },
-    submitted: { icon: Clock, cls: "text-info", label: "Under review", body: "We're reviewing your details — we'll email you the moment it's approved." },
-    action_needed: { icon: TriangleAlert, cls: "text-warn", label: "Action needed", body: "A document was sent back — update it and resubmit." },
+    verified: { icon: BadgeCheck, cls: "text-accent", label: "Verified", body: "Your practice is verified  payouts and funder reporting are unlocked." },
+    submitted: { icon: Clock, cls: "text-info", label: "Under review", body: "We're reviewing your details  we'll email you the moment it's approved." },
+    action_needed: { icon: TriangleAlert, cls: "text-warn", label: "Action needed", body: "A document was sent back  update it and resubmit." },
     not_started: { icon: ShieldCheck, cls: "text-text-3", label: "Not started", body: "Complete your company profile and documents to unlock payouts and funder reporting." },
   };
   const s = map[status] ?? map.not_started!;

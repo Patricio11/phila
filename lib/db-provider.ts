@@ -614,7 +614,7 @@ export const dbProvider: DataProvider = {
   // ── Platform VAT (super-admin, single row) ────────────────────────────
   getPlatformSettings: () => getPlatformSettingsDb(),
 
-  // ── Super-admin console — every tenant, computed live from the real tables ──
+  // ── Super-admin console  every tenant, computed live from the real tables ──
   getPlatformOverview: () => getPlatformOverviewDb(),
   listPlatformOrgs: () => listPlatformOrgsDb(),
   getPlatformOrgDetail: (orgId) => getPlatformOrgDetailDb(orgId),

@@ -22,7 +22,7 @@ async function pendingInviteOrgName(userId: string): Promise<string | null> {
   return row?.name ?? null;
 }
 
-/** A super-admin who has never signed in — a fresh platform-operator invite. */
+/** A super-admin who has never signed in  a fresh platform-operator invite. */
 async function isFreshOperatorInvite(userId: string, platformRole?: string | null): Promise<boolean> {
   if (platformRole !== "super_admin") return false;
   const [s] = await getDb().select({ id: schema.session.id }).from(schema.session).where(eq(schema.session.userId, userId)).limit(1);
@@ -44,11 +44,11 @@ export const auth = betterAuth({
   database: drizzleAdapter(getDb(), { provider: "pg", schema }),
   emailAndPassword: {
     enabled: true,
-    // Sign-in is refused until the address is verified (W1.8) — protects deliverability
+    // Sign-in is refused until the address is verified (W1.8)  protects deliverability
     // and blocks junk signups. The verification email is sent on sign-up below.
     requireEmailVerification: true,
     minPasswordLength: 8,
-    // Self-service password reset (W2) — the branded email carries a single-use,
+    // Self-service password reset (W2)  the branded email carries a single-use,
     // expiring token; the /reset-password page exchanges it for a new password. For a
     // still-invited team member this same mechanism is their **activation**: they get a
     // "welcome, set your password" email instead of a plain reset.

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { sql } from "drizzle-orm";
 
 /**
- * Workstream 0.2 — proves the *application's* RLS mechanism, `runScoped`
+ * Workstream 0.2  proves the *application's* RLS mechanism, `runScoped`
  * (`lib/db/scoped.ts`), isolates tenants. The sibling `rls.test.ts` proves the
  * Postgres policies with raw SQL; this proves the code path the app actually runs:
  * the `phila_app` pool + the org GUC set from an explicit context.

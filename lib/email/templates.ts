@@ -87,6 +87,22 @@ export function teamInviteEmail(url: string, name: string | null, orgName: strin
   };
 }
 
+/** Sent to an invited platform operator (super-admin) — sets their password + activates access. */
+export function platformInviteEmail(url: string, name: string | null): Email {
+  const first = (name ?? "").trim().split(/\s+/)[0] || "there";
+  return {
+    subject: "You've been invited as a Phila platform operator",
+    html: shell({
+      preheader: "Set your password to activate your operator account.",
+      heading: `Welcome aboard, ${first} 🛡️`,
+      body: "You've been given <strong>platform operator</strong> access to Phila — the super-admin console for organisations, plans, and integrations. Set your password to activate your account. We strongly recommend turning on two-factor authentication straight after.",
+      cta: { label: "Set my password", url },
+      footnote: `If the button doesn't work, paste this link into your browser:<br><a href="${url}" style="color:${GREEN};word-break:break-all;">${url}</a><br><br>This link expires in 1 hour. If you weren't expecting this, you can ignore it.`,
+    }),
+    text: `You've been invited as a Phila platform operator.\n\nSet your password: ${url}\n\nThis link expires in 1 hour.`,
+  };
+}
+
 /** Sent when a user requests a password reset. */
 export function resetPasswordEmail(url: string, name: string | null): Email {
   const first = (name ?? "").trim().split(/\s+/)[0] || "there";

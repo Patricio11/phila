@@ -55,7 +55,7 @@ describe("invited-member activation", () => {
 
     // Set-password link → choose their own password.
     await auth.api.requestPasswordReset({ body: { email: EMAIL, redirectTo: "/reset-password" }, headers: new Headers() });
-    const rows = await sql`SELECT identifier FROM verification WHERE identifier LIKE 'reset-password:%' ORDER BY created_at DESC LIMIT 5`;
+    const rows = await sql`SELECT identifier FROM verification WHERE identifier LIKE 'reset-password:%' AND value=${userId} ORDER BY created_at DESC LIMIT 1`;
     const token = (rows[0]?.identifier as string | undefined)?.split("reset-password:")[1];
     expect(token).toBeTruthy();
     await auth.api.resetPassword({ body: { newPassword: NEW, token: token! }, headers: new Headers() });

@@ -1,11 +1,12 @@
 import "server-only";
 import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
+import { hashPassword } from "better-auth/crypto";
 import { getDb } from "@/db/client";
 import {
   orgs, subscriptions, orgMembers, appointments, aiUsage, auditLog, aiProviders,
   onboardingRequirements, orgOnboardingDocs,
 } from "@/db/schema";
-import { user } from "@/db/auth-schema";
+import { user, account, session } from "@/db/auth-schema";
 import { getPlatformIntegration } from "@/db/queries/platform-integrations";
 import { PLANS } from "@/lib/billing/plans";
 import type {
@@ -301,4 +302,70 @@ export async function getAdminOnboardingDocKeyDb(orgId: string, requirementId: s
   const [row] = await getDb().select({ key: orgOnboardingDocs.storageKey }).from(orgOnboardingDocs)
     .where(and(eq(orgOnboardingDocs.orgId, orgId), eq(orgOnboardingDocs.requirementId, requirementId))).limit(1);
   return row?.key ?? null;
+}
+
+/* ── Platform operators (super-admin user management) ──────────────────── */
+
+export interface PlatformOperator {
+  userId: string;
+  name: string;
+  email: string;
+  twoFactorEnabled: boolean;
+  /** No sign-in yet — still activating via their set-password link. */
+  pending: boolean;
+  createdAt: string;
+}
+
+/** Every platform operator (super-admin), newest first, with 2FA + pending state. */
+export async function listPlatformOperatorsDb(): Promise<PlatformOperator[]> {
+  const db = getDb();
+  const [rows, sessions] = await Promise.all([
+    db.select({ id: user.id, name: user.name, email: user.email, tf: user.twoFactorEnabled, createdAt: user.createdAt })
+      .from(user).where(eq(user.platformRole, "super_admin")),
+    db.select({ userId: session.userId }).from(session),
+  ]);
+  const hasSession = new Set(sessions.map((s) => s.userId));
+  return rows
+    .map((r) => ({ userId: r.id, name: r.name, email: r.email, twoFactorEnabled: Boolean(r.tf), pending: !hasSession.has(r.id), createdAt: r.createdAt.toISOString() }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Whether a user is a super-admin who has never signed in (a fresh operator invite). */
+export async function isFreshOperatorInviteDb(userId: string): Promise<boolean> {
+  const db = getDb();
+  const [[u], [s]] = await Promise.all([
+    db.select({ role: user.platformRole }).from(user).where(eq(user.id, userId)).limit(1),
+    db.select({ id: session.id }).from(session).where(eq(session.userId, userId)).limit(1),
+  ]);
+  return u?.role === "super_admin" && !s;
+}
+
+/** Invite a platform operator: provision (or promote) a super-admin + a credential account. */
+export async function invitePlatformOperatorDb(name: string, email: string, now: string): Promise<{ userId: string; email: string; existing: boolean }> {
+  const db = getDb();
+  const [found] = await db.select({ id: user.id }).from(user).where(eq(user.email, email)).limit(1);
+  const userId = found?.id ?? `user_op_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
+  if (!found) {
+    await db.insert(user).values({ id: userId, name, email, emailVerified: true, platformRole: "super_admin", createdAt: new Date(now), updatedAt: new Date(now) });
+    const placeholder = await hashPassword(`${crypto.randomUUID()}${crypto.randomUUID()}`);
+    await db.insert(account).values({ id: `acct_${userId}`, accountId: userId, providerId: "credential", userId, password: placeholder, createdAt: new Date(now), updatedAt: new Date(now) }).onConflictDoNothing();
+  } else {
+    // Promote an existing user to operator.
+    await db.update(user).set({ platformRole: "super_admin", updatedAt: new Date(now) }).where(eq(user.id, userId));
+  }
+  return { userId, email, existing: Boolean(found) };
+}
+
+/** Revoke a user's platform-operator access (clears the super-admin role). */
+export async function revokePlatformOperatorDb(userId: string): Promise<{ ok: boolean }> {
+  const res = await getDb().update(user).set({ platformRole: null, updatedAt: new Date() })
+    .where(and(eq(user.id, userId), eq(user.platformRole, "super_admin")))
+    .returning({ id: user.id });
+  return { ok: res.length > 0 };
+}
+
+/** An operator's email (for resending their setup link). */
+export async function getOperatorEmailDb(userId: string): Promise<string | null> {
+  const [u] = await getDb().select({ email: user.email }).from(user).where(and(eq(user.id, userId), eq(user.platformRole, "super_admin"))).limit(1);
+  return u?.email ?? null;
 }

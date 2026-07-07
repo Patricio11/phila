@@ -138,6 +138,7 @@ export const adminNav: NavSection[] = [
     items: [
       { label: "Overview", href: "/admin", icon: LayoutDashboard, ready: true },
       { label: "Organisations", href: "/admin/orgs", icon: Building2, ready: true },
+      { label: "Users", href: "/admin/users", icon: Users, ready: true },
       { label: "Onboarding", href: "/admin/onboarding", icon: FileCheck, ready: true },
       { label: "Plans & billing", href: "/admin/plans", icon: CreditCard, ready: true },
     ],

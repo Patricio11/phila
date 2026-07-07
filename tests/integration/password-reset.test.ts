@@ -44,7 +44,8 @@ describe("password reset", () => {
 
     // Request the reset — Better Auth writes a reset token to `verification`.
     await auth.api.requestPasswordReset({ body: { email: EMAIL, redirectTo: "/reset-password" }, headers: new Headers() });
-    const rows = await sql`SELECT identifier, value FROM verification WHERE identifier LIKE 'reset-password:%' ORDER BY created_at DESC LIMIT 5`;
+    const [{ id: userId }] = await sql`SELECT id FROM "user" WHERE email=${EMAIL}`;
+    const rows = await sql`SELECT identifier FROM verification WHERE identifier LIKE 'reset-password:%' AND value=${userId} ORDER BY created_at DESC LIMIT 1`;
     const token = (rows[0]?.identifier as string | undefined)?.split("reset-password:")[1];
     expect(token).toBeTruthy();
 

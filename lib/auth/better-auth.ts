@@ -7,7 +7,7 @@ import { getDb } from "@/db/client";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { sendPlatformEmail } from "@/lib/email/platform-email";
-import { verificationEmail, resetPasswordEmail, teamInviteEmail } from "@/lib/email/templates";
+import { verificationEmail, resetPasswordEmail, teamInviteEmail, platformInviteEmail } from "@/lib/email/templates";
 
 const APP_URL = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
 
@@ -20,6 +20,13 @@ async function pendingInviteOrgName(userId: string): Promise<string | null> {
     .where(and(eq(schema.orgMembers.userId, userId), eq(schema.orgMembers.status, "invited")))
     .limit(1);
   return row?.name ?? null;
+}
+
+/** A super-admin who has never signed in — a fresh platform-operator invite. */
+async function isFreshOperatorInvite(userId: string, platformRole?: string | null): Promise<boolean> {
+  if (platformRole !== "super_admin") return false;
+  const [s] = await getDb().select({ id: schema.session.id }).from(schema.session).where(eq(schema.session.userId, userId)).limit(1);
+  return !s;
 }
 
 /**
@@ -48,7 +55,12 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, token }) => {
       const url = `${APP_URL}/reset-password?token=${token}`;
       const inviteOrg = await pendingInviteOrgName(user.id);
-      const email = inviteOrg ? teamInviteEmail(url, user.name, inviteOrg) : resetPasswordEmail(url, user.name);
+      const isOperatorInvite = !inviteOrg && (await isFreshOperatorInvite(user.id, (user as { platformRole?: string | null }).platformRole));
+      const email = inviteOrg
+        ? teamInviteEmail(url, user.name, inviteOrg)
+        : isOperatorInvite
+          ? platformInviteEmail(url, user.name)
+          : resetPasswordEmail(url, user.name);
       await sendPlatformEmail({ to: user.email, ...email });
     },
   },
@@ -70,19 +82,21 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     cookieCache: { enabled: true, maxAge: 60 * 5 },
   },
-  // Throttle the auth endpoints by IP (W2). A modest global cap, with tighter limits
-  // on the brute-forceable ones. In-memory per instance now; a shared store (Upstash/
-  // KV) for the full app surface is the broader follow-up in the plan.
+  // Throttle the auth endpoints by IP (W2). Limits are per-IP, so they're kept
+  // generous enough that a clinic behind one NAT address isn't locked out, while
+  // still blunting brute force. Disabled under test (the shared in-memory bucket
+  // would otherwise trip across the suite). A shared store (Upstash/KV) for the full
+  // app surface is the broader follow-up in the plan.
   rateLimit: {
-    enabled: true,
+    enabled: process.env.NODE_ENV !== "test",
     window: 60,
-    max: 40,
+    max: 80,
     customRules: {
-      "/sign-in/email": { window: 60, max: 8 },
-      "/sign-up/email": { window: 300, max: 6 },
-      "/request-password-reset": { window: 300, max: 4 },
-      "/forget-password": { window: 300, max: 4 },
-      "/two-factor/verify-totp": { window: 60, max: 8 },
+      "/sign-in/email": { window: 60, max: 20 },
+      "/sign-up/email": { window: 300, max: 10 },
+      "/request-password-reset": { window: 300, max: 10 },
+      "/forget-password": { window: 300, max: 10 },
+      "/two-factor/verify-totp": { window: 60, max: 12 },
     },
   },
   // TOTP 2FA (enforced for super_admin / org_admin / supervisors in the UI).

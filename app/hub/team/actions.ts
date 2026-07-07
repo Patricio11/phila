@@ -1,13 +1,28 @@
 "use server";
 
 import { z } from "zod";
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { getDataProvider } from "@/lib/data-provider";
+import { auth } from "@/lib/auth/better-auth";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 import { TEAM_ROLES } from "@/lib/domain/enums";
 import { transferCaseloadDb } from "@/db/queries/clients";
+import { getMemberContactDb } from "@/db/queries/team";
 import { notifyCounsellor } from "@/db/queries/notifications";
+
+const isDb = () => process.env.DATA_PROVIDER === "db";
+
+/** Email a member their set-password / activation link (Better Auth reset token). */
+async function emailSetupLink(email: string): Promise<void> {
+  if (!isDb()) return;
+  try {
+    await auth.api.requestPasswordReset({ body: { email, redirectTo: "/reset-password" }, headers: await headers() });
+  } catch {
+    // Best-effort — never fail the invite/resend on a mail hiccup (honest dormant fallback).
+  }
+}
 
 /**
  * Team management (W1.4, DB-backed). Membership lives in `org_members` (+ the
@@ -89,12 +104,19 @@ const inviteInput = z.object({
   teamRole: z.enum(TEAM_ROLES),
 });
 
-/** (Re)send a member their set-password link. Phase 12 delivers the email itself. */
+/** (Re)send a member their set-password / activation link. */
 export async function sendSetupLink(
   raw: { userId: string },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { principal, membership } = await requireHub();
   if (!raw.userId) return { ok: false, error: "Invalid member." };
+
+  if (isDb()) {
+    const contact = await getMemberContactDb(membership.orgId, raw.userId);
+    if (!contact) return { ok: false, error: "That member could not be found." };
+    await emailSetupLink(contact.email);
+  }
+
   await logAccess({
     action: "admin.action",
     actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
@@ -118,6 +140,9 @@ export async function inviteMember(
     { name: parsed.data.name, email: parsed.data.email, teamRole: parsed.data.teamRole },
     new Date().toISOString(),
   );
+
+  // Email the new member their set-password / activation link straight away.
+  await emailSetupLink(parsed.data.email);
 
   await logAccess({
     action: "admin.action",

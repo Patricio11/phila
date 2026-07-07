@@ -333,8 +333,12 @@ shown on signup (no picker on the form — too much friction). Plan catalogue is
       with a single-use, 1-hour token; `/reset-password?token=` exchanges it via `auth.api.resetPassword`. The
       request path never leaks account existence; a missing/expired token shows a friendly "request a new link"
       state. Proven end-to-end (`tests/integration/password-reset.test.ts`: old→reset→new, old rejected).
-      *(Invited-member **activation** — the `activateAccount`/`sendSetupLink` stubs — still pending: invited users
-      are created without a credential account, so it needs account provisioning + real invite-email delivery.)*
+- [x] **Invited-member activation** (W2 batch 3). `inviteMemberDb` now provisions the user (email-verified) **+ a
+      credential account** with an unguessable placeholder password + an `invited` membership. Inviting (and
+      "resend setup link") emails a branded **"You've been invited to join {org}"** link via Better Auth's reset
+      token; `sendResetPassword` sends the invite email for a still-`invited` member (a plain reset otherwise). The
+      member sets their password at `/reset-password`, and the **first sign-in flips them `invited → active`**.
+      Proven end-to-end (`tests/integration/member-activation.test.ts`).
 - [x] **Uploads.** `validateUpload` now rejects a filename extension that doesn't match the declared
       content-type (all five upload actions pass the name). The declared type is still client-supplied, so a
       post-upload magic-byte/AV `scanObject` remains the real gate — confirm it's a live AV hook before launch.

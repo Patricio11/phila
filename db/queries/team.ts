@@ -1,8 +1,10 @@
 import "server-only";
 import { and, eq, isNull } from "drizzle-orm";
+import { hashPassword } from "better-auth/crypto";
 import { activeDb, runForOrg } from "@/lib/db/scoped";
+import { getDb } from "@/db/client";
 import { orgMembers, counsellors, clients, appointments, services, rooms, roomAssignments } from "@/db/schema";
-import { user } from "@/db/auth-schema";
+import { user, account } from "@/db/auth-schema";
 import type { TeamMemberView, TeamMemberDetail, MemberStatus, AppointmentView } from "@/lib/data-provider";
 import type { TeamRole, CredentialBody, CredentialStatus, AppointmentState, AppointmentType } from "@/lib/domain/enums";
 
@@ -101,11 +103,18 @@ export async function inviteMemberDb(
 ): Promise<{ userId: string; existing: boolean }> {
   return runForOrg(orgId, async () => {
     const db = activeDb();
-    // user is not RLS-scoped, so this read/insert works under phila_app.
+    // user + account are not RLS-scoped, so these read/writes work under phila_app.
     const [found] = await db.select({ id: user.id }).from(user).where(eq(user.email, input.email)).limit(1);
     const userId = found?.id ?? rid("user");
     if (!found) {
-      await db.insert(user).values({ id: userId, name: input.name, email: input.email, emailVerified: false, platformRole: null, createdAt: new Date(now), updatedAt: new Date(now) });
+      // Email is treated as verified: the admin vouches for them, and the invite link
+      // (sent to this address) is the only way to set a password, so email control is
+      // proven before they can ever sign in.
+      await db.insert(user).values({ id: userId, name: input.name, email: input.email, emailVerified: true, platformRole: null, createdAt: new Date(now), updatedAt: new Date(now) });
+      // A credential account with an unguessable placeholder password — the invitee
+      // replaces it via the set-password link (Better Auth's reset flow needs an account).
+      const placeholder = await hashPassword(`${crypto.randomUUID()}${crypto.randomUUID()}`);
+      await db.insert(account).values({ id: `acct_${userId}`, accountId: userId, providerId: "credential", userId, password: placeholder, createdAt: new Date(now), updatedAt: new Date(now) }).onConflictDoNothing();
     }
     await db.insert(orgMembers).values({ orgId, userId, teamRole: input.teamRole, isSupervisor: false, status: "invited", createdAt: new Date(now) }).onConflictDoNothing();
     if (input.teamRole === "counsellor") {
@@ -113,6 +122,22 @@ export async function inviteMemberDb(
     }
     return { userId, existing: Boolean(found) };
   });
+}
+
+/** A member's email + name (owner read) — for triggering their set-password / setup link. */
+export async function getMemberContactDb(orgId: string, userId: string): Promise<{ email: string; name: string | null } | null> {
+  return runForOrg(orgId, async () => {
+    const [m] = await activeDb().select({ userId: orgMembers.userId }).from(orgMembers)
+      .where(and(eq(orgMembers.orgId, orgId), eq(orgMembers.userId, userId))).limit(1);
+    if (!m) return null; // not a member of this org
+    const [u] = await getDb().select({ email: user.email, name: user.name }).from(user).where(eq(user.id, userId)).limit(1);
+    return u ? { email: u.email, name: u.name } : null;
+  });
+}
+
+/** Activate any pending invites for a user (invited → active) once they can sign in. */
+export async function activateMembershipsDb(userId: string): Promise<void> {
+  await getDb().update(orgMembers).set({ status: "active" }).where(and(eq(orgMembers.userId, userId), eq(orgMembers.status, "invited")));
 }
 
 /** Full detail for one member: role/credential + (counsellors) caseload, schedule, upcoming, stats. */

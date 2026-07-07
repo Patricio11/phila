@@ -71,6 +71,22 @@ export function verificationEmail(url: string, name: string | null): Email {
   };
 }
 
+/** Sent to an invited team member — the link both sets their password and activates them. */
+export function teamInviteEmail(url: string, name: string | null, orgName: string): Email {
+  const first = (name ?? "").trim().split(/\s+/)[0] || "there";
+  return {
+    subject: `You've been invited to join ${orgName} on Phila`,
+    html: shell({
+      preheader: `Set your password to join ${orgName}.`,
+      heading: `Welcome to the team, ${first} 👋`,
+      body: `You've been invited to join <strong>${orgName}</strong> on Phila. Set your password to activate your account — then you can sign in and get started.`,
+      cta: { label: "Set my password", url },
+      footnote: `If the button doesn't work, paste this link into your browser:<br><a href="${url}" style="color:${GREEN};word-break:break-all;">${url}</a><br><br>This link expires in 1 hour. If you weren't expecting this invitation, you can safely ignore it.`,
+    }),
+    text: `You've been invited to join ${orgName} on Phila.\n\nSet your password to activate your account:\n${url}\n\nThis link expires in 1 hour.`,
+  };
+}
+
 /** Sent when a user requests a password reset. */
 export function resetPasswordEmail(url: string, name: string | null): Email {
   const first = (name ?? "").trim().split(/\s+/)[0] || "there";

@@ -10,6 +10,7 @@ import { TWO_FA_SKIP_COOKIE } from "@/lib/auth/two-factor-prompt";
 import { logAccess } from "@/lib/audit";
 import { getDb } from "@/db/client";
 import { orgMembers, orgs, subscriptions } from "@/db/schema";
+import { activateMembershipsDb } from "@/db/queries/team";
 import { planById } from "@/lib/billing/plans";
 
 /**
@@ -80,6 +81,9 @@ export async function signIn(
   // 2FA enabled: the session isn't established until the TOTP code is verified.
   if (res.twoFactorRedirect || !res.user) return { ok: true, twoFactor: true };
 
+  // First successful sign-in activates any pending team invite (invited → active).
+  await activateMembershipsDb(res.user.id);
+
   return { ok: true, redirect: await homeForUser(res.user.id, res.user.platformRole ?? null) };
 }
 
@@ -87,6 +91,7 @@ export async function signIn(
 export async function homeForCurrentUser(): Promise<{ redirect: string }> {
   const p = await getCurrentPrincipal();
   if (!p) return { redirect: "/login" };
+  await activateMembershipsDb(p.userId); // activate a pending invite on first sign-in
   if (p.platformRole === "client") return { redirect: "/me" };
   if (p.platformRole === "funder") return { redirect: "/funder" };
   if (p.platformRole === "super_admin") return { redirect: "/admin" };

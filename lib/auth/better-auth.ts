@@ -5,10 +5,22 @@ import { nextCookies } from "better-auth/next-js";
 import { twoFactor } from "better-auth/plugins";
 import { getDb } from "@/db/client";
 import * as schema from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import { sendPlatformEmail } from "@/lib/email/platform-email";
-import { verificationEmail, resetPasswordEmail } from "@/lib/email/templates";
+import { verificationEmail, resetPasswordEmail, teamInviteEmail } from "@/lib/email/templates";
 
 const APP_URL = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
+
+/** The org name if this user still has a pending `invited` membership (else null). */
+async function pendingInviteOrgName(userId: string): Promise<string | null> {
+  const [row] = await getDb()
+    .select({ name: schema.orgs.name })
+    .from(schema.orgMembers)
+    .innerJoin(schema.orgs, eq(schema.orgMembers.orgId, schema.orgs.id))
+    .where(and(eq(schema.orgMembers.userId, userId), eq(schema.orgMembers.status, "invited")))
+    .limit(1);
+  return row?.name ?? null;
+}
 
 /**
  * Better Auth  the real identity layer (Phase 9). Email + password over the
@@ -30,9 +42,14 @@ export const auth = betterAuth({
     requireEmailVerification: true,
     minPasswordLength: 8,
     // Self-service password reset (W2) — the branded email carries a single-use,
-    // expiring token; the /reset-password page exchanges it for a new password.
+    // expiring token; the /reset-password page exchanges it for a new password. For a
+    // still-invited team member this same mechanism is their **activation**: they get a
+    // "welcome, set your password" email instead of a plain reset.
     sendResetPassword: async ({ user, token }) => {
-      await sendPlatformEmail({ to: user.email, ...resetPasswordEmail(`${APP_URL}/reset-password?token=${token}`, user.name) });
+      const url = `${APP_URL}/reset-password?token=${token}`;
+      const inviteOrg = await pendingInviteOrgName(user.id);
+      const email = inviteOrg ? teamInviteEmail(url, user.name, inviteOrg) : resetPasswordEmail(url, user.name);
+      await sendPlatformEmail({ to: user.email, ...email });
     },
   },
   emailVerification: {

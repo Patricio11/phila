@@ -1,6 +1,6 @@
 # Phase 18.7  Client onboarding: phone-or-email, portal invite, full edit
 
-*Status: in progress · Owner: Phila · Started 2026-07-02*
+*Status: ✅ done · Owner: Phila · Started 2026-07-02 · Shipped 2026-07-02 (see `docs/completed/PHASE_18.7_COMPLETE.md`)*
 
 ## Why
 
@@ -86,5 +86,5 @@ Booking already persisted its client row; it now shares the same phone-or-email 
   (no phone) now advances and confirms.
 
 ## Checklist
-- [ ] Commit  the whole phase (create phone-or-email, invite + copy link, full edit,
+- [x] Commit  the whole phase (create phone-or-email, invite + copy link, full edit,
   booking consistency) as one green commit; plan + ROADMAP updated.

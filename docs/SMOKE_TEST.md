@@ -1,8 +1,9 @@
 # Phila  End-to-End Smoke Test (Part B)
 
 > Run this against your real **Neon** database in **DB mode** after `npm run db:seed` (which also seeds
-> the public page, M&E cohort, subscription, and the LiveKit demo integration). Every box ticked = the
-> Part B build (Phases 9–17.1) is verifiably working end-to-end on real data  no mock.
+> the public page, M&E cohort, subscription, forms, documents, team chat, a second tenant, and the LiveKit
+> demo integration). Every box ticked = the Part B build (Phases 9–18.7 + production-readiness W1–W4) is
+> verifiably working end-to-end on real data  no mock.
 
 ---
 
@@ -35,8 +36,11 @@ Visit `http://localhost:3000/login` and try each account. Sign out between accou
 | 1 | Super admin | `ops@philasa.com` | `phila1234` | `/admin` | ☐ |
 | 2 | Practice admin (Hub) | `thandeka@masizakhe.org.za` | `phila1234` | `/hub` | ☐ |
 | 3 | Counsellor (supervisor) | `nomsa@masizakhe.org.za` | `phila1234` | `/app` | ☐ |
-| 4 | Counsellor | `thabo@masizakhe.org.za` | `phila1234` | `/app` | ☐ |
-| 5 | Funder | `palesa.mokoena@dsd.example.gov.za` | `phila1234` | `/funder` | ☐ |
+| 4 | Counsellor | `aisha@masizakhe.org.za` | `phila1234` | `/app` | ☐ |
+| 5 | Front desk | `frontdesk@masizakhe.org.za` | `phila1234` | `/hub` | ☐ |
+| 6 | Finance | `finance@masizakhe.org.za` | `phila1234` | `/hub` | ☐ |
+| 7 | Funder | `palesa.mokoena@dsd.example.gov.za` | `phila1234` | `/funder` | ☐ |
+| 8 | Second-org admin (Thrive) | `admin@thrive-eap.co.za` | `phila1234` | `/hub` | ☐ |
 
 ---
 
@@ -57,6 +61,7 @@ While **signed out**, open each URL  every one should redirect to `/login` (the 
 Cross-tenant / cross-role checks (signed in):
 - ☐ As the **funder**, opening `/funder/grants/g_lotto` (a grant they're **not** scoped to) → **404** (only `g_dsd` is theirs).
 - ☐ As a **counsellor**, `/hub` and `/admin` are not reachable.
+- ☐ **RLS tenant isolation:** sign in as the **Thrive admin** (`admin@thrive-eap.co.za`) → `/hub/clients` shows **only** Thrive's 4 clients (Riedwaan Adams, Chloe van Wyk, Sibongile Dube, Marius Fourie); **no** Masizakhe client (e.g. Lerato Mahlangu) ever appears. This is Postgres RLS, not just app checks.
 
 ---
 
@@ -68,9 +73,11 @@ Cross-tenant / cross-role checks (signed in):
 4. Open **Sessions** → open a session note editor.
 
 ✅ Boxes:
-- ☐ Today dashboard shows real appointments
+- ☐ Today dashboard shows real appointments (every counsellor now has a live day  Nomsa, Thabo, Aisha, Pieter)
 - ☐ Client profile + care plan render
-- ☐ **Supervision** loads (Nomsa is a supervisor)
+- ☐ **Supervision** loads (Nomsa is a supervisor)  the sign-off queue shows a supervisee note awaiting review
+- ☐ **Documents** → **Shared with me** is not empty (the admin shared the Reports folder with counsellors)
+- ☐ **Messages** → the seeded team threads render; sending a message persists (live if the Supabase anon key is set, else on refresh)
 - ☐ **Rooms** shows the room schedule
 
 **AI scribe** (only if a provider is switched on in `/admin/ai` **and** the org consent is on):
@@ -97,16 +104,21 @@ Sign in as **Thandeka**.
 - ☐ Open an invoice → A4 preview renders
 - ☐ If the org gateway is connected (Settings → Payments), an unpaid invoice shows a **Pay link** button → copies a `/pay/<token>` URL
 
-**Reporting** (`/hub/reporting`)  the M&E differentiator
-- ☐ Headline stats: **Clients reported**, **Improved ≥5 on PHQ-9 %**, **Provinces reached**
-- ☐ Funder narrative shows **key-findings bullets** + a paragraph generated from real figures
-- ☐ Breakdowns show real counts where cells ≥ 5 and **"too few to report"** where suppressed (k-anonymity)
-- ☐ **Download CSV** produces a k-anonymised file
-
-**Insights** (`/hub/insights`)
+**Insights** (`/hub/insights`)  session analytics **and** the M&E reporting differentiator
 - ☐ Session volumes + **trend chips** (vs the previous period) on completed / attendance / new clients / revenue
 - ☐ Switching the period (week / month / quarter) updates the figures
 - ☐ Client-mix cuts honour consent (coverage shown)
+- ☐ The **Funder reporting** tab shows headline stats (**Clients reported**, **Improved ≥5 on PHQ-9 %**, **Provinces reached**), key-findings bullets + a paragraph from real figures, k-anon breakdowns ("too few to report" where suppressed), and **Download CSV** (k-anonymised)
+- ☐ The old `/hub/reporting` URL **redirects here** (bookmarks don't break)
+
+**Forms** (`/hub/forms`)
+- ☐ The library shows the seeded **Intake** + **"After your session"** feedback forms with sent/completed counts
+- ☐ Open the feedback form → **Responses** shows the open **share link**; visiting `/f/s_feedback_masizakhe` (no login) renders the themed two-pane fill page
+- ☐ Create / duplicate / archive a form; the **builder** (Build + Design tabs) previews live
+
+**Documents** (`/hub/documents`)
+- ☐ The library + starter folders render; storage usage shows against the plan/override limit
+- ☐ An open **document request** to a client is listed
 
 **Funders & grants** (`/hub/funders` → a grant)
 - ☐ Grant dashboard shows the **At a glance** status line + indicators **actual vs target** with a paced "expected" marker + on-track/at-risk/behind
@@ -183,7 +195,11 @@ Sign in as a client account (see `docs/DEMO_LOGINS.md` for a seeded client email
 
 Sign in as **ops@philasa.com**.
 
-- ☐ Every tab loads: Overview, Organisations, Onboarding, Plans & billing, **AI rail**, **Integrations**, **Audit**
+- ☐ Every tab loads: Overview, **Organisations**, **Users**, **Onboarding**, **Plans & billing**, **Feature control**, **AI rail**, **Integrations**, **Audit**
+- ☐ **Organisations** shows a real multi-tenant list (Masizakhe + Thrive + the lightweight extra tenants) with plan, status, and onboarding stage; opening one shows its **Plan**, **Resources & quotas**, per-org **feature overrides**, and onboarding review
+- ☐ **Users** lists platform operators + org members (search/manage)
+- ☐ **Plans & billing** (W3.4): edit a plan (price / seats / AI / video / storage / messaging) inline → **Save** persists; the change applies to every org on that plan. The **landing-pricing** switch shows the tiers on `/` only when on.
+- ☐ **Feature control** (W3): turn a feature **off across the whole platform** (kill-switch) → it's disabled for every org regardless of plan; turn it back on. On an org detail page, a **force-on / force-off** per-org override wins over the plan.
 - ☐ **Integrations** shows the **Phila platform gateways**: **Paystack** (key + Test connection + switch) and **Video · LiveKit** (Demo/Live mode toggle, ws URL/key/secret, **Test connection**, switch  seeded in Demo with `ws://localhost:7880`)
 - ☐ **LiveKit Test connection** → "Connected" when the Docker server is up; a clear error when it's down
 - ☐ **AI rail** lets you configure Claude **or** OpenAI (key + model) and switch one on
@@ -195,10 +211,10 @@ Sign in as **ops@philasa.com**.
 
 - ☐ `npx tsc --noEmit` clean
 - ☐ `npm run lint` clean
-- ☐ `npx vitest run`  all green (102+ unit/integration)
+- ☐ `npx vitest run`  all green (181 unit/integration)
 - ☐ `npm run build` clean, then `npm run start`  the paths above still work on the production build
 - ☐ Dark mode looks right across Hub, the public site, and the funder portal
-- ☐ Mobile (360 px): no horizontal scroll on `/o/masizakhe`, `/hub/reporting`, `/funder`
+- ☐ Mobile (360 px): no horizontal scroll on `/o/masizakhe`, `/hub/insights`, `/funder`
 
 ---
 

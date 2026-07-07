@@ -145,12 +145,15 @@ Max width ~1320px, generous padding, the `rise` reveal on load. A **page head** 
 summary on the left, primary actions on the right) sits above the work.
 
 ### 5.4 Role scoping
-Same shell, different nav and home:
-- **Counsellor:** Dashboard · Calendar · Clients · Sessions · Messages · (Rooms · Reports · Billing if permitted).
-- **Org admin (Hub):** Overview · Calendars · Team · Rooms · Clients · Intake · Invoicing · Reports & funders · Settings.
-- **Super-admin:** Orgs · Plans & billing · AI · Integrations · Audit (2FA eyebrow).
-- **Funder (external):** a pared shell  only their grant(s); read-only; an "aggregate, anonymised" banner.
-- **Client (`/me`):** the lightest shell  Home · Sessions · Documents · Billing · Consent.
+Same shell, different nav and home. The source of truth is `components/shell/nav-config.ts`; keep this list in sync with it.
+- **Counsellor (`/app`):** Dashboard · Appointments · Clients · Sessions · Documents · Messages · Supervision · Rooms.
+- **Org admin (Hub, `/hub`):** *Oversight* — Overview · Appointments · Clients · Insights · Funders & grants. *Run the practice* — Team · Messages · Rooms · Services · Documents · Booking · Forms · Invoicing · Billing & usage · Verification.
+- **Super-admin (`/admin`):** *Platform* — Overview · Organisations · Users · Onboarding · Plans & billing. *Rails & trust* — Feature control · AI rail · Integrations · Audit. (2FA nudge banner.)
+- **Funder (external, `/funder`):** a pared shell  only their grant(s); read-only; an "aggregate, anonymised" banner.
+- **Client (`/me`):** the lightest shell  Home · Your steps · Sessions · Documents · Forms · Billing · Consent · Profile.
+
+> Feature-gated items (e.g. *Funders & grants*) are hidden unless the org feature is on (Dormant-by-Default);
+> `ready: false` items render honestly as "Soon" rather than as dead links.
 
 ---
 

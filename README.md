@@ -79,6 +79,12 @@ everything **seeded** (no mock at runtime). Per-phase records live in `docs/comp
   `/admin/orgs/[id]`.
 - ✅ **Phases 18 / 18.5 / 18.6 / 18.7**  documents (Supabase storage), real-time team messaging,
   the org forms library, and client onboarding (see `docs/ROADMAP.md`).
+- ✅ **Production readiness (W1–W4).** Team management (invite → activate, roles & honest reach),
+  **mandatory email verification** + a branded onboarding/admin-approval lifecycle on a **17-day
+  no-card trial**, security hardening (HSTS/CSP + security headers, webhook HMAC, timing-safe token
+  checks, fail-strict clinical audit), platform **feature governance** (kill-switch → per-org override →
+  plan → self-toggle) with a DB-backed, **super-admin-editable plan catalogue**, and a fully-seeded
+  two-tenant demo with RLS isolation proven end-to-end. See `docs/PRODUCTION_READINESS_PLAN.md`.
 
 ## Getting started
 
@@ -118,10 +124,10 @@ in-app under `/admin/integrations`, not in env.
 | `PHILA_FIELD_KEY` | 10 | base64 32-byte key for field-level encryption (required in prod; also encrypts the admin-managed integration credentials). |
 | `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` | 9 | Auth signing secret + the app's base URL (also signs video join links + invoice pay-links). |
 
-## Architecture (Part A)
+## Architecture
 
 ```
-app/                 route segments: /(landing) · /app (counsellor) · /offline · (hub|me|admin|funder later)
+app/                 route segments: /(landing) · /app (counsellor) · /hub · /me · /admin · /funder · /o/[slug] · /offline
 components/          ui/ primitives · shell/ (sidebar, top bar) · schedule/ · charts/ · dashboard/ · theme/ · brand/
 lib/
   domain/enums.ts    the value sets (mirrors Part-B Postgres enums)  SA reference data baked in
@@ -131,10 +137,11 @@ lib/
   crypto/            AES-256-GCM field encryption
   retention/         soft-delete + erasure-job stub
   mock/              the dataProvider mock impl + typed fixtures + helpers
-  data-provider.ts   the seam (mock | db)
-db/                  drizzle client (no live connection) + the POPIA/tenancy spine schema
+  data-provider.ts   the seam (mock | db); db-provider.ts is the real impl
+  db/scoped.ts       the RLS-scoped request path (runs as the phila_app role, per-op org GUC)
+db/                  drizzle client + schema + queries/ (the DAL) + rls.sql + seed-all.ts
 public/              PWA manifest, service worker, app icon
-docs/                SECURITY.md + completed/PHASE_N_COMPLETE.md
+docs/                SECURITY.md · PRODUCTION_READINESS_PLAN.md · ROADMAP.md · completed/PHASE_N_COMPLETE.md
 ```
 
 The real isolation boundary in Part B is **Postgres Row-Level Security**, not app checks

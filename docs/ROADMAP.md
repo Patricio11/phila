@@ -91,7 +91,7 @@ could demo tomorrow. Build on the `dataProvider` seam so Part B is a swap, not a
 
 ### Task 0.3: Design system + the `dataProvider` seam
 - [x] Tokens + **Inter** (self-hosted via `next/font`, 400–700, tabular numerals; no serif, no monospace). The 8px/radius/shadow scale + motion + reduced-motion utilities (`DESIGN.md` §3, §4).
-- [x] **Theme system:** light + dark from one set of CSS variables; a `system | light | dark` toggle persisted per user; no flash-of-wrong-theme (set before paint). The whole UI is theme-tokenised from commit one.
+- [x] **Theme system:** light + dark from one set of CSS variables; a `light | dark` toggle persisted per user (light default, no "system" option  locked to `DESIGN.md` §10; `system` is reserved and trivial to add later); no flash-of-wrong-theme (set before paint). The whole UI is theme-tokenised from commit one.
 - [x] **PWA shell:** web app manifest + icons + a service worker registered; installable; an offline shell. The real **offline send-queue** lands with scheduling/notifications (Phase 11/12); scaffold the queue interface now.
 - [x] The **`dataProvider`** interface + `mockProvider` (default in Part A) + typed fixtures + helpers (`DESIGN.md` §11). `DATA_PROVIDER=mock|db` env flag.
 - [x] Performance budget documented (JS budget on key routes; no blocking media)  enforced in Phase 8/18.
@@ -349,7 +349,7 @@ auto-rolls up to them, and a scoped, k-anon, read-only **funder portal**. The gr
 - [x] WCAG 2.2 AA sweep: keyboard-operate the calendar, focus rings, `aria-live` on counts/states, labelled controls, 200% text.
 
 ### Task 8.4: Theme + PWA pass
-- [x] **Dark + light** verified on every surface (calendar, video room, A4 builder, dossier, public page); the `system | light | dark` toggle persists; no flash-of-wrong-theme; AA contrast holds in both.
+- [x] **Dark + light** verified on every surface (calendar, video room, A4 builder, dossier, public page); the `light | dark` toggle persists; no flash-of-wrong-theme; AA contrast holds in both.
 - [x] **PWA:** installable on Android + desktop; offline shell loads; the offline send-queue **stubs** behave (queued booking/note shows a "will send when online" state). Real sync wires in Part B.
 
 **Done when (mock):** a stranger can demo the whole product across all roles on a phone, **in either theme, installed as an app**, it looks finished and alive, and there are zero dead ends. **This is the Part-A ship gate.**
@@ -1009,10 +1009,31 @@ over in one smooth step  and any reschedule can carry a reason kept on the recor
 
 ---
 
+## 🛠️ PRODUCTION READINESS (W1–W6)  cross-cutting hardening pass
+*Tracked in full in `docs/PRODUCTION_READINESS_PLAN.md`; overlaps Phases 19–21. Status below.*
+- [x] **W1  Team & lifecycle:** team management (invite → activate, roles & honest reach), mandatory
+  **email verification** + branded onboarding/admin-approval lifecycle on a **17-day no-card trial**,
+  Settings company profile + Billing trial countdown. Landing `?plan=` carries the chosen plan into signup.
+- [x] **W2  Security hardening:** HSTS/CSP + security headers (`next.config.ts`), webhook **HMAC**
+  (WhatsApp), **timing-safe** Paystack/LiveKit token checks, LiveKit join links bound to the appointment,
+  document-upload extension checks, **fail-strict clinical audit**, per-IP auth rate limiting, and the
+  RLS **runtime cutover** (request path on the `phila_app` role  see Phase 10). Platform Users management.
+- [x] **W3  Feature governance & plans:** the entitlement resolver (kill-switch → per-org override →
+  plan → self-toggle), `/admin/features`, per-org overrides + resource meters/quotas, and a DB-backed,
+  **super-admin-editable plan catalogue** (`plans` table; edits apply to every org on the plan  no drift).
+- [x] **W4  Seed & demo realness:** every role/page has real data; all four counsellors have live days;
+  the M&E cohort has time-anchored sessions (grants read real "sessions delivered"); supervision queue,
+  document shares, payments, and public-page analytics seeded; invoices now-relative; a **second, fully-real,
+  RLS-isolated tenant** (Thrive EAP).
+- [~] **W5  Docs hygiene:** README/DESIGN/SECURITY/SMOKE_TEST/ROADMAP reconciled to the shipped reality
+  (this pass). **W6  UX & org-settings IA** next.
+
+---
+
 ## 🔒 PHASE 19: TRUST, SECURITY & POPIA HARDENING
 *Goal: be allowed in the room with the most sensitive data there is.*
 - [ ] **Data residency:** migrate Postgres to an SA region (AWS `af-south-1` / Azure SA North) on the `db/client.ts` swap; confirm storage + AI inference residency posture; document cross-border flows.
-- [ ] Field-level encryption live; security headers; rate limiting (Upstash) on auth/booking/AI/messaging; observability skeleton.
+- [~] Field-level encryption **live** (Phase 10); **security headers done** + **per-IP auth rate limiting done** (W2); a **shared-store (Upstash) rate limiter** for the public non-auth surfaces + an observability skeleton remain.
 - [ ] **DPIA**; data-subject tools (export / erasure) wired to real soft-delete + pruner cron; retention policy + breach log.
 - [ ] **Opt-out / DMA registry** screen before any marketing send (per the SA direct-marketing registry; manual suppression-list import until the API is published); block + audit if registered.
 - [ ] One-click **POPIA pack** per org (consent records + lawful-basis evidence + audit + retention + breach log)  "compliance you can show the Information Regulator."
@@ -1024,7 +1045,7 @@ over in one smooth step  and any reschedule can carry a reason kept on the recor
 - [ ] Unit (scheduling, freshness, k-anon, contrast, consent state machine).
 - [ ] Integration (Server Actions + Zod + RLS on a real-Postgres harness).
 - [ ] E2E (Playwright) across all roles at 1280px + 360px.
-- [ ] **Compliance tests:** no PII in public/cross-org payloads; **RLS cross-org isolation**; notes never leak; demographic export respects consent + k-anon; **funder is scoped to its grants + sees only k-anon aggregates + small cells suppressed + every view audited** (no identifiable client reachable as a funder); "AI-generated" labelling present; safeguarding never auto-actions.
+- [~] **Compliance tests:** **RLS cross-org isolation is proven** (`tests/integration/rls.test.ts`, `rls-scoped.test.ts`  a query scoped to org A cannot read org B through the `phila_app` role) and a funder is scoped to its own grant. Still to broaden: no-PII-in-cross-role-payload assertions across every surface, demographic-export consent + k-anon, "AI-generated" labelling, safeguarding-never-auto-actions.
 
 ---
 
@@ -1112,7 +1133,7 @@ shared by an explicit, consented counsellor action  never the private note.
 `consentState` (`none|granted|revoked`), `paymentProvider` (`stitch|ozow|yoco|paystack`),
 `paymentStatus` (`unpaid|paid|cancelled|refunded`), `subscriptionStatus`
 (`trialing|active|past_due|cancelled`), `outcomeTool` (`PHQ-9|GAD-7|…`), `aiFeature`
-(`note_draft|care_plan_draft|extraction|summary`), `theme` (`system|light|dark`).
+(`note_draft|care_plan_draft|extraction|summary`), `theme` (stored `light|dark`  the UI ships those two per `DESIGN.md` §10; `system` is reserved for later).
 
 ### Demographic fields (SPECIAL personal information  consent-gated, purpose-bound, k-anon on export)
 `gender` · `race` · `employmentStatus` · `ageBand` · `province`. Captured only with `demographics` consent; never on a public/cross-role payload; excluded from any export cell below the k-anonymity floor (default 5). *These exist for funder/M&E reporting and SA statutory context  never as a clinical judgement.*
@@ -1143,4 +1164,4 @@ shared by an explicit, consented counsellor action  never the private note.
 > trends, session counts, and org-posted narrative. **Never** an individual client, note, care plan,
 > contact, demographic row, or any other grant. Read-only; every view audited.
 
-*Last updated: 2026-06-30 · Version 1.0 · Phila · philasa.com · Stack: Next.js · Neon · Better Auth · Supabase Storage · LiveKit*
+*Last updated: 2026-07-07 · Version 1.1 · Phila · philasa.com · Stack: Next.js · Neon · Better Auth · Supabase Storage · LiveKit*

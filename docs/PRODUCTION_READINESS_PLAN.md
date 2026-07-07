@@ -460,21 +460,27 @@ effective(feature, org) =
 
 ---
 
-## Workstream 5  🟡 DOCS HYGIENE
+## Workstream 5  ✅ DOCS HYGIENE
 
-**Status:** not started.
+**Status:** done.
 
-- [ ] Rewrite `README.md` "Status" (still presents Part A as the whole product; Part B is done through 18.7).
-- [ ] Fix `DESIGN.md` §5.4 nav lists to match `components/shell/nav-config.ts` (Intake→Forms,
-      Calendars→Appointments, add Documents/Insights/Forms/Billing).
-- [ ] Correct `SECURITY.md`: RLS is authored but **not yet enforced at runtime** (don't imply it's the live
-      boundary); fix the stale "in-memory audit sink" line (audit persisted since Phase 9).
-- [ ] Write the missing `docs/completed/PHASE_18.5_COMPLETE.md` and `PHASE_18.7_COMPLETE.md`; set the 18.7
-      plan header to done.
-- [ ] Refresh `SMOKE_TEST.md` (add forms/documents/messaging; the `/hub/reporting` reference redirects to
-      Insights  note it) and add smoke steps for admin feature governance (W3).
-- [ ] Keep `ROADMAP.md` in sync as each workstream lands; reconcile the `system|light|dark` vs `light|dark`
-      theme note.
+- [x] README "Status" refreshed  Part B is covered through 18.7 **plus** a new **Production readiness
+      (W1–W4)** bullet; the Architecture section de-stalened (all role routes exist; `db/scoped.ts` noted).
+- [x] `DESIGN.md` §5.4 nav lists rewritten to match `components/shell/nav-config.ts` exactly (Counsellor:
+      Appointments/Documents/Supervision; Hub: Insights/Forms/Billing/Verification; Admin: Users/Feature
+      control; Client: Your steps/Forms/Profile), with a note on feature-gated + "Soon" items.
+- [x] `SECURITY.md` corrected  RLS **is enforced at runtime** now (the `phila_app` role via
+      `lib/db/scoped.ts`, per-op org GUC), the isolation tests are real (not "Phase 19"), and audit
+      **persists** to `audit_log` (fail-strict for clinical actions)  the stale "in-memory sink" line is gone.
+- [x] Wrote `docs/completed/PHASE_18.5_COMPLETE.md` + `PHASE_18.7_COMPLETE.md`; set the 18.7 plan header
+      + checklist to done.
+- [x] `SMOKE_TEST.md` refreshed  new sign-in rows (ops-roles + the Thrive tenant), an **RLS isolation**
+      check, Forms/Documents/Messages/Supervision boxes, Reporting folded into **Insights** (with the
+      `/hub/reporting`→`/hub/insights` redirect noted), admin **Feature control** + **Plans** (W3) steps,
+      and the test count (181).
+- [x] `ROADMAP.md` kept in sync  a **Production readiness (W1–W6)** section added, Phase 19/20 boxes
+      updated to reflect what W2/W3 delivered (security headers, per-IP rate limiting, RLS runtime cutover +
+      isolation tests), and the `system|light|dark` → `light|dark` theme note reconciled to `DESIGN.md` §10.
 
 ---
 

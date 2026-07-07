@@ -21,10 +21,12 @@ Authorisation is defence in depth. No single layer is trusted alone.
 3. **Postgres Row-Level Security  the isolation boundary.** This is the layer that actually stops a
    tenant from reading another tenant's rows. Every `org_id` table has an RLS policy keyed off the
    authenticated org + role. Even a bug in layers 1–2 cannot leak across orgs, because the database
-   itself refuses the row. Policies are **authored, applied, and proven** at the DB in Phase 10 (a non-owner
-   `phila_app` role with a 5-test cross-org leak proof); the **runtime cutover**  pointing the request path at
-   `phila_app` and setting the per-request org GUCs so these policies bind on every live query  is the Phase 19
-   hardening pass. Until then the app-layer `where org_id = …` in the DAL is the primary in-place boundary.
+   itself refuses the row. Policies are **authored, applied, proven, and enforced at runtime**: the request
+   path connects as the non-owner `phila_app` role (no `BYPASSRLS`) through `lib/db/scoped.ts`, which opens a
+   short transaction per operation and sets the org GUC (`app.org_id`) locally so the policies in `db/rls.sql`
+   bind on every live query. The owner connection (`db/client.ts`) keeps `BYPASSRLS` only for bootstrapping
+   (session/membership resolution), webhooks, cron, and seed. RLS is a real second boundary **beneath** the
+   DAL's app-layer `where org_id = …`  defence in depth, not either-or.
 
 > **Rule of thumb:** if removing the route guard would leak data, the design is wrong. The guard is
 > for experience; the DAL and RLS are for safety.
@@ -35,8 +37,9 @@ Authorisation is defence in depth. No single layer is trusted alone.
 - A request carries an authenticated org context; RLS policies compare `org_id` to that context.
 - `super_admin` cross-org access and impersonation go through an **explicit, audited** path  never
   an implicit policy hole. Each crossing writes an `audit_log` row (`impersonate.start` / `.end`).
-- Tests (Phase 19) assert no query crosses orgs, that notes never appear in a cross-role payload, and
-  that a funder can reach only their own grant's aggregates.
+- Integration tests (`tests/integration/rls.test.ts`, `rls-scoped.test.ts`) assert that a query scoped to
+  org A cannot read org B's rows through the `phila_app` role, that notes never appear in a cross-role
+  payload, and that a funder can reach only their own grant's aggregates.
 
 ## Clinical-note confidentiality (the core rule)
 
@@ -66,9 +69,9 @@ Authorisation is defence in depth. No single layer is trusted alone.
 
 ## Audit (Protected & Audited Rule)
 
-- `logAccess()` is invoked on every PII read/export and privileged action. Part A writes to an
-  in-memory/console sink so the call sites exist now; Phase 10 swaps in the persistent `audit_log`
-  table with no call-site change.
+- `logAccess()` is invoked on every PII read/export and privileged action, and **persists to the
+  `audit_log` table** (since Phase 9/10). Clinical actions are on a fail-strict list  a failed audit
+  write re-throws rather than letting the action proceed silently unlogged (`lib/audit`).
 
 ## k-anonymity (funder / aggregate exports)
 

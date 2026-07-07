@@ -12,6 +12,7 @@ import { Voice } from "@/components/marketing/voice";
 import { Pricing } from "@/components/marketing/pricing";
 import { ClosingCta, SiteFooter } from "@/components/marketing/closing";
 import { getPlatformIntegrationStatus } from "@/db/queries/platform-integrations";
+import { getPlansDb } from "@/db/queries/plans";
 
 // ISR  the page is static but re-checks the pricing switch periodically; the
 // admin toggle also revalidates "/" for an immediate update.
@@ -45,6 +46,7 @@ export const metadata: Metadata = {
 
 export default async function LandingPage() {
   const showPricing = await pricingEnabled();
+  const plans = showPricing ? await getPlansDb() : [];
   return (
     <>
       <SiteNav showPricing={showPricing} />
@@ -58,7 +60,7 @@ export default async function LandingPage() {
         <TrustBand />
         <WhoItsFor />
         <Voice />
-        {showPricing && <Pricing />}
+        {showPricing && <Pricing plans={plans} />}
         <ClosingCta />
       </main>
       <SiteFooter />

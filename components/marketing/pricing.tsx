@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { Check } from "lucide-react";
-import { PLANS } from "@/lib/billing/plans";
+import type { Plan } from "@/lib/domain/types";
 import { SectionHeading } from "@/components/marketing/section-heading";
 import { Reveal } from "@/components/marketing/reveal";
 import { cn } from "@/lib/utils";
 
 const rand = (cents: number) => `R${Math.round(cents / 100).toLocaleString("en-ZA")}`;
 
-function features(p: (typeof PLANS)[number]): string[] {
+function features(p: Plan): string[] {
   return [
     p.seats === null ? "Unlimited team seats" : `${p.seats} team seats`,
     p.rooms === null ? "Unlimited rooms" : `${p.rooms} consulting rooms`,
@@ -19,7 +19,7 @@ function features(p: (typeof PLANS)[number]): string[] {
 
 /** Pricing  the subscription tiers (Phase 15A catalogue). Visibility is gated by a
  * super-admin switch (Plans & billing), so it stays hidden until pricing is final. */
-export function Pricing() {
+export function Pricing({ plans }: { plans: Plan[] }) {
   return (
     <section id="pricing" className="scroll-mt-20 py-16 sm:py-24">
       <div className="mx-auto w-full max-w-[1120px] px-4 sm:px-6">
@@ -30,7 +30,7 @@ export function Pricing() {
         />
 
         <div className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {PLANS.map((p, i) => (
+          {plans.map((p, i) => (
             <Reveal key={p.id} delay={(i % 4) * 70}>
               <div
                 className={cn(
@@ -60,7 +60,7 @@ export function Pricing() {
                 </ul>
 
                 <Link
-                  href="/signup"
+                  href={`/signup?plan=${p.id}`}
                   className={cn(
                     "mt-5 inline-flex h-10 items-center justify-center rounded-control text-[13.5px] font-medium transition-colors",
                     p.popular ? "bg-accent text-accent-ink hover:bg-accent-hover" : "border border-border bg-surface text-text hover:bg-surface-hover",

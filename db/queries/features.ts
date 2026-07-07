@@ -4,7 +4,7 @@ import { getDb } from "@/db/client";
 import { orgs, subscriptions, platformFeatureFlags, orgFeatureOverrides } from "@/db/schema";
 import { ORG_FEATURES, type OrgFeature } from "@/lib/domain/enums";
 import { planIncludesFeature, FEATURE_REGISTRY } from "@/lib/domain/features";
-import { planById } from "@/lib/billing/plans";
+import { getPlanByIdDb } from "@/db/queries/plans";
 
 /**
  * The entitlement resolver (W3.1). One precedence chain, used by `requireOrgFeature`,
@@ -63,7 +63,7 @@ export async function resolveAllFeaturesDb(orgId: string): Promise<Record<OrgFea
     db.select().from(orgFeatureOverrides).where(eq(orgFeatureOverrides.orgId, orgId)),
   ]);
   const selfFeatures = (org?.features as Record<string, boolean> | undefined) ?? {};
-  const plan = planById(subRows[0]?.planId ?? "p_community");
+  const plan = await getPlanByIdDb(subRows[0]?.planId ?? "p_community");
   const planName = plan?.name ?? "current";
   const killed = new Set(flagRows.filter((f) => f.disabled).map((f) => f.feature));
   const overrideOf = new Map(overrideRows.map((o) => [o.feature, o]));

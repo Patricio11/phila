@@ -22,7 +22,7 @@ import {
 } from "@/db/queries/platform";
 import { getClientProfileDb } from "@/db/queries/client-profile";
 import { listTeamDb, getTeamMemberDetailDb, saveTeamMemberDb, setMemberStatusDb, inviteMemberDb } from "@/db/queries/team";
-import { PLANS, planById } from "@/lib/billing/plans";
+import { getPlansDb, getPlanByIdDb } from "@/db/queries/plans";
 import { getSubscriptionRow, listSubscriptions } from "@/db/queries/subscriptions";
 import { getReportingDb, getHubInsightsDb } from "@/db/queries/analytics";
 import { listGrantsDb, getGrantViewDb, getFunderGrantViewDb, getGrantAdminDb } from "@/db/queries/grants";
@@ -234,7 +234,7 @@ export const dbProvider: DataProvider = {
   getOrgSubscription: (orgId: string, now: string): Promise<OrgSubscription | null> => runForOrg(orgId, async () => {
     const sub = await getSubscriptionRow(orgId);
     if (!sub) return null;
-    const plan = planById(sub.planId);
+    const plan = await getPlanByIdDb(sub.planId);
     if (!plan || (sub.status !== "active" && sub.status !== "trialing" && sub.status !== "past_due")) return null;
     const d = new Date(now);
     const nextBillingAt = sub.currentPeriodEnd ?? new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)).toISOString();
@@ -242,8 +242,8 @@ export const dbProvider: DataProvider = {
   }),
 
   listPlans: async (): Promise<PlanWithUsage[]> => {
-    const subs = await listSubscriptions();
-    return PLANS.map((plan) => {
+    const [subs, plans] = await Promise.all([listSubscriptions(), getPlansDb()]);
+    return plans.map((plan) => {
       const active = subs.filter((s) => s.planId === plan.id && s.status === "active");
       return { plan, subscribers: active.length, mrrCents: active.length * plan.priceCents };
     });

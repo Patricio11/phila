@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getPlatformIntegrationStatus } from "@/db/queries/platform-integrations";
+import { getPlansDb } from "@/db/queries/plans";
 import { SiteNav } from "@/components/marketing/site-nav";
 import { Pricing } from "@/components/marketing/pricing";
 import { ClosingCta, SiteFooter } from "@/components/marketing/closing";
@@ -33,6 +34,7 @@ async function pricingEnabled(): Promise<boolean> {
 
 export default async function MarketingPage() {
   const showPricing = await pricingEnabled();
+  const plans = showPricing ? await getPlansDb() : [];
   return (
     <>
       <SiteNav showPricing={showPricing} />
@@ -44,7 +46,7 @@ export default async function MarketingPage() {
         <HowItWorks />
         <Proof />
         <WhyPhila />
-        {showPricing ? <Pricing /> : <PricingTeaser />}
+        {showPricing ? <Pricing plans={plans} /> : <PricingTeaser />}
         <ClosingCta />
       </main>
       <SiteFooter />

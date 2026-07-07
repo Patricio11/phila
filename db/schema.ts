@@ -73,6 +73,25 @@ export const platformSettings = pgTable("platform_settings", {
   vatRatePercent: integer("vat_rate_percent").notNull(),
 });
 
+/** The subscription plan catalogue (W3.4) — super-admin-editable. Seeded from the
+ *  `lib/billing/plans` defaults; the entitlement resolver + quotas read from here. */
+export const plans = pgTable("plans", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  tagline: text("tagline").notNull(),
+  priceCents: integer("price_cents").notNull(),
+  seats: integer("seats"), // null = unlimited
+  aiTokens: integer("ai_tokens").default(0).notNull(),
+  videoMinutes: integer("video_minutes").default(0).notNull(),
+  messaging: boolean("messaging").default(false).notNull(),
+  rooms: integer("rooms"), // null = unlimited
+  storageGb: integer("storage_gb").default(5).notNull(),
+  popular: boolean("popular").default(false).notNull(),
+  ngo: boolean("ngo").default(false).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  active: boolean("active").default(true).notNull(),
+});
+
 /** Global feature governance (W3): a super-admin kill-switch per feature. Row present
  *  only once a feature has been touched; absent = not killed. */
 export const platformFeatureFlags = pgTable("platform_feature_flags", {

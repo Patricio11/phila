@@ -405,8 +405,13 @@ effective(feature, org) =
 - [x] **Assign/upgrade/downgrade an org's plan** from `app/admin/orgs/[id]` — an **OrgPlanControl** card (plan
       selector + quota summary) → `setOrgPlan`/`setOrgPlanDb` (reuses `upsertSubscription`). Entitlements + quotas
       are reflected **immediately** by the resolver (proven: moving plans changes the effective storage limit).
-- [ ] *Deferred:* full plan-catalogue CRUD (edit prices/quotas of the plans themselves) — the catalogue stays
-      code-defined for now; moving an org between plans is the high-value capability and is live.
+- [x] **Full plan-catalogue CRUD** — a DB-backed, super-admin-editable `plans` table (migration 0042; seeded from
+      the code `PLANS`, which stays as the fallback if the table is empty/unavailable, so nothing breaks). Reads
+      go through `db/queries/plans.ts` (`getPlansDb`/`getPlansMapDb`/`getPlanByIdDb`/`savePlanDb`); every consumer
+      — the entitlement resolver, resource meters, platform overview, `listPlans`, the landing pricing, the hub
+      plan picker, and `OrgPlanControl` — now reads the live catalogue. `app/admin/plans` **PlansManager** edits a
+      plan's name/tagline/price/seats/AI/video/storage/rooms/messaging inline → `savePlan` action → one change
+      applies to every org on the plan (no drift). Landing "Get started" carries `?plan=<id>` into signup.
 
 ### 3.5 Admin: metered resources & credits — ✅ done (d)
 - [x] `getOrgResourceMetersDb` unifies the real pools — `credit_balances` (SMS/email), `org_storage_usage`

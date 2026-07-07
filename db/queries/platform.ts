@@ -8,7 +8,8 @@ import {
 } from "@/db/schema";
 import { user, account, session } from "@/db/auth-schema";
 import { getPlatformIntegration } from "@/db/queries/platform-integrations";
-import { PLANS } from "@/lib/billing/plans";
+import { getPlansMapDb } from "@/db/queries/plans";
+import type { Plan } from "@/lib/domain/types";
 import type {
   PlatformOverview, PlatformOrgRow, PlatformOrgDetail, OnboardingRequirement,
   OrgOnboardingReview, OnboardingDocStatus, TeamMemberView,
@@ -30,11 +31,11 @@ function monthStartUtc(): Date {
   return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), 1));
 }
 
-function planPriceCents(planId: string): number {
-  return PLANS.find((p) => p.id === planId)?.priceCents ?? 0;
+function planPriceCents(map: Map<string, Plan>, planId: string): number {
+  return map.get(planId)?.priceCents ?? 0;
 }
-function planName(planId: string): string {
-  return PLANS.find((p) => p.id === planId)?.name ?? "";
+function planName(map: Map<string, Plan>, planId: string): string {
+  return map.get(planId)?.name ?? "";
 }
 
 /** Every org as a PlatformOrg, with member / 7-day-session / AI-spend counts. */
@@ -79,12 +80,12 @@ async function platformOrgs(): Promise<PlatformOrg[]> {
 }
 
 export async function listPlatformOrgsDb(): Promise<PlatformOrgRow[]> {
-  const list = await platformOrgs();
-  return list.map((org) => ({ org, planName: planName(org.planId), planPriceCents: planPriceCents(org.planId) }));
+  const [list, planMap] = await Promise.all([platformOrgs(), getPlansMapDb()]);
+  return list.map((org) => ({ org, planName: planName(planMap, org.planId), planPriceCents: planPriceCents(planMap, org.planId) }));
 }
 
 export async function getPlatformOverviewDb(): Promise<PlatformOverview> {
-  const [list, integrations] = await Promise.all([platformOrgs(), listIntegrationsDb()]);
+  const [list, integrations, planMap] = await Promise.all([platformOrgs(), listIntegrationsDb(), getPlansMapDb()]);
   const health = { live: 0, mock: 0, off: 0 };
   for (const i of integrations) health[i.status]++;
   return {
@@ -95,13 +96,13 @@ export async function getPlatformOverviewDb(): Promise<PlatformOverview> {
     totalMembers: list.reduce((s, o) => s + o.members, 0),
     sessions7d: list.reduce((s, o) => s + o.sessions7d, 0),
     aiSpendCents: list.reduce((s, o) => s + o.aiSpendCents, 0),
-    mrrCents: list.filter((o) => o.subscriptionStatus === "active").reduce((s, o) => s + planPriceCents(o.planId), 0),
+    mrrCents: list.filter((o) => o.subscriptionStatus === "active").reduce((s, o) => s + planPriceCents(planMap, o.planId), 0),
     integrationHealth: health,
   };
 }
 
 export async function getPlatformOrgDetailDb(orgId: string): Promise<PlatformOrgDetail | null> {
-  const list = await platformOrgs();
+  const [list, planMap] = await Promise.all([platformOrgs(), getPlansMapDb()]);
   const org = list.find((o) => o.id === orgId);
   if (!org) return null;
   const db = getDb();
@@ -120,7 +121,7 @@ export async function getPlatformOrgDetailDb(orgId: string): Promise<PlatformOrg
     credential: null, joinedAt: r.createdAt.toISOString(),
   })).sort((a, b) => a.name.localeCompare(b.name));
   return {
-    org, planName: planName(org.planId), planPriceCents: planPriceCents(org.planId),
+    org, planName: planName(planMap, org.planId), planPriceCents: planPriceCents(planMap, org.planId),
     team, clientCount: clientCountRows[0]?.c ?? 0, fullyModeled: team.length > 0,
     profile: (profileRows[0]?.profile as Record<string, string>) ?? {},
     onboardingStatus: org.onboardingStatus,

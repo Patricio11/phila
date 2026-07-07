@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Sparkles } from "lucide-react";
-import { PLANS } from "@/lib/billing/plans";
+import type { Plan } from "@/lib/domain/types";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
@@ -14,12 +14,12 @@ function rands(cents: number): string {
 }
 
 /** Move an org between plans (W3.4c) — entitlements + quotas follow immediately. */
-export function OrgPlanControl({ orgId, planId }: { orgId: string; planId: string }) {
+export function OrgPlanControl({ orgId, planId, plans }: { orgId: string; planId: string; plans: Plan[] }) {
   const { toast } = useToast();
   const router = useRouter();
   const [pending, start] = useTransition();
   const [selected, setSelected] = useState(planId);
-  const plan = PLANS.find((p) => p.id === selected) ?? PLANS[0]!;
+  const plan = plans.find((p) => p.id === selected) ?? plans[0]!;
   const changed = selected !== planId;
 
   const includes: string[] = [
@@ -43,7 +43,7 @@ export function OrgPlanControl({ orgId, planId }: { orgId: string; planId: strin
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="flex-1 space-y-1.5">
           <label className="text-[12px] font-medium text-text-2">Plan</label>
-          <Select value={selected} onChange={setSelected} options={PLANS.map((p) => ({ value: p.id, label: `${p.name} — ${rands(p.priceCents)}/mo` }))} />
+          <Select value={selected} onChange={setSelected} options={plans.map((p) => ({ value: p.id, label: `${p.name} — ${rands(p.priceCents)}/mo` }))} />
         </div>
         <Button onClick={save} loading={pending} disabled={!changed}>Change plan</Button>
       </div>

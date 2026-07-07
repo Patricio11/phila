@@ -45,6 +45,7 @@ import {
   orgOnboardingDocs as onboardingDocsFx,
 } from "@/lib/mock/fixtures";
 import { CHANNELS, TRIGGERS, DEFAULT_TEMPLATES } from "@/lib/messaging/templates";
+import { PLANS } from "@/lib/billing/plans";
 
 /** SAST calendar-day for an instant (fixed +02:00, no DST). */
 function sastDate(d: Date): string {
@@ -325,6 +326,16 @@ async function main() {
     const amount = STARTER_CREDITS[channel];
     await db.insert(schema.creditBalances).values({ orgId: "org_masizakhe", channel, balance: amount }).onConflictDoNothing();
     await db.insert(schema.creditLedger).values({ orgId: "org_masizakhe", channel, delta: amount, reason: "grant", ref: "seed", idempotencyKey: `seed_grant_${channel}_org_masizakhe`, balanceAfter: amount, createdAt: msgNow }).onConflictDoNothing();
+  }
+
+  // Plan catalogue (W3.4)  the super-admin-editable tier table. Seeded from the code
+  // PLANS so a fresh DB has the catalogue; onConflictDoNothing keeps admin edits intact.
+  for (const [i, p] of PLANS.entries()) {
+    await db.insert(schema.plans).values({
+      id: p.id, name: p.name, tagline: p.tagline, priceCents: p.priceCents, seats: p.seats,
+      aiTokens: p.aiTokens, videoMinutes: p.videoMinutes, messaging: p.messaging, rooms: p.rooms,
+      storageGb: p.storageGb, popular: Boolean(p.popular), ngo: Boolean(p.ngo), sortOrder: i, active: true,
+    }).onConflictDoNothing();
   }
 
   // Phila subscription (Phase 15A)  Masizakhe is on the Community plan, billed monthly.

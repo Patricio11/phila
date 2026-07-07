@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Check, Pencil, Plus, Sparkles, X } from "lucide-react";
+import { useId, useState, useTransition } from "react";
+import { Check, Pencil, Sparkles, X } from "lucide-react";
 import type { PlanWithUsage } from "@/lib/data-provider";
 import type { Plan } from "@/lib/domain/types";
+import { savePlan } from "@/app/admin/plans/actions";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
@@ -18,24 +19,17 @@ function tokens(n: number): string {
 }
 
 export function PlansManager({ initial }: { initial: PlanWithUsage[] }) {
-  const { toast } = useToast();
   const [plans, setPlans] = useState(initial);
 
-  const save = (plan: Plan) => {
+  const onSaved = (plan: Plan) => {
     setPlans((prev) => prev.map((p) => (p.plan.id === plan.id ? { ...p, plan } : p)));
-    toast({ tone: "success", title: `${plan.name} updated`, description: "Entitlements apply to every org on this plan  no drift." });
   };
 
   return (
     <div>
-      <div className="mb-4 flex justify-end">
-        <Button size="sm" onClick={() => toast({ tone: "default", title: "Create a plan", description: "Define a tier, its price, and its entitlements." })}>
-          <Plus className="size-4" strokeWidth={2} aria-hidden /> Create plan
-        </Button>
-      </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {plans.map((p) => (
-          <PlanCard key={p.plan.id} item={p} onSave={save} />
+          <PlanCard key={p.plan.id} item={p} onSaved={onSaved} />
         ))}
       </div>
     </div>
@@ -51,10 +45,30 @@ function Entitlement({ label, value }: { label: string; value: string }) {
   );
 }
 
-function PlanCard({ item, onSave }: { item: PlanWithUsage; onSave: (plan: Plan) => void }) {
+function PlanCard({ item, onSaved }: { item: PlanWithUsage; onSaved: (plan: Plan) => void }) {
   const { plan, subscribers, mrrCents } = item;
+  const { toast } = useToast();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(plan);
+  const [pending, startTransition] = useTransition();
+
+  const commit = () => {
+    startTransition(async () => {
+      const res = await savePlan({
+        id: draft.id, name: draft.name, tagline: draft.tagline, priceCents: draft.priceCents,
+        seats: draft.seats, aiTokens: draft.aiTokens, videoMinutes: draft.videoMinutes,
+        messaging: draft.messaging, rooms: draft.rooms, storageGb: draft.storageGb,
+        popular: draft.popular, ngo: draft.ngo,
+      });
+      if (!res.ok) {
+        toast({ tone: "error", title: "Couldn't save", description: res.error });
+        return;
+      }
+      onSaved(draft);
+      setEditing(false);
+      toast({ tone: "success", title: `${draft.name} updated`, description: "Entitlements apply to every org on this plan — no drift." });
+    });
+  };
 
   return (
     <div className={cn("flex flex-col rounded-card border bg-surface p-5 shadow-sm", plan.popular ? "border-accent/40" : "border-border")}>
@@ -71,16 +85,23 @@ function PlanCard({ item, onSave }: { item: PlanWithUsage; onSave: (plan: Plan) 
 
       {editing ? (
         <div className="mt-4 space-y-2.5">
+          <TextField label="Name" value={draft.name} onChange={(v) => setDraft({ ...draft, name: v })} />
+          <TextField label="Tagline" value={draft.tagline} onChange={(v) => setDraft({ ...draft, tagline: v })} />
           <Field label="Price (R/mo)" value={String(Math.round(draft.priceCents / 100))} onChange={(v) => setDraft({ ...draft, priceCents: Number(v || 0) * 100 })} />
-          <Field label="Seats (blank = ∞)" value={draft.seats === null ? "" : String(draft.seats)} onChange={(v) => setDraft({ ...draft, seats: v === "" ? null : Number(v) })} />
+          <Field label="Seats (blank = ∞)" value={draft.seats === null ? "" : String(draft.seats)} onChange={(v) => setDraft({ ...draft, seats: v === "" ? null : Number(v) })} allowBlank />
           <Field label="AI tokens / mo" value={String(draft.aiTokens)} onChange={(v) => setDraft({ ...draft, aiTokens: Number(v || 0) })} />
           <Field label="Video minutes" value={String(draft.videoMinutes)} onChange={(v) => setDraft({ ...draft, videoMinutes: Number(v || 0) })} />
-          <Field label="Rooms (blank = ∞)" value={draft.rooms === null ? "" : String(draft.rooms)} onChange={(v) => setDraft({ ...draft, rooms: v === "" ? null : Number(v) })} />
+          <Field label="Storage (GB)" value={String(draft.storageGb)} onChange={(v) => setDraft({ ...draft, storageGb: Number(v || 0) })} />
+          <Field label="Rooms (blank = ∞)" value={draft.rooms === null ? "" : String(draft.rooms)} onChange={(v) => setDraft({ ...draft, rooms: v === "" ? null : Number(v) })} allowBlank />
+          <label className="flex cursor-pointer items-center justify-between pt-1">
+            <span className="text-[12.5px] text-text-2">Messaging (WhatsApp + SMS)</span>
+            <input type="checkbox" checked={draft.messaging} onChange={(e) => setDraft({ ...draft, messaging: e.target.checked })} className="size-4 accent-[var(--accent)]" />
+          </label>
           <div className="mt-3 flex gap-2">
-            <Button size="sm" className="flex-1" onClick={() => { onSave(draft); setEditing(false); }}>
-              <Check className="size-4" strokeWidth={2.4} aria-hidden /> Save
+            <Button size="sm" className="flex-1" onClick={commit} disabled={pending}>
+              <Check className="size-4" strokeWidth={2.4} aria-hidden /> {pending ? "Saving…" : "Save"}
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => { setDraft(plan); setEditing(false); }}>
+            <Button variant="ghost" size="sm" onClick={() => { setDraft(plan); setEditing(false); }} disabled={pending}>
               <X className="size-4" strokeWidth={2} aria-hidden />
             </Button>
           </div>
@@ -96,7 +117,8 @@ function PlanCard({ item, onSave }: { item: PlanWithUsage; onSave: (plan: Plan) 
             <Entitlement label="Seats" value={plan.seats === null ? "Unlimited" : String(plan.seats)} />
             <Entitlement label="AI" value={tokens(plan.aiTokens)} />
             <Entitlement label="Video" value={plan.videoMinutes === 0 ? "Paste-link" : `${plan.videoMinutes} min`} />
-            <Entitlement label="Messaging" value={plan.messaging ? "WhatsApp + SMS" : ""} />
+            <Entitlement label="Storage" value={`${plan.storageGb} GB`} />
+            <Entitlement label="Messaging" value={plan.messaging ? "WhatsApp + SMS" : "—"} />
             <Entitlement label="Rooms" value={plan.rooms === null ? "Unlimited" : String(plan.rooms)} />
           </ul>
 
@@ -112,11 +134,22 @@ function PlanCard({ item, onSave }: { item: PlanWithUsage; onSave: (plan: Plan) 
   );
 }
 
-function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function Field({ label, value, onChange, allowBlank }: { label: string; value: string; onChange: (v: string) => void; allowBlank?: boolean }) {
+  const id = useId();
   return (
     <div className="space-y-1">
-      <Label>{label}</Label>
-      <Input inputMode="numeric" value={value} onChange={(e) => onChange(e.target.value.replace(/[^\d]/g, ""))} className="h-9" />
+      <Label htmlFor={id}>{label}</Label>
+      <Input id={id} inputMode="numeric" value={value} onChange={(e) => onChange(e.target.value.replace(/[^\d]/g, ""))} className="h-9" placeholder={allowBlank ? "∞" : undefined} />
+    </div>
+  );
+}
+
+function TextField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const id = useId();
+  return (
+    <div className="space-y-1">
+      <Label htmlFor={id}>{label}</Label>
+      <Input id={id} value={value} onChange={(e) => onChange(e.target.value)} className="h-9" />
     </div>
   );
 }

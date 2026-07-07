@@ -3,7 +3,7 @@ import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { PageHead } from "@/components/shell/page-head";
 import { PlanPicker } from "@/components/hub/plan-picker";
-import { PLANS, planById } from "@/lib/billing/plans";
+import { getPlansDb, getPlanByIdDb } from "@/db/queries/plans";
 import { confirmPlanCheckout } from "@/app/hub/billing/plan-actions";
 import { now as clockNow } from "@/lib/clock";
 
@@ -17,11 +17,14 @@ export default async function ChangePlanPage({ searchParams }: { searchParams: P
   let activated: string | null = null;
   if (ref) {
     const r = await confirmPlanCheckout(ref);
-    if (r.active && r.planId) activated = planById(r.planId)?.name ?? null;
+    if (r.active && r.planId) activated = (await getPlanByIdDb(r.planId))?.name ?? null;
   }
 
   const provider = await getDataProvider();
-  const sub = await provider.getOrgSubscription(membership.orgId, clockNow());
+  const [sub, plans] = await Promise.all([
+    provider.getOrgSubscription(membership.orgId, clockNow()),
+    getPlansDb(),
+  ]);
 
   return (
     <div className="rise space-y-6">
@@ -34,7 +37,7 @@ export default async function ChangePlanPage({ searchParams }: { searchParams: P
         </div>
       )}
 
-      <PlanPicker plans={PLANS} currentPlanId={sub?.plan.id ?? null} />
+      <PlanPicker plans={plans} currentPlanId={sub?.plan.id ?? null} />
 
       <p className="text-[11.5px] text-text-3">Plans renew monthly. Changing plan takes effect immediately; you&apos;ll be charged for the new plan. Need a custom arrangement? Talk to Phila.</p>
     </div>

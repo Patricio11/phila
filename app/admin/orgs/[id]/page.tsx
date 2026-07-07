@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Info } from "lucide-react";
 import { requireSuperAdmin } from "@/lib/auth/guard";
 import { getOrgResourceMetersDb, type OrgResourceMeters } from "@/db/queries/resources";
+import { getPlansDb } from "@/db/queries/plans";
 import { OrgPlanControl } from "@/components/admin/org-plan-control";
 import { OrgResourceMeters as OrgResourceMetersPanel } from "@/components/admin/org-resource-meters";
 import { getDataProvider, type TeamMemberView } from "@/lib/data-provider";
@@ -51,11 +52,12 @@ export default async function AdminOrgDetailPage({ params }: { params: Promise<{
   const principal = await requireSuperAdmin();
   const provider = await getDataProvider();
   const isDb = process.env.DATA_PROVIDER === "db";
-  const [detail, review, featureMap, meters] = await Promise.all([
+  const [detail, review, featureMap, meters, plans] = await Promise.all([
     provider.getPlatformOrgDetail(id),
     provider.getOrgOnboardingReview(id),
     isDb ? resolveAllFeaturesDb(id) : Promise.resolve(null),
     isDb ? getOrgResourceMetersDb(id) : Promise.resolve(null as OrgResourceMeters | null),
+    getPlansDb(),
   ]);
   if (!detail) notFound();
   const featureResolutions = featureMap ? ORG_FEATURES.map((f) => featureMap[f]) : [];
@@ -157,7 +159,7 @@ export default async function AdminOrgDetailPage({ params }: { params: Promise<{
           <Card>
             <CardHead title="Plan" />
             <div className="px-[17px] pb-[17px]">
-              <OrgPlanControl orgId={id} planId={meters.planId} />
+              <OrgPlanControl orgId={id} planId={meters.planId} plans={plans} />
             </div>
           </Card>
           <Card>

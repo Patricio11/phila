@@ -6,7 +6,7 @@ import { getCreditBalances } from "@/db/queries/messaging";
 import { currentStorageBytes } from "@/db/queries/documents";
 import { getAiSpendThisMonth, getAiSettings } from "@/db/queries/ai";
 import { getSubscriptionRow } from "@/db/queries/subscriptions";
-import { planById } from "@/lib/billing/plans";
+import { getPlanByIdDb } from "@/db/queries/plans";
 import { BYTES_PER_GB, DEFAULT_STORAGE_GB } from "@/lib/documents/quota";
 
 /**
@@ -35,7 +35,7 @@ export async function orgStorageLimitBytes(orgId: string): Promise<number> {
     getSubscriptionRow(orgId),
   ]);
   const override = (org?.rl as Record<string, number> | undefined)?.storageGb;
-  const planGb = planById(sub?.planId ?? "p_community")?.storageGb ?? DEFAULT_STORAGE_GB;
+  const planGb = (await getPlanByIdDb(sub?.planId ?? "p_community"))?.storageGb ?? DEFAULT_STORAGE_GB;
   return (override ?? planGb) * BYTES_PER_GB;
 }
 
@@ -69,7 +69,7 @@ export async function getOrgResourceMetersDb(orgId: string): Promise<OrgResource
     getSubscriptionRow(orgId),
   ]);
   const rl = (orgRows[0]?.rl as Record<string, number> | undefined) ?? {};
-  const plan = planById(sub?.planId ?? "p_community");
+  const plan = await getPlanByIdDb(sub?.planId ?? "p_community");
   const storageGb = rl.storageGb ?? plan?.storageGb ?? DEFAULT_STORAGE_GB;
   return {
     planName: plan?.name ?? "",

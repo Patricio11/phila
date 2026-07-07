@@ -4,7 +4,9 @@ import { readFileSync } from "node:fs";
 
 /**
  * W3 — the entitlement resolver precedence: platform kill-switch → per-org override →
- * plan → the org's own toggle. Exercised against org_masizakhe (snapshot + restore).
+ * plan → the org's own toggle. Exercised against a dedicated probe org on the Community
+ * plan (which includes AI), so a parallel test moving a shared tenant's plan can't flip
+ * the entitlement mid-run.
  */
 const envFile = readFileSync(".env.local", "utf8");
 process.env.DATABASE_URL = (envFile.match(/^DATABASE_URL=(.+)$/m)?.[1] ?? "").trim();
@@ -12,19 +14,23 @@ const sql = neon(process.env.DATABASE_URL);
 
 const { resolveFeatureDb, setPlatformFeatureDb, setOrgFeatureOverrideDb } = await import("@/db/queries/features");
 
-const ORG = "org_masizakhe";
-let originalFeatures = "";
+const ORG = "org_feat_probe";
 
 afterAll(async () => {
-  if (originalFeatures) await sql`UPDATE orgs SET features = ${originalFeatures}::jsonb WHERE id=${ORG}`;
   await sql`DELETE FROM platform_feature_flags WHERE feature='ai'`;
   await sql`DELETE FROM org_feature_overrides WHERE org_id=${ORG} AND feature='ai'`;
+  await sql`DELETE FROM subscriptions WHERE org_id=${ORG}`;
+  await sql`DELETE FROM orgs WHERE id=${ORG}`;
 });
 
 describe("feature entitlement resolver", () => {
   it("applies the precedence chain for a feature the plan includes", { timeout: 20_000 }, async () => {
-    const [row] = await sql`SELECT features::text AS f FROM orgs WHERE id=${ORG}`;
-    originalFeatures = row!.f as string;
+    // A dedicated probe org on the Community plan (parallel-safe).
+    await sql`INSERT INTO orgs (id, name, slug, province, features, scheduling, client_portal, created_at)
+      VALUES (${ORG}, 'Feature Probe', 'feature-probe', 'Gauteng', '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, now())
+      ON CONFLICT (id) DO UPDATE SET features='{}'::jsonb`;
+    await sql`INSERT INTO subscriptions (org_id, plan_id, status, updated_at) VALUES (${ORG}, 'p_community', 'active', now())
+      ON CONFLICT (org_id) DO UPDATE SET plan_id='p_community', status='active'`;
 
     // Baseline: the practice turns AI on; no override, no kill. (Community plan includes AI.)
     await sql`UPDATE orgs SET features = jsonb_set(features, '{ai}', 'true') WHERE id=${ORG}`;

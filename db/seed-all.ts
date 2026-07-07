@@ -10,7 +10,7 @@
  */
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { eq } from "drizzle-orm";
+import { eq, and, gte, lte } from "drizzle-orm";
 import { createCipheriv, randomBytes } from "node:crypto";
 import { hashPassword } from "better-auth/crypto";
 import * as schema from "@/db/schema";
@@ -37,6 +37,7 @@ import {
   grantNarratives as narrativesFx,
   funderContacts as funderContactsFx,
   teamThreads as teamThreadsFx,
+  supervisionTemplates as supervisionFx,
   orgForms as orgFormsFx,
   formAssignments as formAssignmentsFx,
   bookingSettings as bookingSettingsFx,
@@ -173,6 +174,15 @@ async function main() {
   //    rows; real client bookings are left untouched).
   const durationOf = new Map(servicesFx.map((s) => [s.id, s.durationMin]));
   const today = sastDate(now);
+  // Clear the org's "live week" first (templates + supervision land here). This drops any
+  // stale rows — old templated sessions AND residue left by test runs sharing a room — so
+  // the rebuild never trips the room/counsellor overlap constraint. Cohort history (older,
+  // and online) and other tenants are untouched; a fresh prod DB has nothing to clear.
+  await db.delete(schema.appointments).where(and(
+    eq(schema.appointments.orgId, ORG),
+    gte(schema.appointments.startsAt, new Date(`${addDays(today, -9)}T00:00:00+02:00`)),
+    lte(schema.appointments.startsAt, new Date(`${addDays(today, 3)}T23:59:59+02:00`)),
+  ));
   for (const [cid, template] of Object.entries(dayTemplates)) {
     for (let i = 0; i < template.length; i++) await db.delete(schema.appointments).where(eq(schema.appointments.id, `appt_${cid}_${i}`));
     await db.insert(schema.appointments).values(
@@ -231,12 +241,47 @@ async function main() {
       status: "pending", createdAt: now,
     }).onConflictDoNothing();
   }
+  // Org→counsellor shares so each counsellor's "Shared with me" reads true. The admin
+  // shares the Reports folder with the team and a specific file with one counsellor.
+  const DOC_SHARES = [
+    { id: "dshare_reports_thabo", targetType: "folder", targetId: "fold_mas_reports", sharedWith: "user_thabo" },
+    { id: "dshare_reports_aisha", targetType: "folder", targetId: "fold_mas_reports", sharedWith: "user_aisha" },
+    { id: "dshare_reports_pieter", targetType: "folder", targetId: "fold_mas_reports", sharedWith: "user_pieter" },
+    { id: "dshare_doc1_thabo", targetType: "file", targetId: "doc1", sharedWith: "user_thabo" },
+  ] as const;
+  for (const s of DOC_SHARES) {
+    await db.insert(schema.documentShares).values({
+      id: s.id, orgId: "org_masizakhe", targetType: s.targetType, targetId: s.targetId,
+      sharedWith: s.sharedWith, grantedBy: "user_thandeka", createdAt: now,
+    }).onConflictDoNothing();
+  }
 
   for (const [clientId, measures] of Object.entries(outcomesFx)) {
     for (let i = 0; i < measures.length; i++) {
       const m = measures[i]!;
       await db.insert(schema.outcomeMeasures).values({ id: `om_${clientId}_${i}`, clientId, tool: m.tool, score: m.score, takenAt: new Date(now.getTime() - m.weeksAgo * 7 * 86_400_000) }).onConflictDoNothing();
     }
+  }
+
+  // ── Supervision cluster ───────────────────────────────────────────────
+  // Signed supervisee notes awaiting the supervisor's sign-off, each on a real
+  // backing appointment (16:00+, clear of the day templates). Drives the hub's
+  // supervision queue + each counsellor's note history. Supervisor = nomsa.
+  const supervisorOf = new Map(counsellorsFx.map((c) => [c.id, c.supervisorId]));
+  for (let i = 0; i < supervisionFx.length; i++) {
+    const s = supervisionFx[i]!;
+    const apptId = `appt_sup_${i}`;
+    const startsAt = new Date(`${addDays(today, s.sessionDayOffset)}T16:${String((i % 2) * 30).padStart(2, "0")}:00+02:00`);
+    await db.delete(schema.appointments).where(eq(schema.appointments.id, apptId));
+    await db.insert(schema.appointments).values({
+      id: apptId, orgId: ORG, clientId: s.clientId, counsellorId: s.superviseeId, serviceId: s.serviceId,
+      type: "in_person", roomId: null, startsAt, durationMin: durationOf.get(s.serviceId) ?? 60, state: "completed", tags: [],
+    }).onConflictDoNothing({ target: schema.appointments.id });
+    await db.insert(schema.sessionNotes).values({
+      id: `sn_sup_${i}`, appointmentId: apptId, authorCounsellorId: s.superviseeId, body: s.note,
+      aiGenerated: s.aiGenerated, signedAt: new Date(now.getTime() + s.submittedDayOffset * 86_400_000),
+      supervisorId: supervisorOf.get(s.superviseeId) ?? "couns_nomsa", supervisorSignedAt: null, supervisorDecision: null, supervisorComment: null,
+    }).onConflictDoNothing();
   }
 
   // ── Forms cluster (Phase 18.6) ────────────────────────────────────────
@@ -292,9 +337,18 @@ async function main() {
   }
 
   // ── Billing cluster (client invoices + org-level extras) ──────────────
+  // The fixtures are anchored to a fixed "today" (their newest invoice is 2026-06-24);
+  // shift every invoice by the same delta so the ladder stays intact but lands around
+  // NOW  otherwise "income this month" decays to R0 whenever the demo is seeded later.
+  const INV_ANCHOR = new Date("2026-06-24T09:00:00+02:00").getTime(); // the fixtures' newest invoice
+  const invDelta = now.getTime() - INV_ANCHOR; // newest invoice → today; the ladder pulls a recent paid one into this month
+  const shiftInv = (iso: string) => new Date(new Date(iso).getTime() + invDelta);
   const allInvoices = [...Object.values(invoicesFx).flat(), ...extraInvoicesFx];
   for (const v of allInvoices) {
-    await db.insert(schema.invoices).values({ id: v.id, clientId: v.clientId, orgId: v.orgId, number: v.number, serviceName: v.serviceName, amountCents: v.amountCents, status: v.status, issuedAt: new Date(v.issuedAt), dueAt: new Date(v.dueAt) }).onConflictDoNothing();
+    // Update the dates on conflict so a re-seed re-anchors them to the new "now"
+    // (they'd otherwise stay frozen at whatever the first seed wrote).
+    await db.insert(schema.invoices).values({ id: v.id, clientId: v.clientId, orgId: v.orgId, number: v.number, serviceName: v.serviceName, amountCents: v.amountCents, status: v.status, issuedAt: shiftInv(v.issuedAt), dueAt: shiftInv(v.dueAt) })
+      .onConflictDoUpdate({ target: schema.invoices.id, set: { issuedAt: shiftInv(v.issuedAt), dueAt: shiftInv(v.dueAt), status: v.status } });
   }
 
   // ── Funders & grants cluster (M&E) ────────────────────────────────────
@@ -438,6 +492,53 @@ async function main() {
     }
   }
 
+  // ── Second tenant with REAL data (Thrive EAP) ─────────────────────────
+  // The extra orgs above are lightweight (ghost staff/appointments for the counts).
+  // Thrive gets a proper admin + counsellor login, real clients, and real sessions so
+  // tenant-isolation / RLS is demonstrable end-to-end and the console has a second
+  // fully-explorable tenant. (Its own gateway/consent stay minimal — a real trial org.)
+  const THRIVE = "org_thrive";
+  const thriveUsers = [
+    { id: "user_thrive_admin", name: "Adri Louw", email: "admin@thrive-eap.co.za", teamRole: "org_admin" as const },
+    { id: "user_thrive_couns", name: "Dr Yolanda Meyer", email: "counsellor@thrive-eap.co.za", teamRole: "counsellor" as const },
+  ];
+  for (const u of thriveUsers) {
+    await db.insert(schema.user).values({ id: u.id, name: u.name, email: u.email, emailVerified: true, createdAt: msgNow, updatedAt: msgNow, platformRole: null, clientId: null }).onConflictDoNothing();
+    await db.insert(schema.account).values({ id: `acct_${u.id}`, accountId: u.id, providerId: "credential", userId: u.id, password: hash, createdAt: msgNow, updatedAt: msgNow }).onConflictDoNothing();
+    await db.insert(schema.orgMembers).values({ orgId: THRIVE, userId: u.id, teamRole: u.teamRole, isSupervisor: u.teamRole === "counsellor", status: "active", createdAt: msgNow }).onConflictDoNothing();
+  }
+  await db.insert(schema.counsellors).values({
+    id: "couns_thrive", userId: "user_thrive_couns", orgId: THRIVE, name: "Dr Yolanda Meyer",
+    credentialBody: "HPCSA", credentialRegNo: "PS-0104521", credentialStatus: "verified", isSupervisor: true, supervisorId: null,
+  }).onConflictDoNothing();
+  const thriveClients = [
+    { id: "cl_thrive_1", name: "Riedwaan Adams" }, { id: "cl_thrive_2", name: "Chloe van Wyk" },
+    { id: "cl_thrive_3", name: "Sibongile Dube" }, { id: "cl_thrive_4", name: "Marius Fourie" },
+  ];
+  for (let i = 0; i < thriveClients.length; i++) {
+    const c = thriveClients[i]!;
+    await db.insert(schema.clients).values({ id: c.id, orgId: THRIVE, name: c.name, province: "Western Cape", primaryCounsellorId: "couns_thrive", riskFlag: false, createdAt: new Date(msgNow.getTime() - (30 + i * 12) * 86_400_000) }).onConflictDoNothing();
+  }
+  // Real sessions for Thrive's own counsellor (distinct times → no overlap).
+  const thriveAppts = [
+    { id: "appt_thrive_1", clientId: "cl_thrive_1", dayBack: 0, hour: 9, state: "completed" },
+    { id: "appt_thrive_2", clientId: "cl_thrive_2", dayBack: 0, hour: 11, state: "scheduled" },
+    { id: "appt_thrive_3", clientId: "cl_thrive_3", dayBack: 0, hour: 14, state: "scheduled" },
+    { id: "appt_thrive_4", clientId: "cl_thrive_1", dayBack: 1, hour: 9, state: "completed" },
+    { id: "appt_thrive_5", clientId: "cl_thrive_4", dayBack: 3, hour: 11, state: "completed" },
+    { id: "appt_thrive_6", clientId: "cl_thrive_2", dayBack: -1, hour: 10, state: "scheduled" },
+  ];
+  const thriveToday = sastDate(msgNow);
+  for (const a of thriveAppts) {
+    await db.insert(schema.appointments).values({
+      id: a.id, orgId: THRIVE, clientId: a.clientId, counsellorId: "couns_thrive", serviceId: "svc_individual",
+      type: "online", roomId: null, startsAt: new Date(`${addDays(thriveToday, -a.dayBack)}T${String(a.hour).padStart(2, "0")}:00:00+02:00`),
+      durationMin: 60, state: a.state, tags: [],
+    }).onConflictDoNothing({ target: schema.appointments.id });
+  }
+  await db.insert(schema.invoices).values({ id: "inv_thrive_1", clientId: "cl_thrive_1", orgId: THRIVE, number: "TH-2026-0007", serviceName: "Individual counselling", amountCents: 60000, status: "paid", issuedAt: shiftInv("2026-06-16T09:00:00+02:00"), dueAt: shiftInv("2026-06-30T09:00:00+02:00") })
+    .onConflictDoUpdate({ target: schema.invoices.id, set: { issuedAt: shiftInv("2026-06-16T09:00:00+02:00"), dueAt: shiftInv("2026-06-30T09:00:00+02:00") } });
+
   // ── Per-org onboarding submissions (after every org exists, for the FK) ──
   for (const [orgId, docs] of Object.entries(onboardingDocsFx)) {
     for (const [reqId, d] of Object.entries(docs)) {
@@ -446,6 +547,42 @@ async function main() {
         uploadedAt: new Date(msgNow.getTime() - d.daysAgo * 86_400_000),
       }).onConflictDoNothing();
     }
+  }
+
+  // ── Polish: payment history + public-page analytics ───────────────────
+  // A short, honest payment ledger for Masizakhe (a settled invoice, a credit
+  // top-up, the monthly subscription) so the billing/payments views read real.
+  const daysAgoTs = (n: number) => new Date(now.getTime() - n * 86_400_000);
+  const SEED_PAYMENTS = [
+    { ref: "seed_pay_inv2", purpose: "invoice", invoiceId: "inv2", creditsAmount: 0, amountCents: 45000, daysAgo: 9 },
+    { ref: "seed_pay_credit_sms", purpose: "credit_sms", packId: "sms_500", creditsAmount: 500, amountCents: 25000, daysAgo: 20 },
+    { ref: "seed_pay_sub", purpose: "subscription", packId: "p_community", creditsAmount: 0, amountCents: 65000, daysAgo: 6 },
+  ] as const;
+  for (const p of SEED_PAYMENTS) {
+    await db.insert(schema.payments).values({
+      orgId: "org_masizakhe", provider: "paystack", providerRef: p.ref, purpose: p.purpose,
+      packId: "packId" in p ? p.packId : null, invoiceId: "invoiceId" in p ? p.invoiceId : null,
+      creditsAmount: p.creditsAmount, amountCents: p.amountCents, status: "paid",
+      createdAt: daysAgoTs(p.daysAgo), paidAt: daysAgoTs(p.daysAgo),
+    }).onConflictDoNothing({ target: schema.payments.providerRef });
+  }
+  // Public micro-site traffic over the last fortnight → the "how is my page doing"
+  // panel. A realistic funnel: many views, some book-clicks, a few bookings. The rows
+  // have a random-uuid PK (no natural key), so clear the org's set first to stay idempotent.
+  await db.delete(schema.publicPageEvents).where(eq(schema.publicPageEvents.orgId, "org_masizakhe"));
+  const PPE: { kind: string; daysAgo: number }[] = [];
+  for (let d = 13; d >= 0; d--) {
+    const views = 3 + ((d * 7) % 5); // 3–7 views/day
+    for (let v = 0; v < views; v++) PPE.push({ kind: "view", daysAgo: d });
+    if (d % 2 === 0) PPE.push({ kind: "book_click", daysAgo: d });
+    if (d % 5 === 0) PPE.push({ kind: "booked", daysAgo: d });
+  }
+  for (let i = 0; i < PPE.length; i++) {
+    const e = PPE[i]!;
+    await db.insert(schema.publicPageEvents).values({
+      orgId: "org_masizakhe", kind: e.kind,
+      at: new Date(now.getTime() - e.daysAgo * 86_400_000 - (i % 24) * 3_600_000),
+    }).onConflictDoNothing();
   }
 
   const sql = neon(url!);
@@ -483,6 +620,13 @@ async function seedCohort(now: Date): Promise<void> {
   const POP = ["black_african", "black_african", "black_african", "coloured", "black_african", "indian_asian", "black_african", "white", "black_african", "coloured"];
   const EMP = ["unemployed", "employed", "student", "employed", "self_employed", "unemployed", "student", "employed", "unemployed", "self_employed"];
 
+  // Sessions are spread across the four counsellors; a per-counsellor day cursor keeps
+  // every counsellor's cohort appointments ≥2 days apart so none overlap (the deferred
+  // exclusion constraint), and clear of the ±3-day day-templates (all ≥7 days back).
+  const COUNS = ["couns_nomsa", "couns_thabo", "couns_aisha", "couns_pieter"];
+  const dayCursor: Record<string, number> = { couns_nomsa: 0, couns_thabo: 0, couns_aisha: 0, couns_pieter: 0 };
+  const today = sastDate(now);
+
   const N = 30;
   for (let i = 0; i < N; i++) {
     const id = `cl_demo_${String(i + 1).padStart(3, "0")}`;
@@ -501,6 +645,22 @@ async function seedCohort(now: Date): Promise<void> {
     for (let k = 0; k < series.length; k++) {
       const takenAt = new Date(now.getTime() - weeks[k]! * 7 * 86_400_000);
       await db.insert(schema.outcomeMeasures).values({ id: `om_${id}_${k}`, clientId: id, tool: "PHQ-9", score: Math.max(0, series[k]!), takenAt }).onConflictDoNothing();
+    }
+
+    // Completed sessions → the grants' "sessions delivered" indicator (reads ~0 without
+    // these). 4–8 per client over the last few months, round-robined across counsellors.
+    const sessions = 4 + (i % 5);
+    for (let k = 0; k < sessions; k++) {
+      const c = COUNS[(i + k) % COUNS.length]!;
+      const seq = dayCursor[c] ?? 0;
+      dayCursor[c] = seq + 1;
+      const dayBack = 7 + seq * 2;
+      const hour = 8 + (seq % 8);
+      const startsAt = new Date(`${addDays(today, -dayBack)}T${String(hour).padStart(2, "0")}:00:00+02:00`);
+      await db.insert(schema.appointments).values({
+        id: `appt_coh_${id}_${k}`, orgId: ORG, clientId: id, counsellorId: c, serviceId: "svc_individual",
+        type: "online", roomId: null, startsAt, durationMin: 60, state: "completed", tags: [],
+      }).onConflictDoNothing({ target: schema.appointments.id });
     }
 
     // Allocate to grants: ~73% to DSD, every 3rd also to the Lotto youth grant.

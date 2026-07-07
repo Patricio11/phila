@@ -12,9 +12,23 @@ All sign in at **`/login`** with the password below.
 | Counsellor | `aisha@masizakhe.org.za` | `/app` | Aisha Patel · HPCSA |
 | Counsellor | `pieter@masizakhe.org.za` | `/app` | Pieter van der Merwe · SACSSP |
 | Practice admin (Hub) | `thandeka@masizakhe.org.za` | `/hub` | Thandeka Mbeki · runs the practice |
+| Front desk | `frontdesk@masizakhe.org.za` | `/hub` | Lindiwe Khoza · reception / scheduling |
+| Finance | `finance@masizakhe.org.za` | `/hub` | Riaan Steyn · invoicing & billing |
+| Programme manager | `programmes@masizakhe.org.za` | `/hub` | Bongani Nkosi · M&E / funders *(archived member — reactivate to sign in)* |
 | Client | `lerato.m@example.co.za` | `/me` | Lerato Mahlangu · client portal |
 | Funder | `palesa.mokoena@dsd.example.gov.za` | `/funder` | Palesa Mokoena · DSD · read-only, scoped |
 | Super admin | `ops@philasa.com` | `/admin` | Sizwe Ndlovu · platform console |
+
+## Second org — Thrive EAP (`org_thrive`)
+
+A separate, fully-seeded tenant (own counsellor, clients, sessions, a paid invoice) so
+**tenant isolation / RLS** is demonstrable: sign in as Thrive and you see only Thrive's
+data, never Masizakhe's.
+
+| Role | Email | Lands on | Notes |
+|------|-------|----------|-------|
+| Practice admin (Hub) | `admin@thrive-eap.co.za` | `/hub` | Adri Louw · runs Thrive EAP |
+| Counsellor | `counsellor@thrive-eap.co.za` | `/app` | Dr Yolanda Meyer · HPCSA · 4 clients |
 
 ## Forms (Phase 18.6)
 - The Hub's **Forms** library (`/hub/forms`) is seeded with an **Intake** form and a themed **"After your session"**

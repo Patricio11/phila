@@ -435,24 +435,28 @@ effective(feature, org) =
 
 ---
 
-## Workstream 4  🟡 SEED & DEMO REALNESS
+## Workstream 4  ✅ SEED & DEMO REALNESS
 
-**Status:** not started. *So every page has meaningful data and every role has a login.* (`db/seed-all.ts`)
+**Status:** done. *So every page has meaningful data and every role has a login.* (`db/seed-all.ts`)
 
-- [ ] Seed appointments for **all four** counsellors (only Nomsa has any → 3 empty dashboards).
-- [ ] Give the 30-client M&E cohort time-anchored appointments (grant "sessions delivered" reads ~0 today).
-- [ ] Seed `session_notes` from the existing `supervisionTemplates` fixture (never imported) so supervision +
-      note history are real.
-- [ ] Add logins (`user` + `account` + `org_members`) for the missing roles: **front_desk** (Lindiwe),
-      **finance** (Riaan), **programme_manager** (Bongani)  also fixes a broken team-thread participant.
-- [ ] Seed a **second org** (admin + a few clients/appointments) so tenant-isolation / RLS is demonstrable
-      and the admin console has >1 tenant.
-- [ ] Make invoices **`now`-relative** (issue/due as `daysAgo`/`daysAhead`)  hardcoded June–July 2026 dates
-      decay "income this month" to R0.
-- [ ] Seed `document_shares` (org→counsellor) so "shared with me" isn't empty.
-- [ ] Polish: a few `audit_log`, `public_page_events`, `payments`, and `org_*_settings` rows so no
-      otherwise-explorable page shows a zero-state.
-- [ ] Update `docs/DEMO_LOGINS.md` with the new logins + second org.
+- [x] Day templates for **all four** counsellors (Thabo/Aisha/Pieter added to `counsellorDayTemplates`, so the
+      mock provider populates too). Each counsellor's `/app` now has a live day — verified Aisha's dashboard.
+- [x] The 30-client M&E cohort now has **time-anchored completed sessions** (4–8 each, round-robined across the
+      counsellors, spaced so the deferred overlap constraint never trips). Grant "sessions delivered" reads
+      **173** (DSD) / **67** (Lotto) instead of ~0.
+- [x] `session_notes` seeded from `supervisionTemplates` (each on a real backing appointment at 16:00, clear of
+      the day templates), supervisor = Nomsa → the supervision sign-off queue is real.
+- [x] Logins for **front_desk** (Lindiwe), **finance** (Riaan), **programme_manager** (Bongani — seeded
+      archived, to demo the archived-member state) — all in `DEMO_USERS`/`MEMBERS`; documented in DEMO_LOGINS.
+- [x] A **second, fully-real tenant — Thrive EAP** (`org_thrive`): its own admin (`admin@thrive-eap.co.za`) +
+      counsellor (Dr Yolanda Meyer) + 4 clients + real sessions + a paid invoice. **RLS isolation proven** end-to-end
+      (signed in as Thrive → sees only Thrive's clients, never Masizakhe's).
+- [x] Invoices are **`now`-relative** — a uniform shift anchors the newest to today (`onConflictDoUpdate` so a
+      re-seed re-anchors), pulling a recent paid one into the current month → "income this month" = R450, not R0.
+- [x] `document_shares` (org→counsellor) seeded so each counsellor's "Shared with me" reads true.
+- [x] Polish: real `payments` (settled invoice, credit top-up, subscription) + a fortnight of `public_page_events`
+      (view→click→booked funnel, cleared-then-reinserted to stay idempotent) so those views aren't zero-state.
+- [x] `docs/DEMO_LOGINS.md` updated with the operations-role logins + the Thrive second org.
 
 ---
 

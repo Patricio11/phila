@@ -503,7 +503,11 @@ Move from today's 5 tabs to a cleaner IA:
       relabelled "Security & data"; the data-export + danger-zone surfaces remain.)*
 
 ### 6.2 Flow quick-wins (small, high smoothness)
-- [ ] "Create invoice" CTA on session-complete → deep-link `/hub/invoicing/new?client=…&service=…` prefilled.
+- [x] **Auto-invoice at booking** (per the practice's model, supersedes the "create-invoice-on-session-complete"
+      idea): booking a **priced** session raises an unpaid invoice (numbered, due per terms, **linked to the
+      appointment**), both public + staff paths; a default-on **"Raise an invoice when a session is booked"** toggle
+      lets funded/free programmes opt out. The client pays online via the existing gateway pay-link → the invoice
+      flips to **paid**. `createInvoiceForBookingDb` (the app never created invoices before — builder was print-only).
 - [x] **Client request-to-change** on `upcoming-session-card` (per the org's rule: the client never edits the
       booking  they **request** a reschedule/cancel with a reason; the org has a configurable notice window and a
       pending-requests queue on `/hub/appointments` with Approve/Decline). *(Supersedes the "direct reschedule/

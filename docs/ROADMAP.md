@@ -1009,7 +1009,7 @@ over in one smooth step  and any reschedule can carry a reason kept on the recor
 
 ---
 
-## 🛠️ PRODUCTION READINESS (W1–W6)  cross-cutting hardening pass
+## 🛠️ PRODUCTION READINESS (W1–W7)  cross-cutting hardening pass
 *Tracked in full in `docs/PRODUCTION_READINESS_PLAN.md`; overlaps Phases 19–21. Status below.*
 - [x] **W1  Team & lifecycle:** team management (invite → activate, roles & honest reach), mandatory
   **email verification** + branded onboarding/admin-approval lifecycle on a **17-day no-card trial**,
@@ -1025,8 +1025,23 @@ over in one smooth step  and any reschedule can carry a reason kept on the recor
   the M&E cohort has time-anchored sessions (grants read real "sessions delivered"); supervision queue,
   document shares, payments, and public-page analytics seeded; invoices now-relative; a **second, fully-real,
   RLS-isolated tenant** (Thrive EAP).
-- [~] **W5  Docs hygiene:** README/DESIGN/SECURITY/SMOKE_TEST/ROADMAP reconciled to the shipped reality
-  (this pass). **W6  UX & org-settings IA** next.
+- [x] **W5  Docs hygiene:** README/DESIGN/SECURITY/SMOKE_TEST/ROADMAP reconciled to the shipped reality.
+- [x] **W6  UX & org-settings IA:** org **branding + logo** (shown on the public booking page, counted
+  against the org's storage quota); the **invoice model** made real (an invoice is generated at booking, and a
+  client can pay it online when the org's gateway is connected); the **client change-request flow** (clients
+  never edit a booking  they **request** a reschedule/cancel with a reason, gated by the org's configurable
+  notice window, which notifies the practice); a top-level **Messaging** summary tab in Settings; and the
+  Security & data surfaces.
+- [x] **W7  New features (the moat):** every differentiator shipped, each in the W3 feature registry,
+  Dormant-by-Default and admin-rollable  **sliding-scale / subsidised fees** (per-client fee policy flowing
+  into the auto-invoice), **unified client timeline**, **referral / source tracking** (org-toggleable),
+  **no-show follow-up** (one-tap rebook), **outcome trends** (PHQ-9 **and** GAD-7 as separate per-tool trends),
+  the **funder/M&E report pack** (real print-to-PDF, k-anonymised), **waitlist auto-fill** (a cancelled slot
+  offers itself to matching waiting clients), **WhatsApp-first comms** (the free 24-hour service window
+  engineered end-to-end  free-form in-window, approved template out-of-window, honest skip otherwise; WhatsApp
+  promoted to the primary channel with a Test-connection ping; BYO encrypted Meta creds), and the **client
+  portal** reschedule/cancel (on every upcoming session) + pay-via-pay-link. *(Only the optional, out-of-scope
+  medical-aid invoice formatting remains.)*
 
 ---
 
@@ -1061,8 +1076,10 @@ over in one smooth step  and any reschedule can carry a reason kept on the recor
 
 ## 🌱 ADVISED ENHANCEMENTS (backlog  tag `[new]` / `[phase N]`)
 - [ ] **Group / couple / family sessions** `[new]`  multi-client appointments + notes.
-- [ ] **Waitlist auto-fill** `[phase 11]`  a cancelled slot offers itself to a waitlisted client via WhatsApp.
-- [ ] **Sliding-scale / subsidised fees** `[phase 15]`  per-client fee rules (NGO reality).
+- [x] **Waitlist auto-fill** ✅ *(W7)*  a cancelled slot offers itself to matching waiting clients via the
+  messaging rail + an in-app notification; the counsellor is told how many were offered it (`waitlist_entries`).
+- [x] **Sliding-scale / subsidised fees** ✅ *(W7)*  per-client fee policy (standard / sliding-% / fixed /
+  waived) flowing into the auto-invoice at booking (`clients.fee_policy`).
 - [ ] *(Promoted to core  PWA + offline send-queue now ship in Phases 0/8/11.)* Remaining backlog: **low-data media-defer toggle** refinements for field counsellors on metered data.
 - [ ] **Low-data media-defer toggle** `[phase 8]`  finer control for field counsellors on metered data (English-only; no translation work  SA, one language).
 - [ ] **Supervision analytics** `[phase 16]`  supervisor caseload quality + sign-off turnaround.
@@ -1164,4 +1181,4 @@ shared by an explicit, consented counsellor action  never the private note.
 > trends, session counts, and org-posted narrative. **Never** an individual client, note, care plan,
 > contact, demographic row, or any other grant. Read-only; every view audited.
 
-*Last updated: 2026-07-07 · Version 1.1 · Phila · philasa.com · Stack: Next.js · Neon · Better Auth · Supabase Storage · LiveKit*
+*Last updated: 2026-07-08 · Version 1.2 · Phila · philasa.com · Stack: Next.js · Neon · Better Auth · Supabase Storage · LiveKit*

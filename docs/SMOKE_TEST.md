@@ -104,6 +104,12 @@ Sign in as **Thandeka**.
 - ☐ Open an invoice → A4 preview renders
 - ☐ If the org gateway is connected (Settings → Payments), an unpaid invoice shows a **Pay link** button → copies a `/pay/<token>` URL
 
+**Messaging  WhatsApp-first** (Settings → **Messaging** → Manage messaging) (W7)
+- ☐ **WhatsApp** leads as the **primary channel** with the free-24h-window explainer; SMS/email are the metered backups
+- ☐ The connect form shows the BYO Meta fields (Phone number ID, WABA ID, access token, app secret, verify token) + a copyable **webhook URL** and **verify token**; when connected, a **Test connection** button pings Meta and (on success) shows a **Verified** badge
+- ☐ **Message templates**: editing a template's preview shows the sample with **highlighted** auto-filled tokens; a WhatsApp template documents the `{{1}}..{{6}}` positional order for out-of-window sends
+- ☐ **Waitlist** (W7): add a client to the waitlist from their detail; on `/hub/appointments` a **Waitlist** card lists them with one-tap prefilled **Book**; cancelling a session offers the freed slot to matching waiting clients (dormant-safe message + in-app notification)
+
 **Insights** (`/hub/insights`)  session analytics **and** the M&E reporting differentiator
 - ☐ Session volumes + **trend chips** (vs the previous period) on completed / attendance / new clients / revenue
 - ☐ Switching the period (week / month / quarter) updates the figures
@@ -188,6 +194,8 @@ Sign in as a client account (see `docs/DEMO_LOGINS.md` for a seeded client email
 - ☐ `/me` home, **Your steps**, **Sessions**, **Documents**, **Billing**, **Consent**, **Profile** all render
 - ☐ Toggling a **consent** persists and is audited
 - ☐ An online session shows a **join** link
+- ☐ **Request a change** (W7): on `/me/sessions`, an **upcoming** session shows **Request reschedule** / **Request cancellation**; submitting with a reason shows the "we'll be in touch" state (the booking is **not** changed  the practice gets the request); a session inside the org's notice window instead asks the client to phone
+- ☐ **Pay online** (W7): on `/me/billing`, an **unpaid** invoice shows **Pay R…** (when the org's gateway is on) that opens the signed `/pay/<token>` page; otherwise EFT details are shown
 
 ---
 
@@ -211,7 +219,7 @@ Sign in as **ops@philasa.com**.
 
 - ☐ `npx tsc --noEmit` clean
 - ☐ `npm run lint` clean
-- ☐ `npx vitest run`  all green (181 unit/integration)
+- ☐ `npx vitest run`  all green (202 unit/integration)
 - ☐ `npm run build` clean, then `npm run start`  the paths above still work on the production build
 - ☐ Dark mode looks right across Hub, the public site, and the funder portal
 - ☐ Mobile (360 px): no horizontal scroll on `/o/masizakhe`, `/hub/insights`, `/funder`

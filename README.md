@@ -77,14 +77,21 @@ everything **seeded** (no mock at runtime). Per-phase records live in `docs/comp
   searchable Client/Counsellor pickers (`SearchSelect`) with **inline "New client"** (primary counsellor
   = the selected counsellor); seeded starter credits (500 SMS / 1000 email) + super-admin top-ups at
   `/admin/orgs/[id]`.
-- ✅ **Phases 18 / 18.5 / 18.6 / 18.7**  documents (Supabase storage), real-time team messaging,
-  the org forms library, and client onboarding (see `docs/ROADMAP.md`).
-- ✅ **Production readiness (W1–W4).** Team management (invite → activate, roles & honest reach),
+- ✅ **Phases 18 / 18.5 / 18.6 / 18.7 / 18.8**  documents (Supabase storage), real-time team messaging,
+  the org forms library, client onboarding, and caseload transfer + reschedule reasons (see `docs/ROADMAP.md`).
+- ✅ **Production readiness (W1–W7).** Team management (invite → activate, roles & honest reach),
   **mandatory email verification** + a branded onboarding/admin-approval lifecycle on a **17-day
-  no-card trial**, security hardening (HSTS/CSP + security headers, webhook HMAC, timing-safe token
-  checks, fail-strict clinical audit), platform **feature governance** (kill-switch → per-org override →
-  plan → self-toggle) with a DB-backed, **super-admin-editable plan catalogue**, and a fully-seeded
-  two-tenant demo with RLS isolation proven end-to-end. See `docs/PRODUCTION_READINESS_PLAN.md`.
+  no-card trial** (W1); security hardening (HSTS/CSP + security headers, webhook HMAC, timing-safe token
+  checks, fail-strict clinical audit) (W2); platform **feature governance** (kill-switch → per-org override →
+  plan → self-toggle) with a DB-backed, **super-admin-editable plan catalogue** (W3); a fully-seeded
+  two-tenant demo with RLS isolation proven end-to-end (W4); docs reconciliation (W5); **UX & org-settings
+  IA**  org branding/logo on the public page, an invoice generated at booking + pay-online, and the client
+  **change-request** flow (request reschedule/cancel with a reason, notice-window gated) (W6); and the
+  **moat features** (W7), each Dormant-by-Default in the feature registry: sliding-scale fees, the unified
+  client timeline, referral/source tracking, no-show follow-up, PHQ-9 **and** GAD-7 outcome trends, the
+  print-to-PDF funder report pack, waitlist auto-fill, **WhatsApp-first comms** (the free 24-hour service
+  window  free-form in-window, approved template out-of-window; BYO Meta creds), and the client portal's
+  reschedule/cancel + pay-via-pay-link. See `docs/PRODUCTION_READINESS_PLAN.md`.
 
 ## Getting started
 

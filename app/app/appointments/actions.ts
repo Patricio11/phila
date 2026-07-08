@@ -7,6 +7,7 @@ import { requireOrg } from "@/lib/auth/guard";
 import { getDb } from "@/db/client";
 import { appointments } from "@/db/schema";
 import { rescheduleAppointment as persistReschedule, cancelAppointment as persistCancel } from "@/db/queries/appointments";
+import { markNoShowFollowedUpDb } from "@/db/queries/no-shows";
 import { isSlotTakenError, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
 import { notifyAppointment } from "@/lib/messaging/notify";
 import { videoJoinPath } from "@/lib/video/livekit";
@@ -101,4 +102,46 @@ export async function cancelAppointment(
     reason: `cancel_${parsed.data.scope}`,
   });
   return { ok: true, cancelled };
+}
+
+/* ── No-show follow-up (W7) ────────────────────────────────────────────── */
+
+const noShowInput = z.object({ appointmentId: z.string().min(1) });
+
+/** Dismiss a no-show from the follow-up list (rebooked elsewhere, or handled offline). */
+export async function resolveNoShow(
+  raw: z.infer<typeof noShowInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg([...SCHEDULERS]);
+  const parsed = noShowInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid request" };
+  if (process.env.DATA_PROVIDER === "db") await markNoShowFollowedUpDb(membership.orgId, parsed.data.appointmentId);
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
+    orgId: membership.orgId,
+    target: `appointment:${parsed.data.appointmentId}`,
+    reason: "no_show_resolved",
+  });
+  return { ok: true };
+}
+
+/** Send the client a "we missed you — let's rebook" follow-up over their preferred channel. */
+export async function sendNoShowFollowUp(
+  raw: z.infer<typeof noShowInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg([...SCHEDULERS]);
+  const parsed = noShowInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid request" };
+  const [appt] = await getDb().select({ orgId: appointments.orgId }).from(appointments).where(eq(appointments.id, parsed.data.appointmentId)).limit(1);
+  if (!appt || appt.orgId !== membership.orgId) return { ok: false, error: "Session not found." };
+  if (process.env.DATA_PROVIDER === "db") await notifyAppointment(parsed.data.appointmentId, "no_show", null, "followup");
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
+    orgId: membership.orgId,
+    target: `appointment:${parsed.data.appointmentId}`,
+    reason: "no_show_followup_sent",
+  });
+  return { ok: true };
 }

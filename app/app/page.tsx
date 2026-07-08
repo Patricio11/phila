@@ -11,6 +11,8 @@ import { StatCard } from "@/components/ui/stat-card";
 import { ScheduleList } from "@/components/schedule/schedule-list";
 import { AttentionList } from "@/components/dashboard/attention-list";
 import { WeekCapacity } from "@/components/dashboard/week-capacity";
+import { NoShowFollowUps } from "@/components/dashboard/no-show-follow-ups";
+import { listUnhandledNoShowsDb } from "@/db/queries/no-shows";
 import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";
 import { now as clockNow } from "@/lib/clock";
 
@@ -56,6 +58,8 @@ export default async function DashboardPage() {
     target: `counsellor:${me.id}/dashboard`,
     reason: "own_caseload",
   });
+
+  const noShows = process.env.DATA_PROVIDER === "db" ? await listUnhandledNoShowsDb(membership.orgId, me.id) : [];
 
   const { stats } = dash;
   const nowMs = new Date(now).getTime();
@@ -107,12 +111,15 @@ export default async function DashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Today's schedule */}
-        <Card className="lg:col-span-2">
-          <CardHead title="Today" count={dash.today.length} />
-          <CardBody className="pt-0">
-            <ScheduleList appointments={dash.today} nowISO={now} />
-          </CardBody>
-        </Card>
+        <div className="space-y-6 lg:col-span-2">
+          {noShows.length > 0 && <NoShowFollowUps initial={noShows} options={scheduling} />}
+          <Card>
+            <CardHead title="Today" count={dash.today.length} />
+            <CardBody className="pt-0">
+              <ScheduleList appointments={dash.today} nowISO={now} />
+            </CardBody>
+          </Card>
+        </div>
 
         {/* Outcomes + attention */}
         <div className="space-y-6">

@@ -32,6 +32,8 @@ export interface CreateInitial {
   date?: string;
   time?: string;
   counsellorId?: string;
+  clientId?: string;
+  serviceId?: string;
   roomId?: string;
   type?: "In person" | "Online";
 }
@@ -41,11 +43,14 @@ export function CreateAppointmentModal({
   onClose,
   options,
   initial,
+  onCreated,
 }: {
   open: boolean;
   onClose: () => void;
   options: SchedulingOptions;
   initial?: CreateInitial;
+  /** Called after an appointment is successfully created (e.g. to mark a no-show rebooked). */
+  onCreated?: () => void;
 }) {
   const { toast } = useToast();
   const [pending, start] = useTransition();
@@ -58,8 +63,8 @@ export function CreateAppointmentModal({
   const [nc, setNc] = useState({ name: "", phone: "", email: "" });
   const [ncError, setNcError] = useState<string | null>(null);
 
-  const [clientId, setClientId] = useState<string | null>(null);
-  const [serviceId, setServiceId] = useState<string | null>(null);
+  const [clientId, setClientId] = useState<string | null>(initial?.clientId ?? null);
+  const [serviceId, setServiceId] = useState<string | null>(initial?.serviceId ?? null);
   const [counsellorId, setCounsellorId] = useState<string | null>(initial?.counsellorId ?? options.defaultCounsellorId ?? null);
   const [type, setType] = useState(initial?.type ?? "In person");
   const [roomId, setRoomId] = useState<string | null>(initial?.roomId ?? null);
@@ -132,6 +137,7 @@ export function CreateAppointmentModal({
       const name = clients.find((c) => c.id === clientId)?.name ?? "client";
       const seriesNote = recurring ? (recurringCount ? ` · ${recurringCount}-session series` : " · ongoing series") : "";
       toast({ tone: "success", title: "Appointment created", description: (sendConfirmation ? `${name} was notified by email + in-app.` : `Booked for ${name}.`) + seriesNote });
+      onCreated?.();
       onClose();
     });
   };

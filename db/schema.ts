@@ -287,6 +287,8 @@ export const appointments = pgTable("appointments", {
   rescheduleNote: text("reschedule_note"), // optional reason when a session is moved
   reminded24h: boolean("reminded_24h").default(false).notNull(), // reminder sweep dedup
   reminded1h: boolean("reminded_1h").default(false).notNull(),
+  /** When a no-show was followed up (rebooked or dismissed) — so it stops nagging (W7). */
+  noShowFollowUpAt: timestamp("no_show_follow_up_at", { withTimezone: true }),
 });
 
 /* ── Clinical cluster (Phase 10) ───────────────────────────────────────── */

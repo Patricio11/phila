@@ -534,7 +534,10 @@ Sizes: S/M/L. Grounded in existing building blocks.
 
 - [ ] **Outcome measures live + trends** (S)  PHQ-9/GAD-7 persisted (W1.2) with per-client trend; GAD-7 schema
       already present. *Differentiator: no SA competitor scores outcomes.*
-- [ ] **No-show follow-up automation** (S)  auto-nudge/rebook using the existing `no_show` trigger.
+- [x] **No-show follow-up** (S) ✅  a missed session never falls through the cracks. A "Missed sessions to follow
+      up" card on the counsellor dashboard lists unhandled no-shows with **one-tap Rebook** (a create-appointment
+      modal **prefilled** with the client + counsellor + missed service), a **"we missed you" nudge** (the `no_show`
+      message rail), and **Mark done**. `appointments.no_show_follow_up_at` clears a handled one so it stops nagging.
 - [ ] **Portal pay via pay-link** (S/M)  W1.3.
 - [ ] **Portal reschedule/cancel** (M)  client-guarded wrappers over existing actions.
 - [x] **Sliding-scale / subsidised fees** (M) ✅  a per-client fee policy (`clients.fee_policy`): standard,

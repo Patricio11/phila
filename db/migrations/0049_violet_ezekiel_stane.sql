@@ -1,0 +1,1 @@
+ALTER TABLE "appointments" ADD COLUMN "no_show_follow_up_at" timestamp with time zone;

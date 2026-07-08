@@ -604,6 +604,16 @@ async function main() {
   await db.update(schema.clients).set({ feePolicy: { kind: "waived" } }).where(eq(schema.clients.id, "cl_demo_002"));
   await db.update(schema.clients).set({ feePolicy: { kind: "fixed", value: 15000 } }).where(eq(schema.clients.id, "cl_zanele"));
 
+  // GAD-7 (anxiety) series alongside PHQ-9 for a few clients (W7) — so the client
+  // outcome trends show both tools, not just depression. Improving, weeks 8 → 4 → now.
+  const gad7 = [{ id: "cl_lerato", scores: [14, 9, 5] }, { id: "cl_johan", scores: [12, 8, 6] }, { id: "cl_demo_001", scores: [16, 11, 7] }];
+  const gadWeeks = [8, 4, 0];
+  for (const g of gad7) {
+    for (let k = 0; k < g.scores.length; k++) {
+      await db.insert(schema.outcomeMeasures).values({ id: `om_gad_${g.id}_${k}`, clientId: g.id, tool: "GAD-7", score: g.scores[k]!, takenAt: new Date(now.getTime() - gadWeeks[k]! * 7 * 86_400_000) }).onConflictDoNothing();
+    }
+  }
+
   // Referral tracking (W7) — a realistic spread of how the cohort found the practice, so
   // the "Where clients come from" Insights breakdown is meaningful. (masizakhe has it on.)
   const REFERRAL_MIX = ["word_of_mouth", "whatsapp", "sadag", "medical", "search", "funder_programme", "social", "school_employer", "returning", "word_of_mouth"];

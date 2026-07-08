@@ -532,8 +532,10 @@ Move from today's 5 tabs to a cleaner IA:
 **Status:** not started. *Each registers in the W3 feature registry, defaults OFF, admin-rollable.*
 Sizes: S/M/L. Grounded in existing building blocks.
 
-- [ ] **Outcome measures live + trends** (S)  PHQ-9/GAD-7 persisted (W1.2) with per-client trend; GAD-7 schema
-      already present. *Differentiator: no SA competitor scores outcomes.*
+- [x] **Outcome measures live + trends** (S) ✅  PHQ-9 **and GAD-7** now show as **separate per-tool trends** on
+      the client detail (`OutcomeTrends`) with scale notes (0–27 / 0–21, lower is better) and the improvement
+      direction  no longer mixed onto one line. Both tools were captured; now both are shown. *Differentiator:
+      no SA competitor scores outcomes.*
 - [x] **No-show follow-up** (S) ✅  a missed session never falls through the cracks. A "Missed sessions to follow
       up" card on the counsellor dashboard lists unhandled no-shows with **one-tap Rebook** (a create-appointment
       modal **prefilled** with the client + counsellor + missed service), a **"we missed you" nudge** (the `no_show`

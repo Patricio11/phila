@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { StatusDot } from "@/components/ui/status-dot";
 import { BlockedState } from "@/components/ui/blocked-state";
 import { ClientTimeline } from "@/components/hub/client-timeline";
-import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";
+import { OutcomeTrends } from "@/components/charts/outcome-trends";
 import { ReassignClientButton } from "@/components/hub/reassign-client-button";
 import { InviteClientButton } from "@/components/hub/invite-client-button";
 import { EditClientButton } from "@/components/hub/edit-client-button";
@@ -65,9 +65,8 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
   const attended = sessions.filter((s) => s.state === "completed" || s.state === "discharged").length;
   const noShow = sessions.filter((s) => s.state === "no_show").length;
   const attendanceRate = attended + noShow > 0 ? Math.round((attended / (attended + noShow)) * 100) : null;
-  const points = [...outcomes]
-    .sort((a, b) => a.takenAt.localeCompare(b.takenAt))
-    .map((o) => ({ label: new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "short" }).format(new Date(o.takenAt)), value: o.score }));
+  // The most recent measure across tools — for the "at a glance" latest-score stat.
+  const latestOutcome = [...outcomes].sort((a, b) => b.takenAt.localeCompare(a.takenAt))[0];
   const counsellorOpts = counsellors.map((c) => ({ id: c.id, name: c.name }));
 
   return (
@@ -112,19 +111,15 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
         <Stat value={String(attended)} label={`Session${attended === 1 ? "" : "s"} attended`} />
         <Stat value={attendanceRate === null ? "" : `${attendanceRate}%`} label={noShow > 0 ? `Attendance · ${noShow} no-show${noShow === 1 ? "" : "s"}` : "Attendance"} />
         <Stat value={timeInCare(client.createdAt, now)} label="In care" />
-        <Stat value={points[points.length - 1] ? String(points[points.length - 1]!.value) : ""} label={outcomes[0]?.tool ?? "Outcome"} />
+        <Stat value={latestOutcome ? String(latestOutcome.score) : ""} label={latestOutcome?.tool ?? "Outcome"} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <Card>
-            <CardHead title="Outcome trend" />
+            <CardHead title="Outcome trends" />
             <div className="px-[17px] pb-[17px]">
-              {points.length >= 2 ? (
-                <OutcomeSparkline points={points} tool={outcomes[0]?.tool ?? "PHQ-9"} coverage={`${outcomes.length} measures captured`} />
-              ) : (
-                <p className="py-6 text-center text-[12.5px] text-text-3">Not yet measured.</p>
-              )}
+              <OutcomeTrends outcomes={outcomes} />
             </div>
           </Card>
 

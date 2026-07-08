@@ -4,6 +4,7 @@ import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
 import { resolveNoteAccess } from "@/lib/auth/roles";
 import { SessionEditor } from "@/components/workspace/session-editor";
+import { listSessionAttachmentsDb } from "@/db/queries/documents";
 import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
@@ -41,5 +42,9 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
     reason: access.reason,
   });
 
-  return <SessionEditor data={data} counsellorName={me.name} videoEnabled={Boolean(org?.features.video)} />;
+  const attachments = process.env.DATA_PROVIDER === "db"
+    ? (await listSessionAttachmentsDb(membership.orgId, id)).map((a) => ({ id: a.id, name: a.name, sizeLabel: a.sizeLabel, scanStatus: a.scanStatus }))
+    : [];
+
+  return <SessionEditor data={data} counsellorName={me.name} videoEnabled={Boolean(org?.features.video)} initialAttachments={attachments} />;
 }

@@ -32,8 +32,13 @@ import {
   saveNoteDraft,
   shareCarePlan,
   signNote,
+  requestSessionAttachment,
+  confirmSessionAttachment,
+  signSessionAttachment,
   type AiExtraction,
 } from "@/app/app/sessions/[id]/actions";
+
+type Attachment = { id: string; name: string; sizeLabel: string; scanStatus: string };
 
 const PROGRESS: { state: AppointmentState; label: string }[] = [
   { state: "completed", label: "Completed" },
@@ -63,10 +68,12 @@ export function SessionEditor({
   data,
   counsellorName,
   videoEnabled,
+  initialAttachments = [],
 }: {
   data: SessionEditorData;
   counsellorName: string;
   videoEnabled: boolean;
+  initialAttachments?: Attachment[];
 }) {
   const { appointment: appt, client, continuity } = data;
   const { toast } = useToast();
@@ -84,17 +91,45 @@ export function SessionEditor({
   const [marking, startMark] = useTransition();
   const [sharing, startShare] = useTransition();
   const [draftingCare, startDraftCare] = useTransition();
-  const [attachments, setAttachments] = useState<string[]>([]);
+  const [attachments, setAttachments] = useState<Attachment[]>(initialAttachments);
+  const [uploading, setUploading] = useState(false);
+  const [openingId, setOpeningId] = useState<string | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const onAttach: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+  // Real upload via the documents pipeline: request a presigned URL → PUT the bytes
+  // straight to storage → confirm (scan + accounting). The file is stored clinical,
+  // linked to this session — the same lane as the rest of the documents system.
+  const onAttach: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Mock: attach to the session record. Phase 10 stores to Supabase (signed URL).
-    setAttachments((prev) => [file.name, ...prev]);
-    toast({ tone: "success", title: "Attached to this session", description: file.name });
     e.target.value = "";
+    setUploading(true);
+    try {
+      const req = await requestSessionAttachment({ appointmentId: appt.id, name: file.name, contentType: file.type || "application/octet-stream", bytes: file.size });
+      if (!req.ok) { toast({ tone: "error", title: "Couldn't attach", description: req.error }); return; }
+      const put = await fetch(req.uploadUrl, { method: "PUT", body: file, headers: { "content-type": file.type || "application/octet-stream" } });
+      if (!put.ok) { toast({ tone: "error", title: "Upload failed", description: "The file didn't reach storage  please try again." }); return; }
+      const done = await confirmSessionAttachment({ documentId: req.documentId, bytes: file.size });
+      if (!done.ok) { toast({ tone: "error", title: "Couldn't finalise", description: done.error }); return; }
+      setAttachments((prev) => [{ id: done.id, name: done.name, sizeLabel: done.sizeLabel, scanStatus: done.scan }, ...prev]);
+      toast(done.scan === "clean"
+        ? { tone: "success", title: "Attached to this session", description: file.name }
+        : { tone: "default", title: "Attached  scanning", description: "It'll open once the security scan clears." });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const openAttachment = (a: Attachment) => {
+    if (a.scanStatus !== "clean") return toast({ tone: "default", title: "Still scanning", description: "This file opens once the scan clears." });
+    setOpeningId(a.id);
+    void (async () => {
+      const res = await signSessionAttachment({ documentId: a.id });
+      setOpeningId(null);
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      window.open(res.url, "_blank", "noopener,noreferrer");
+    })();
   };
 
   // Debounced autosave  never blocks typing; the draft persists so it survives a
@@ -270,7 +305,7 @@ export function SessionEditor({
                 <Sparkles className="size-4" strokeWidth={2} aria-hidden /> Generate draft with AI
               </Button>
               <input ref={fileRef} type="file" className="hidden" onChange={onAttach} aria-hidden />
-              <Button variant="ghost" onClick={() => fileRef.current?.click()}>
+              <Button variant="ghost" onClick={() => fileRef.current?.click()} loading={uploading}>
                 <Paperclip className="size-4" strokeWidth={2} aria-hidden /> Attach
               </Button>
               <Button onClick={onSign} loading={signing} disabled={!body.trim()} className="ml-auto">
@@ -280,10 +315,20 @@ export function SessionEditor({
 
             {attachments.length > 0 && (
               <ul className="space-y-1">
-                {attachments.map((name, i) => (
-                  <li key={i} className="flex items-center gap-2 rounded-control bg-surface-2 px-3 py-2 text-[12.5px] text-text-2">
+                {attachments.map((a) => (
+                  <li key={a.id} className="flex items-center gap-2 rounded-control bg-surface-2 px-3 py-2 text-[12.5px] text-text-2">
                     <Paperclip className="size-3.5 shrink-0 text-text-3" strokeWidth={2} aria-hidden />
-                    <span className="truncate">{name}</span>
+                    <button
+                      type="button"
+                      onClick={() => openAttachment(a)}
+                      disabled={openingId === a.id}
+                      className={cn("truncate text-left", a.scanStatus === "clean" ? "text-accent hover:underline" : "text-text-3")}
+                    >
+                      {a.name}
+                    </button>
+                    <span className="ml-auto shrink-0 text-[11px] tabular-nums text-text-3">
+                      {a.scanStatus === "clean" ? a.sizeLabel : a.scanStatus === "quarantined" ? "Blocked" : "Scanning…"}
+                    </span>
                   </li>
                 ))}
               </ul>

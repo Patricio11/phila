@@ -15,6 +15,12 @@ import { createOutcomeMeasureDb } from "@/db/queries/outcomes";
 import { saveSessionNoteDb, counsellorIdForUser } from "@/db/queries/session-notes";
 import { shareCarePlanDb } from "@/db/queries/care-plans";
 import { draftNote, draftCarePlan } from "@/lib/ai/scribe";
+import { insertPendingDocument, finalizeDocument, getDocumentRow, addStorageUsage, currentStorageBytes, ensureSessionFolderDb } from "@/db/queries/documents";
+import { getStorageProvider, objectKey } from "@/lib/storage";
+import { validateUpload } from "@/lib/documents/quota";
+import { orgStorageLimitBytes } from "@/db/queries/resources";
+import { scanObject } from "@/lib/documents/scan";
+import { randomUUID } from "node:crypto";
 
 const isDb = () => process.env.DATA_PROVIDER === "db";
 
@@ -264,4 +270,104 @@ export async function recordOutcome(
     reason: `record_${parsed.data.tool}`,
   });
   return { ok: true };
+}
+
+/* ── Session attachments (W6.2): real uploads via the documents pipeline ──── */
+
+/** The appointment's client + date, scoped so a caller can't touch another org's session. */
+async function sessionContext(orgId: string, appointmentId: string): Promise<{ clientId: string | null; clientName: string; dateLabel: string } | null> {
+  const [row] = await getDb().select({ clientId: appointments.clientId, clientName: clients.name, startsAt: appointments.startsAt })
+    .from(appointments).leftJoin(clients, eq(appointments.clientId, clients.id))
+    .where(and(eq(appointments.id, appointmentId), eq(appointments.orgId, orgId))).limit(1);
+  if (!row) return null;
+  const dateLabel = new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "short", year: "numeric" }).format(row.startsAt);
+  return { clientId: row.clientId, clientName: row.clientName ?? "Client", dateLabel };
+}
+
+const attachInput = z.object({
+  appointmentId: z.string().min(1),
+  name: z.string().trim().min(1).max(160),
+  contentType: z.string().trim().min(1).max(120),
+  bytes: z.number().int().positive(),
+});
+
+/** Mint a presigned upload URL for a session attachment (clinical, linked to the session). */
+export async function requestSessionAttachment(
+  raw: z.infer<typeof attachInput>,
+): Promise<{ ok: true; uploadUrl: string; documentId: string } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg([...CLINICIANS]);
+  const parsed = attachInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Check the file." };
+  const ctx = await sessionContext(membership.orgId, parsed.data.appointmentId);
+  if (!ctx) return { ok: false, error: "That session couldn't be found." };
+  const v = validateUpload({ contentType: parsed.data.contentType, bytes: parsed.data.bytes, name: parsed.data.name });
+  if (!v.ok) return v;
+
+  const storage = await getStorageProvider();
+  if (storage.status !== "live") return { ok: false, error: "Phila Storage isn't switched on yet." };
+  const used = await currentStorageBytes(membership.orgId);
+  if (used + parsed.data.bytes > await orgStorageLimitBytes(membership.orgId))
+    return { ok: false, error: "You've reached your plan's storage. Remove files or upgrade for more." };
+
+  const documentId = `doc_${randomUUID()}`;
+  const key = objectKey(membership.orgId, documentId, parsed.data.name);
+  let uploadUrl: string;
+  try {
+    ({ uploadUrl } = await storage.signedUploadUrl({ key, contentType: parsed.data.contentType }));
+  } catch {
+    return { ok: false, error: "Storage rejected the upload  check the Phila Storage configuration." };
+  }
+  const author = await noteAuthorId(membership.orgId, principal.userId, parsed.data.appointmentId);
+  // File it into Documents under Sessions → [Client] → [Session date] so it's browsable there too.
+  const folderId = await ensureSessionFolderDb(membership.orgId, ctx.clientId, ctx.clientName, ctx.dateLabel);
+  await insertPendingDocument({
+    id: documentId, orgId: membership.orgId, folderId, name: parsed.data.name,
+    contentType: parsed.data.contentType, storageKey: key, uploadedBy: principal.userId,
+    sessionId: parsed.data.appointmentId, clientId: ctx.clientId, counsellorId: author,
+    visibility: "clinical", sharedBy: "counsellor",
+  });
+  await logAccess({ action: "file.access", actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole }, orgId: membership.orgId, target: `document:${documentId}`, reason: "session_attach_request" });
+  return { ok: true, uploadUrl, documentId };
+}
+
+const confirmAttachInput = z.object({ documentId: z.string().min(1), bytes: z.number().int().positive() });
+
+/** Finalise a session attachment after the browser PUT (scan + storage accounting). */
+export async function confirmSessionAttachment(
+  raw: z.infer<typeof confirmAttachInput>,
+): Promise<{ ok: true; scan: string; id: string; name: string; sizeLabel: string } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg([...CLINICIANS]);
+  const parsed = confirmAttachInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Could not finalise the upload." };
+  const doc = await getDocumentRow(membership.orgId, parsed.data.documentId);
+  if (!doc || !doc.storageKey) return { ok: false, error: "Upload not found." };
+
+  const scan = await scanObject(doc.storageKey);
+  await finalizeDocument(membership.orgId, parsed.data.documentId, parsed.data.bytes, scan);
+  if (scan === "clean") await addStorageUsage(membership.orgId, parsed.data.bytes);
+  await logAccess({ action: "file.access", actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole }, orgId: membership.orgId, target: `document:${parsed.data.documentId}`, reason: `session_attach_${scan}` });
+  const label = scan === "clean" ? `${Math.max(1, Math.round(parsed.data.bytes / 1024))} KB` : "…";
+  return { ok: true, scan, id: parsed.data.documentId, name: doc.name, sizeLabel: label };
+}
+
+/** A short-lived URL to open a session attachment (clean files only). Audited. */
+export async function signSessionAttachment(
+  raw: { documentId: string },
+): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg([...CLINICIANS]);
+  const documentId = String(raw?.documentId ?? "");
+  if (!documentId) return { ok: false, error: "Not found." };
+  const doc = await getDocumentRow(membership.orgId, documentId);
+  if (!doc || !doc.storageKey || doc.scanStatus !== "clean") return { ok: false, error: "That file isn't available to open." };
+
+  const storage = await getStorageProvider();
+  if (storage.status !== "live") return { ok: false, error: "Files aren't available right now." };
+  let url: string;
+  try {
+    url = await storage.signedDownloadUrl(doc.storageKey);
+  } catch {
+    return { ok: false, error: "Could not open the file." };
+  }
+  await logAccess({ action: "file.access", actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole }, orgId: membership.orgId, target: `document:${documentId}`, reason: "session_attach_download" });
+  return { ok: true, url };
 }

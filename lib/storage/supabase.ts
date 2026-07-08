@@ -37,6 +37,8 @@ export function supabaseStorage(cfg: SupabaseStorageConfig): StorageProvider {
       const res = await fetch(`${root}/object/upload/sign/${cfg.bucket}/${enc(key)}`, {
         method: "POST",
         headers: headers(cfg.serviceKey),
+        // Supabase rejects a JSON content-type with an empty body (400); send `{}`.
+        body: "{}",
       });
       if (!res.ok) throw new Error(`Storage upload-sign failed (${res.status})`);
       const data = (await res.json()) as { url: string };

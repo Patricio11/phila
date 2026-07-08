@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { getDb } from "@/db/client";
 import { activeDb, runForOrg } from "@/lib/db/scoped";
@@ -94,6 +94,33 @@ export async function createFolderDb(
   return id;
 }
 
+/** Find (or create) a folder by name under a parent — the building block for the
+ *  session-attachment tree. Idempotent per (org, parent, name). */
+async function findOrCreateFolder(
+  db: ReturnType<typeof activeDb>, orgId: string, name: string, parentId: string | null, scope: FolderScope, clientId: string | null,
+): Promise<string> {
+  const [existing] = await db.select({ id: documentFolders.id }).from(documentFolders)
+    .where(and(
+      eq(documentFolders.orgId, orgId), eq(documentFolders.name, name), isNull(documentFolders.deletedAt),
+      parentId === null ? isNull(documentFolders.parentId) : eq(documentFolders.parentId, parentId),
+    )).limit(1);
+  if (existing) return existing.id;
+  const id = `fold_${randomUUID()}`;
+  await db.insert(documentFolders).values({ id, orgId, name, parentId, scope, clientId, createdBy: "system", createdAt: new Date() });
+  return id;
+}
+
+/** The leaf folder for a session's attachments: Sessions → [Client] → [Session date].
+ *  So every session file is browsable in the Documents page, tidily organised. */
+export async function ensureSessionFolderDb(orgId: string, clientId: string | null, clientName: string, dateLabel: string): Promise<string> {
+  return runForOrg(orgId, async () => {
+    const db = activeDb();
+    const sessions = await findOrCreateFolder(db, orgId, "Sessions", null, "org", null);
+    const client = await findOrCreateFolder(db, orgId, clientName, sessions, "client", clientId);
+    return findOrCreateFolder(db, orgId, dateLabel, client, "org", null);
+  });
+}
+
 export async function renameFolderDb(orgId: string, folderId: string, name: string): Promise<void> {
   await runForOrg(orgId, () => activeDb().update(documentFolders).set({ name })
     .where(and(eq(documentFolders.orgId, orgId), eq(documentFolders.id, folderId))));
@@ -180,13 +207,28 @@ export async function currentStorageBytes(orgId: string): Promise<number> {
 export async function insertPendingDocument(input: {
   id: string; orgId: string; folderId: string | null; name: string; contentType: string;
   storageKey: string; uploadedBy: string | null;
+  /** Session-attachment context (W6.2): link to the session + client, kept clinical. */
+  sessionId?: string | null; clientId?: string | null; counsellorId?: string | null;
+  visibility?: "internal" | "clinical" | "client_visible"; sharedBy?: "org" | "counsellor" | "client";
 }): Promise<void> {
   await runForOrg(input.orgId, () => activeDb().insert(documents).values({
     id: input.id, orgId: input.orgId, folderId: input.folderId, name: input.name,
-    kind: "upload", visibility: "internal", storageProvider: "supabase", storageKey: input.storageKey,
+    kind: "upload", visibility: input.visibility ?? "internal", storageProvider: "supabase", storageKey: input.storageKey,
     contentType: input.contentType, bytes: 0, sizeLabel: "…", scanStatus: "pending",
-    uploadedBy: input.uploadedBy, sharedBy: "org", createdAt: new Date(),
+    sessionId: input.sessionId ?? null, clientId: input.clientId ?? null, counsellorId: input.counsellorId ?? null,
+    uploadedBy: input.uploadedBy, sharedBy: input.sharedBy ?? "org", createdAt: new Date(),
   }));
+}
+
+/** A session's attachments (clinical), for the note editor. RLS-scoped. */
+export async function listSessionAttachmentsDb(orgId: string, sessionId: string): Promise<{ id: string; name: string; sizeLabel: string; storageKey: string | null; scanStatus: string }[]> {
+  return runForOrg(orgId, async () => {
+    const rows = await activeDb().select({ id: documents.id, name: documents.name, sizeLabel: documents.sizeLabel, storageKey: documents.storageKey, scanStatus: documents.scanStatus })
+      .from(documents)
+      .where(and(eq(documents.orgId, orgId), eq(documents.sessionId, sessionId), isNull(documents.deletedAt)))
+      .orderBy(desc(documents.createdAt));
+    return rows;
+  });
 }
 
 export async function finalizeDocument(orgId: string, documentId: string, bytes: number, scanStatus: ScanStatus): Promise<void> {

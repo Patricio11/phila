@@ -62,18 +62,23 @@ test("consent change persists across a reload (DB-backed)", async ({ page }) => 
   await save2;
 });
 
-test("sign-up creates a real practice and lands on onboarding", async ({ page }) => {
+test("sign-up creates a real practice and asks the founder to verify their email", async ({ page }) => {
+  // Signup is verification-first (W1.8: SIGNUP → VERIFY → ONBOARDING → APPROVAL). After
+  // submitting, the founder lands on a "check your email" step — a real verification link
+  // must be clicked before onboarding, so the test asserts that gate rather than /onboarding.
   const stamp = Date.now();
+  const email = `founder-${stamp}@example.co.za`;
   await page.goto("/signup");
   await page.getByPlaceholder("e.g. Masizakhe Counselling").fill(`Test Practice ${stamp}`);
   await page.locator('input[autocomplete="name"]').fill("Test Founder");
-  await page.getByPlaceholder("you@practice.co.za").fill(`founder-${stamp}@example.co.za`);
+  await page.getByPlaceholder("you@practice.co.za").fill(email);
   await page.locator('input[type="password"]').fill("phila1234");
   await page.getByText(/I agree to Phila/i).click();
   await page.getByRole("button", { name: /create|get started|sign up/i }).first().click();
-  await page.waitForURL("**/onboarding", { timeout: 30_000 });
-  await expect(page).toHaveURL(/\/onboarding/);
-  await page.screenshot({ path: "screenshots/signup-onboarding.png", fullPage: true });
+  await expect(page.getByRole("heading", { name: /check your email/i })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(email)).toBeVisible();
+  await expect(page.getByRole("button", { name: /resend verification/i })).toBeVisible();
+  await page.screenshot({ path: "screenshots/signup-verify-email.png", fullPage: true });
 });
 
 test("2FA: enrol on a counsellor, then sign-in requires the code (only for enrolled users)", async ({ page, context }) => {

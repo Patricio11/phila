@@ -544,7 +544,9 @@ Sizes: S/M/L. Grounded in existing building blocks.
       what they pay, list price struck through) → `setClientFee`. *NGO reality; no competitor does it.*
 - [ ] **Waitlist auto-fill** (L)  cancelled slot offers itself via the messaging rail; new `waitlist_entries`.
 - [ ] **Referral / source tracking** (S/M)  intake already captures the field; surface in Insights breakdowns.
-- [ ] **Unified client timeline** (M)  one scroll over sessions + documents + outcomes + care-plan.
+- [x] **Unified client timeline** (M) ✅  one calm, month-grouped scroll over sessions, **outcome measures with
+      the improvement trend** (▼4 improved), documents, and care-plan shares  the integrated record no SA
+      point-tool gives you. `ClientTimeline` on the hub client detail (replaced the plain session-history list).
 - [ ] **WhatsApp-first comms as a headline** (S/M)  ensure it's prominent, not dormant-by-afterthought;
       engineer reminders into the free 24h service window where possible (marginal cost ≈ 0).
 - [ ] **Funder/M&E depth** (M)  the paid differentiator: generate DSD/NLC-shaped narrative+financial report

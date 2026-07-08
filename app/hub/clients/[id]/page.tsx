@@ -11,10 +11,9 @@ import { PageHead } from "@/components/shell/page-head";
 import { Card, CardHead } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/empty-state";
 import { StatusDot } from "@/components/ui/status-dot";
 import { BlockedState } from "@/components/ui/blocked-state";
-import { SessionTimeline } from "@/components/client/session-timeline";
+import { ClientTimeline } from "@/components/hub/client-timeline";
 import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";
 import { ReassignClientButton } from "@/components/hub/reassign-client-button";
 import { InviteClientButton } from "@/components/hub/invite-client-button";
@@ -124,17 +123,9 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
           </Card>
 
           <Card>
-            <CardHead title="Session history" count={sessions.length} />
+            <CardHead title="Timeline" />
             <div className="px-[17px] pb-[17px]">
-              {sessions.length > 0 ? (
-                <SessionTimeline
-                  appointments={sessions}
-                  nowISO={now}
-                  hrefFor={(a) => (a.state === "scheduled" ? null : `/hub/sessions/${a.id}`)}
-                />
-              ) : (
-                <EmptyState icon={CalendarPlus} title="No sessions yet" body="Sessions appear here once booked." />
-              )}
+              <ClientTimeline sessions={sessions} outcomes={outcomes} documents={documents} carePlan={carePlan} nowISO={now} />
             </div>
           </Card>
         </div>

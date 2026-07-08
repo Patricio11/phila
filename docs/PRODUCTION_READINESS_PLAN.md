@@ -543,7 +543,11 @@ Sizes: S/M/L. Grounded in existing building blocks.
       raise no invoice. A **Fee arrangement** card on the client detail (label chip + a per-service preview of exactly
       what they pay, list price struck through) → `setClientFee`. *NGO reality; no competitor does it.*
 - [ ] **Waitlist auto-fill** (L)  cancelled slot offers itself via the messaging rail; new `waitlist_entries`.
-- [ ] **Referral / source tracking** (S/M)  intake already captures the field; surface in Insights breakdowns.
+- [x] **Referral / source tracking** (S/M) ✅  a proper **org-toggleable feature** (`referrals` in the W3 feature
+      registry, Dormant-by-Default; on/off in Settings → Integrations, super-admin kill-switchable). When on: a
+      "How did they find you?" field on Add/Edit client (WhatsApp, SADAG, GP referral, word of mouth, funder
+      programme…), a source chip on the client detail, and a **"Where clients come from"** ranked breakdown in
+      Insights (operational, not consent-gated). `clients.referral_source`.
 - [x] **Unified client timeline** (M) ✅  one calm, month-grouped scroll over sessions, **outcome measures with
       the improvement trend** (▼4 improved), documents, and care-plan shares  the integrated record no SA
       point-tool gives you. `ClientTimeline` on the hub client detail (replaced the plain session-history list).

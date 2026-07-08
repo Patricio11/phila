@@ -604,6 +604,13 @@ async function main() {
   await db.update(schema.clients).set({ feePolicy: { kind: "waived" } }).where(eq(schema.clients.id, "cl_demo_002"));
   await db.update(schema.clients).set({ feePolicy: { kind: "fixed", value: 15000 } }).where(eq(schema.clients.id, "cl_zanele"));
 
+  // Referral tracking (W7) — a realistic spread of how the cohort found the practice, so
+  // the "Where clients come from" Insights breakdown is meaningful. (masizakhe has it on.)
+  const REFERRAL_MIX = ["word_of_mouth", "whatsapp", "sadag", "medical", "search", "funder_programme", "social", "school_employer", "returning", "word_of_mouth"];
+  const namedSources: [string, string][] = [["cl_lerato", "sadag"], ["cl_johan", "medical"], ["cl_sipho", "word_of_mouth"], ["cl_fatima", "whatsapp"], ["cl_zanele", "search"], ["cl_kabelo", "school_employer"], ["cl_naledi", "funder_programme"], ["cl_megan", "returning"]];
+  for (const [id, src] of namedSources) await db.update(schema.clients).set({ referralSource: src }).where(eq(schema.clients.id, id));
+  for (let i = 0; i < 30; i++) await db.update(schema.clients).set({ referralSource: REFERRAL_MIX[i % REFERRAL_MIX.length]! }).where(eq(schema.clients.id, `cl_demo_${String(i + 1).padStart(3, "0")}`));
+
   const sql = neon(url!);
   const [c] = await sql`select
     (select count(*)::int from orgs) orgs,

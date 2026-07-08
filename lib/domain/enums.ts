@@ -130,6 +130,34 @@ export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
 export const OUTCOME_TOOLS = ["PHQ-9", "GAD-7"] as const;
 export type OutcomeTool = (typeof OUTCOME_TOOLS)[number];
 
+/** How a client found the practice (W7 referral/source tracking) — SA-real channels. */
+export const REFERRAL_SOURCES = [
+  "search",
+  "whatsapp",
+  "social",
+  "sadag",
+  "medical",
+  "word_of_mouth",
+  "funder_programme",
+  "school_employer",
+  "returning",
+  "other",
+] as const;
+export type ReferralSource = (typeof REFERRAL_SOURCES)[number];
+
+export const REFERRAL_SOURCE_LABELS: Record<ReferralSource, string> = {
+  search: "Google / search",
+  whatsapp: "WhatsApp",
+  social: "Social media",
+  sadag: "SADAG",
+  medical: "GP / medical referral",
+  word_of_mouth: "Word of mouth",
+  funder_programme: "Funder programme",
+  school_employer: "School / employer",
+  returning: "Returning client",
+  other: "Other",
+};
+
 export const AI_FEATURES = [
   "note_draft",
   "care_plan_draft",
@@ -139,7 +167,7 @@ export const AI_FEATURES = [
 export type AiFeature = (typeof AI_FEATURES)[number];
 
 /** Per-org feature toggles  dormant by default (Dormant-by-Default Rule). */
-export const ORG_FEATURES = ["ai", "video", "whatsapp", "sms", "payments", "funders"] as const;
+export const ORG_FEATURES = ["ai", "video", "whatsapp", "sms", "payments", "funders", "referrals"] as const;
 export type OrgFeature = (typeof ORG_FEATURES)[number];
 
 /* ---- Documents (Phase 18) ---------------------------------------------- */

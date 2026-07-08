@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Bot, Video, MessageCircle, Smartphone, CreditCard, HandCoins, Power } from "lucide-react";
+import { Bot, Video, MessageCircle, Smartphone, CreditCard, HandCoins, Share2, Power } from "lucide-react";
 import type { FeatureMeta } from "@/lib/domain/features";
 import type { OrgFeature } from "@/lib/domain/enums";
 import { useToast } from "@/components/ui/toast";
@@ -9,7 +9,7 @@ import { setPlatformFeature } from "@/app/admin/features/actions";
 import { cn } from "@/lib/utils";
 
 const ICON: Record<OrgFeature, typeof Bot> = {
-  ai: Bot, video: Video, whatsapp: MessageCircle, sms: Smartphone, payments: CreditCard, funders: HandCoins,
+  ai: Bot, video: Video, whatsapp: MessageCircle, sms: Smartphone, payments: CreditCard, funders: HandCoins, referrals: Share2,
 };
 
 type Row = FeatureMeta & { disabled: boolean };

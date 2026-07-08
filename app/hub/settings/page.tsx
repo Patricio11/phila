@@ -6,6 +6,7 @@ import { PageHead } from "@/components/shell/page-head";
 import { SettingsTabs } from "@/components/hub/settings-tabs";
 import { ClientPortalSettings } from "@/components/hub/client-portal-settings";
 import { FundersFeatureToggle } from "@/components/hub/funders-feature-toggle";
+import { ReferralsFeatureToggle } from "@/components/hub/referrals-feature-toggle";
 import { Card, CardHead } from "@/components/ui/card";
 import { IntegrationToggles } from "@/components/hub/integration-toggles";
 import { PaymentConnectionCard } from "@/components/hub/payment-connection-card";
@@ -184,6 +185,7 @@ export default async function HubSettingsPage() {
                 <p className="text-[12.5px] text-text-2">Everything starts off. Turn on only what you need  nothing sends or leaves until you do.</p>
                 <IntegrationToggles initial={org.features} />
                 <FundersFeatureToggle initial={Boolean(org.features.funders)} />
+                <ReferralsFeatureToggle initial={Boolean(org.features.referrals)} />
               </div>
             </Card>
             <div className="grid items-start gap-6 lg:grid-cols-2">

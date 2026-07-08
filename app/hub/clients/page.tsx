@@ -46,7 +46,7 @@ export default async function HubClientsPage() {
         actions={
           <div className="flex items-center gap-2">
             <ImportClientsButton existingKeys={existingKeys} />
-            <AddClientButton counsellors={counsellorOpts} inviteOnCreateDefault={Boolean(org?.clientPortal.inviteOnCreate)} />
+            <AddClientButton counsellors={counsellorOpts} inviteOnCreateDefault={Boolean(org?.clientPortal.inviteOnCreate)} referralsOn={Boolean(org?.features.referrals)} />
           </div>
         }
       />

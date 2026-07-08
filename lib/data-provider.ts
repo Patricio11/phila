@@ -618,6 +618,8 @@ export interface HubInsights {
   byGender: InsightsMix[];
   byAgeBand: InsightsMix[];
   byProvince: InsightsMix[];
+  /** Where clients come from (W7 referral tracking) — present when the org captures it. */
+  byReferralSource?: InsightsMix[];
   /** Phase 16  same metrics for the previous comparable window (for trend deltas). */
   previous?: { completed: number; attendanceRate: number; newClients: number; revenueActualCents: number; noShows: number };
 }

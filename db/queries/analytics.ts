@@ -11,7 +11,7 @@ import { computeReporting, computeInsights, type OutcomeRow, type ApptRow, type 
 export async function loadCohort(orgId: string): Promise<{ clientRows: ClientRow[]; consentedIds: Set<string>; demos: Demographics[]; outcomes: OutcomeRow[] }> {
   const db = activeDb();
   const [clientRows, demoRows, consentRows] = await Promise.all([
-    db.select({ id: clients.id, createdAt: clients.createdAt }).from(clients).where(and(eq(clients.orgId, orgId), isNull(clients.deletedAt))),
+    db.select({ id: clients.id, createdAt: clients.createdAt, referralSource: clients.referralSource }).from(clients).where(and(eq(clients.orgId, orgId), isNull(clients.deletedAt))),
     db.select().from(demographics),
     db.select({ clientId: consents.clientId }).from(consents).where(and(eq(consents.orgId, orgId), eq(consents.purpose, "demographics"), eq(consents.state, "granted"))),
   ]);
@@ -20,7 +20,7 @@ export async function loadCohort(orgId: string): Promise<{ clientRows: ClientRow
   const demos = demoRows.filter((d) => orgClientIds.has(d.clientId)).map((d) => ({ clientId: d.clientId, gender: d.gender, populationGroup: d.populationGroup, employmentStatus: d.employmentStatus, ageBand: d.ageBand, province: d.province })) as Demographics[];
   const outRows = await db.select({ clientId: outcomeMeasures.clientId, tool: outcomeMeasures.tool, score: outcomeMeasures.score, takenAt: outcomeMeasures.takenAt }).from(outcomeMeasures);
   const outcomes: OutcomeRow[] = outRows.filter((o) => orgClientIds.has(o.clientId)).map((o) => ({ clientId: o.clientId, tool: o.tool, score: o.score, takenAt: o.takenAt.toISOString() }));
-  return { clientRows: clientRows.map((c) => ({ id: c.id, createdAt: c.createdAt.toISOString() })), consentedIds, demos, outcomes };
+  return { clientRows: clientRows.map((c) => ({ id: c.id, createdAt: c.createdAt.toISOString(), referralSource: c.referralSource })), consentedIds, demos, outcomes };
 }
 
 export async function getReportingDb(orgId: string, now: string, filters: ReportingFilters): Promise<ReportingResult & { improvementRate: number; headline: string[] }> {

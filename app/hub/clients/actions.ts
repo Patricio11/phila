@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
-import { PROVINCES } from "@/lib/domain/enums";
+import { PROVINCES, REFERRAL_SOURCES } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
 import { getDataProvider } from "@/lib/data-provider";
 import { createClientDb, createClientsDb, updateClientDb, setClientRemovedDb, reassignClientDb, setClientFeeDb } from "@/db/queries/clients";
@@ -39,6 +39,7 @@ const createInput = z
     province: z.enum(PROVINCES),
     counsellorId: z.string().min(1, "Assign a counsellor."),
     riskFlag: z.boolean(),
+    referralSource: z.enum(REFERRAL_SOURCES).optional(),
     /** Send a portal invite on create (opt-in). Off by default  non-tech clients
      *  are added silently and only invited when the org clicks "Invite to portal". */
     notify: z.boolean().optional(),
@@ -52,10 +53,10 @@ export async function createClient(
   const parsed = createInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the details." };
 
-  const { name, phone, email, province, counsellorId, riskFlag, notify } = parsed.data;
+  const { name, phone, email, province, counsellorId, riskFlag, referralSource, notify } = parsed.data;
   let clientId = "new";
   if (isDb()) {
-    const res = await createClientDb(membership.orgId, { name, phone, email, province, counsellorId, riskFlag }, clockNow());
+    const res = await createClientDb(membership.orgId, { name, phone, email, province, counsellorId, riskFlag, referralSource: referralSource ?? null }, clockNow());
     clientId = res.id;
   }
   await logAccess({
@@ -168,6 +169,7 @@ const updateInput = z
     province: z.enum(PROVINCES),
     counsellorId: z.string().min(1, "Assign a counsellor."),
     riskFlag: z.boolean(),
+    referralSource: z.enum(REFERRAL_SOURCES).optional(),
   })
   .refine(hasContact, { message: contactMessage, path: ["phone"] });
 
@@ -184,9 +186,9 @@ export async function updateClient(
   const parsed = updateInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the details." };
 
-  const { clientId, name, phone, email, province, counsellorId, riskFlag } = parsed.data;
+  const { clientId, name, phone, email, province, counsellorId, riskFlag, referralSource } = parsed.data;
   if (isDb()) {
-    await updateClientDb(membership.orgId, clientId, { name, phone, email, province, counsellorId, riskFlag });
+    await updateClientDb(membership.orgId, clientId, { name, phone, email, province, counsellorId, riskFlag, referralSource: referralSource ?? null });
   }
   await logAccess({
     action: "admin.action",

@@ -249,6 +249,8 @@ export const clients = pgTable("clients", {
   /** Sliding-scale / subsidised fee (W7): { kind: 'standard'|'percentage'|'fixed'|'waived', value? }.
    *  null/absent = pays the list price. `percentage` = pays value% of list; `fixed` = value cents flat. */
   feePolicy: jsonb("fee_policy").$type<{ kind: "standard" | "percentage" | "fixed" | "waived"; value?: number }>(),
+  /** How the client found the practice (W7) — one of REFERRAL_SOURCES; null = not captured. */
+  referralSource: text("referral_source"),
   /** Client self-service profile: { dateOfBirth, address, emergencyName, emergencyPhone, preferredContact }. */
   profile: jsonb("profile").$type<Record<string, string>>().default({}).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),

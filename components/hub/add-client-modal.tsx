@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, Send, UserPlus } from "lucide-react";
-import { PROVINCES, type Province } from "@/lib/domain/enums";
+import { PROVINCES, REFERRAL_SOURCES, REFERRAL_SOURCE_LABELS, type Province, type ReferralSource } from "@/lib/domain/enums";
 import { Dialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
 import { Input, Label, FieldError } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/app/hub/clients/actions";
 import { cn } from "@/lib/utils";
 
-export function AddClientButton({ counsellors, inviteOnCreateDefault = false }: { counsellors: { id: string; name: string }[]; inviteOnCreateDefault?: boolean }) {
+export function AddClientButton({ counsellors, inviteOnCreateDefault = false, referralsOn = false }: { counsellors: { id: string; name: string }[]; inviteOnCreateDefault?: boolean; referralsOn?: boolean }) {
   const { toast } = useToast();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -25,6 +25,7 @@ export function AddClientButton({ counsellors, inviteOnCreateDefault = false }: 
   const [province, setProvince] = useState<Province>("Gauteng");
   const [counsellorId, setCounsellorId] = useState<string | null>(counsellors[0]?.id ?? null);
   const [riskFlag, setRiskFlag] = useState(false);
+  const [referralSource, setReferralSource] = useState<string>("");
   const [notify, setNotify] = useState(inviteOnCreateDefault);
 
   const errors = {
@@ -35,7 +36,7 @@ export function AddClientButton({ counsellors, inviteOnCreateDefault = false }: 
     contact: !phone.trim() && !email.trim() ? "Add a phone number or an email  either works." : "",
   };
 
-  const reset = () => { setName(""); setPhone(""); setEmail(""); setProvince("Gauteng"); setCounsellorId(counsellors[0]?.id ?? null); setRiskFlag(false); setNotify(inviteOnCreateDefault); setAttempted(false); };
+  const reset = () => { setName(""); setPhone(""); setEmail(""); setProvince("Gauteng"); setCounsellorId(counsellors[0]?.id ?? null); setRiskFlag(false); setReferralSource(""); setNotify(inviteOnCreateDefault); setAttempted(false); };
 
   const inviteChannel = email.trim() ? "email" : "SMS";
 
@@ -43,7 +44,7 @@ export function AddClientButton({ counsellors, inviteOnCreateDefault = false }: 
     setAttempted(true);
     if (errors.name || errors.counsellor || errors.phone || errors.email || errors.contact) return;
     start(async () => {
-      const res = await createClient({ name: name.trim(), phone: phone.replace(/\s/g, ""), email, province, counsellorId: counsellorId!, riskFlag, notify });
+      const res = await createClient({ name: name.trim(), phone: phone.replace(/\s/g, ""), email, province, counsellorId: counsellorId!, riskFlag, ...(referralsOn && referralSource ? { referralSource: referralSource as ReferralSource } : {}), notify });
       if (!res.ok) return toast({ tone: "error", title: res.error });
       const firstName = name.split(" ")[0];
       toast({
@@ -115,6 +116,13 @@ export function AddClientButton({ counsellors, inviteOnCreateDefault = false }: 
               {attempted && errors.counsellor ? <FieldError>{errors.counsellor}</FieldError> : null}
             </div>
           </div>
+
+          {referralsOn && (
+            <div className="space-y-1.5">
+              <Label>How did they find you? <span className="font-normal text-text-3">(optional)</span></Label>
+              <Select value={referralSource} onChange={setReferralSource} placeholder="Select a source" options={REFERRAL_SOURCES.map((s) => ({ value: s, label: REFERRAL_SOURCE_LABELS[s] }))} />
+            </div>
+          )}
 
           <button
             type="button"

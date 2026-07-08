@@ -337,6 +337,13 @@
       "when": 1783499251689,
       "tag": "0047_luxuriant_loners",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1783502821707,
+      "tag": "0048_clear_cobalt_man",
+      "breakpoints": true
     }
   ]
 }

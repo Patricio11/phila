@@ -13,9 +13,10 @@ import type { Demographics, Grant, GrantIndicator } from "@/lib/domain/types";
 import type { IndicatorStatus } from "@/lib/data-provider";
 import { applyKAnon } from "@/lib/domain/helpers";
 import { GENDER_LABELS, POPULATION_GROUP_LABELS, AGE_BAND_LABELS, EMPLOYMENT_LABELS } from "@/lib/domain/labels";
+import { REFERRAL_SOURCE_LABELS } from "@/lib/domain/enums";
 
 // ── Row shapes the loaders provide ───────────────────────────────────────────
-export interface ClientRow { id: string; createdAt: string }
+export interface ClientRow { id: string; createdAt: string; referralSource?: string | null }
 export interface OutcomeRow { clientId: string; tool: string; score: number; takenAt: string }
 export interface ApptRow { clientId: string; state: string; startsAt: string }
 export interface InvoiceRow { status: string; issuedAt: string; amountCents: number }
@@ -257,6 +258,8 @@ export function computeInsights(input: InsightsInput, now: string, filters: Insi
     byGender: countBy(demos, (d) => GENDER_LABELS[d.gender as keyof typeof GENDER_LABELS] ?? d.gender) as InsightsMix[],
     byAgeBand: countBy(demos, (d) => AGE_BAND_LABELS[d.ageBand as keyof typeof AGE_BAND_LABELS] ?? d.ageBand) as InsightsMix[],
     byProvince: countBy(demos, (d) => d.province) as InsightsMix[],
+    // Where clients come from (W7) — operational, not demographic, so no consent gate.
+    byReferralSource: countBy(input.clients.filter((c) => c.referralSource), (c) => REFERRAL_SOURCE_LABELS[c.referralSource as keyof typeof REFERRAL_SOURCE_LABELS] ?? c.referralSource!) as InsightsMix[],
     previous: { completed: prev.completed, attendanceRate: prev.attendanceRate, newClients: prev.newClients, revenueActualCents: prev.revenueActualCents, noShows: prev.noShows },
   };
 }

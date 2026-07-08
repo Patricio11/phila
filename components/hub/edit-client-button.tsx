@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, Pencil } from "lucide-react";
-import { PROVINCES, type Province } from "@/lib/domain/enums";
+import { PROVINCES, REFERRAL_SOURCES, REFERRAL_SOURCE_LABELS, type Province, type ReferralSource } from "@/lib/domain/enums";
 import { Dialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
 import { Input, Label, FieldError } from "@/components/ui/input";
@@ -21,10 +21,12 @@ export function EditClientButton({
   clientId,
   counsellors,
   initial,
+  referralsOn = false,
 }: {
   clientId: string;
   counsellors: { id: string; name: string }[];
-  initial: { name: string; phone: string | null; email: string | null; province: Province; counsellorId: string | null; riskFlag: boolean };
+  initial: { name: string; phone: string | null; email: string | null; province: Province; counsellorId: string | null; riskFlag: boolean; referralSource?: string | null };
+  referralsOn?: boolean;
 }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -38,6 +40,7 @@ export function EditClientButton({
   const [province, setProvince] = useState<Province>(initial.province);
   const [counsellorId, setCounsellorId] = useState<string | null>(initial.counsellorId ?? counsellors[0]?.id ?? null);
   const [riskFlag, setRiskFlag] = useState(initial.riskFlag);
+  const [referralSource, setReferralSource] = useState<string>(initial.referralSource ?? "");
 
   const errors = {
     name: name.trim().length < 2 ? "Enter the client's full name." : "",
@@ -50,7 +53,7 @@ export function EditClientButton({
   const resetToInitial = () => {
     setName(initial.name); setPhone(initial.phone ?? ""); setEmail(initial.email ?? "");
     setProvince(initial.province); setCounsellorId(initial.counsellorId ?? counsellors[0]?.id ?? null);
-    setRiskFlag(initial.riskFlag); setAttempted(false);
+    setRiskFlag(initial.riskFlag); setReferralSource(initial.referralSource ?? ""); setAttempted(false);
   };
 
   const close = () => { setOpen(false); resetToInitial(); };
@@ -59,7 +62,7 @@ export function EditClientButton({
     setAttempted(true);
     if (errors.name || errors.counsellor || errors.phone || errors.email || errors.contact) return;
     start(async () => {
-      const res = await updateClient({ clientId, name: name.trim(), phone: phone.replace(/\s/g, ""), email, province, counsellorId: counsellorId!, riskFlag });
+      const res = await updateClient({ clientId, name: name.trim(), phone: phone.replace(/\s/g, ""), email, province, counsellorId: counsellorId!, riskFlag, ...(referralsOn ? { referralSource: (referralSource || undefined) as ReferralSource | undefined } : {}) });
       if (!res.ok) return toast({ tone: "error", title: res.error });
       toast({ tone: "success", title: "Profile updated", description: `${name.split(" ")[0]}'s details are saved.` });
       setOpen(false);
@@ -124,6 +127,13 @@ export function EditClientButton({
               {attempted && errors.counsellor ? <FieldError>{errors.counsellor}</FieldError> : null}
             </div>
           </div>
+
+          {referralsOn && (
+            <div className="space-y-1.5">
+              <Label>How did they find you? <span className="font-normal text-text-3">(optional)</span></Label>
+              <Select value={referralSource} onChange={setReferralSource} placeholder="Select a source" options={REFERRAL_SOURCES.map((s) => ({ value: s, label: REFERRAL_SOURCE_LABELS[s] }))} />
+            </div>
+          )}
 
           <button
             type="button"

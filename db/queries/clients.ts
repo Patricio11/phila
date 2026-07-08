@@ -33,6 +33,8 @@ export interface ClientWriteInput {
   province: Province;
   counsellorId: string;
   riskFlag: boolean;
+  /** How the client found the practice (W7); undefined = leave unchanged/unset. */
+  referralSource?: string | null;
 }
 
 /** Insert a new client onto the org's caseload. Returns the new id. */
@@ -47,6 +49,7 @@ export async function createClientDb(orgId: string, input: ClientWriteInput, now
     province: input.province,
     primaryCounsellorId: input.counsellorId,
     riskFlag: input.riskFlag,
+    referralSource: input.referralSource ?? null,
     createdAt: new Date(now),
   }));
   return { id };
@@ -91,6 +94,7 @@ export async function updateClientDb(orgId: string, clientId: string, input: Cli
       province: input.province,
       primaryCounsellorId: input.counsellorId,
       riskFlag: input.riskFlag,
+      ...(input.referralSource !== undefined ? { referralSource: input.referralSource } : {}),
     })
     .where(and(eq(clients.id, clientId), eq(clients.orgId, orgId))));
 }
@@ -107,6 +111,12 @@ export async function setClientFeeDb(orgId: string, clientId: string, policy: Fe
 export async function getClientFeeDb(orgId: string, clientId: string): Promise<FeePolicy | null> {
   const [row] = await runForOrg(orgId, () => activeDb().select({ f: clients.feePolicy }).from(clients).where(and(eq(clients.id, clientId), eq(clients.orgId, orgId))).limit(1));
   return (row?.f as FeePolicy | null) ?? null;
+}
+
+/** A client's referral source (how they found the practice; null = not captured). RLS-scoped. */
+export async function getClientReferralDb(orgId: string, clientId: string): Promise<string | null> {
+  const [row] = await runForOrg(orgId, () => activeDb().select({ r: clients.referralSource }).from(clients).where(and(eq(clients.id, clientId), eq(clients.orgId, orgId))).limit(1));
+  return row?.r ?? null;
 }
 
 /** Soft-delete (removed=true) or restore (removed=false) a client. */

@@ -120,6 +120,22 @@ export function HubInsightsView({ initial }: { initial: HubInsights }) {
           </p>
         </div>
       </Card>
+
+      {/* Where clients come from (W7 referral tracking) — only when the org captures it. */}
+      {data.byReferralSource && data.byReferralSource.length > 0 && (
+        <Card>
+          <CardHead
+            title="Where clients come from"
+            action={<span className="text-[12px] text-text-3">{data.byReferralSource.reduce((s, r) => s + r.count, 0)} with a source</span>}
+          />
+          <div className="space-y-2 px-[17px] pb-[17px]">
+            <SourceBars rows={data.byReferralSource} />
+            <p className="border-t border-border pt-3 text-[11.5px] text-text-3">
+              How your clients found you  captured when you add or edit a client. Not demographic; no consent needed. Turn this off any time in Settings.
+            </p>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
@@ -149,6 +165,25 @@ function Bars({ bars }: { bars: InsightsBar[] }) {
         ))}
       </div>
     </div>
+  );
+}
+
+/** A ranked bar list for referral sources (clearer than a many-slice donut). */
+function SourceBars({ rows }: { rows: InsightsMix[] }) {
+  const sorted = [...rows].sort((a, b) => b.count - a.count);
+  const max = Math.max(1, ...sorted.map((r) => r.count));
+  return (
+    <ul className="space-y-2">
+      {sorted.map((r) => (
+        <li key={r.label} className="grid grid-cols-[9rem_1fr_2.5rem] items-center gap-3">
+          <span className="truncate text-[12.5px] text-text-2">{r.label}</span>
+          <span className="h-2 overflow-hidden rounded-full bg-surface-2">
+            <span className="block h-full rounded-full bg-accent" style={{ width: `${Math.max(4, (r.count / max) * 100)}%` }} />
+          </span>
+          <span className="text-right text-[12.5px] font-semibold tabular-nums text-text">{r.count}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 

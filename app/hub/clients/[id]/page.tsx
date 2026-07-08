@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarPlus, FileText, HandCoins, Mail, Phone, ShieldCheck, Target } from "lucide-react";
+import { ArrowLeft, CalendarPlus, FileText, HandCoins, Mail, Phone, Share2, ShieldCheck, Target } from "lucide-react";
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
@@ -19,7 +19,8 @@ import { ReassignClientButton } from "@/components/hub/reassign-client-button";
 import { InviteClientButton } from "@/components/hub/invite-client-button";
 import { EditClientButton } from "@/components/hub/edit-client-button";
 import { ClientFeeControl } from "@/components/hub/client-fee-control";
-import { getClientFeeDb } from "@/db/queries/clients";
+import { getClientFeeDb, getClientReferralDb } from "@/db/queries/clients";
+import { REFERRAL_SOURCE_LABELS, type ReferralSource } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
@@ -45,8 +46,11 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
     provider.listServices(membership.orgId),
   ]);
   if (!dossier || dossier.client.orgId !== membership.orgId) notFound();
-  const feePolicy = process.env.DATA_PROVIDER === "db" ? await getClientFeeDb(membership.orgId, id) : null;
+  const isDbMode = process.env.DATA_PROVIDER === "db";
+  const feePolicy = isDbMode ? await getClientFeeDb(membership.orgId, id) : null;
   const pricedServices = services.filter((s) => (s.priceCents ?? 0) > 0).map((s) => ({ name: s.name, priceCents: s.priceCents ?? 0 }));
+  const referralsOn = Boolean(dossier.org.features.referrals);
+  const referralSource = referralsOn && isDbMode ? await getClientReferralDb(membership.orgId, id) : null;
 
   // Hub oversight is a recorded PII access  but private clinical notes are never on this page.
   await logAccess({
@@ -84,7 +88,8 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
             <EditClientButton
               clientId={client.id}
               counsellors={counsellorOpts}
-              initial={{ name: client.name, phone: client.phone ?? null, email: client.email ?? null, province: client.province, counsellorId: counsellor.id, riskFlag: client.riskFlag }}
+              referralsOn={referralsOn}
+              initial={{ name: client.name, phone: client.phone ?? null, email: client.email ?? null, province: client.province, counsellorId: counsellor.id, riskFlag: client.riskFlag, referralSource }}
             />
             <InviteClientButton clientId={client.id} clientName={client.name} phone={client.phone ?? null} email={client.email ?? null} whatsappOn={Boolean(org.features.whatsapp)} smsOn={Boolean(org.features.sms)} />
             <ReassignClientButton clientId={client.id} clientName={client.name} counsellors={counsellorOpts} currentCounsellorId={counsellor.id} />
@@ -99,6 +104,7 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
         {client.phone && <span className="inline-flex items-center gap-1"><Phone className="size-3.5 text-text-3" strokeWidth={2} aria-hidden /> {client.phone}</span>}
         {client.email && <span className="inline-flex items-center gap-1"><Mail className="size-3.5 text-text-3" strokeWidth={2} aria-hidden /> {client.email}</span>}
         {client.riskFlag && <span className="inline-flex items-center gap-1.5 text-danger"><StatusDot tone="rose" /> Safeguarding flag</span>}
+        {referralSource && <span className="inline-flex items-center gap-1"><Share2 className="size-3.5 text-text-3" strokeWidth={2} aria-hidden /> Found you via {REFERRAL_SOURCE_LABELS[referralSource as ReferralSource] ?? referralSource}</span>}
       </div>
 
       {/* At a glance */}

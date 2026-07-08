@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { Mail, MessageCircle, Pencil, RotateCcw, Smartphone } from "lucide-react";
 import type { TemplateView } from "@/db/queries/messaging";
-import { type Channel, type MessageTrigger, renderTemplate, EMAIL_SUBJECTS } from "@/lib/messaging/templates";
+import { type Channel, type MessageTrigger, EMAIL_SUBJECTS } from "@/lib/messaging/templates";
 import { WHATSAPP_TEMPLATE_PARAM_KEYS } from "@/lib/messaging/whatsapp-window";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
@@ -42,8 +42,32 @@ export function TemplateManager({ templates, practiceName }: { templates: Templa
           </div>
         </div>
       ))}
-      <p className="text-[11px] text-text-3">Available tokens: {TOKENS.map((t) => `{${t}}`).join(" · ")}. WhatsApp/SMS keep it short; replies still reach you.</p>
+      <p className="text-[11px] text-text-3">Available tokens: {TOKENS.map((t) => `{${t}}`).join(" · ")}. <span className="text-accent">Highlighted</span> values are filled in automatically for each client. WhatsApp/SMS keep it short; replies still reach you.</p>
     </div>
+  );
+}
+
+/**
+ * Preview a template body with the sample values substituted, but with the dynamic
+ * parts visually chipped — so it reads like a real message AND it's unmistakable that
+ * e.g. the name is auto-filled per client (not hard-coded).
+ */
+function TemplatePreview({ body, sample }: { body: string; sample: Record<string, string> }) {
+  const parts = body.split(/(\{\w+\})/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        const m = part.match(/^\{(\w+)\}$/);
+        if (!m) return <span key={i}>{part}</span>;
+        const token = m[1]!;
+        const value = sample[token];
+        return (
+          <span key={i} title={`{${token}} — filled in per client`} className="rounded bg-accent-soft px-1 font-[560] text-accent">
+            {value ?? `{${token}}`}
+          </span>
+        );
+      })}
+    </>
   );
 }
 
@@ -79,7 +103,7 @@ function TemplateRow({ tpl, sample }: { tpl: TemplateView; sample: Record<string
             <span className="text-[12px] font-[600] text-text">{label}</span>
             {tpl.isOverride && <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] font-medium text-accent">Customised</span>}
           </div>
-          {!editing && <p className="mt-1 whitespace-pre-line text-[12.5px] leading-snug text-text-2">{renderTemplate(tpl.body, sample)}</p>}
+          {!editing && <p className="mt-1 whitespace-pre-line text-[12.5px] leading-snug text-text-2"><TemplatePreview body={tpl.body} sample={sample} /></p>}
         </div>
         {!editing && (
           <Button variant="mini" onClick={() => { setBody(tpl.body); setWaName(tpl.whatsappTemplateName ?? ""); setEditing(true); }}>
@@ -108,7 +132,7 @@ function TemplateRow({ tpl, sample }: { tpl: TemplateView; sample: Record<string
           )}
           <div className="rounded-control border border-border bg-surface px-3 py-2">
             <div className="text-[10.5px] font-medium uppercase tracking-wide text-text-3">Preview{tpl.channel === "email" ? ` · ${EMAIL_SUBJECTS[tpl.key]}` : ""}</div>
-            <p className="mt-1 whitespace-pre-line text-[12.5px] leading-snug text-text">{renderTemplate(body, sample)}</p>
+            <p className="mt-1 whitespace-pre-line text-[12.5px] leading-snug text-text"><TemplatePreview body={body} sample={sample} /></p>
           </div>
           <div className="flex items-center gap-2">
             <Button size="sm" onClick={save} loading={pending}>Save</Button>

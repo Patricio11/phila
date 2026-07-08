@@ -72,11 +72,12 @@ export async function saveOrgBrandingDb(orgId: string, brandAccent: string): Pro
 export interface InvoiceSettingsRow {
   vatRegistered: boolean; vatNumber: string; pricesIncludeVat: boolean; invoicePrefix: string;
   paymentTermsDays: number; bankName: string; accountName: string; accountNumber: string;
-  branchCode: string; showPayButton: boolean;
+  branchCode: string; showPayButton: boolean; autoInvoiceOnBooking: boolean;
 }
 const INVOICE_DEFAULTS: InvoiceSettingsRow = {
   vatRegistered: false, vatNumber: "", pricesIncludeVat: false, invoicePrefix: "INV",
   paymentTermsDays: 14, bankName: "", accountName: "", accountNumber: "", branchCode: "", showPayButton: false,
+  autoInvoiceOnBooking: true,
 };
 
 /** The org's invoicing config, merged over sensible defaults. RLS-scoped. */

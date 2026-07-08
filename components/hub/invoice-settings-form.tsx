@@ -40,6 +40,7 @@ export function InvoiceSettingsForm({
       accountNumber: s.accountNumber,
       branchCode: s.branchCode,
       showPayButton: s.showPayButton,
+      autoInvoiceOnBooking: s.autoInvoiceOnBooking,
     });
     setSaving(false);
     if (res.ok) toast({ tone: "success", title: "Invoicing saved", description: "New invoices use these settings." });
@@ -100,6 +101,17 @@ export function InvoiceSettingsForm({
           <Field label="Account name" value={s.accountName} onChange={(v) => set({ accountName: v })} placeholder="Your practice" />
           <Field label="Account number" value={s.accountNumber} onChange={(v) => set({ accountNumber: v.replace(/\D/g, "") })} placeholder="62845109973" inputMode="numeric" />
           <Field label="Branch code" value={s.branchCode} onChange={(v) => set({ branchCode: v.replace(/\D/g, "") })} placeholder="250655" inputMode="numeric" />
+        </div>
+      </Section>
+
+      {/* Automatic invoicing */}
+      <Section title="Automatic invoicing">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="text-[13.5px] font-medium text-text">Raise an invoice when a session is booked</div>
+            <div className="mt-0.5 text-[12px] text-text-2">Every booking of a priced service creates an unpaid invoice automatically  so nothing slips. Turn off for funded or free programmes where clients aren&apos;t billed.</div>
+          </div>
+          <Toggle on={s.autoInvoiceOnBooking} onClick={() => set({ autoInvoiceOnBooking: !s.autoInvoiceOnBooking })} />
         </div>
       </Section>
 

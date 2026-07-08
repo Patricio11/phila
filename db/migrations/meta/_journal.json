@@ -309,6 +309,13 @@
       "when": 1783456576165,
       "tag": "0043_abandoned_obadiah_stane",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1783484722224,
+      "tag": "0044_yellow_warlock",
+      "breakpoints": true
     }
   ]
 }

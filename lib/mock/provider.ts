@@ -463,8 +463,8 @@ export const mockProvider: DataProvider = {
     const s = invoiceSettings[orgId];
     return ok(
       s
-        ? { orgId, ...s }
-        : { orgId, vatRegistered: false, vatNumber: "", pricesIncludeVat: false, invoicePrefix: "INV", paymentTermsDays: 14, bankName: "", accountName: "", accountNumber: "", branchCode: "", showPayButton: false },
+        ? { orgId, autoInvoiceOnBooking: true, ...s }
+        : { orgId, vatRegistered: false, vatNumber: "", pricesIncludeVat: false, invoicePrefix: "INV", paymentTermsDays: 14, bankName: "", accountName: "", accountNumber: "", branchCode: "", showPayButton: false, autoInvoiceOnBooking: true },
     );
   },
 

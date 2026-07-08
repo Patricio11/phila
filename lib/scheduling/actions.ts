@@ -5,8 +5,9 @@ import { eq } from "drizzle-orm";
 import { logAccess } from "@/lib/audit";
 import { requireOrg } from "@/lib/auth/guard";
 import { getDb } from "@/db/client";
-import { orgs } from "@/db/schema";
+import { orgs, services as servicesTable } from "@/db/schema";
 import { createAppointment as persistCreateAppointment } from "@/db/queries/appointments";
+import { createInvoiceForBookingDb } from "@/db/queries/invoices";
 import { createClientDb } from "@/db/queries/clients";
 import { isSlotTakenError, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
 import { notifyAppointmentBooked } from "@/lib/messaging/notify";
@@ -96,6 +97,11 @@ export async function createAppointment(
     }
     // In-app (always) + email (rail); the first session of a series carries the notice.
     if (data.sendConfirmation) await notifyAppointmentBooked(firstId);
+    // Auto-raise an invoice for the (first) session — priced services only, org-toggleable.
+    try {
+      const [svc] = await getDb().select({ name: servicesTable.name, priceCents: servicesTable.priceCents }).from(servicesTable).where(eq(servicesTable.id, data.serviceId)).limit(1);
+      if (svc) await createInvoiceForBookingDb({ orgId: data.orgId, appointmentId: firstId, clientId: data.clientId, serviceName: svc.name, amountCents: svc.priceCents ?? 0, issuedAt: new Date(clockNow()) });
+    } catch { /* never break booking over billing */ }
   }
 
   await logAccess({

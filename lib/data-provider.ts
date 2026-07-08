@@ -559,6 +559,8 @@ export interface InvoiceSettings {
   branchCode: string;
   /** Show a "Pay now" button on sent invoices (needs the org's gateway connected). */
   showPayButton: boolean;
+  /** Auto-raise an invoice when a priced session is booked (W6.2). Default on. */
+  autoInvoiceOnBooking: boolean;
 }
 
 export type InsightsPeriod = "week" | "month" | "quarter";

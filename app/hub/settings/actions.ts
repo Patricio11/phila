@@ -238,6 +238,7 @@ const invoiceInput = z.object({
   accountNumber: z.string().trim().max(20).regex(/^\d*$/, "Account number is digits only.").optional().or(z.literal("")),
   branchCode: z.string().trim().max(10).regex(/^\d*$/, "Branch code is digits only.").optional().or(z.literal("")),
   showPayButton: z.boolean(),
+  autoInvoiceOnBooking: z.boolean(),
 });
 
 /**
@@ -260,7 +261,7 @@ export async function saveInvoiceSettings(
       vatRegistered: d.vatRegistered, vatNumber: d.vatNumber ?? "", pricesIncludeVat: d.pricesIncludeVat,
       invoicePrefix: d.invoicePrefix, paymentTermsDays: d.paymentTermsDays, bankName: d.bankName ?? "",
       accountName: d.accountName ?? "", accountNumber: d.accountNumber ?? "", branchCode: d.branchCode ?? "",
-      showPayButton: d.showPayButton,
+      showPayButton: d.showPayButton, autoInvoiceOnBooking: d.autoInvoiceOnBooking,
     });
   }
   await logAccess({

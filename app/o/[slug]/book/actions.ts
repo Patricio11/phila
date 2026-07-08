@@ -7,6 +7,7 @@ import { logAccess } from "@/lib/audit";
 import { CONSENT_PURPOSES } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
 import { persistBooking } from "@/db/queries/booking";
+import { createInvoiceForBookingDb } from "@/db/queries/invoices";
 import { recordBookingIntakeDb } from "@/db/queries/forms";
 import { recordPageEvent } from "@/db/queries/public-page";
 import { isSlotTakenError, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
@@ -209,6 +210,9 @@ export async function submitBooking(
       if (input.modality === "online") joinUrl = videoJoinPath(res.appointmentId, input.startsAt);
       // Email (rail) + always-on in-app for the counsellor + client (Phase 17.2).
       await notifyAppointmentBooked(res.appointmentId);
+      // Auto-raise an invoice for the session (priced services only; org-toggleable) so
+      // the client can pay online. Best-effort — never break a booking over billing.
+      try { await createInvoiceForBookingDb({ orgId: config.org.id, appointmentId: res.appointmentId, clientId: res.clientId, serviceName: service.name, amountCents: service.priceCents ?? 0, issuedAt: new Date(clockNow()) }); } catch { /* never break booking */ }
       void recordPageEvent(config.org.id, "booked"); // PII-free conversion (Phase 17)
       // Mirror the intake into the active intake form's Responses (best-effort).
       try { await recordBookingIntakeDb(config.org.id, res.clientId, input.intake, clockNow()); } catch { /* never break booking */ }

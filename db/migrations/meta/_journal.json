@@ -302,6 +302,13 @@
       "when": 1783431115693,
       "tag": "0042_chemical_hairball",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1783456576165,
+      "tag": "0043_abandoned_obadiah_stane",
+      "breakpoints": true
     }
   ]
 }

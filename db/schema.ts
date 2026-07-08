@@ -782,3 +782,21 @@ export const formAssignments = pgTable("form_assignments", {
   index("form_assign_form_idx").on(t.formId),
   index("form_assign_client_idx").on(t.clientId),
 ]);
+
+/** A client's REQUEST to reschedule or cancel a session (W6.2). The client never edits
+ *  the booking directly — they submit a reason; the practice actions or declines it. */
+export const appointmentChangeRequests = pgTable("appointment_change_requests", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  appointmentId: text("appointment_id").notNull(),
+  clientId: text("client_id").notNull(),
+  kind: text("kind").notNull(), // reschedule | cancel
+  reason: text("reason").notNull(),
+  status: text("status").default("pending").notNull(), // pending | approved | declined | withdrawn
+  resolvedBy: text("resolved_by"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+}, (t) => [
+  index("acr_org_status_idx").on(t.orgId, t.status),
+  index("acr_appt_idx").on(t.appointmentId),
+]);

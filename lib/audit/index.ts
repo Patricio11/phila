@@ -20,6 +20,7 @@ export type AuditAction =
   | "impersonate.end"
   | "consent.change"
   | "file.access"
+  | "client.action"
   | "admin.action";
 
 export interface AuditEvent {

@@ -3,6 +3,8 @@ import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { PageHead } from "@/components/shell/page-head";
 import { CalendarView } from "@/components/calendar/calendar-view";
+import { ChangeRequestsCard } from "@/components/hub/change-requests-card";
+import { listPendingChangeRequestsDb } from "@/db/queries/appointment-requests";
 import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +28,7 @@ export default async function HubCalendarsPage() {
     provider.listRooms(membership.orgId),
   ]);
   const events = lists.flat();
+  const changeRequests = process.env.DATA_PROVIDER === "db" ? await listPendingChangeRequestsDb(membership.orgId) : [];
   const scheduling = {
     orgId: membership.orgId,
     clients: orgClients.map((c) => ({ id: c.id, name: c.name })),
@@ -41,6 +44,7 @@ export default async function HubCalendarsPage() {
         title="Appointments"
         summary={`Every counsellor's sessions in one view  ${counsellors.length} counsellors. Click a slot to book on behalf.`}
       />
+      <ChangeRequestsCard initial={changeRequests} />
       <CalendarView events={events} businessHours={org.scheduling.businessHours} scheduling={scheduling} nowISO={now} openSessions={false} clientBasePath="/hub/clients" />
     </div>
   );

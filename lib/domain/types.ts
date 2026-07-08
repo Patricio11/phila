@@ -61,6 +61,8 @@ export interface Org {
     defaultDurationMin: number;
     bufferMin: number;
     businessHours: BusinessHours;
+    /** Hours of notice a client needs to request a change/cancellation from the portal (default 24). */
+    changeNoticeHours?: number;
   };
   /**
    * Client-portal onboarding policy. Both default OFF so clients are added/booked

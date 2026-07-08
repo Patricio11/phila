@@ -47,13 +47,14 @@ export async function saveClientPortal(orgId: string, settings: { inviteOnBookin
   await runForOrg(orgId, () => activeDb().update(orgs).set({ clientPortal: settings }).where(eq(orgs.id, orgId)));
 }
 
-/** Update the org's scheduling defaults (default session length + inter-session interval), merged into scheduling JSONB. RLS-scoped. */
-export async function saveSchedulingDefaults(orgId: string, defaults: { defaultDurationMin: number; bufferMin: number }): Promise<void> {
+/** Update the org's scheduling defaults (session length, inter-session interval, and the
+ *  client change/cancellation notice window), merged into scheduling JSONB. RLS-scoped. */
+export async function saveSchedulingDefaults(orgId: string, defaults: { defaultDurationMin: number; bufferMin: number; changeNoticeHours: number }): Promise<void> {
   await runForOrg(orgId, async () => {
     const db = activeDb();
     const [org] = await db.select({ scheduling: orgs.scheduling }).from(orgs).where(eq(orgs.id, orgId)).limit(1);
     if (!org) return;
-    const scheduling = { ...(org.scheduling as Record<string, unknown>), defaultDurationMin: defaults.defaultDurationMin, bufferMin: defaults.bufferMin };
+    const scheduling = { ...(org.scheduling as Record<string, unknown>), defaultDurationMin: defaults.defaultDurationMin, bufferMin: defaults.bufferMin, changeNoticeHours: defaults.changeNoticeHours };
     await db.update(orgs).set({ scheduling }).where(eq(orgs.id, orgId));
   });
 }

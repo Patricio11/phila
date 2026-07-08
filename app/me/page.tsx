@@ -14,6 +14,7 @@ import { UpcomingSessionCard } from "@/components/client/upcoming-session-card";
 import { SessionTimeline } from "@/components/client/session-timeline";
 import { now as clockNow } from "@/lib/clock";
 import { videoJoinPath } from "@/lib/video/livekit";
+import { pendingRequestKindsDb } from "@/db/queries/appointment-requests";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,9 @@ export default async function MeHomePage() {
   const upcoming = appts.find(
     (a) => new Date(a.startsAt).getTime() > nowMs && a.state === "scheduled",
   );
+  const pendingKind = upcoming && process.env.DATA_PROVIDER === "db"
+    ? (await pendingRequestKindsDb([upcoming.id]))[upcoming.id] ?? null
+    : null;
   const carePlanShared = consents.find((c) => c.purpose === "care_plan_share");
   const openInvoices = invoices.filter((i) => i.status === "unpaid");
   const activeConsents = consents.filter((c) => isConsentActive(c)).length;
@@ -63,7 +67,7 @@ export default async function MeHomePage() {
       />
 
       {upcoming ? (
-        <UpcomingSessionCard appt={upcoming} nowISO={now} joinUrl={upcoming.type === "online" ? videoJoinPath(upcoming.id, upcoming.startsAt) : null} />
+        <UpcomingSessionCard appt={upcoming} nowISO={now} joinUrl={upcoming.type === "online" ? videoJoinPath(upcoming.id, upcoming.startsAt) : null} pendingKind={pendingKind} />
       ) : (
         <Card className="p-2">
           <EmptyState

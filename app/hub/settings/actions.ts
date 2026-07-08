@@ -72,6 +72,7 @@ const input = z.object({
 const defaultsInput = z.object({
   defaultDurationMin: z.number().int().min(10, "A session is at least 10 minutes.").max(480, "Keep a session under 8 hours."),
   bufferMin: z.number().int().min(0, "The interval can't be negative.").max(120, "Keep the interval under 2 hours."),
+  changeNoticeHours: z.number().int().min(0, "Notice can't be negative.").max(168, "Keep the notice under a week."),
 });
 
 export async function saveSchedulingDefaults(

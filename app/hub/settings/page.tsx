@@ -62,7 +62,7 @@ export default async function HubSettingsPage() {
   // for lightweight/just-created orgs).
   const DEFAULT_HOURS = { 1: { start: "08:00", end: "17:00" }, 2: { start: "08:00", end: "17:00" }, 3: { start: "08:00", end: "17:00" }, 4: { start: "08:00", end: "17:00" }, 5: { start: "08:00", end: "17:00" }, 6: null, 7: null };
   const bh: BusinessHours = (org.scheduling.businessHours ?? DEFAULT_HOURS) as BusinessHours;
-  const scheduling = { defaultDurationMin: org.scheduling.defaultDurationMin ?? 60, bufferMin: org.scheduling.bufferMin ?? 10 };
+  const scheduling = { defaultDurationMin: org.scheduling.defaultDurationMin ?? 60, bufferMin: org.scheduling.bufferMin ?? 10, changeNoticeHours: org.scheduling.changeNoticeHours ?? 24 };
 
   const onboardingStatus = process.env.DATA_PROVIDER === "db" ? await getOnboardingStatusDb(membership.orgId) : "verified";
 

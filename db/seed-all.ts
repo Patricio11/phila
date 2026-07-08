@@ -201,6 +201,12 @@ async function main() {
       })),
     );
   }
+  // An upcoming online session for the demo client (Lerato) so the portal's next-session
+  // card + the "request to reschedule/cancel" flow are demonstrable. Nomsa is free at +2.
+  await db.insert(schema.appointments).values({
+    id: "appt_lerato_upcoming", orgId: ORG, clientId: "cl_lerato", counsellorId: "couns_nomsa", serviceId: "svc_individual",
+    type: "online", roomId: null, startsAt: new Date(`${addDays(today, 2)}T10:00:00+02:00`), durationMin: 60, state: "scheduled", tags: [],
+  }).onConflictDoNothing({ target: schema.appointments.id });
 
   // ── Clinical cluster ──────────────────────────────────────────────────
   for (const plan of Object.values(carePlansFx)) {
@@ -584,6 +590,14 @@ async function main() {
       at: new Date(now.getTime() - e.daysAgo * 86_400_000 - (i % 24) * 3_600_000),
     }).onConflictDoNothing();
   }
+
+  // A pending client change request (W6.2) so the hub's requests queue is demonstrable.
+  // Tied to a real upcoming scheduled session (cl_fatima with Nomsa, tomorrow).
+  await db.insert(schema.appointmentChangeRequests).values({
+    id: "acr_seed_1", orgId: ORG, appointmentId: "appt_couns_nomsa_8", clientId: "cl_fatima",
+    kind: "reschedule", reason: "Something's come up at work that morning  could we move to the afternoon?",
+    status: "pending", createdAt: new Date(now.getTime() - 3 * 3_600_000),
+  }).onConflictDoNothing();
 
   const sql = neon(url!);
   const [c] = await sql`select

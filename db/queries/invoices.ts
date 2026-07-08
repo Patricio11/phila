@@ -2,8 +2,9 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { getDb } from "@/db/client";
-import { invoices } from "@/db/schema";
+import { invoices, clients } from "@/db/schema";
 import { getInvoiceSettingsDb } from "@/db/queries/settings";
+import { effectiveFeeCents, type FeePolicy } from "@/lib/billing/fees";
 
 /**
  * Auto-invoicing at booking (W6.2). When a priced session is booked, we raise an
@@ -15,11 +16,15 @@ import { getInvoiceSettingsDb } from "@/db/queries/settings";
 export async function createInvoiceForBookingDb(input: {
   orgId: string; appointmentId: string; clientId: string; serviceName: string; amountCents: number; issuedAt: Date;
 }): Promise<{ id: string } | null> {
-  // Never bill twice for the same session, or for a free/unpriced service.
-  if (input.amountCents <= 0) return null;
   const db = getDb();
   const settings = await getInvoiceSettingsDb(input.orgId);
   if (!settings.autoInvoiceOnBooking) return null;
+
+  // Apply the client's sliding-scale fee to the service list price (W7). A waived /
+  // fully-subsidised client owes nothing → no invoice; a free service → no invoice.
+  const [c] = await db.select({ fee: clients.feePolicy }).from(clients).where(eq(clients.id, input.clientId)).limit(1);
+  const amountCents = effectiveFeeCents(input.amountCents, (c?.fee as FeePolicy | null) ?? null);
+  if (amountCents <= 0) return null;
 
   const existing = await db.select({ id: invoices.id }).from(invoices).where(eq(invoices.appointmentId, input.appointmentId)).limit(1);
   if (existing.length) return { id: existing[0]!.id };
@@ -34,7 +39,7 @@ export async function createInvoiceForBookingDb(input: {
   const id = `inv_${randomUUID()}`;
   await db.insert(invoices).values({
     id, clientId: input.clientId, orgId: input.orgId, number, serviceName: input.serviceName,
-    amountCents: input.amountCents, status: "unpaid", issuedAt: input.issuedAt, dueAt, appointmentId: input.appointmentId,
+    amountCents, status: "unpaid", issuedAt: input.issuedAt, dueAt, appointmentId: input.appointmentId,
   });
   return { id };
 }

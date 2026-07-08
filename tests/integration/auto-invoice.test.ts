@@ -17,6 +17,7 @@ const ORG = "org_inv_probe";
 
 afterAll(async () => {
   await sql`DELETE FROM invoices WHERE org_id=${ORG}`;
+  await sql`DELETE FROM clients WHERE org_id=${ORG}`;
   await sql`DELETE FROM orgs WHERE id=${ORG}`;
 });
 
@@ -46,6 +47,19 @@ describe("auto-invoice on booking", () => {
     // A free/unpriced session → no invoice.
     const free = await createInvoiceForBookingDb({ orgId: ORG, appointmentId: "appt_ip_free", clientId: "cl_ip_1", serviceName: "Community session", amountCents: 0, issuedAt: new Date("2026-07-01T09:00:00Z") });
     expect(free).toBeNull();
+
+    // Sliding-scale fee (W7): a subsidised client is billed their rate, not the list price.
+    await sql`INSERT INTO clients (id, org_id, name, province, fee_policy, created_at)
+      VALUES ('cl_ip_sub', ${ORG}, 'Subsidised Client', 'Gauteng', '{"kind":"percentage","value":50}'::jsonb, now())
+      ON CONFLICT (id) DO UPDATE SET fee_policy=EXCLUDED.fee_policy`;
+    const sub = await createInvoiceForBookingDb({ orgId: ORG, appointmentId: "appt_ip_sub", clientId: "cl_ip_sub", serviceName: "Individual counselling", amountCents: 45000, issuedAt: new Date("2026-07-01T09:00:00Z") });
+    const [subInv] = await sql`SELECT amount_cents FROM invoices WHERE id=${sub!.id}`;
+    expect(subInv!.amount_cents).toBe(22500); // 50% of R450
+
+    // A waived (funded) client owes nothing → no invoice raised.
+    await sql`UPDATE clients SET fee_policy='{"kind":"waived"}'::jsonb WHERE id='cl_ip_sub'`;
+    const waived = await createInvoiceForBookingDb({ orgId: ORG, appointmentId: "appt_ip_waived", clientId: "cl_ip_sub", serviceName: "Individual counselling", amountCents: 45000, issuedAt: new Date("2026-07-01T09:00:00Z") });
+    expect(waived).toBeNull();
 
     // Toggle off → no invoice even for a priced session.
     await sql`UPDATE orgs SET invoice_settings = jsonb_set(invoice_settings, '{autoInvoiceOnBooking}', 'false') WHERE id=${ORG}`;

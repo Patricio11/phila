@@ -537,8 +537,11 @@ Sizes: S/M/L. Grounded in existing building blocks.
 - [ ] **No-show follow-up automation** (S)  auto-nudge/rebook using the existing `no_show` trigger.
 - [ ] **Portal pay via pay-link** (S/M)  W1.3.
 - [ ] **Portal reschedule/cancel** (M)  client-guarded wrappers over existing actions.
-- [ ] **Sliding-scale / subsidised fees** (M)  per-client fee override on `services.priceCents` + `invoices`.
-      *NGO reality; no competitor does it.*
+- [x] **Sliding-scale / subsidised fees** (M) ✅  a per-client fee policy (`clients.fee_policy`): standard,
+      **sliding-scale %**, **fixed** per-session, or **waived** (funded). Pure `effectiveFeeCents` helper (unit-tested)
+      flows straight into the **auto-invoice at booking** — subsidised clients are billed their rate, waived clients
+      raise no invoice. A **Fee arrangement** card on the client detail (label chip + a per-service preview of exactly
+      what they pay, list price struck through) → `setClientFee`. *NGO reality; no competitor does it.*
 - [ ] **Waitlist auto-fill** (L)  cancelled slot offers itself via the messaging rail; new `waitlist_entries`.
 - [ ] **Referral / source tracking** (S/M)  intake already captures the field; surface in Insights breakdowns.
 - [ ] **Unified client timeline** (M)  one scroll over sessions + documents + outcomes + care-plan.

@@ -4,6 +4,7 @@ import { activeDb, runForOrg } from "@/lib/db/scoped";
 import { appointments, clients } from "@/db/schema";
 import { isSlotTakenError } from "@/db/queries/errors";
 import type { Province } from "@/lib/domain/enums";
+import type { FeePolicy } from "@/lib/billing/fees";
 
 /**
  * Client writes (Phase 10/11)  real, org-scoped persistence for the hub caseload.
@@ -92,6 +93,20 @@ export async function updateClientDb(orgId: string, clientId: string, input: Cli
       riskFlag: input.riskFlag,
     })
     .where(and(eq(clients.id, clientId), eq(clients.orgId, orgId))));
+}
+
+/** Set (or clear, with null) a client's sliding-scale fee policy (W7). RLS-scoped. */
+export async function setClientFeeDb(orgId: string, clientId: string, policy: FeePolicy | null): Promise<void> {
+  await runForOrg(orgId, () => activeDb()
+    .update(clients)
+    .set({ feePolicy: policy })
+    .where(and(eq(clients.id, clientId), eq(clients.orgId, orgId))));
+}
+
+/** A client's current fee policy (null = standard/list price). RLS-scoped. */
+export async function getClientFeeDb(orgId: string, clientId: string): Promise<FeePolicy | null> {
+  const [row] = await runForOrg(orgId, () => activeDb().select({ f: clients.feePolicy }).from(clients).where(and(eq(clients.id, clientId), eq(clients.orgId, orgId))).limit(1));
+  return (row?.f as FeePolicy | null) ?? null;
 }
 
 /** Soft-delete (removed=true) or restore (removed=false) a client. */

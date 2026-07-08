@@ -246,6 +246,9 @@ export const clients = pgTable("clients", {
   province: text("province").notNull(),
   primaryCounsellorId: text("primary_counsellor_id"),
   riskFlag: boolean("risk_flag").default(false).notNull(),
+  /** Sliding-scale / subsidised fee (W7): { kind: 'standard'|'percentage'|'fixed'|'waived', value? }.
+   *  null/absent = pays the list price. `percentage` = pays value% of list; `fixed` = value cents flat. */
+  feePolicy: jsonb("fee_policy").$type<{ kind: "standard" | "percentage" | "fixed" | "waived"; value?: number }>(),
   /** Client self-service profile: { dateOfBirth, address, emergencyName, emergencyPhone, preferredContact }. */
   profile: jsonb("profile").$type<Record<string, string>>().default({}).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),

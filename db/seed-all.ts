@@ -599,6 +599,11 @@ async function main() {
     status: "pending", createdAt: new Date(now.getTime() - 3 * 3_600_000),
   }).onConflictDoNothing();
 
+  // Sliding-scale / subsidised fees (W7) — realistic NGO variety on the demo caseload.
+  await db.update(schema.clients).set({ feePolicy: { kind: "percentage", value: 50 } }).where(eq(schema.clients.id, "cl_johan"));
+  await db.update(schema.clients).set({ feePolicy: { kind: "waived" } }).where(eq(schema.clients.id, "cl_demo_002"));
+  await db.update(schema.clients).set({ feePolicy: { kind: "fixed", value: 15000 } }).where(eq(schema.clients.id, "cl_zanele"));
+
   const sql = neon(url!);
   const [c] = await sql`select
     (select count(*)::int from orgs) orgs,

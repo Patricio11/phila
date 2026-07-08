@@ -7,8 +7,9 @@ import { logAccess } from "@/lib/audit";
 import { PROVINCES } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
 import { getDataProvider } from "@/lib/data-provider";
-import { createClientDb, createClientsDb, updateClientDb, setClientRemovedDb, reassignClientDb } from "@/db/queries/clients";
+import { createClientDb, createClientsDb, updateClientDb, setClientRemovedDb, reassignClientDb, setClientFeeDb } from "@/db/queries/clients";
 import { mergeClientsDb } from "@/db/queries/merge";
+import type { FeePolicy } from "@/lib/billing/fees";
 
 const isDb = () => process.env.DATA_PROVIDER === "db";
 
@@ -288,4 +289,34 @@ export async function reassignClient(
   revalidatePath("/hub/clients");
   revalidatePath(`/hub/clients/${parsed.data.clientId}`);
   return { ok: true, movedSessions, skippedSessions };
+}
+
+const feeInput = z.object({
+  clientId: z.string().min(1),
+  kind: z.enum(["standard", "percentage", "fixed", "waived"]),
+  value: z.number().int().min(0).max(100_000_00).optional(),
+});
+
+/** Set a client's sliding-scale / subsidised fee (W7). Audited; the auto-invoice uses it. */
+export async function setClientFee(
+  raw: z.infer<typeof feeInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = feeInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Check the fee details." };
+  const { clientId, kind, value } = parsed.data;
+  if (kind === "percentage" && (value == null || value < 0 || value > 100)) return { ok: false, error: "Enter a percentage between 0 and 100." };
+  if (kind === "fixed" && (value == null || value < 0)) return { ok: false, error: "Enter the fixed amount." };
+
+  const policy: FeePolicy | null = kind === "standard" ? null : { kind, ...(kind === "percentage" || kind === "fixed" ? { value } : {}) };
+  if (isDb()) await setClientFeeDb(membership.orgId, clientId, policy);
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `client:${clientId}/fee`,
+    reason: `set_fee_${kind}`,
+  });
+  revalidatePath(`/hub/clients/${clientId}`);
+  return { ok: true };
 }

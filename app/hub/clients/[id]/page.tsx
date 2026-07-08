@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarPlus, FileText, Mail, Phone, ShieldCheck, Target } from "lucide-react";
+import { ArrowLeft, CalendarPlus, FileText, HandCoins, Mail, Phone, ShieldCheck, Target } from "lucide-react";
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
@@ -19,6 +19,8 @@ import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";
 import { ReassignClientButton } from "@/components/hub/reassign-client-button";
 import { InviteClientButton } from "@/components/hub/invite-client-button";
 import { EditClientButton } from "@/components/hub/edit-client-button";
+import { ClientFeeControl } from "@/components/hub/client-fee-control";
+import { getClientFeeDb } from "@/db/queries/clients";
 import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
@@ -38,11 +40,14 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
   const provider = await getDataProvider();
   const now = clockNow();
 
-  const [dossier, counsellors] = await Promise.all([
+  const [dossier, counsellors, services] = await Promise.all([
     provider.getClientDossier(membership.orgId, id, now),
     provider.listCounsellors(membership.orgId),
+    provider.listServices(membership.orgId),
   ]);
   if (!dossier || dossier.client.orgId !== membership.orgId) notFound();
+  const feePolicy = process.env.DATA_PROVIDER === "db" ? await getClientFeeDb(membership.orgId, id) : null;
+  const pricedServices = services.filter((s) => (s.priceCents ?? 0) > 0).map((s) => ({ name: s.name, priceCents: s.priceCents ?? 0 }));
 
   // Hub oversight is a recorded PII access  but private clinical notes are never on this page.
   await logAccess({
@@ -140,6 +145,11 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
               <ShieldCheck className="size-4 text-accent" strokeWidth={2} aria-hidden /> Full clinic access
             </div>
             <p className="mt-1 text-[12px] text-text-2">Open any past session to read {counsellor.name.split(" ")[0]}&apos;s clinical note. Every note you open is recorded in the audit trail.</p>
+          </Card>
+
+          <Card>
+            <CardHead title={<span className="flex items-center gap-2"><HandCoins className="size-4 text-text-3" strokeWidth={2} aria-hidden /> Fee arrangement</span>} />
+            <ClientFeeControl clientId={id} clientName={client.name} initial={feePolicy} services={pricedServices} />
           </Card>
 
           {carePlan && (

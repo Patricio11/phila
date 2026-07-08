@@ -15,7 +15,7 @@ import { getDataProvider } from "@/lib/data-provider";
 import { getCreditBalances } from "@/db/queries/messaging";
 import { LOW_CREDIT_THRESHOLD } from "@/lib/payments/packs";
 import { logAccess } from "@/lib/audit";
-import { coverageNote, isoWeekday } from "@/lib/domain/helpers";
+import { coverageNote, isoWeekday, WEEK_CAPACITY } from "@/lib/domain/helpers";
 import { PageHead } from "@/components/shell/page-head";
 import { Card, CardHead } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
@@ -27,8 +27,6 @@ import { getOnboardingStatusDb } from "@/db/queries/onboarding";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
-
-const WEEK_CAPACITY = 25; // a full week of sessions before a counsellor is stretched
 
 function rands(cents: number): string {
   return `R${Math.round(cents / 100).toLocaleString("en-ZA")}`;

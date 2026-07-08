@@ -10,6 +10,7 @@ import { Card, CardBody, CardHead } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
 import { ScheduleList } from "@/components/schedule/schedule-list";
 import { AttentionList } from "@/components/dashboard/attention-list";
+import { WeekCapacity } from "@/components/dashboard/week-capacity";
 import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";
 import { now as clockNow } from "@/lib/clock";
 
@@ -73,7 +74,7 @@ export default async function DashboardPage() {
             ? "Your day is clear."
             : `You have ${dash.today.length} ${plural(dash.today.length, "session")} today · ${remaining} still to come.`
         }
-        actions={<CreateAppointmentButton options={scheduling} />}
+        actions={<CreateAppointmentButton options={scheduling} hotkey />}
       />
 
       {/* Stat cards  honest coverage, no vanity numbers, no fabricated trends. */}
@@ -115,6 +116,7 @@ export default async function DashboardPage() {
 
         {/* Outcomes + attention */}
         <div className="space-y-6">
+          <WeekCapacity sessionsThisWeek={stats.sessionsThisWeek} />
           <Card>
             <CardHead title="Outcomes" />
             <CardBody className="pt-0">

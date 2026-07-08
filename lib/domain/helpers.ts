@@ -203,6 +203,9 @@ export function roomUtilisation(opts: {
 
 export const K_ANON_FLOOR = 5;
 
+/** A full week of sessions before a counsellor is stretched (hub team-load + the counsellor's own bar). */
+export const WEEK_CAPACITY = 25;
+
 export interface CountRow {
   label: string;
   count: number;

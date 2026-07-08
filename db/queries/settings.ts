@@ -69,6 +69,17 @@ export async function saveOrgBrandingDb(orgId: string, brandAccent: string): Pro
   await runForOrg(orgId, () => activeDb().update(orgs).set({ brandAccent }).where(eq(orgs.id, orgId)));
 }
 
+/** Set (or clear, with null) the org's logo storage key + its byte size. RLS-scoped. */
+export async function saveOrgLogoDb(orgId: string, brandLogoKey: string | null, brandLogoBytes: number): Promise<void> {
+  await runForOrg(orgId, () => activeDb().update(orgs).set({ brandLogoKey, brandLogoBytes }).where(eq(orgs.id, orgId)));
+}
+
+/** The org's current logo (key + bytes; key null = wordmark only). RLS-scoped. */
+export async function getOrgLogoDb(orgId: string): Promise<{ key: string | null; bytes: number }> {
+  const [row] = await runForOrg(orgId, () => activeDb().select({ k: orgs.brandLogoKey, b: orgs.brandLogoBytes }).from(orgs).where(eq(orgs.id, orgId)).limit(1));
+  return { key: row?.k ?? null, bytes: row?.b ?? 0 };
+}
+
 export interface InvoiceSettingsRow {
   vatRegistered: boolean; vatNumber: string; pricesIncludeVat: boolean; invoicePrefix: string;
   paymentTermsDays: number; bankName: string; accountName: string; accountNumber: string;

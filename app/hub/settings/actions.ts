@@ -3,10 +3,15 @@
 import { z } from "zod";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
-import { saveBusinessHours as persistBusinessHours, saveClientPortal as persistClientPortal, setOrgFeature as persistOrgFeature, saveSchedulingDefaults as persistSchedulingDefaults, saveOrgProfileDb, saveOrgBrandingDb, saveInvoiceSettingsDb as persistInvoiceSettings } from "@/db/queries/settings";
+import { saveBusinessHours as persistBusinessHours, saveClientPortal as persistClientPortal, setOrgFeature as persistOrgFeature, saveSchedulingDefaults as persistSchedulingDefaults, saveOrgProfileDb, saveOrgBrandingDb, saveOrgLogoDb, getOrgLogoDb, saveInvoiceSettingsDb as persistInvoiceSettings } from "@/db/queries/settings";
 import { saveVideoSettings } from "@/db/queries/video";
 import { saveAiSettings } from "@/db/queries/ai";
 import { ORG_FEATURES } from "@/lib/domain/enums";
+import { getStorageProvider } from "@/lib/storage";
+import { scanObject } from "@/lib/documents/scan";
+import { currentStorageBytes, addStorageUsage } from "@/db/queries/documents";
+import { orgStorageLimitBytes } from "@/db/queries/resources";
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -225,6 +230,92 @@ export async function saveOrgBranding(
   revalidatePath("/hub/settings");
   revalidatePath("/", "layout"); // the accent shows app-wide + on the public page
   return { ok: true };
+}
+
+/* ── Org logo (W6.1): image upload via storage; shown on the public page + booking ── */
+
+const LOGO_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+const LOGO_MAX_BYTES = 2 * 1024 * 1024;
+const logoInput = z.object({ name: z.string().trim().min(1).max(160), contentType: z.string().trim().min(1), bytes: z.number().int().positive() });
+
+/** Presign a logo upload (image ≤ 2 MB). The browser PUTs the bytes, then confirms. Quota-checked. */
+export async function requestLogoUpload(
+  raw: z.infer<typeof logoInput>,
+): Promise<{ ok: true; uploadUrl: string; key: string; bytes: number } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = logoInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Check the image." };
+  if (!LOGO_TYPES.has(parsed.data.contentType)) return { ok: false, error: "Use a PNG, JPG, or WebP image." };
+  if (parsed.data.bytes > LOGO_MAX_BYTES) return { ok: false, error: "Keep the logo under 2 MB." };
+
+  const storage = await getStorageProvider();
+  if (storage.status !== "live") return { ok: false, error: "Phila Storage isn't switched on yet." };
+  // The logo counts against org storage — net of the logo it replaces.
+  const [used, current, limit] = await Promise.all([currentStorageBytes(membership.orgId), getOrgLogoDb(membership.orgId), orgStorageLimitBytes(membership.orgId)]);
+  if (used - current.bytes + parsed.data.bytes > limit) return { ok: false, error: "You've reached your plan's storage. Remove files or upgrade for more." };
+
+  const ext = parsed.data.contentType === "image/png" ? "png" : parsed.data.contentType === "image/webp" ? "webp" : "jpg";
+  const key = `${membership.orgId}/branding/logo-${randomUUID()}.${ext}`;
+  let uploadUrl: string;
+  try {
+    ({ uploadUrl } = await storage.signedUploadUrl({ key, contentType: parsed.data.contentType }));
+  } catch {
+    return { ok: false, error: "Storage rejected the upload  check the Phila Storage configuration." };
+  }
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `org:${membership.orgId}/logo`, reason: "request_logo_upload" });
+  return { ok: true, uploadUrl, key, bytes: parsed.data.bytes };
+}
+
+/** Finalise the logo after the PUT: scan, point the org at the new key, and reconcile storage. */
+export async function confirmLogoUpload(
+  raw: { key: string; bytes: number },
+): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const key = String(raw?.key ?? "");
+  const bytes = Number(raw?.bytes ?? 0);
+  if (!key.startsWith(`${membership.orgId}/branding/`) || bytes <= 0) return { ok: false, error: "Invalid upload." };
+  const storage = await getStorageProvider();
+  if (storage.status !== "live") return { ok: false, error: "Files aren't available right now." };
+  const scan = await scanObject(key);
+  if (scan !== "clean") { try { await storage.remove(key); } catch { /* best effort */ } return { ok: false, error: "That image didn't pass the security scan." }; }
+
+  const prev = await getOrgLogoDb(membership.orgId);
+  await saveOrgLogoDb(membership.orgId, key, bytes);
+  await addStorageUsage(membership.orgId, bytes - prev.bytes); // net change vs the replaced logo
+  if (prev.key && prev.key !== key) { try { await storage.remove(prev.key); } catch { /* best effort */ } }
+
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `org:${membership.orgId}/logo`, reason: "set_logo" });
+  revalidatePath("/hub/settings");
+  revalidatePath("/o", "layout"); // public page + booking
+  const url = await storage.signedDownloadUrl(key, 3600);
+  return { ok: true, url };
+}
+
+/** Remove the org's logo (clears the key, deletes the object, releases its storage). */
+export async function removeOrgLogo(): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const prev = await getOrgLogoDb(membership.orgId);
+  await saveOrgLogoDb(membership.orgId, null, 0);
+  if (prev.bytes > 0) await addStorageUsage(membership.orgId, -prev.bytes);
+  if (prev.key) { try { (await getStorageProvider()).remove(prev.key); } catch { /* best effort */ } }
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `org:${membership.orgId}/logo`, reason: "remove_logo" });
+  revalidatePath("/hub/settings");
+  revalidatePath("/o", "layout");
+  return { ok: true };
+}
+
+/** A short-TTL URL for the org's current logo, for the settings preview. */
+export async function getOrgLogoUrl(): Promise<{ ok: true; url: string | null } | { ok: false; error: string }> {
+  const { membership } = await requireHub();
+  const { key } = await getOrgLogoDb(membership.orgId);
+  if (!key) return { ok: true, url: null };
+  try {
+    const storage = await getStorageProvider();
+    if (storage.status !== "live") return { ok: true, url: null };
+    return { ok: true, url: await storage.signedDownloadUrl(key, 3600) };
+  } catch {
+    return { ok: true, url: null };
+  }
 }
 
 const invoiceInput = z.object({

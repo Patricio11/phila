@@ -15,7 +15,7 @@ import { initials } from "@/lib/utils";
  * org's `--brand-accent` recolours only the primary actions + brand tile (auto-darkened
  * to stay AA). No PII  services, team (honest credentials), approach, FAQ, contact only.
  */
-export function OrgPublicShell({ page }: { page: OrgPublicPage }) {
+export function OrgPublicShell({ page, logoUrl = null }: { page: OrgPublicPage; logoUrl?: string | null }) {
   const { org } = page;
   const c: PublicPageContent | undefined = page.content;
   const brand = contrastSafeAccent(org.brandAccent);
@@ -31,7 +31,12 @@ export function OrgPublicShell({ page }: { page: OrgPublicPage }) {
       <header className="sticky top-0 z-40 border-b border-border bg-surface/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 w-full max-w-[1080px] items-center gap-3 px-4 sm:px-6">
           <div className="flex items-center gap-2.5">
-            <BrandTile name={org.name} />
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt={`${org.name} logo`} className="size-9 rounded-lg object-contain" />
+            ) : (
+              <BrandTile name={org.name} />
+            )}
             <span className="text-[15px] font-[650] tracking-[-0.01em] text-text">{org.name}</span>
           </div>
           <nav className="ml-auto hidden items-center gap-5 text-[13px] text-text-2 md:flex">

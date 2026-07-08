@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getDataProvider } from "@/lib/data-provider";
 import { BookingWizard } from "@/components/booking/booking-wizard";
-import { recordPageEvent } from "@/db/queries/public-page";
+import { recordPageEvent, getOrgLogoUrlPublic } from "@/db/queries/public-page";
 
 type Params = { slug: string };
 type Search = { service?: string };
@@ -42,6 +42,7 @@ export default async function BookPage({
 
   void recordPageEvent(config.org.id, "book_click"); // PII-free funnel (Phase 17)
   const initialServiceId = config.services.some((s) => s.id === service) ? service! : null;
+  const logoUrl = process.env.DATA_PROVIDER === "db" ? await getOrgLogoUrlPublic(config.org.id) : null;
 
-  return <BookingWizard config={config} initialServiceId={initialServiceId} />;
+  return <BookingWizard config={config} initialServiceId={initialServiceId} logoUrl={logoUrl} />;
 }

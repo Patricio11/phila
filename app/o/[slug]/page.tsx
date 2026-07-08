@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getDataProvider } from "@/lib/data-provider";
 import { OrgPublicShell } from "@/components/public/org-public-shell";
 import { PageViewBeacon } from "@/components/public/page-view-beacon";
+import { getOrgLogoUrlPublic } from "@/db/queries/public-page";
 
 type Params = { slug: string };
 
@@ -38,6 +39,7 @@ export default async function OrgPublicPage({ params }: { params: Promise<Params
   const provider = await getDataProvider();
   const page = await provider.getOrgPublicPage(slug);
   if (!page) notFound();
+  const logoUrl = process.env.DATA_PROVIDER === "db" ? await getOrgLogoUrlPublic(page.org.id) : null;
 
   // Honest, non-diagnostic structured data (never diagnose).
   const jsonLd = {
@@ -61,7 +63,7 @@ export default async function OrgPublicPage({ params }: { params: Promise<Params
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <PageViewBeacon slug={slug} />
-      <OrgPublicShell page={page} />
+      <OrgPublicShell page={page} logoUrl={logoUrl} />
     </>
   );
 }

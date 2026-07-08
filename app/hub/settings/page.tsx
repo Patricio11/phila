@@ -14,6 +14,9 @@ import { BusinessHoursEditor } from "@/components/hub/business-hours-editor";
 import { SchedulingDefaultsForm } from "@/components/hub/scheduling-defaults-form";
 import { OrgProfileForm, type OrgProfile } from "@/components/hub/org-profile-form";
 import { BrandingSettings } from "@/components/hub/branding-settings";
+import { LogoSettings } from "@/components/hub/logo-settings";
+import { getOrgLogoDb } from "@/db/queries/settings";
+import { getStorageProvider } from "@/lib/storage";
 import { MessagingSummary } from "@/components/hub/messaging-summary";
 import { getMessagingSettings, getCreditBalances } from "@/db/queries/messaging";
 import { VerificationStatusCard } from "@/components/hub/verification-status-card";
@@ -58,6 +61,12 @@ export default async function HubSettingsPage() {
     getMessagingSettings(membership.orgId),
     getCreditBalances(membership.orgId),
   ]);
+  // A short-lived signed URL for the current logo (if any + storage is live).
+  let logoUrl: string | null = null;
+  if (process.env.DATA_PROVIDER === "db") {
+    const { key } = await getOrgLogoDb(membership.orgId);
+    if (key) { try { const s = await getStorageProvider(); if (s.status === "live") logoUrl = await s.signedDownloadUrl(key, 3600); } catch { /* wordmark fallback */ } }
+  }
   // Fall back to a standard week if an org has no business hours set yet (robust
   // for lightweight/just-created orgs).
   const DEFAULT_HOURS = { 1: { start: "08:00", end: "17:00" }, 2: { start: "08:00", end: "17:00" }, 3: { start: "08:00", end: "17:00" }, 4: { start: "08:00", end: "17:00" }, 5: { start: "08:00", end: "17:00" }, 6: null, 7: null };
@@ -100,8 +109,11 @@ export default async function HubSettingsPage() {
             </Card>
             <Card>
               <CardHead title="Branding" />
-              <div className="px-[17px] pb-[17px]">
-                <BrandingSettings initial={org.brandAccent} />
+              <div className="space-y-5 px-[17px] pb-[17px]">
+                <LogoSettings initialUrl={logoUrl} />
+                <div className="border-t border-border pt-4">
+                  <BrandingSettings initial={org.brandAccent} />
+                </div>
               </div>
             </Card>
             <Card>

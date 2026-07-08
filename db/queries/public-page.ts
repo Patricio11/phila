@@ -1,10 +1,25 @@
 import "server-only";
 import { and, eq, gte } from "drizzle-orm";
 import { getDb } from "@/db/client";
-import { orgPublicPages, publicPageEvents } from "@/db/schema";
+import { orgPublicPages, publicPageEvents, orgs } from "@/db/schema";
+import { getStorageProvider } from "@/lib/storage";
 import type { PublicPageContent } from "@/lib/data-provider";
 
 /** Org public micro-site content (Phase 17)  real, persisted, no mock. */
+
+/** A signed URL for the org's logo in a PUBLIC context (owner read, no org session).
+ *  Long TTL so it outlives the page's ISR window; null when unset/dormant. */
+export async function getOrgLogoUrlPublic(orgId: string, ttlSeconds = 7200): Promise<string | null> {
+  const [row] = await getDb().select({ k: orgs.brandLogoKey }).from(orgs).where(eq(orgs.id, orgId)).limit(1);
+  if (!row?.k) return null;
+  try {
+    const storage = await getStorageProvider();
+    if (storage.status !== "live") return null;
+    return await storage.signedDownloadUrl(row.k, ttlSeconds);
+  } catch {
+    return null;
+  }
+}
 
 /** Sensible starter content for an org without a saved page yet. */
 export function defaultContent(opts: { intro?: string; about?: string }): PublicPageContent {

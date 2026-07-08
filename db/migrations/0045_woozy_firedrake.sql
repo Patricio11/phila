@@ -1,0 +1,1 @@
+ALTER TABLE "orgs" ADD COLUMN "brand_logo_key" text;

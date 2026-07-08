@@ -18,6 +18,7 @@ export function BookingShell({
   brand,
   steps,
   current,
+  logoUrl = null,
   children,
 }: {
   orgName: string;
@@ -25,6 +26,7 @@ export function BookingShell({
   brand: string;
   steps: BookingStepMeta[];
   current: number;
+  logoUrl?: string | null;
   children: React.ReactNode;
 }) {
   const pct = Math.round(((current + 1) / steps.length) * 100);
@@ -33,13 +35,18 @@ export function BookingShell({
     <div style={{ "--brand": brand } as React.CSSProperties} className="min-h-dvh bg-bg">
       <header className="border-b border-border bg-surface/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 w-full max-w-[760px] items-center gap-2.5 px-4 sm:px-6">
-          <span
-            className="inline-flex size-8 items-center justify-center rounded-[9px] text-[12px] font-bold text-white shadow-sm"
-            style={{ backgroundColor: "var(--brand)" }}
-            aria-hidden
-          >
-            {initials(orgName)}
-          </span>
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt={`${orgName} logo`} className="size-8 rounded-[9px] object-contain" />
+          ) : (
+            <span
+              className="inline-flex size-8 items-center justify-center rounded-[9px] text-[12px] font-bold text-white shadow-sm"
+              style={{ backgroundColor: "var(--brand)" }}
+              aria-hidden
+            >
+              {initials(orgName)}
+            </span>
+          )}
           <Link href={`/o/${orgSlug}`} className="text-[14.5px] font-[640] tracking-[-0.01em] text-text">
             {orgName}
           </Link>

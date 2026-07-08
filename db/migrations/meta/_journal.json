@@ -316,6 +316,20 @@
       "when": 1783484722224,
       "tag": "0044_yellow_warlock",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1783494990940,
+      "tag": "0045_woozy_firedrake",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1783495575129,
+      "tag": "0046_wonderful_wallow",
+      "breakpoints": true
     }
   ]
 }

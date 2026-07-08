@@ -42,6 +42,10 @@ export const orgs = pgTable("orgs", {
   slug: text("slug").notNull().unique(),
   province: text("province").notNull(),
   brandAccent: text("brand_accent").default("#1C7D58").notNull(),
+  /** Storage key of the org's uploaded logo (W6.1), shown on the public page + branding. Null = wordmark only. */
+  brandLogoKey: text("brand_logo_key"),
+  /** The logo's size in bytes — tracked so it counts against (and releases from) org storage. */
+  brandLogoBytes: integer("brand_logo_bytes").default(0).notNull(),
   timezone: text("timezone").default("Africa/Johannesburg").notNull(),
   /** Dormant-by-Default feature flags: { ai, video, whatsapp, sms, payments }. */
   features: jsonb("features").$type<Record<string, boolean>>().default({}).notNull(),

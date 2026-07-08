@@ -42,9 +42,11 @@ function loadSaved(slug: string): Saved | null {
 export function BookingWizard({
   config,
   initialServiceId,
+  logoUrl = null,
 }: {
   config: BookingConfig;
   initialServiceId: string | null;
+  logoUrl?: string | null;
 }) {
   const { org } = config;
   const slug = org.slug;
@@ -168,7 +170,7 @@ export function BookingWizard({
 
   if (queued) {
     return (
-      <BookingShell orgName={org.name} orgSlug={slug} brand={brand} steps={STEPS} current={STEPS.length - 1}>
+      <BookingShell orgName={org.name} orgSlug={slug} brand={brand} steps={STEPS} current={STEPS.length - 1} logoUrl={logoUrl}>
         <div className="mx-auto max-w-md space-y-3 py-6 text-center">
           <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-warn-soft text-warn">
             <CloudUpload className="size-6" strokeWidth={2} aria-hidden />
@@ -186,7 +188,7 @@ export function BookingWizard({
 
   if (confirmation) {
     return (
-      <BookingShell orgName={org.name} orgSlug={slug} brand={brand} steps={STEPS} current={STEPS.length - 1}>
+      <BookingShell orgName={org.name} orgSlug={slug} brand={brand} steps={STEPS} current={STEPS.length - 1} logoUrl={logoUrl}>
         <SuccessStep
           confirmation={confirmation}
           orgName={org.name}
@@ -200,7 +202,7 @@ export function BookingWizard({
   const isConfirm = step === STEPS.length - 1;
 
   return (
-    <BookingShell orgName={org.name} orgSlug={slug} brand={brand} steps={STEPS} current={step}>
+    <BookingShell orgName={org.name} orgSlug={slug} brand={brand} steps={STEPS} current={step} logoUrl={logoUrl}>
       {step === 0 && (
         <ServiceStep
           services={config.services}

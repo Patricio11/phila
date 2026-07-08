@@ -558,8 +558,13 @@ Sizes: S/M/L. Grounded in existing building blocks.
       point-tool gives you. `ClientTimeline` on the hub client detail (replaced the plain session-history list).
 - [ ] **WhatsApp-first comms as a headline** (S/M)  ensure it's prominent, not dormant-by-afterthought;
       engineer reminders into the free 24h service window where possible (marginal cost ≈ 0).
-- [ ] **Funder/M&E depth** (M)  the paid differentiator: generate DSD/NLC-shaped narrative+financial report
-      packs (get a real grantee template first), DQA-ready session stats.
+- [x] **Funder/M&E depth** (M) ✅  the paid differentiator: a real, professional, **print-to-PDF funder report
+      pack** (`/reports/grant/[id]`, a shell-less printable page). Letterhead (org + logo) → executive summary with
+      KPIs (clients reached, sessions delivered, PHQ-9 improvement) → performance-vs-target table (achieved,
+      expected-by-now, status) → **k-anonymised** participant profile (small cells suppressed ≤4*) → outcomes →
+      narrative → POPIA footer. Replaces the stubbed "export" (which only audited). `GrantReportPack` + a
+      "Report pack" action on the grant detail. *(A funder-specific field mapping / real DSD-NLC template is a
+      later refinement.)*
 - [ ] *(Optional, large) Medical-aid invoice formatting*  BHF practice no. + ICD-10 (with diagnosis-disclosure
       consent) + tariff code; switch integration (MediSwitch/Healthbridge) is a separate big module. Only if
       chasing paid HPCSA practitioners; **out of scope for the NGO-first core.**

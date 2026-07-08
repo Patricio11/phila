@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Users } from "lucide-react";
+import { ArrowLeft, FileText, Users } from "lucide-react";
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
 import { coverageNote } from "@/lib/domain/helpers";
 import { PageHead } from "@/components/shell/page-head";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
 import { GrantDashboard } from "@/components/funder/grant-dashboard";
@@ -82,6 +83,9 @@ export default async function GrantPage({ params }: { params: Promise<{ id: stri
             />
             <ManageGrantClients grantId={grant.id} clients={clients.map((r) => ({ id: r.client.id, name: r.client.name }))} initial={admin?.allocatedClientIds ?? []} />
             <ReportExport grantId={grant.id} />
+            <Button asChild>
+              <Link href={`/reports/grant/${grant.id}`}><FileText className="size-4" strokeWidth={2} aria-hidden /> Report pack</Link>
+            </Button>
           </div>
         }
       />

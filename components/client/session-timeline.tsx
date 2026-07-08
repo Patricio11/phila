@@ -41,11 +41,14 @@ export function SessionTimeline({
   nowISO,
   limit,
   hrefFor,
+  renderAction,
 }: {
   appointments: AppointmentView[];
   nowISO: string;
   limit?: number;
   hrefFor?: (appt: AppointmentView) => string | null;
+  /** Optional per-row action rendered under the card (e.g. the client's request-change control). */
+  renderAction?: (appt: AppointmentView) => React.ReactNode;
 }) {
   const nowMs = new Date(nowISO).getTime();
 
@@ -120,6 +123,10 @@ export function SessionTimeline({
               {/* Card */}
               <div className={cn("min-w-0 flex-1", isLast ? "pb-0" : "pb-3")}>
                 {href ? <Link href={href} className={cardCls}>{inner}</Link> : <div className={cardCls}>{inner}</div>}
+                {renderAction && isUpcoming && (() => {
+                  const action = renderAction(appt);
+                  return action ? <div className="mt-2">{action}</div> : null;
+                })()}
               </div>
             </div>
           </li>

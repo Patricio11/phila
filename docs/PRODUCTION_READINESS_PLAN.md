@@ -529,7 +529,8 @@ Move from today's 5 tabs to a cleaner IA:
 
 ## Workstream 7  🟢 NEW FEATURES (the moat)
 
-**Status:** not started. *Each registers in the W3 feature registry, defaults OFF, admin-rollable.*
+**Status:** ✅ **complete** — every moat feature shipped (only the explicitly out-of-scope, optional
+Medical-aid invoice formatting remains). *Each registers in the W3 feature registry, defaults OFF, admin-rollable.*
 Sizes: S/M/L. Grounded in existing building blocks.
 
 - [x] **Outcome measures live + trends** (S) ✅  PHQ-9 **and GAD-7** now show as **separate per-tool trends** on
@@ -540,8 +541,14 @@ Sizes: S/M/L. Grounded in existing building blocks.
       up" card on the counsellor dashboard lists unhandled no-shows with **one-tap Rebook** (a create-appointment
       modal **prefilled** with the client + counsellor + missed service), a **"we missed you" nudge** (the `no_show`
       message rail), and **Mark done**. `appointments.no_show_follow_up_at` clears a handled one so it stops nagging.
-- [ ] **Portal pay via pay-link** (S/M)  W1.3.
-- [ ] **Portal reschedule/cancel** (M)  client-guarded wrappers over existing actions.
+- [x] **Portal pay via pay-link** (S/M) ✅  the client's **Billing** page (`/me/billing`) mints a signed,
+      unguessable `/pay/<token>` per unpaid invoice (`invoicePayPath` HMAC) and `InvoiceList` shows a **Pay R___**
+      button when the org has payments on + the pay-button enabled, with an EFT-details fallback otherwise. The
+      token flow reuses the existing Paystack pay-link + webhook — no new surface.
+- [x] **Portal reschedule/cancel** (M) ✅  client-guarded `requestAppointmentChange` (ownership + org notice-window
+      + change-request row + notifies counsellor & schedulers; client never edits the booking). Extracted the
+      request UI into a shared `RequestChangeControl`, so it's now on **every upcoming session** in `/me/sessions`
+      (via a `SessionTimeline` render-prop) as well as the dashboard's next-session card — not just the next one.
 - [x] **Sliding-scale / subsidised fees** (M) ✅  a per-client fee policy (`clients.fee_policy`): standard,
       **sliding-scale %**, **fixed** per-session, or **waived** (funded). Pure `effectiveFeeCents` helper (unit-tested)
       flows straight into the **auto-invoice at booking** — subsidised clients are billed their rate, waived clients
@@ -561,8 +568,16 @@ Sizes: S/M/L. Grounded in existing building blocks.
 - [x] **Unified client timeline** (M) ✅  one calm, month-grouped scroll over sessions, **outcome measures with
       the improvement trend** (▼4 improved), documents, and care-plan shares  the integrated record no SA
       point-tool gives you. `ClientTimeline` on the hub client detail (replaced the plain session-history list).
-- [ ] **WhatsApp-first comms as a headline** (S/M)  ensure it's prominent, not dormant-by-afterthought;
-      engineer reminders into the free 24h service window where possible (marginal cost ≈ 0).
+- [x] **WhatsApp-first comms as a headline** (S/M) ✅  the whole channel now turns on the free 24h service
+      window. `whatsapp_windows` (RLS) tracks each client's last inbound (webhook records every inbound message);
+      the `deliver` chokepoint is window-aware — **free-form (free) in-window**, an approved **template**
+      out-of-window (the `whatsappTemplateName` we already collect, now actually used), and an honest
+      `window_closed` (never a Meta-bounced free-form) when neither is possible. So reminders that used to
+      silently fail outside 24h now deliver. WhatsApp is promoted to the **primary channel** in Settings →
+      Messaging (Primary badge + free-window explainer + a **Test connection** ping to Meta's Graph API that
+      verifies the number & records `verifiedAt`); SMS/email are the metered backups. Template manager documents
+      the fixed `{{1}}..{{6}}` positional param order and highlights auto-filled tokens in previews. BYO — the org
+      sets its own encrypted Meta creds. Unit + integration tested.
 - [x] **Funder/M&E depth** (M) ✅  the paid differentiator: a real, professional, **print-to-PDF funder report
       pack** (`/reports/grant/[id]`, a shell-less printable page). Letterhead (org + logo) → executive summary with
       KPIs (clients reached, sessions delivered, PHQ-9 improvement) → performance-vs-target table (achieved,

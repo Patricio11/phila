@@ -7,6 +7,8 @@ import { PageHead } from "@/components/shell/page-head";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SessionTimeline } from "@/components/client/session-timeline";
+import { RequestChangeControl } from "@/components/client/request-change-control";
+import { pendingRequestKindsDb } from "@/db/queries/appointment-requests";
 import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +36,11 @@ export default async function MeSessionsPage() {
   const upcoming = appts.filter((a) => new Date(a.startsAt).getTime() > nowMs && a.state === "scheduled");
   const past = appts.filter((a) => !(new Date(a.startsAt).getTime() > nowMs && a.state === "scheduled"));
 
+  // Which upcoming sessions already have a pending change request (so we show the "asked" state, not the buttons).
+  const pendingKinds = upcoming.length > 0 && process.env.DATA_PROVIDER === "db"
+    ? await pendingRequestKindsDb(upcoming.map((a) => a.id))
+    : {};
+
   return (
     <div className="rise space-y-6">
       <PageHead title="Your sessions" summary="Everything from your first visit to your next one." />
@@ -41,7 +48,11 @@ export default async function MeSessionsPage() {
       {upcoming.length > 0 && (
         <section>
           <h2 className="mb-2.5 text-[13px] font-semibold uppercase tracking-wide text-text-3">Upcoming</h2>
-          <SessionTimeline appointments={upcoming} nowISO={now} />
+          <SessionTimeline
+            appointments={upcoming}
+            nowISO={now}
+            renderAction={(appt) => <RequestChangeControl appointmentId={appt.id} pendingKind={pendingKinds[appt.id] ?? null} />}
+          />
         </section>
       )}
 

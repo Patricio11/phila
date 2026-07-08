@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { addOptOut, getOrgByWhatsappPhone, getWhatsappAppSecretByPhone, whatsappVerifyTokenExists, updateMessageStatus } from "@/db/queries/messaging";
+import { addOptOut, getOrgByWhatsappPhone, getWhatsappAppSecretByPhone, whatsappVerifyTokenExists, updateMessageStatus, recordWhatsappInbound } from "@/db/queries/messaging";
 
 export const dynamic = "force-dynamic";
 
@@ -61,10 +61,12 @@ export async function POST(req: Request) {
       const phoneNumberId = value.metadata?.phone_number_id;
       const orgId = phoneNumberId ? await getOrgByWhatsappPhone(phoneNumberId) : null;
 
-      // Inbound messages  honour STOP as an opt-out.
+      // Inbound messages: every one (re)opens the free 24h service window; STOP also opts out.
       for (const msg of value.messages ?? []) {
+        if (!orgId || !msg.from) continue;
+        await recordWhatsappInbound(orgId, `+${msg.from}`, new Date());
         const text = (msg.text?.body ?? "").trim().toLowerCase();
-        if (orgId && msg.from && OPT_OUT_WORDS.has(text)) {
+        if (OPT_OUT_WORDS.has(text)) {
           await addOptOut(orgId, "whatsapp", `+${msg.from}`, "client replied STOP");
         }
       }

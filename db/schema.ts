@@ -488,6 +488,19 @@ export const whatsappConnections = pgTable("whatsapp_connections", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 });
 
+/**
+ * Per-client WhatsApp 24-hour service window. `lastInboundAt` is updated every time
+ * a client messages the org's number (inbound webhook). While it's < 24h old, the org
+ * can send FREE-FORM messages for free; outside it, only an approved template. Keyed by
+ * the canonical last-9-digit phone key so an inbound wa_id matches the stored client phone.
+ */
+export const whatsappWindows = pgTable("whatsapp_windows", {
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  phoneKey: text("phone_key").notNull(), // e.g. "p:603187742"
+  lastInboundAt: timestamp("last_inbound_at", { withTimezone: true }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+}, (t) => [uniqueIndex("whatsapp_window_uq").on(t.orgId, t.phoneKey)]);
+
 /** Phila credit balances per metered channel (sms, email). WhatsApp is BYO (org pays Meta). */
 export const creditBalances = pgTable("credit_balances", {
   orgId: text("org_id").notNull().references(() => orgs.id),

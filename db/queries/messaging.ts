@@ -1,9 +1,10 @@
 import "server-only";
 import { and, desc, eq, isNull, or } from "drizzle-orm";
 import { getDb } from "@/db/client";
-import { orgMessagingSettings, whatsappConnections, creditBalances, creditLedger, messageTemplates, messageLog, messageOptOuts } from "@/db/schema";
+import { orgMessagingSettings, whatsappConnections, whatsappWindows, creditBalances, creditLedger, messageTemplates, messageLog, messageOptOuts } from "@/db/schema";
 import { encryptField, decryptField } from "@/lib/crypto";
 import { CHANNELS, TRIGGERS, DEFAULT_TEMPLATES, type Channel, type MessageTrigger } from "@/lib/messaging/templates";
+import { windowKey } from "@/lib/messaging/whatsapp-window";
 
 export interface MessagingSettings {
   whatsappEnabled: boolean;
@@ -135,6 +136,39 @@ export async function getTemplateBody(orgId: string, channel: Channel, key: Mess
   const override = rows.find((r) => r.orgId === orgId);
   const sys = rows.find((r) => r.orgId === null);
   return override?.body ?? sys?.body ?? DEFAULT_TEMPLATES[channel][key];
+}
+
+/**
+ * The org's Meta-approved WhatsApp template NAME for a trigger, used to reach a client
+ * OUTSIDE the 24h window (Meta rejects free-form there). null = none configured, so an
+ * out-of-window WhatsApp send is honestly skipped rather than bounced.
+ */
+export async function getWhatsappTemplateName(orgId: string, key: MessageTrigger): Promise<string | null> {
+  const rows = await getDb().select({ orgId: messageTemplates.orgId, name: messageTemplates.whatsappTemplateName })
+    .from(messageTemplates)
+    .where(and(or(isNull(messageTemplates.orgId), eq(messageTemplates.orgId, orgId)), eq(messageTemplates.channel, "whatsapp"), eq(messageTemplates.key, key)));
+  const override = rows.find((r) => r.orgId === orgId);
+  const sys = rows.find((r) => r.orgId === null);
+  return (override?.name ?? sys?.name) || null;
+}
+
+/* ---- WhatsApp 24-hour service window (WhatsApp-first) ------------------- */
+
+/** Record an inbound WhatsApp message — refreshes (or opens) the client's free window. */
+export async function recordWhatsappInbound(orgId: string, phone: string, at: Date): Promise<void> {
+  const key = windowKey(phone);
+  if (!key) return;
+  await getDb().insert(whatsappWindows).values({ orgId, phoneKey: key, lastInboundAt: at, updatedAt: at })
+    .onConflictDoUpdate({ target: [whatsappWindows.orgId, whatsappWindows.phoneKey], set: { lastInboundAt: at, updatedAt: at } });
+}
+
+/** The client's last inbound WhatsApp time (null if they've never messaged the org). */
+export async function getWhatsappLastInbound(orgId: string, phone: string | null | undefined): Promise<Date | null> {
+  const key = windowKey(phone);
+  if (!key) return null;
+  const [row] = await getDb().select({ at: whatsappWindows.lastInboundAt }).from(whatsappWindows)
+    .where(and(eq(whatsappWindows.orgId, orgId), eq(whatsappWindows.phoneKey, key))).limit(1);
+  return row?.at ?? null;
 }
 
 /** Idempotent 1-credit debit. ok:false when the balance is exhausted (blocks the send). */

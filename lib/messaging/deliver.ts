@@ -2,8 +2,9 @@ import "server-only";
 import { now as clockNow } from "@/lib/clock";
 import { resolveChannel, withinQuietHours } from "@/lib/messaging/resolve";
 import { renderTemplate, EMAIL_SUBJECTS, type MessageTrigger, type RenderVars } from "@/lib/messaging/templates";
-import { sendWhatsApp, sendSms, sendEmail } from "@/lib/messaging/transports";
-import { getMessagingSettings, getWhatsappCreds, getTemplateBody, getCreditBalances, isOptedOut, consumeCredit, logMessage } from "@/db/queries/messaging";
+import { sendWhatsApp, sendWhatsAppTemplate, sendSms, sendEmail, type TransportResult } from "@/lib/messaging/transports";
+import { getMessagingSettings, getWhatsappCreds, getWhatsappTemplateName, getWhatsappLastInbound, getTemplateBody, getCreditBalances, isOptedOut, consumeCredit, logMessage } from "@/db/queries/messaging";
+import { whatsappWindowOpen, decideWhatsappSend, orderedTemplateParams } from "@/lib/messaging/whatsapp-window";
 
 export interface DeliverInput {
   orgId: string;
@@ -68,10 +69,33 @@ export async function deliver(input: DeliverInput): Promise<DeliverOutcome> {
   }
 
   const body = renderTemplate(await getTemplateBody(orgId, channel, trigger), vars);
-  const result =
-    channel === "whatsapp" ? await sendWhatsApp({ phoneNumberId: wa.phoneNumberId, accessTokenEnc: wa.accessTokenEnc }, to, body)
-    : channel === "sms" ? await sendSms(to, body)
-    : await sendEmail(to, EMAIL_SUBJECTS[trigger], body, settings.emailFromName ?? "", settings.emailReplyTo);
+
+  // WhatsApp is window-aware: inside the client's free 24h window we send a free-form
+  // message (free); outside it we can only use a Meta-approved template — and if none is
+  // configured we skip honestly rather than have Meta bounce a free-form message.
+  let result: TransportResult;
+  let waNote: string | undefined;
+  if (channel === "whatsapp") {
+    const windowOpen = whatsappWindowOpen(await getWhatsappLastInbound(orgId, to), clockNow());
+    const templateName = windowOpen ? null : await getWhatsappTemplateName(orgId, trigger);
+    const mode = decideWhatsappSend({ windowOpen, hasTemplate: Boolean(templateName) });
+    if (mode === "window_closed") {
+      await logMessage({ orgId, channel, to, templateKey: trigger, trigger, status: "window_closed", detail: "outside 24h window · no approved template configured" });
+      return { channel, status: "window_closed" };
+    }
+    const creds = { phoneNumberId: wa.phoneNumberId, accessTokenEnc: wa.accessTokenEnc };
+    if (mode === "free_form") {
+      waNote = "in-window (free)";
+      result = await sendWhatsApp(creds, to, body);
+    } else {
+      waNote = "approved template";
+      result = await sendWhatsAppTemplate(creds, to, templateName!, "en", orderedTemplateParams(vars));
+    }
+  } else if (channel === "sms") {
+    result = await sendSms(to, body);
+  } else {
+    result = await sendEmail(to, EMAIL_SUBJECTS[trigger], body, settings.emailFromName ?? "", settings.emailReplyTo);
+  }
 
   // Charge a credit only on a real send (never for dormant/failed).
   let cost = 0;
@@ -79,6 +103,6 @@ export async function deliver(input: DeliverInput): Promise<DeliverOutcome> {
     const c = await consumeCredit(orgId, channel, `${ref}:${channel}:${trigger}`, ref);
     cost = c.ok ? 1 : 0;
   }
-  await logMessage({ orgId, channel, to, templateKey: trigger, trigger, status: result.status, detail: result.detail, providerMessageId: result.providerMessageId, costCredits: cost });
+  await logMessage({ orgId, channel, to, templateKey: trigger, trigger, status: result.status, detail: result.detail ?? waNote, providerMessageId: result.providerMessageId, costCredits: cost });
   return { channel, status: result.status };
 }

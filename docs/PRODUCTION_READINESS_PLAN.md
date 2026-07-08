@@ -484,23 +484,26 @@ effective(feature, org) =
 
 ---
 
-## Workstream 6  🟡 UX & ORG SETTINGS IA
+## Workstream 6  ✅ UX & ORG SETTINGS IA (core done)
 
-**Status:** in progress.
+**Status:** core done. Two items are **intentionally deferred** (below), not dropped.
 
 ### 6.1 Settings page re-architecture (`app/hub/settings`)
 Move from today's 5 tabs to a cleaner IA:
-- [~] **Organisation**  profile (persisted, W1.5) + **Branding** ✅ (an accent picker with live preview + preset
-      palette + contrast note; `saveOrgBranding`  the accent was only set at signup) + contact. *(Logo column still
-      to add.)*
-- [~] **Booking & scheduling**  duration/buffer + business hours + the new **change/cancellation notice** window
-      ✅. *(Still to fold in: the booking-window rules stranded on `/hub/booking` + the client-portal policy link.)*
+- [x] **Organisation**  profile (persisted, W1.5) + **Branding** (an accent picker with live preview + preset
+      palette + contrast note; `saveOrgBranding`  the accent was only set at signup) + contact. *(Logo upload → W7:
+      an app-wide private-storage logo needs a public-asset/caching strategy, a design call beyond this pass.)*
+- [x] **Booking & scheduling**  duration/buffer + business hours + the new **change/cancellation notice** window.
+      *Decision:* the richer booking-window/per-service/per-counsellor config stays on its **dedicated `/hub/booking`
+      surface** (a coherent configurator) rather than being fragmented into Settings; the notice window that governs
+      client change-requests lives in Scheduling where it belongs.
 - [x] **Messaging**  promoted from the buried Integrations link-out to a **top-level tab** (channel on/off chips,
       SMS/email credit balances, quiet hours, + a route into the full manager).
 - [x] **Billing & plan**  invoicing/VAT, own gateway, Phila plan/credits (already grouped).
 - [x] **Integrations**  feature flags (reflect W3 platform/plan overrides), video, AI scribe (Messaging moved out).
-- [ ] **Security & data**  2FA, audit access, **data export** (POPIA subject access), **danger zone**. *(Tab
-      relabelled "Security & data"; the data-export + danger-zone surfaces remain.)*
+- [~] **Security & data**  2FA ✅ (tab relabelled "Security & data"). **Deferred pending sign-off:** audit-access
+      view, **data export** (POPIA subject access), **danger zone** (org-level destructive actions need the owner's
+      decision on soft-disable vs hard-delete + retention + who can trigger).
 
 ### 6.2 Flow quick-wins (small, high smoothness)
 - [x] **Auto-invoice at booking** (per the practice's model, supersedes the "create-invoice-on-session-complete"
@@ -514,8 +517,12 @@ Move from today's 5 tabs to a cleaner IA:
       cancel" idea; also lands W7's "Portal reschedule/cancel".)*
 - [x] The `no_show` message already fires on marking a session no-show (session-note flow) — verified.
 - [x] Counsellor own-caseload **capacity bar** on `/app` (shared `WEEK_CAPACITY`).
-- [ ] Real session-note attachments via the documents pipeline (not local state).
-- [ ] Empty-state next-step CTAs + bulk actions (multi-select reassign) across hub client/invoice lists.
+- [x] **Real session-note attachments** via the documents pipeline (was local-state-only): presigned upload → scan →
+      stored clinical, linked to the session, and **auto-filed into Documents under Sessions → [Client] → [Date]**.
+      Uncovered + fixed a real bug — `signedUploadUrl` sent a JSON content-type with no body, so **no** upload worked
+      against live Supabase (documents/forms/messages/attachments); now verified end-to-end.
+- [x] **Bulk multi-select reassign** on the hub clients list (checkbox column + floating bar) + **empty-state CTAs**
+      (funders "Add funder"/"New grant").
 - [x] Global **⌘K / Ctrl-K → New appointment** (opt-in on the counsellor dashboard).
 
 ---

@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeftRight, Check, Inbox, Search, UserMinus, Undo2 } from "lucide-react";
+import { ArrowLeftRight, Check, Inbox, Search, UserMinus, Undo2, X } from "lucide-react";
 import type { CaseloadStatus, OrgClientRow } from "@/lib/data-provider";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Avatar } from "@/components/ui/avatar";
@@ -53,6 +53,12 @@ export function HubClientsTable({ rows, removedRows, counsellors }: { rows: OrgC
   const [counsellorQuery, setCounsellorQuery] = useState("");
   // Remove confirmation state
   const [removeTarget, setRemoveTarget] = useState<OrgClientRow | null>(null);
+  // Bulk multi-select state
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkReassign, setBulkReassign] = useState(false);
+  const canSelect = tab !== "removed" && counsellors.length > 1;
+  const toggleSel = (id: string) => setSelected((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const clearSel = () => setSelected(new Set());
 
   // Source of truth is the DB  the server component re-reads on router.refresh().
   const liveRows = rows;
@@ -77,16 +83,30 @@ export function HubClientsTable({ rows, removedRows, counsellors }: { rows: OrgC
     setReassigning(r);
     setPickCounsellor(counsellors.find((c) => c.name === r.counsellorName)?.id ?? counsellors[0]?.id ?? null);
   };
-  const closeReassign = () => { setReassigning(null); setCounsellorQuery(""); };
+  const openBulkReassign = () => {
+    setBulkReassign(true);
+    setPickCounsellor(counsellors[0]?.id ?? null);
+  };
+  const closeReassign = () => { setReassigning(null); setBulkReassign(false); setCounsellorQuery(""); };
   const confirmReassign = () => {
-    if (!reassigning || !pickCounsellor) return;
-    const target = reassigning;
+    if (!pickCounsellor) return;
+    const ids = bulkReassign ? [...selected] : reassigning ? [reassigning.client.id] : [];
+    if (ids.length === 0) return;
+    const name = counsellors.find((c) => c.id === pickCounsellor)?.name ?? "";
     start(async () => {
-      const res = await reassignClient({ clientId: target.client.id, counsellorId: pickCounsellor });
-      if (!res.ok) return toast({ tone: "error", title: res.error });
-      const name = counsellors.find((c) => c.id === pickCounsellor)?.name ?? "";
-      toast({ tone: "success", title: `${target.client.name.split(" ")[0]} reassigned`, description: `Now with ${name.split(" ")[0]}. History stays intact.` });
+      let ok = 0;
+      for (const id of ids) {
+        const res = await reassignClient({ clientId: id, counsellorId: pickCounsellor });
+        if (res.ok) ok += 1;
+      }
+      if (ok === 0) return toast({ tone: "error", title: "Couldn't reassign  please try again." });
+      toast({
+        tone: "success",
+        title: ids.length === 1 ? `${liveRows.find((r) => r.client.id === ids[0])?.client.name.split(" ")[0] ?? "Client"} reassigned` : `${ok} client${ok === 1 ? "" : "s"} reassigned`,
+        description: `Now with ${name.split(" ")[0]}. History stays intact.`,
+      });
       closeReassign();
+      clearSel();
       router.refresh();
     });
   };
@@ -112,7 +132,23 @@ export function HubClientsTable({ rows, removedRows, counsellors }: { rows: OrgC
     });
   };
 
+  const selectColumn: Column<OrgClientRow> = {
+    key: "select",
+    header: "",
+    className: "w-9",
+    render: (r) => (
+      <input
+        type="checkbox"
+        aria-label={`Select ${r.client.name}`}
+        checked={selected.has(r.client.id)}
+        onChange={() => toggleSel(r.client.id)}
+        className="size-4 cursor-pointer accent-[var(--accent)]"
+      />
+    ),
+  };
+
   const columns: Column<OrgClientRow>[] = [
+    ...(canSelect ? [selectColumn] : []),
     {
       key: "name",
       header: "Client",
@@ -176,7 +212,7 @@ export function HubClientsTable({ rows, removedRows, counsellors }: { rows: OrgC
             <button
               key={t.key}
               type="button"
-              onClick={() => setTab(t.key)}
+              onClick={() => { setTab(t.key); clearSel(); }}
               aria-pressed={active}
               className={cn(
                 "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium transition-colors",
@@ -191,6 +227,24 @@ export function HubClientsTable({ rows, removedRows, counsellors }: { rows: OrgC
           );
         })}
       </div>
+
+      {/* Bulk action bar  appears when clients are selected. */}
+      {canSelect && selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-card border border-accent/30 bg-accent-soft/40 px-4 py-2.5">
+          <span className="text-[13px] font-medium text-text">{selected.size} selected</span>
+          {selected.size < shown.length && (
+            <button type="button" onClick={() => setSelected(new Set(shown.map((r) => r.client.id)))} className="text-[12.5px] font-medium text-accent hover:underline">Select all {shown.length}</button>
+          )}
+          <div className="ml-auto flex items-center gap-2">
+            <Button size="sm" onClick={openBulkReassign}>
+              <ArrowLeftRight className="size-3.5" strokeWidth={2} aria-hidden /> Reassign
+            </Button>
+            <Button size="sm" variant="ghost" onClick={clearSel}>
+              <X className="size-3.5" strokeWidth={2} aria-hidden /> Clear
+            </Button>
+          </div>
+        </div>
+      )}
 
       {tab === "removed" && removedRows.length === 0 ? (
         <EmptyRemoved />
@@ -214,12 +268,12 @@ export function HubClientsTable({ rows, removedRows, counsellors }: { rows: OrgC
         />
       )}
 
-      {/* Reassign  searchable counsellor picker */}
+      {/* Reassign  searchable counsellor picker (single or bulk) */}
       <Dialog
-        open={Boolean(reassigning)}
+        open={Boolean(reassigning) || bulkReassign}
         onClose={closeReassign}
-        title={reassigning ? `Reassign ${reassigning.client.name}` : "Reassign"}
-        description="Move this client to another counsellor. Their full history and outcomes move with them."
+        title={bulkReassign ? `Reassign ${selected.size} client${selected.size === 1 ? "" : "s"}` : reassigning ? `Reassign ${reassigning.client.name}` : "Reassign"}
+        description={bulkReassign ? "Move the selected clients to one counsellor. Each client's full history and outcomes move with them." : "Move this client to another counsellor. Their full history and outcomes move with them."}
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={closeReassign} disabled={pending}>Cancel</Button>

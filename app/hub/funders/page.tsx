@@ -42,7 +42,7 @@ export default async function HubFundersPage() {
 
       {funders.length === 0 ? (
         <Card className="p-2">
-          <EmptyState icon={Building2} title="No funders yet" body="Add a funder, then create a grant under it with its own targets and reporting schedule." />
+          <EmptyState icon={Building2} title="No funders yet" body="Add a funder, then create a grant under it with its own targets and reporting schedule." action={<FunderFormButton />} />
         </Card>
       ) : (
         <>
@@ -55,7 +55,7 @@ export default async function HubFundersPage() {
             <h3 className="text-[13px] font-[640] uppercase tracking-[0.05em] text-text-3">Grants · {grants.length}</h3>
             {grants.length === 0 ? (
               <Card className="p-2">
-                <EmptyState icon={Building2} title="No grants yet" body="Create a grant under one of your funders to start tracking indicators against targets." />
+                <EmptyState icon={Building2} title="No grants yet" body="Create a grant under one of your funders to start tracking indicators against targets." action={<GrantFormButton funders={funderOpts} />} />
               </Card>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">

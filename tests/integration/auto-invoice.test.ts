@@ -40,8 +40,8 @@ describe("auto-invoice on booking", () => {
     // Idempotent — booking the same session again doesn't double-bill.
     const r2 = await createInvoiceForBookingDb({ orgId: ORG, appointmentId: "appt_ip_1", clientId: "cl_ip_1", serviceName: "Individual counselling", amountCents: 45000, issuedAt: new Date("2026-07-01T09:00:00Z") });
     expect(r2?.id).toBe(r1!.id);
-    const [{ n }] = await sql`SELECT count(*)::int n FROM invoices WHERE org_id=${ORG}`;
-    expect(n).toBe(1);
+    const countRows = await sql`SELECT count(*)::int n FROM invoices WHERE org_id=${ORG}`;
+    expect(countRows[0]!.n).toBe(1);
 
     // A free/unpriced session → no invoice.
     const free = await createInvoiceForBookingDb({ orgId: ORG, appointmentId: "appt_ip_free", clientId: "cl_ip_1", serviceName: "Community session", amountCents: 0, issuedAt: new Date("2026-07-01T09:00:00Z") });

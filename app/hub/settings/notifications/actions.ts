@@ -3,7 +3,8 @@
 import { z } from "zod";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
-import { saveMessagingSettings, saveWhatsappConnection, saveTemplate, resetTemplate } from "@/db/queries/messaging";
+import { saveMessagingSettings, saveWhatsappConnection, saveTemplate, resetTemplate, getWhatsappCreds, markWhatsappVerified } from "@/db/queries/messaging";
+import { verifyWhatsApp } from "@/lib/messaging/transports";
 
 const time = z.string().regex(/^\d{2}:\d{2}$/).or(z.literal(""));
 
@@ -82,6 +83,24 @@ export async function resetMessageTemplate(
   await resetTemplate(membership.orgId, parsed.data.channel, parsed.data.key);
   await logAccess({ action: "admin.action", actor: { userId: "hub", platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `org:${membership.orgId}/template:${parsed.data.channel}.${parsed.data.key}`, reason: "reset_template" });
   return { ok: true };
+}
+
+/**
+ * Test the saved WhatsApp connection against Meta's Graph API. On success the
+ * connection is promoted to "live" (verifiedAt recorded) and the number's display
+ * name + quality rating are returned. Secrets never leave the server — this pings
+ * the STORED creds, so the org must save before testing.
+ */
+export async function verifyWhatsappConnection(): Promise<
+  { ok: true; displayPhone?: string; name?: string; quality?: string } | { ok: false; error: string }
+> {
+  const { membership } = await requireHub();
+  const creds = await getWhatsappCreds(membership.orgId);
+  const res = await verifyWhatsApp({ phoneNumberId: creds.phoneNumberId, accessTokenEnc: creds.accessTokenEnc });
+  await markWhatsappVerified(membership.orgId, res.ok);
+  await logAccess({ action: "admin.action", actor: { userId: "hub", platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `org:${membership.orgId}/whatsapp`, reason: res.ok ? "verify_whatsapp_ok" : "verify_whatsapp_failed" });
+  if (!res.ok) return { ok: false, error: res.detail ?? "Could not reach WhatsApp." };
+  return { ok: true, displayPhone: res.displayPhone, name: res.name, quality: res.quality };
 }
 
 /** "Help me set up WhatsApp"  logs a setup-assist request for the platform team. */

@@ -19,7 +19,7 @@ import { LogoSettings } from "@/components/hub/logo-settings";
 import { getOrgLogoDb } from "@/db/queries/settings";
 import { getStorageProvider } from "@/lib/storage";
 import { MessagingSummary } from "@/components/hub/messaging-summary";
-import { getMessagingSettings, getCreditBalances } from "@/db/queries/messaging";
+import { getMessagingSettings, getCreditBalances, getWhatsappConnection } from "@/db/queries/messaging";
 import { VerificationStatusCard } from "@/components/hub/verification-status-card";
 import { getOnboardingStatusDb } from "@/db/queries/onboarding";
 import { InvoiceSettingsForm } from "@/components/hub/invoice-settings-form";
@@ -58,9 +58,10 @@ export default async function HubSettingsPage() {
   const page = await provider.getOrgPublicPage(org.slug);
   const pageContent = page?.content ?? defaultContent({ intro: page?.intro, about: page?.about });
   const pageStats = await getPageStats(membership.orgId);
-  const [messaging, credits] = await Promise.all([
+  const [messaging, credits, whatsappConn] = await Promise.all([
     getMessagingSettings(membership.orgId),
     getCreditBalances(membership.orgId),
+    getWhatsappConnection(membership.orgId),
   ]);
   // A short-lived signed URL for the current logo (if any + storage is live).
   let logoUrl: string | null = null;
@@ -173,7 +174,7 @@ export default async function HubSettingsPage() {
           <Card>
             <CardHead title="Messaging & notifications" />
             <div className="px-[17px] pb-[17px]">
-              <MessagingSummary settings={messaging} credits={credits} quietHours={messaging.quietStart && messaging.quietEnd ? `${messaging.quietStart} to ${messaging.quietEnd}` : null} />
+              <MessagingSummary settings={messaging} whatsapp={whatsappConn} credits={credits} quietHours={messaging.quietStart && messaging.quietEnd ? `${messaging.quietStart} to ${messaging.quietEnd}` : null} />
             </div>
           </Card>
         }

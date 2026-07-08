@@ -38,13 +38,21 @@ export interface WhatsappConnectionView {
   wabaId: string | null;
   hasToken: boolean;
   verifyToken: string | null;
+  verifiedAt: string | null;
 }
 
 /** Never returns the decrypted token  only whether one is stored. */
 export async function getWhatsappConnection(orgId: string): Promise<WhatsappConnectionView> {
   const [row] = await getDb().select().from(whatsappConnections).where(eq(whatsappConnections.orgId, orgId)).limit(1);
-  if (!row) return { status: "off", phoneNumberId: null, wabaId: null, hasToken: false, verifyToken: null };
-  return { status: row.status as WhatsappConnectionView["status"], phoneNumberId: row.phoneNumberId, wabaId: row.wabaId, hasToken: Boolean(row.accessTokenEnc), verifyToken: row.verifyToken };
+  if (!row) return { status: "off", phoneNumberId: null, wabaId: null, hasToken: false, verifyToken: null, verifiedAt: null };
+  return { status: row.status as WhatsappConnectionView["status"], phoneNumberId: row.phoneNumberId, wabaId: row.wabaId, hasToken: Boolean(row.accessTokenEnc), verifyToken: row.verifyToken, verifiedAt: row.verifiedAt?.toISOString() ?? null };
+}
+
+/** Promote a connection to "live" after a successful Graph API ping (records the moment). */
+export async function markWhatsappVerified(orgId: string, ok: boolean): Promise<void> {
+  await getDb().update(whatsappConnections)
+    .set(ok ? { status: "live", verifiedAt: new Date(), updatedAt: new Date() } : { updatedAt: new Date() })
+    .where(eq(whatsappConnections.orgId, orgId));
 }
 
 export async function saveWhatsappConnection(orgId: string, input: { phoneNumberId: string; wabaId: string; accessToken?: string; appSecret?: string; verifyToken: string }): Promise<void> {

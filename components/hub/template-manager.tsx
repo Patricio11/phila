@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Mail, MessageCircle, Pencil, RotateCcw, Smartphone } from "lucide-react";
 import type { TemplateView } from "@/db/queries/messaging";
 import { type Channel, type MessageTrigger, renderTemplate, EMAIL_SUBJECTS } from "@/lib/messaging/templates";
+import { WHATSAPP_TEMPLATE_PARAM_KEYS } from "@/lib/messaging/whatsapp-window";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
@@ -91,13 +92,19 @@ function TemplateRow({ tpl, sample }: { tpl: TemplateView; sample: Record<string
         <div className="mt-2.5 space-y-2.5 pl-8">
           <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={tpl.channel === "email" ? 6 : 3} aria-label={`${label} message`} />
           {tpl.channel === "whatsapp" && (
-            <input
-              value={waName}
-              onChange={(e) => setWaName(e.target.value)}
-              placeholder="Meta-approved template name (for sends outside the 24h window)"
-              aria-label="WhatsApp template name"
-              className="h-9 w-full rounded-control border border-border bg-surface px-2.5 text-[12.5px] text-text placeholder:text-text-3"
-            />
+            <div className="space-y-1.5">
+              <input
+                value={waName}
+                onChange={(e) => setWaName(e.target.value)}
+                placeholder="Meta-approved template name (for sends outside the 24h window)"
+                aria-label="WhatsApp template name"
+                className="h-9 w-full rounded-control border border-border bg-surface px-2.5 text-[12.5px] text-text placeholder:text-text-3"
+              />
+              <p className="text-[11px] leading-snug text-text-3">
+                Inside a client&apos;s free 24-hour window we send the message above. Outside it, Meta only allows a pre-approved <b>template</b> — name it here, and build its body with placeholders in this order:{" "}
+                {WHATSAPP_TEMPLATE_PARAM_KEYS.map((k, i) => `{{${i + 1}}} ${k}`).join(" · ")}.
+              </p>
+            </div>
           )}
           <div className="rounded-control border border-border bg-surface px-3 py-2">
             <div className="text-[10.5px] font-medium uppercase tracking-wide text-text-3">Preview{tpl.channel === "email" ? ` · ${EMAIL_SUBJECTS[tpl.key]}` : ""}</div>

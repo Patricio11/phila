@@ -547,7 +547,12 @@ Sizes: S/M/L. Grounded in existing building blocks.
       flows straight into the **auto-invoice at booking** — subsidised clients are billed their rate, waived clients
       raise no invoice. A **Fee arrangement** card on the client detail (label chip + a per-service preview of exactly
       what they pay, list price struck through) → `setClientFee`. *NGO reality; no competitor does it.*
-- [ ] **Waitlist auto-fill** (L)  cancelled slot offers itself via the messaging rail; new `waitlist_entries`.
+- [x] **Waitlist auto-fill** (L) ✅  `waitlist_entries` table (RLS). Add a client to the waitlist (any counsellor
+      or a preferred one, + a note) from the client detail; a **Waitlist** card on `/hub/appointments` lists who's
+      waiting with **one-tap Book** (prefilled) + remove. When a session is **cancelled** (staff *or* an approved
+      client cancel-request), the freed slot **offers itself** to matching waiting clients via the messaging rail
+      (new `waitlist_slot` template, dormant-safe) + an in-app notification, and the counsellor is told how many
+      were offered it. Integration-verified matching/marking.
 - [x] **Referral / source tracking** (S/M) ✅  a proper **org-toggleable feature** (`referrals` in the W3 feature
       registry, Dormant-by-Default; on/off in Settings → Integrations, super-admin kill-switchable). When on: a
       "How did they find you?" field on Add/Edit client (WhatsApp, SADAG, GP referral, word of mouth, funder

@@ -19,6 +19,7 @@ import { ReassignClientButton } from "@/components/hub/reassign-client-button";
 import { InviteClientButton } from "@/components/hub/invite-client-button";
 import { EditClientButton } from "@/components/hub/edit-client-button";
 import { ClientFeeControl } from "@/components/hub/client-fee-control";
+import { AddToWaitlistButton } from "@/components/hub/add-to-waitlist-button";
 import { getClientFeeDb, getClientReferralDb } from "@/db/queries/clients";
 import { REFERRAL_SOURCE_LABELS, type ReferralSource } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
@@ -92,6 +93,7 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
             />
             <InviteClientButton clientId={client.id} clientName={client.name} phone={client.phone ?? null} email={client.email ?? null} whatsappOn={Boolean(org.features.whatsapp)} smsOn={Boolean(org.features.sms)} />
             <ReassignClientButton clientId={client.id} clientName={client.name} counsellors={counsellorOpts} currentCounsellorId={counsellor.id} />
+            <AddToWaitlistButton clientId={client.id} clientName={client.name} counsellors={counsellorOpts} />
             <Button asChild>
               <Link href="/hub/appointments"><CalendarPlus className="size-4" strokeWidth={2} aria-hidden /> Book session</Link>
             </Button>

@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireOrg } from "@/lib/auth/guard";
 import { getChangeRequestDb, resolveChangeRequestDb } from "@/db/queries/appointment-requests";
 import { cancelAppointment as persistCancel } from "@/db/queries/appointments";
-import { notifyAppointment } from "@/lib/messaging/notify";
+import { notifyAppointment, offerFreedSlot } from "@/lib/messaging/notify";
 import { notifyClientUser } from "@/db/queries/notifications";
 import { logAccess } from "@/lib/audit";
 
@@ -46,6 +46,7 @@ export async function resolveChangeRequest(
     // Approve a cancellation → actually cancel the session.
     await persistCancel(membership.orgId, req.appointmentId, "Cancelled at the client's request", "this");
     await notifyAppointment(req.appointmentId, "cancelled");
+    void offerFreedSlot(membership.orgId, req.appointmentId); // waitlist auto-offer (W7)
     await resolveChangeRequestDb(membership.orgId, req.id, "approved", principal.userId);
     await notifyClientUser(req.clientId, membership.orgId, {
       kind: "change_approved", title: "Session cancelled", body: "Your session has been cancelled as requested.", href: "/me",

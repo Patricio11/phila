@@ -9,7 +9,7 @@ import { appointments } from "@/db/schema";
 import { rescheduleAppointment as persistReschedule, cancelAppointment as persistCancel } from "@/db/queries/appointments";
 import { markNoShowFollowedUpDb } from "@/db/queries/no-shows";
 import { isSlotTakenError, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
-import { notifyAppointment } from "@/lib/messaging/notify";
+import { notifyAppointment, offerFreedSlot } from "@/lib/messaging/notify";
 import { videoJoinPath } from "@/lib/video/livekit";
 
 /** A signed, in-org join link for an online session (Phase 17.2). */
@@ -93,6 +93,7 @@ export async function cancelAppointment(
     cancelled = await persistCancel(membership.orgId, parsed.data.appointmentId, parsed.data.reason, parsed.data.scope);
     if (cancelled === 0) return { ok: false, error: "That session couldn't be found." };
     await notifyAppointment(parsed.data.appointmentId, "cancelled");
+    void offerFreedSlot(membership.orgId, parsed.data.appointmentId); // waitlist auto-offer (W7)
   }
   await logAccess({
     action: "admin.action",

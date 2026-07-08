@@ -796,6 +796,21 @@ export const formAssignments = pgTable("form_assignments", {
   index("form_assign_client_idx").on(t.clientId),
 ]);
 
+/** Waitlist (W7): clients waiting for a slot. When a session is cancelled, matching
+ *  entries are offered the freed slot via the messaging rail. */
+export const waitlistEntries = pgTable("waitlist_entries", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  clientId: text("client_id").notNull(),
+  counsellorId: text("counsellor_id"), // null = any counsellor
+  serviceId: text("service_id"),
+  note: text("note"),
+  status: text("status").default("waiting").notNull(), // waiting | placed | removed
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  offeredAt: timestamp("offered_at", { withTimezone: true }),
+  placedAt: timestamp("placed_at", { withTimezone: true }),
+}, (t) => [index("waitlist_org_status_idx").on(t.orgId, t.status)]);
+
 /** A client's REQUEST to reschedule or cancel a session (W6.2). The client never edits
  *  the booking directly — they submit a reason; the practice actions or declines it. */
 export const appointmentChangeRequests = pgTable("appointment_change_requests", {

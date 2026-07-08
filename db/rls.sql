@@ -27,7 +27,7 @@ grant execute on function app_is_super() to phila_app;
 do $$
 declare t text;
 begin
-  foreach t in array array['appointments','audit_log','client_documents','clients','consents','counsellors','funders','grants','invoices','org_members','rooms','room_assignments','services','sites','org_messaging_settings','whatsapp_connections','credit_balances','credit_ledger','message_log','message_opt_outs','org_video_settings','org_ai_settings','ai_usage','payments','org_payment_connections','subscriptions','org_public_pages','public_page_events','documents','document_folders','document_requests','document_shares','org_storage_usage','message_threads','thread_members','team_messages','forms','form_assignments','org_onboarding_docs','org_feature_overrides','appointment_change_requests']
+  foreach t in array array['appointments','audit_log','client_documents','clients','consents','counsellors','funders','grants','invoices','org_members','rooms','room_assignments','services','sites','org_messaging_settings','whatsapp_connections','credit_balances','credit_ledger','message_log','message_opt_outs','org_video_settings','org_ai_settings','ai_usage','payments','org_payment_connections','subscriptions','org_public_pages','public_page_events','documents','document_folders','document_requests','document_shares','org_storage_usage','message_threads','thread_members','team_messages','forms','form_assignments','org_onboarding_docs','org_feature_overrides','appointment_change_requests','waitlist_entries']
   loop
     execute format('alter table %I enable row level security', t);
     execute format('alter table %I force row level security', t);

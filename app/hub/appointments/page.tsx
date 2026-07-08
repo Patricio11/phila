@@ -4,7 +4,9 @@ import { getDataProvider } from "@/lib/data-provider";
 import { PageHead } from "@/components/shell/page-head";
 import { CalendarView } from "@/components/calendar/calendar-view";
 import { ChangeRequestsCard } from "@/components/hub/change-requests-card";
+import { WaitlistCard } from "@/components/hub/waitlist-card";
 import { listPendingChangeRequestsDb } from "@/db/queries/appointment-requests";
+import { listWaitlistDb } from "@/db/queries/waitlist";
 import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +30,11 @@ export default async function HubCalendarsPage() {
     provider.listRooms(membership.orgId),
   ]);
   const events = lists.flat();
-  const changeRequests = process.env.DATA_PROVIDER === "db" ? await listPendingChangeRequestsDb(membership.orgId) : [];
+  const isDb = process.env.DATA_PROVIDER === "db";
+  const [changeRequests, waitlist] = await Promise.all([
+    isDb ? listPendingChangeRequestsDb(membership.orgId) : Promise.resolve([]),
+    isDb ? listWaitlistDb(membership.orgId) : Promise.resolve([]),
+  ]);
   const scheduling = {
     orgId: membership.orgId,
     clients: orgClients.map((c) => ({ id: c.id, name: c.name })),
@@ -45,6 +51,7 @@ export default async function HubCalendarsPage() {
         summary={`Every counsellor's sessions in one view  ${counsellors.length} counsellors. Click a slot to book on behalf.`}
       />
       <ChangeRequestsCard initial={changeRequests} />
+      <WaitlistCard initial={waitlist} options={scheduling} />
       <CalendarView events={events} businessHours={org.scheduling.businessHours} scheduling={scheduling} nowISO={now} openSessions={false} clientBasePath="/hub/clients" />
     </div>
   );

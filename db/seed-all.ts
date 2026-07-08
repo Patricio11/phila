@@ -591,6 +591,12 @@ async function main() {
     }).onConflictDoNothing();
   }
 
+  // Waitlist (W7) — a couple of clients waiting, so the waitlist + auto-offer is demonstrable.
+  await db.insert(schema.waitlistEntries).values([
+    { id: "wl_seed_1", orgId: ORG, clientId: "cl_naledi", counsellorId: "couns_nomsa", serviceId: "svc_individual", note: "Prefers mornings", status: "waiting", createdAt: new Date(now.getTime() - 6 * 86_400_000) },
+    { id: "wl_seed_2", orgId: ORG, clientId: "cl_megan", counsellorId: null, serviceId: null, note: "Flexible on counsellor", status: "waiting", createdAt: new Date(now.getTime() - 2 * 86_400_000) },
+  ]).onConflictDoNothing();
+
   // A pending client change request (W6.2) so the hub's requests queue is demonstrable.
   // Tied to a real upcoming scheduled session (cl_fatima with Nomsa, tomorrow).
   await db.insert(schema.appointmentChangeRequests).values({

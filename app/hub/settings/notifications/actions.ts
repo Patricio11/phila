@@ -54,7 +54,7 @@ export async function saveWhatsapp(
 
 const templateInput = z.object({
   channel: z.enum(["whatsapp", "sms", "email"]),
-  key: z.enum(["booked", "rescheduled", "cancelled", "reminder", "no_show", "document_shared", "client_uploaded_document", "form_sent"]),
+  key: z.enum(["booked", "rescheduled", "cancelled", "reminder", "no_show", "document_shared", "client_uploaded_document", "form_sent", "waitlist_slot"]),
   body: z.string().trim().min(1, "Message can't be empty.").max(2000),
   whatsappTemplateName: z.string().trim().max(120).default(""),
 });
@@ -71,7 +71,7 @@ export async function saveMessageTemplate(
   return { ok: true };
 }
 
-const resetInput = z.object({ channel: z.enum(["whatsapp", "sms", "email"]), key: z.enum(["booked", "rescheduled", "cancelled", "reminder", "no_show", "document_shared", "client_uploaded_document", "form_sent"]) });
+const resetInput = z.object({ channel: z.enum(["whatsapp", "sms", "email"]), key: z.enum(["booked", "rescheduled", "cancelled", "reminder", "no_show", "document_shared", "client_uploaded_document", "form_sent", "waitlist_slot"]) });
 
 export async function resetMessageTemplate(
   raw: z.infer<typeof resetInput>,

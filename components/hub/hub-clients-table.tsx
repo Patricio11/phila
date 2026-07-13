@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { StatusDot, type DotTone } from "@/components/ui/status-dot";
 import { useToast } from "@/components/ui/toast";
 import { reassignClient, removeClient, restoreClient } from "@/app/hub/clients/actions";
@@ -137,12 +138,11 @@ export function HubClientsTable({ rows, removedRows, counsellors }: { rows: OrgC
     header: "",
     className: "w-9",
     render: (r) => (
-      <input
-        type="checkbox"
-        aria-label={`Select ${r.client.name}`}
+      <Checkbox
+        size="sm"
+        ariaLabel={`Select ${r.client.name}`}
         checked={selected.has(r.client.id)}
         onChange={() => toggleSel(r.client.id)}
-        className="size-4 cursor-pointer accent-[var(--accent)]"
       />
     ),
   };

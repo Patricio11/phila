@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { ImageIcon, Loader2, Plus, Upload, X } from "lucide-react";
+import { ImageIcon, Loader2, Pipette, Plus, Upload, X } from "lucide-react";
 import type { FormTheme } from "@/lib/domain/types";
 import { FORM_IMAGE_FITS } from "@/lib/domain/enums";
 import { Card } from "@/components/ui/card";
@@ -170,7 +170,12 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
     <div className="space-y-1">
       <Label>{label}</Label>
       <div className="flex items-center gap-2">
-        <input type="color" value={value} onChange={(e) => onChange(e.target.value)} className="size-9 cursor-pointer rounded-control border border-border bg-surface p-0.5" aria-label={label} />
+        {/* Custom swatch — the (invisible) native input on top only summons the OS colour dialog. */}
+        <span className="relative inline-flex size-9 shrink-0 items-center justify-center rounded-control border border-border bg-surface transition-shadow hover:shadow-sm">
+          <span className="size-6 rounded-[6px] shadow-inner ring-1 ring-black/5" style={{ backgroundColor: value }} aria-hidden />
+          <Pipette className="absolute -bottom-1 -right-1 size-3.5 rounded-full bg-surface p-0.5 text-text-3 shadow-sm ring-1 ring-border" strokeWidth={2} aria-hidden />
+          <input type="color" value={value} onChange={(e) => onChange(e.target.value)} className="absolute inset-0 cursor-pointer opacity-0" aria-label={label} />
+        </span>
         <Input value={value} onChange={(e) => onChange(e.target.value)} className="h-9 w-24 text-[12.5px]" />
       </div>
     </div>

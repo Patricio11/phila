@@ -4,6 +4,7 @@ import { CalendarDays, Clock, MapPin, MessageCircle, User, Video, Wallet } from 
 import type { BookingConfig } from "@/lib/data-provider";
 import type { BookingState } from "@/components/booking/types";
 import { StepHeader } from "@/components/booking/step-header";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export function formatWhen(iso: string): string {
   const d = new Date(iso);
@@ -79,11 +80,12 @@ export function ConfirmStep({
 
       {/* One affirmative acceptance in place of a page of toggles  the terms carry the detail. */}
       <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-control border border-border bg-surface p-3.5 transition-colors hover:bg-surface-hover">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={accepted}
-          onChange={(e) => onAccept(e.target.checked)}
-          className="mt-0.5 size-[18px] shrink-0 rounded accent-[var(--brand)]"
+          onChange={onAccept}
+          ariaLabel="Accept the terms and privacy policy"
+          fillClassName="border-[var(--brand)] bg-[var(--brand)]"
+          className="mt-0.5"
         />
         <span className="text-[13px] leading-relaxed text-text-2">
           I&apos;ve read and accept the{" "}

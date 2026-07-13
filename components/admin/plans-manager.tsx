@@ -7,6 +7,7 @@ import type { Plan } from "@/lib/domain/types";
 import { savePlan } from "@/app/admin/plans/actions";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
@@ -95,7 +96,7 @@ function PlanCard({ item, onSaved }: { item: PlanWithUsage; onSaved: (plan: Plan
           <Field label="Rooms (blank = ∞)" value={draft.rooms === null ? "" : String(draft.rooms)} onChange={(v) => setDraft({ ...draft, rooms: v === "" ? null : Number(v) })} allowBlank />
           <label className="flex cursor-pointer items-center justify-between pt-1">
             <span className="text-[12.5px] text-text-2">Messaging (WhatsApp + SMS)</span>
-            <input type="checkbox" checked={draft.messaging} onChange={(e) => setDraft({ ...draft, messaging: e.target.checked })} className="size-4 accent-[var(--accent)]" />
+            <Checkbox size="sm" checked={draft.messaging} onChange={(v) => setDraft({ ...draft, messaging: v })} ariaLabel="Messaging included" />
           </label>
           <div className="mt-3 flex gap-2">
             <Button size="sm" className="flex-1" onClick={commit} disabled={pending}>

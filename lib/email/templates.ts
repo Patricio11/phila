@@ -55,6 +55,27 @@ function shell(opts: { preheader: string; heading: string; body: string; cta?: {
 </body></html>`;
 }
 
+/**
+ * Wrap a messaging-rail text body in the branded shell — the notification rail's
+ * email leg (booked / reminder / cancelled…) sends real HTML, not bare text. The
+ * body's blank lines become paragraphs; an optional CTA (e.g. "Join your session")
+ * renders as the standard button.
+ */
+export function railEmailHtml(opts: { subject: string; practiceName: string; body: string; cta?: { label: string; url: string } }): string {
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const paragraphs = esc(opts.body.trim())
+    .split(/\n{2,}/)
+    .map((p) => `<p style="margin:0 0 12px;">${p.replace(/\n/g, "<br>")}</p>`)
+    .join("");
+  return shell({
+    preheader: opts.subject,
+    heading: opts.subject,
+    body: paragraphs,
+    cta: opts.cta,
+    footnote: `Sent on behalf of ${esc(opts.practiceName)} via Phila. Reply to this email to reach the practice.`,
+  });
+}
+
 /** Sent on signup  the mandatory email-verification link. */
 export function verificationEmail(url: string, name: string | null): Email {
   const first = (name ?? "").trim().split(/\s+/)[0] || "there";
@@ -120,17 +141,19 @@ export function resetPasswordEmail(url: string, name: string | null): Email {
 }
 
 /** Sent to the assigned counsellor when a session is booked for them (staff notice). */
-export function appointmentBookedCounsellorEmail(vars: { counsellorName: string | null; clientName: string; serviceName: string; when: string; where: string; practiceName: string }): Email {
+export function appointmentBookedCounsellorEmail(vars: { counsellorName: string | null; clientName: string; serviceName: string; when: string; where: string; practiceName: string; openUrl?: string; joinUrl?: string }): Email {
   const first = (vars.counsellorName ?? "").trim().split(/\s+/)[0] || "there";
+  const joinLine = vars.joinUrl ? `<br><strong>Join link:</strong> <a href="${vars.joinUrl}" style="color:${GREEN};word-break:break-all;">${vars.joinUrl}</a>` : "";
   return {
     subject: `New session: ${vars.clientName}  ${vars.when}`,
     html: shell({
       preheader: `${vars.clientName} is booked in for ${vars.when}.`,
       heading: `New session booked, ${first}`,
-      body: `A session has been added to your calendar at <strong>${vars.practiceName}</strong>.<br><br><strong>Client:</strong> ${vars.clientName}<br><strong>Service:</strong> ${vars.serviceName}<br><strong>When:</strong> ${vars.when}<br><strong>Where:</strong> ${vars.where}`,
+      body: `A session has been added to your calendar at <strong>${vars.practiceName}</strong>.<br><br><strong>Client:</strong> ${vars.clientName}<br><strong>Service:</strong> ${vars.serviceName}<br><strong>When:</strong> ${vars.when}<br><strong>Where:</strong> ${vars.where}${joinLine}`,
+      cta: vars.openUrl ? { label: "Open the session", url: vars.openUrl } : undefined,
       footnote: `You're receiving this as the assigned counsellor. See it any time in your Phila workspace.`,
     }),
-    text: `New session booked at ${vars.practiceName}.\n\nClient: ${vars.clientName}\nService: ${vars.serviceName}\nWhen: ${vars.when}\nWhere: ${vars.where}`,
+    text: `New session booked at ${vars.practiceName}.\n\nClient: ${vars.clientName}\nService: ${vars.serviceName}\nWhen: ${vars.when}\nWhere: ${vars.where}${vars.joinUrl ? `\nJoin link: ${vars.joinUrl}` : ""}${vars.openUrl ? `\n\nOpen it: ${vars.openUrl}` : ""}`,
   };
 }
 

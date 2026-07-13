@@ -29,6 +29,8 @@ export interface RenderVars {
   documentName?: string;
   formName?: string;
   formLink?: string;
+  /** Absolute join URL for an ONLINE session — emails render it as a button, texts as a link line. */
+  joinLink?: string;
 }
 
 export const DEFAULT_TEMPLATES: Record<Channel, Record<MessageTrigger, string>> = {

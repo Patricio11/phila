@@ -5,6 +5,7 @@ import { renderTemplate, EMAIL_SUBJECTS, type MessageTrigger, type RenderVars } 
 import { sendWhatsApp, sendWhatsAppTemplate, sendSms, sendEmail, type TransportResult } from "@/lib/messaging/transports";
 import { getMessagingSettings, getWhatsappCreds, getWhatsappTemplateName, getWhatsappLastInbound, getTemplateBody, getCreditBalances, isOptedOut, consumeCredit, logMessage } from "@/db/queries/messaging";
 import { whatsappWindowOpen, decideWhatsappSend, orderedTemplateParams } from "@/lib/messaging/whatsapp-window";
+import { railEmailHtml } from "@/lib/email/templates";
 
 export interface DeliverInput {
   orgId: string;
@@ -84,17 +85,30 @@ export async function deliver(input: DeliverInput): Promise<DeliverOutcome> {
       return { channel, status: "window_closed" };
     }
     const creds = { phoneNumberId: wa.phoneNumberId, accessTokenEnc: wa.accessTokenEnc };
+    // An online session's join link travels with the message (free-form only —
+    // an approved template's params are fixed by Meta).
+    const waBody = vars.joinLink ? `${body}\n\nJoin online: ${vars.joinLink}` : body;
     if (mode === "free_form") {
       waNote = "in-window (free)";
-      result = await sendWhatsApp(creds, to, body);
+      result = await sendWhatsApp(creds, to, waBody);
     } else {
       waNote = "approved template";
       result = await sendWhatsAppTemplate(creds, to, templateName!, "en", orderedTemplateParams(vars));
     }
   } else if (channel === "sms") {
-    result = await sendSms(to, body);
+    result = await sendSms(to, vars.joinLink ? `${body}\nJoin: ${vars.joinLink}` : body);
   } else {
-    result = await sendEmail(to, EMAIL_SUBJECTS[trigger], body, settings.emailFromName ?? "", settings.emailReplyTo);
+    // Email goes out branded (HTML shell + plain-text fallback); an online session
+    // renders its join link as the button.
+    const subject = EMAIL_SUBJECTS[trigger];
+    const text = vars.joinLink ? `${body}\n\nJoin your session online:\n${vars.joinLink}` : body;
+    const html = railEmailHtml({
+      subject,
+      practiceName: vars.practiceName ?? "your practice",
+      body,
+      cta: vars.joinLink ? { label: "Join your session", url: vars.joinLink } : undefined,
+    });
+    result = await sendEmail(to, subject, text, settings.emailFromName ?? "", settings.emailReplyTo, html);
   }
 
   // Charge a credit only on a real send (never for dormant/failed).

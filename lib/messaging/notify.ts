@@ -6,6 +6,9 @@ import { deliver } from "@/lib/messaging/deliver";
 import { notifyCounsellor, notifyClientUser } from "@/db/queries/notifications";
 import { sendPlatformEmail } from "@/lib/email/platform-email";
 import { appointmentBookedCounsellorEmail } from "@/lib/email/templates";
+import { videoJoinPath } from "@/lib/video/livekit";
+
+const APP_URL = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
 import { offerFreedSlotDb } from "@/db/queries/waitlist";
 import type { MessageTrigger } from "@/lib/messaging/templates";
 
@@ -121,15 +124,17 @@ export async function offerFreedSlot(orgId: string, appointmentId: string): Prom
 }
 
 /**
- * Full fan-out when an appointment is booked (Phase 17.2). Defaults to **email +
- * in-app** (SMS is opt-in): the client gets an email via the rail (dormant-safe),
- * and both the counsellor and the client (if they have a portal account) get an
- * always-on in-app notification. One lookup, never throws.
+ * Full fan-out when an appointment is booked (Phase 17.2, upgraded W-feedback).
+ * The CLIENT is reached on their preferred channel — WhatsApp first when the org
+ * has its number live (free in-window), else SMS/email — with a guaranteed email
+ * fallback if the text leg couldn't send, plus an in-app notice. The COUNSELLOR
+ * gets a branded email AND an in-app notice. Online sessions carry the secure
+ * join link everywhere. One lookup, never throws.
  */
 export async function notifyAppointmentBooked(appointmentId: string): Promise<void> {
   try {
     const [row] = await getDb()
-      .select({ a: appointments, clientName: clients.name, clientPhone: clients.phone, clientEmail: clients.email, counsellorName: counsellors.name, counsellorEmail: user.email, serviceName: services.name, orgName: orgs.name })
+      .select({ a: appointments, clientName: clients.name, clientPhone: clients.phone, clientEmail: clients.email, clientProfile: clients.profile, counsellorName: counsellors.name, counsellorEmail: user.email, serviceName: services.name, orgName: orgs.name })
       .from(appointments)
       .leftJoin(clients, eq(appointments.clientId, clients.id))
       .leftJoin(counsellors, eq(appointments.counsellorId, counsellors.id))
@@ -142,21 +147,39 @@ export async function notifyAppointmentBooked(appointmentId: string): Promise<vo
     const start = row.a.startsAt;
     const clientFirst = (row.clientName ?? "the client").split(" ")[0] ?? "the client";
     const when = `${fmtLong(start)} at ${fmtTime(start)}`;
-    const where = row.a.type === "online" ? "online (secure video)" : "in person";
+    const isOnline = row.a.type === "online";
+    const where = isOnline ? "online (secure video)" : "in person";
+    const joinLink = isOnline ? `${APP_URL}${videoJoinPath(appointmentId, start.toISOString())}` : undefined;
+    const vars = {
+      clientName: clientFirst, practiceName: row.orgName ?? "your practice", serviceName: row.serviceName ?? "session",
+      counsellorName: (row.counsellorName ?? "your counsellor").split(" ")[0] ?? "your counsellor", date: fmtDate(start), time: fmtTime(start),
+      joinLink,
+    };
 
-    // 1) Client  email-first through the rail (SMS stays opt-in).
-    await deliver({
+    // 1) Client — their preferred channel through the rail. No stated preference →
+    // the rail's fallback order (WhatsApp when the org's number is live → SMS → email).
+    const preferred = (row.clientProfile as Record<string, string> | null)?.preferredContact ?? null;
+    const outcome = await deliver({
       orgId: row.a.orgId,
       trigger: "booked",
       ref: appointmentId,
-      recipient: { phone: row.clientPhone, email: row.clientEmail, preferredContact: "Email" },
-      vars: {
-        clientName: clientFirst, practiceName: row.orgName ?? "your practice", serviceName: row.serviceName ?? "session",
-        counsellorName: (row.counsellorName ?? "your counsellor").split(" ")[0] ?? "your counsellor", date: fmtDate(start), time: fmtTime(start),
-      },
+      recipient: { phone: row.clientPhone, email: row.clientEmail, preferredContact: preferred },
+      vars,
     });
 
-    // 2) Counsellor  always-on in-app.
+    // 1b) Guarantee: if a text channel was chosen but nothing actually sent (window
+    // closed, no credit, provider error…), the confirmation still lands by email.
+    if (outcome.channel !== "email" && outcome.status !== "sent" && row.clientEmail) {
+      await deliver({
+        orgId: row.a.orgId,
+        trigger: "booked",
+        ref: `${appointmentId}:email-fallback`,
+        recipient: { phone: null, email: row.clientEmail, preferredContact: "Email" },
+        vars,
+      });
+    }
+
+    // 2) Counsellor — always-on in-app.
     await notifyCounsellor(row.a.counsellorId, {
       kind: "appointment_booked",
       title: `New session with ${row.clientName ?? "a client"}`,
@@ -164,8 +187,8 @@ export async function notifyAppointmentBooked(appointmentId: string): Promise<vo
       href: `/app/sessions/${appointmentId}`,
     });
 
-    // 2b) Counsellor  an email too, so a new session isn't missed when they're away
-    // from the app. Best-effort (a bad address never blocks the client notice below).
+    // 2b) Counsellor — a branded email too (with the join link when online), so a
+    // new session isn't missed when they're away from the app. Best-effort.
     if (row.counsellorEmail) {
       try {
         await sendPlatformEmail({
@@ -173,16 +196,17 @@ export async function notifyAppointmentBooked(appointmentId: string): Promise<vo
           ...appointmentBookedCounsellorEmail({
             counsellorName: row.counsellorName, clientName: row.clientName ?? "A client",
             serviceName: row.serviceName ?? "Session", when, where, practiceName: row.orgName ?? "your practice",
+            openUrl: `${APP_URL}/app/sessions/${appointmentId}`, joinUrl: joinLink,
           }),
         });
       } catch { /* email is best-effort; the in-app notice already landed */ }
     }
 
-    // 3) Client  in-app too, if they have a portal account.
+    // 3) Client — in-app too, if they have a portal account.
     await notifyClientUser(row.a.clientId, row.a.orgId, {
       kind: "appointment_booked",
       title: `Your session is booked`,
-      body: `${row.serviceName ?? "Session"} · ${when} · ${where}`,
+      body: `${row.serviceName ?? "Session"} · ${when} · ${where}${isOnline ? " · join from your portal" : ""}`,
       href: `/me/sessions`,
     });
   } catch {

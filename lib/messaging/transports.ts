@@ -119,14 +119,14 @@ export async function sendSms(to: string, body: string): Promise<TransportResult
   }
 }
 
-export async function sendEmail(to: string, subject: string, body: string, fromName: string, replyTo: string | null): Promise<TransportResult> {
+export async function sendEmail(to: string, subject: string, body: string, fromName: string, replyTo: string | null, html?: string): Promise<TransportResult> {
   const creds = await getResendCreds();
   if (!creds) return { status: "dormant", detail: "Phila email not configured" };
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${creds.apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: `${fromName || "Phila"} <${creds.from}>`, to, subject, text: body, reply_to: replyTo || undefined }),
+      body: JSON.stringify({ from: `${fromName || "Phila"} <${creds.from}>`, to, subject, text: body, html: html || undefined, reply_to: replyTo || undefined }),
     });
     if (!res.ok) return { status: "failed", detail: `Resend HTTP ${res.status}` };
     const json = (await res.json()) as { id?: string };

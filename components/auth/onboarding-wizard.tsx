@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, Building2, CalendarClock, Check, FileCheck2, Par
 import type { OnboardingRequirement } from "@/lib/data-provider";
 import { PhilaMark } from "@/components/brand/logo";
 import { Input, Label } from "@/components/ui/input";
+import { TimePicker } from "@/components/ui/time-picker";
 import { Button } from "@/components/ui/button";
 import { completeOnboarding } from "@/app/(auth)/actions";
 import { cn } from "@/lib/utils";
@@ -108,8 +109,8 @@ export function OnboardingWizard({ requirements }: { requirements: OnboardingReq
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4 sm:max-w-xs">
-                <div className="space-y-1.5"><Label>Opens</Label><Input type="time" value={hours.start} onChange={(e) => setHours((h) => ({ ...h, start: e.target.value }))} /></div>
-                <div className="space-y-1.5"><Label>Closes</Label><Input type="time" value={hours.end} onChange={(e) => setHours((h) => ({ ...h, end: e.target.value }))} /></div>
+                <div className="space-y-1.5"><Label>Opens</Label><TimePicker minuteStep={15} value={hours.start} onChange={(v) => setHours((h) => ({ ...h, start: v }))} ariaLabel="Opens" /></div>
+                <div className="space-y-1.5"><Label>Closes</Label><TimePicker minuteStep={15} value={hours.end} onChange={(v) => setHours((h) => ({ ...h, end: v }))} ariaLabel="Closes" /></div>
               </div>
             </div>
           )}

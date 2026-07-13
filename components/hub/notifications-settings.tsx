@@ -5,6 +5,7 @@ import { BadgeCheck, Check, CheckCircle2, ChevronDown, Copy, HelpCircle, Mail, M
 import type { MessagingSettings, WhatsappConnectionView } from "@/db/queries/messaging";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { TimePicker } from "@/components/ui/time-picker";
 import { useToast } from "@/components/ui/toast";
 import { saveNotificationSettings, saveWhatsapp, requestWhatsappSetup, verifyWhatsappConnection } from "@/app/hub/settings/notifications/actions";
 import { cn } from "@/lib/utils";
@@ -69,9 +70,9 @@ export function NotificationsSettings({
         <div className="text-[12px] font-[660] text-text">Quiet hours</div>
         <p className="mt-0.5 text-[11.5px] text-text-2">No reminders send between these times (the client&apos;s wellbeing comes first). Leave blank for none.</p>
         <div className="mt-2 flex items-center gap-2">
-          <Input type="time" value={s.quietStart ?? ""} onChange={(e) => set("quietStart", e.target.value)} aria-label="Quiet hours start" className="w-32" />
+          <TimePicker minuteStep={15} className="w-32" value={s.quietStart ?? ""} onChange={(v) => set("quietStart", v)} ariaLabel="Quiet hours start" />
           <span className="text-[12px] text-text-3">to</span>
-          <Input type="time" value={s.quietEnd ?? ""} onChange={(e) => set("quietEnd", e.target.value)} aria-label="Quiet hours end" className="w-32" />
+          <TimePicker minuteStep={15} className="w-32" value={s.quietEnd ?? ""} onChange={(v) => set("quietEnd", v)} ariaLabel="Quiet hours end" />
         </div>
       </div>
 

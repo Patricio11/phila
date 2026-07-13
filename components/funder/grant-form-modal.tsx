@@ -9,6 +9,7 @@ import { INDICATOR_CATALOGUE, indicatorMeta } from "@/lib/domain/indicator-catal
 import { Dialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
 import { Input, Label, FieldError } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { createGrant, updateGrant } from "@/app/hub/funders/actions";
@@ -130,12 +131,12 @@ export function GrantFormButton({ funders, grant, trigger }: { funders: { id: st
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Period start</Label>
-              <Input type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} invalid={Boolean(attempted && errors.start)} />
+              <DatePicker value={periodStart} onChange={setPeriodStart} invalid={Boolean(attempted && errors.start)} ariaLabel="Period start" />
               {attempted && errors.start ? <FieldError>{errors.start}</FieldError> : null}
             </div>
             <div className="space-y-1.5">
               <Label>Period end</Label>
-              <Input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} invalid={Boolean(attempted && errors.end)} />
+              <DatePicker value={periodEnd} onChange={setPeriodEnd} min={periodStart || undefined} invalid={Boolean(attempted && errors.end)} ariaLabel="Period end" />
               {attempted && errors.end ? <FieldError>{errors.end}</FieldError> : null}
             </div>
           </div>

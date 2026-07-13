@@ -21,6 +21,8 @@ export function TimePicker({
   id,
   ariaLabel = "Time",
   placeholder = "Pick a time",
+  compact,
+  className,
 }: {
   /** "HH:MM" or empty. */
   value: string;
@@ -30,6 +32,9 @@ export function TimePicker({
   id?: string;
   ariaLabel?: string;
   placeholder?: string;
+  /** Small inline variant for dense rows (e.g. the business-hours editor). */
+  compact?: boolean;
+  className?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [hour, setHour] = useState<number | null>(value ? Number(value.slice(0, 2)) : null);
@@ -72,7 +77,7 @@ export function TimePicker({
   const preview = hour !== null ? `${pad(hour)}:${selMinute !== null && Number(value.slice(0, 2)) === hour ? pad(selMinute) : "--"}` : null;
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className={cn("relative", className)}>
       <button
         id={id}
         type="button"
@@ -81,13 +86,14 @@ export function TimePicker({
         aria-expanded={open}
         aria-label={ariaLabel}
         className={cn(
-          "flex h-11 w-full items-center justify-between gap-2 rounded-control border bg-surface px-3 text-left text-[14px] tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60",
+          "flex w-full items-center justify-between gap-2 rounded-control border bg-surface text-left tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60",
+          compact ? "h-8 px-2 text-[12.5px]" : "h-11 px-3 text-[14px]",
           invalid ? "border-danger" : "border-border",
           value ? "text-text" : "text-text-3",
         )}
       >
         <span className="truncate">{value || placeholder}</span>
-        <Clock className="size-4 shrink-0 text-text-3" strokeWidth={2} aria-hidden />
+        <Clock className={cn("shrink-0 text-text-3", compact ? "size-3.5" : "size-4")} strokeWidth={2} aria-hidden />
       </button>
 
       {open && (

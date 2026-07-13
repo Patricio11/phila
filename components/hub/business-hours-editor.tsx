@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Clock } from "lucide-react";
 import type { BusinessHours } from "@/lib/domain/types";
 import { Button } from "@/components/ui/button";
+import { TimePicker } from "@/components/ui/time-picker";
 import { useToast } from "@/components/ui/toast";
 import { saveBusinessHours } from "@/app/hub/settings/actions";
 import { cn } from "@/lib/utils";
@@ -68,19 +69,9 @@ export function BusinessHoursEditor({ initial }: { initial: BusinessHours }) {
               <span className={cn("w-20 shrink-0 text-[13px]", open ? "text-text" : "text-text-3")}>{label}</span>
               {open ? (
                 <div className="flex items-center gap-1.5">
-                  <input
-                    type="time"
-                    value={h!.start}
-                    onChange={(e) => setTime(n, "start", e.target.value)}
-                    className={cn("h-8 rounded-control border bg-surface px-2 text-[12.5px] tabular-nums text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", bad ? "border-danger" : "border-border")}
-                  />
+                  <TimePicker compact minuteStep={15} className="w-24" value={h!.start} onChange={(v) => setTime(n, "start", v)} invalid={bad} ariaLabel={`${label} opens`} />
                   <span className="text-text-3">–</span>
-                  <input
-                    type="time"
-                    value={h!.end}
-                    onChange={(e) => setTime(n, "end", e.target.value)}
-                    className={cn("h-8 rounded-control border bg-surface px-2 text-[12.5px] tabular-nums text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", bad ? "border-danger" : "border-border")}
-                  />
+                  <TimePicker compact minuteStep={15} className="w-24" value={h!.end} onChange={(v) => setTime(n, "end", v)} invalid={bad} ariaLabel={`${label} closes`} />
                 </div>
               ) : (
                 <span className="text-[12.5px] text-text-3">Closed</span>

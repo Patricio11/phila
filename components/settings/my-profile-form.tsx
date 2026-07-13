@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Lock } from "lucide-react";
 import { Input, Label, Textarea, FieldError } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { CredentialChip } from "@/components/ui/credential-chip";
@@ -77,7 +78,7 @@ export function MyProfileForm({
           <Input inputMode="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="082 123 4567" invalid={Boolean(attempted && errors.phone)} />
         </Field>
         <Field label="Date of birth">
-          <Input type="date" value={form.dateOfBirth} onChange={(e) => set("dateOfBirth", e.target.value)} />
+          <DatePicker value={form.dateOfBirth} onChange={(v) => set("dateOfBirth", v)} max={new Date().toLocaleDateString("en-CA")} ariaLabel="Date of birth" />
         </Field>
         <Field label="Languages">
           <Input value={form.languages} onChange={(e) => set("languages", e.target.value)} placeholder="English, isiZulu, …" />

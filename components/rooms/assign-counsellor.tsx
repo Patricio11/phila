@@ -4,7 +4,8 @@ import { useState, useTransition } from "react";
 import { CalendarPlus } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
-import { Input, Label, FieldError } from "@/components/ui/input";
+import { Label, FieldError } from "@/components/ui/input";
+import { TimePicker } from "@/components/ui/time-picker";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { saveRoomAssignment } from "@/app/hub/rooms/actions";
@@ -87,11 +88,11 @@ export function AssignCounsellorButton({ roomId, roomName, counsellors }: { room
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>From</Label>
-              <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+              <TimePicker minuteStep={15} value={startTime} onChange={setStartTime} ariaLabel="Assignment starts" />
             </div>
             <div className="space-y-1.5">
               <Label>To</Label>
-              <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} invalid={Boolean(attempted && errors.time)} />
+              <TimePicker minuteStep={15} value={endTime} onChange={setEndTime} invalid={Boolean(attempted && errors.time)} ariaLabel="Assignment ends" />
             </div>
           </div>
           {attempted && errors.time ? <FieldError>{errors.time}</FieldError> : null}

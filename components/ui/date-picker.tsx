@@ -1,18 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
  * Phila's own calendar picker (never the native control — DESIGN §6). A calm
  * month grid in the product's language: Monday-first (matches the business-hours
  * model), today ringed, the chosen day filled accent, closed/past days quietly
- * disabled. Opens as a `.pop` popover; closes on pick, Esc, or outside click.
+ * disabled. Clicking the "July 2026" header jumps to a years → months view, so a
+ * date of birth in 1985 is three taps, not forty. Opens as a `.pop` popover;
+ * closes on pick, Esc, or outside click.
  */
 
 const WEEKDAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const iso = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`;
@@ -39,10 +42,13 @@ function monthGrid(year: number, month: number): (number | null)[] {
   return cells;
 }
 
+type Mode = "days" | "years" | "months";
+
 export function DatePicker({
   value,
   onChange,
   min,
+  max,
   isDayDisabled,
   invalid,
   id,
@@ -54,6 +60,8 @@ export function DatePicker({
   onChange: (value: string) => void;
   /** Earliest selectable day (yyyy-mm-dd). */
   min?: string;
+  /** Latest selectable day (yyyy-mm-dd) — e.g. today for a date of birth. */
+  max?: string;
   /** Extra per-day rule, e.g. the practice's closed days. */
   isDayDisabled?: (isoDate: string) => boolean;
   invalid?: boolean;
@@ -62,9 +70,11 @@ export function DatePicker({
   placeholder?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<Mode>("days");
   const today = todayIso();
-  const anchor = value || today;
+  const anchor = value || (max && max < today ? max : today);
   const [view, setView] = useState({ year: Number(anchor.slice(0, 4)), month: Number(anchor.slice(5, 7)) - 1 });
+  const [yearBase, setYearBase] = useState(Math.floor(Number(anchor.slice(0, 4)) / 12) * 12);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -77,8 +87,10 @@ export function DatePicker({
   }, [open]);
 
   const openPicker = () => {
-    const a = value || today;
+    const a = value || (max && max < today ? max : today);
     setView({ year: Number(a.slice(0, 4)), month: Number(a.slice(5, 7)) - 1 });
+    setYearBase(Math.floor(Number(a.slice(0, 4)) / 12) * 12);
+    setMode("days");
     setOpen((v) => !v);
   };
 
@@ -89,10 +101,16 @@ export function DatePicker({
     });
   };
 
-  const disabled = (d: string) => (min ? d < min : false) || (isDayDisabled?.(d) ?? false);
+  const disabled = (d: string) => (min ? d < min : false) || (max ? d > max : false) || (isDayDisabled?.(d) ?? false);
   const cells = monthGrid(view.year, view.month);
-  // Don't page back past the month that holds `min` — everything earlier is dead.
-  const atMinMonth = min ? `${view.year}-${pad(view.month + 1)}` <= min.slice(0, 7) : false;
+  const viewYm = `${view.year}-${pad(view.month + 1)}`;
+  // Don't page past the months that hold `min`/`max` — everything beyond is dead.
+  const atMinMonth = min ? viewYm <= min.slice(0, 7) : false;
+  const atMaxMonth = max ? viewYm >= max.slice(0, 7) : false;
+
+  const minYear = min ? Number(min.slice(0, 4)) : null;
+  const maxYear = max ? Number(max.slice(0, 4)) : null;
+  const years = Array.from({ length: 12 }, (_, i) => yearBase + i);
 
   return (
     <div ref={ref} className="relative">
@@ -115,70 +133,135 @@ export function DatePicker({
 
       {open && (
         <div role="dialog" aria-label="Choose a date" className="pop absolute left-0 top-full z-40 mt-1.5 w-[19rem] rounded-card border border-border bg-surface p-3 shadow-[var(--shadow-card)]">
-          {/* Month header */}
+          {/* Header: month/year label jumps to the year picker; chevrons page the current view. */}
           <div className="flex items-center justify-between px-1 pb-2">
-            <span className="text-[13.5px] font-[660] text-text">{MONTHS[view.month]} {view.year}</span>
+            <button
+              type="button"
+              onClick={() => { setYearBase(Math.floor(view.year / 12) * 12); setMode(mode === "days" ? "years" : "days"); }}
+              aria-label={mode === "days" ? "Choose year" : "Back to days"}
+              className="inline-flex items-center gap-1 rounded-[7px] px-1.5 py-0.5 text-[13.5px] font-[660] text-text transition-colors hover:bg-surface-2"
+            >
+              {mode === "days" ? `${MONTHS[view.month]} ${view.year}` : mode === "years" ? "Pick a year" : String(view.year)}
+              <ChevronDown className={cn("size-3.5 text-text-3 transition-transform", mode !== "days" && "rotate-180")} strokeWidth={2.2} aria-hidden />
+            </button>
             <div className="flex items-center gap-1">
-              <button type="button" onClick={() => step(-1)} disabled={atMinMonth} aria-label="Previous month" className="grid size-7 place-items-center rounded-[7px] text-text-3 transition-colors hover:bg-surface-2 hover:text-text disabled:pointer-events-none disabled:opacity-40">
+              <button
+                type="button"
+                onClick={() => (mode === "years" ? setYearBase((b) => b - 12) : step(-1))}
+                disabled={mode === "days" ? atMinMonth : mode === "years" && minYear !== null && yearBase <= minYear}
+                aria-label={mode === "years" ? "Earlier years" : "Previous month"}
+                className="grid size-7 place-items-center rounded-[7px] text-text-3 transition-colors hover:bg-surface-2 hover:text-text disabled:pointer-events-none disabled:opacity-40"
+              >
                 <ChevronLeft className="size-4" strokeWidth={2.2} aria-hidden />
               </button>
-              <button type="button" onClick={() => step(1)} aria-label="Next month" className="grid size-7 place-items-center rounded-[7px] text-text-3 transition-colors hover:bg-surface-2 hover:text-text">
+              <button
+                type="button"
+                onClick={() => (mode === "years" ? setYearBase((b) => b + 12) : step(1))}
+                disabled={mode === "days" ? atMaxMonth : mode === "years" && maxYear !== null && yearBase + 11 >= maxYear}
+                aria-label={mode === "years" ? "Later years" : "Next month"}
+                className="grid size-7 place-items-center rounded-[7px] text-text-3 transition-colors hover:bg-surface-2 hover:text-text disabled:pointer-events-none disabled:opacity-40"
+              >
                 <ChevronRight className="size-4" strokeWidth={2.2} aria-hidden />
               </button>
             </div>
           </div>
 
-          {/* Weekday row */}
-          <div className="grid grid-cols-7 pb-1">
-            {WEEKDAYS.map((w) => (
-              <span key={w} className={cn("py-1 text-center text-[10.5px] font-semibold uppercase tracking-wide", w === "Sa" || w === "Su" ? "text-text-3/70" : "text-text-3")}>{w}</span>
-            ))}
-          </div>
+          {mode === "years" ? (
+            <div className="grid grid-cols-3 gap-1.5 pb-1">
+              {years.map((y) => {
+                const off = (minYear !== null && y < minYear) || (maxYear !== null && y > maxYear);
+                return (
+                  <button
+                    key={y}
+                    type="button"
+                    disabled={off}
+                    onClick={() => { setView((v) => ({ ...v, year: y })); setMode("months"); }}
+                    className={cn(
+                      "rounded-[9px] py-2 text-[13px] tabular-nums transition-colors",
+                      y === view.year ? "bg-accent font-semibold text-white shadow-sm" : off ? "text-text-3/40" : "text-text-2 hover:bg-accent-soft hover:text-accent",
+                    )}
+                  >
+                    {y}
+                  </button>
+                );
+              })}
+            </div>
+          ) : mode === "months" ? (
+            <div className="grid grid-cols-3 gap-1.5 pb-1">
+              {MONTHS_SHORT.map((m, i) => {
+                const ym = `${view.year}-${pad(i + 1)}`;
+                const off = (min && ym < min.slice(0, 7)) || (max && ym > max.slice(0, 7));
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    disabled={Boolean(off)}
+                    onClick={() => { setView((v) => ({ ...v, month: i })); setMode("days"); }}
+                    className={cn(
+                      "rounded-[9px] py-2 text-[13px] transition-colors",
+                      i === view.month ? "bg-accent font-semibold text-white shadow-sm" : off ? "text-text-3/40" : "text-text-2 hover:bg-accent-soft hover:text-accent",
+                    )}
+                  >
+                    {m}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <>
+              {/* Weekday row */}
+              <div className="grid grid-cols-7 pb-1">
+                {WEEKDAYS.map((w) => (
+                  <span key={w} className={cn("py-1 text-center text-[10.5px] font-semibold uppercase tracking-wide", w === "Sa" || w === "Su" ? "text-text-3/70" : "text-text-3")}>{w}</span>
+                ))}
+              </div>
 
-          {/* Day grid */}
-          <div className="grid grid-cols-7 gap-y-0.5">
-            {cells.map((d, i) => {
-              if (d === null) return <span key={i} />;
-              const dIso = iso(view.year, view.month, d);
-              const isSel = dIso === value;
-              const isToday = dIso === today;
-              const off = disabled(dIso);
-              return (
+              {/* Day grid */}
+              <div className="grid grid-cols-7 gap-y-0.5">
+                {cells.map((d, i) => {
+                  if (d === null) return <span key={i} />;
+                  const dIso = iso(view.year, view.month, d);
+                  const isSel = dIso === value;
+                  const isToday = dIso === today;
+                  const off = disabled(dIso);
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      disabled={off}
+                      aria-label={prettyLabel(dIso)}
+                      aria-pressed={isSel}
+                      onClick={() => { onChange(dIso); setOpen(false); }}
+                      className={cn(
+                        "mx-auto grid size-9 place-items-center rounded-[9px] text-[13px] tabular-nums transition-colors",
+                        isSel
+                          ? "bg-accent font-semibold text-white shadow-sm"
+                          : off
+                            ? "text-text-3/50 line-through decoration-border-strong"
+                            : "text-text-2 hover:bg-accent-soft hover:text-accent",
+                        isToday && !isSel && "font-semibold text-accent ring-1 ring-inset ring-accent/40",
+                      )}
+                    >
+                      {d}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Footer: one-tap today */}
+              <div className="mt-2 flex items-center justify-between border-t border-border pt-2">
+                <span className="px-1 text-[11px] text-text-3">{value ? prettyLabel(value) : "Nothing picked yet"}</span>
                 <button
-                  key={i}
                   type="button"
-                  disabled={off}
-                  aria-label={prettyLabel(dIso)}
-                  aria-pressed={isSel}
-                  onClick={() => { onChange(dIso); setOpen(false); }}
-                  className={cn(
-                    "mx-auto grid size-9 place-items-center rounded-[9px] text-[13px] tabular-nums transition-colors",
-                    isSel
-                      ? "bg-accent font-semibold text-white shadow-sm"
-                      : off
-                        ? "text-text-3/50 line-through decoration-border-strong"
-                        : "text-text-2 hover:bg-accent-soft hover:text-accent",
-                    isToday && !isSel && "font-semibold text-accent ring-1 ring-inset ring-accent/40",
-                  )}
+                  disabled={disabled(today)}
+                  onClick={() => { onChange(today); setOpen(false); }}
+                  className="rounded-chip px-2 py-1 text-[12px] font-medium text-accent transition-colors hover:bg-accent-soft disabled:pointer-events-none disabled:opacity-40"
                 >
-                  {d}
+                  Today
                 </button>
-              );
-            })}
-          </div>
-
-          {/* Footer: one-tap today */}
-          <div className="mt-2 flex items-center justify-between border-t border-border pt-2">
-            <span className="px-1 text-[11px] text-text-3">{value ? prettyLabel(value) : "Nothing picked yet"}</span>
-            <button
-              type="button"
-              disabled={disabled(today)}
-              onClick={() => { onChange(today); setOpen(false); }}
-              className="rounded-chip px-2 py-1 text-[12px] font-medium text-accent transition-colors hover:bg-accent-soft disabled:pointer-events-none disabled:opacity-40"
-            >
-              Today
-            </button>
-          </div>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

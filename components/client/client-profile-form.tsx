@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Heart, Phone } from "lucide-react";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/toast";
@@ -67,7 +68,7 @@ export function ClientProfileForm({ initial }: { initial: ClientProfile }) {
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Date of birth">
-            <Input type="date" value={form.dateOfBirth} onChange={(e) => set("dateOfBirth", e.target.value)} />
+            <DatePicker value={form.dateOfBirth} onChange={(v) => set("dateOfBirth", v)} max={new Date().toLocaleDateString("en-CA")} ariaLabel="Date of birth" />
           </Field>
           <Field label="How should we reach you?">
             <Select value={form.preferredContact} onChange={(v) => set("preferredContact", (v as ClientProfile["preferredContact"]) ?? "WhatsApp")} options={[{ value: "WhatsApp", label: "WhatsApp" }, { value: "Phone call", label: "Phone call" }, { value: "Email", label: "Email" }]} />

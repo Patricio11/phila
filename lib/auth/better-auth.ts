@@ -48,6 +48,10 @@ export const auth = betterAuth({
     // and blocks junk signups. The verification email is sent on sign-up below.
     requireEmailVerification: true,
     minPasswordLength: 8,
+    // The reset-password token also activates an invited team member / operator
+    // ("set your password"). Default is 1h  too short for someone who opens the
+    // invite later, so give the join/reset link a friendlier 72-hour window (W-feedback).
+    resetPasswordTokenExpiresIn: 60 * 60 * 72,
     // Self-service password reset (W2)  the branded email carries a single-use,
     // expiring token; the /reset-password page exchanges it for a new password. For a
     // still-invited team member this same mechanism is their **activation**: they get a

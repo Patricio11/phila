@@ -81,9 +81,9 @@ export function teamInviteEmail(url: string, name: string | null, orgName: strin
       heading: `Welcome to the team, ${first} 👋`,
       body: `You've been invited to join <strong>${orgName}</strong> on Phila. Set your password to activate your account  then you can sign in and get started.`,
       cta: { label: "Set my password", url },
-      footnote: `If the button doesn't work, paste this link into your browser:<br><a href="${url}" style="color:${GREEN};word-break:break-all;">${url}</a><br><br>This link expires in 1 hour. If you weren't expecting this invitation, you can safely ignore it.`,
+      footnote: `If the button doesn't work, paste this link into your browser:<br><a href="${url}" style="color:${GREEN};word-break:break-all;">${url}</a><br><br>This link expires in 72 hours. If you weren't expecting this invitation, you can safely ignore it.`,
     }),
-    text: `You've been invited to join ${orgName} on Phila.\n\nSet your password to activate your account:\n${url}\n\nThis link expires in 1 hour.`,
+    text: `You've been invited to join ${orgName} on Phila.\n\nSet your password to activate your account:\n${url}\n\nThis link expires in 72 hours.`,
   };
 }
 
@@ -97,9 +97,9 @@ export function platformInviteEmail(url: string, name: string | null): Email {
       heading: `Welcome aboard, ${first} 🛡️`,
       body: "You've been given <strong>platform operator</strong> access to Phila  the super-admin console for organisations, plans, and integrations. Set your password to activate your account. We strongly recommend turning on two-factor authentication straight after.",
       cta: { label: "Set my password", url },
-      footnote: `If the button doesn't work, paste this link into your browser:<br><a href="${url}" style="color:${GREEN};word-break:break-all;">${url}</a><br><br>This link expires in 1 hour. If you weren't expecting this, you can ignore it.`,
+      footnote: `If the button doesn't work, paste this link into your browser:<br><a href="${url}" style="color:${GREEN};word-break:break-all;">${url}</a><br><br>This link expires in 72 hours. If you weren't expecting this, you can ignore it.`,
     }),
-    text: `You've been invited as a Phila platform operator.\n\nSet your password: ${url}\n\nThis link expires in 1 hour.`,
+    text: `You've been invited as a Phila platform operator.\n\nSet your password: ${url}\n\nThis link expires in 72 hours.`,
   };
 }
 
@@ -113,9 +113,24 @@ export function resetPasswordEmail(url: string, name: string | null): Email {
       heading: "Reset your password",
       body: `Hi ${first}, we got a request to reset your Phila password. Click below to choose a new one. If this wasn't you, you can safely ignore this email  your password won't change.`,
       cta: { label: "Set a new password", url },
-      footnote: `If the button doesn't work, paste this link into your browser:<br><a href="${url}" style="color:${GREEN};word-break:break-all;">${url}</a><br><br>This link expires in 1 hour.`,
+      footnote: `If the button doesn't work, paste this link into your browser:<br><a href="${url}" style="color:${GREEN};word-break:break-all;">${url}</a><br><br>This link expires in 72 hours.`,
     }),
-    text: `Reset your Phila password.\n\nChoose a new password:\n${url}\n\nThis link expires in 1 hour. If you didn't request this, ignore this email.`,
+    text: `Reset your Phila password.\n\nChoose a new password:\n${url}\n\nThis link expires in 72 hours. If you didn't request this, ignore this email.`,
+  };
+}
+
+/** Sent to the assigned counsellor when a session is booked for them (staff notice). */
+export function appointmentBookedCounsellorEmail(vars: { counsellorName: string | null; clientName: string; serviceName: string; when: string; where: string; practiceName: string }): Email {
+  const first = (vars.counsellorName ?? "").trim().split(/\s+/)[0] || "there";
+  return {
+    subject: `New session: ${vars.clientName}  ${vars.when}`,
+    html: shell({
+      preheader: `${vars.clientName} is booked in for ${vars.when}.`,
+      heading: `New session booked, ${first}`,
+      body: `A session has been added to your calendar at <strong>${vars.practiceName}</strong>.<br><br><strong>Client:</strong> ${vars.clientName}<br><strong>Service:</strong> ${vars.serviceName}<br><strong>When:</strong> ${vars.when}<br><strong>Where:</strong> ${vars.where}`,
+      footnote: `You're receiving this as the assigned counsellor. See it any time in your Phila workspace.`,
+    }),
+    text: `New session booked at ${vars.practiceName}.\n\nClient: ${vars.clientName}\nService: ${vars.serviceName}\nWhen: ${vars.when}\nWhere: ${vars.where}`,
   };
 }
 

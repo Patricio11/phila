@@ -1,9 +1,11 @@
 import "server-only";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/client";
-import { appointments, clients, counsellors, services, orgs } from "@/db/schema";
+import { appointments, clients, counsellors, services, orgs, user } from "@/db/schema";
 import { deliver } from "@/lib/messaging/deliver";
 import { notifyCounsellor, notifyClientUser } from "@/db/queries/notifications";
+import { sendPlatformEmail } from "@/lib/email/platform-email";
+import { appointmentBookedCounsellorEmail } from "@/lib/email/templates";
 import { offerFreedSlotDb } from "@/db/queries/waitlist";
 import type { MessageTrigger } from "@/lib/messaging/templates";
 
@@ -127,10 +129,11 @@ export async function offerFreedSlot(orgId: string, appointmentId: string): Prom
 export async function notifyAppointmentBooked(appointmentId: string): Promise<void> {
   try {
     const [row] = await getDb()
-      .select({ a: appointments, clientName: clients.name, clientPhone: clients.phone, clientEmail: clients.email, counsellorName: counsellors.name, serviceName: services.name, orgName: orgs.name })
+      .select({ a: appointments, clientName: clients.name, clientPhone: clients.phone, clientEmail: clients.email, counsellorName: counsellors.name, counsellorEmail: user.email, serviceName: services.name, orgName: orgs.name })
       .from(appointments)
       .leftJoin(clients, eq(appointments.clientId, clients.id))
       .leftJoin(counsellors, eq(appointments.counsellorId, counsellors.id))
+      .leftJoin(user, eq(counsellors.userId, user.id))
       .leftJoin(services, eq(appointments.serviceId, services.id))
       .leftJoin(orgs, eq(appointments.orgId, orgs.id))
       .where(eq(appointments.id, appointmentId))
@@ -160,6 +163,20 @@ export async function notifyAppointmentBooked(appointmentId: string): Promise<vo
       body: `${row.serviceName ?? "Session"} · ${when} · ${where}`,
       href: `/app/sessions/${appointmentId}`,
     });
+
+    // 2b) Counsellor  an email too, so a new session isn't missed when they're away
+    // from the app. Best-effort (a bad address never blocks the client notice below).
+    if (row.counsellorEmail) {
+      try {
+        await sendPlatformEmail({
+          to: row.counsellorEmail,
+          ...appointmentBookedCounsellorEmail({
+            counsellorName: row.counsellorName, clientName: row.clientName ?? "A client",
+            serviceName: row.serviceName ?? "Session", when, where, practiceName: row.orgName ?? "your practice",
+          }),
+        });
+      } catch { /* email is best-effort; the in-app notice already landed */ }
+    }
 
     // 3) Client  in-app too, if they have a portal account.
     await notifyClientUser(row.a.clientId, row.a.orgId, {

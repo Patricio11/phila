@@ -63,7 +63,8 @@ export function TeamBoard({ members }: { members: TeamMemberView[] }) {
     <div className="space-y-4">
       <RoleGuide />
 
-      <div className="overflow-hidden rounded-card border border-border bg-surface">
+      {/* No overflow-hidden here — it would clip the row ⋯ menus at the card edge. */}
+      <div className="rounded-card border border-border bg-surface">
         {/* Toolbar: tabs + search + invite */}
         <div className="flex flex-col gap-3 border-b border-border p-3 sm:flex-row sm:items-center">
           <div className="flex items-center gap-1 rounded-control bg-surface-2 p-1">
@@ -120,7 +121,7 @@ function MemberRow({ member: m, supervisorOptions }: { member: TeamMemberView; s
   const [manageOpen, setManageOpen] = useState(false);
 
   return (
-    <li className="group flex items-center gap-3 px-3.5 py-3 transition-colors hover:bg-surface-hover">
+    <li className="group flex items-center gap-3 px-3.5 py-3 transition-colors last:rounded-b-card hover:bg-surface-hover">
       <Link href={`/hub/team/${m.userId}`} className="flex min-w-0 flex-1 items-center gap-3">
         <Avatar name={m.name} size="sm" verified={m.credential?.status === "verified"} />
         <div className="min-w-0">
@@ -188,8 +189,18 @@ function StatusChip({ status }: { status: MemberStatus }) {
 function RowMenu({ member: m, onManage }: { member: TeamMemberView; onManage: () => void }) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [openUp, setOpenUp] = useState(false);
   const [pending, start] = useTransition();
   const ref = useRef<HTMLDivElement>(null);
+
+  // Open upward when the row sits near the bottom of the viewport, so the menu
+  // is never cut off (the last rows of the list were clipping below the fold).
+  const toggle = () => {
+    if (!open && ref.current) {
+      setOpenUp(window.innerHeight - ref.current.getBoundingClientRect().bottom < 240);
+    }
+    setOpen((v) => !v);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -223,7 +234,7 @@ function RowMenu({ member: m, onManage }: { member: TeamMemberView; onManage: ()
     <div ref={ref} className="relative shrink-0">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         aria-label={`Actions for ${m.name}`}
         aria-expanded={open}
         className="grid size-8 place-items-center rounded-control text-text-3 transition-colors hover:bg-surface-2 hover:text-text"
@@ -232,7 +243,7 @@ function RowMenu({ member: m, onManage }: { member: TeamMemberView; onManage: ()
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-30 mt-1 w-52 overflow-hidden rounded-control border border-border bg-surface p-1 shadow-[var(--shadow-card)]">
+        <div className={cn("absolute right-0 z-30 w-52 overflow-hidden rounded-control border border-border bg-surface p-1 shadow-[var(--shadow-card)]", openUp ? "bottom-full mb-1" : "top-full mt-1")}>
           <MenuLink href={`/hub/team/${m.userId}`} icon={ArrowUpRight}>Open profile</MenuLink>
           <MenuButton icon={SlidersHorizontal} onClick={() => { setOpen(false); onManage(); }}>Manage role &amp; access</MenuButton>
           {m.status === "invited" && (

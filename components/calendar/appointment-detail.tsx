@@ -9,7 +9,9 @@ import type { AppointmentState } from "@/lib/domain/enums";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
-import { Input, Textarea } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
+import { TimePicker } from "@/components/ui/time-picker";
 import { StatusDot, type DotTone } from "@/components/ui/status-dot";
 import { useToast } from "@/components/ui/toast";
 import { rescheduleAppointment, cancelAppointment, getAppointmentJoinLink } from "@/app/app/appointments/actions";
@@ -218,8 +220,8 @@ export function AppointmentDetail({
                 <div className="space-y-2.5 rounded-control border border-border bg-surface-2/40 p-3">
                   <div className="text-[12px] font-semibold text-text">Move {isSeries && scope === "following" ? "these sessions" : "this session"}</div>
                   <div className="grid grid-cols-2 gap-2">
-                    <Input type="date" value={date} onChange={(e) => { setDate(e.target.value); setOverride(false); }} aria-label="New date" />
-                    <Input type="time" value={time} onChange={(e) => { setTime(e.target.value); setOverride(false); }} aria-label="New time" />
+                    <DatePicker value={date} onChange={(v) => { setDate(v); setOverride(false); }} ariaLabel="New date" />
+                    <TimePicker value={time} onChange={(v) => { setTime(v); setOverride(false); }} ariaLabel="New time" />
                   </div>
                   {isSeries && <ScopeToggle scope={scope} onChange={setScope} kind="move" />}
                   <Textarea value={moveNote} onChange={(e) => setMoveNote(e.target.value)} rows={2} placeholder="Reason (optional)  kept on the record" aria-label="Reschedule reason" />

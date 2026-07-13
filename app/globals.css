@@ -235,6 +235,23 @@
     animation-delay: 0.16s;
   }
 
+  /* Popover entrance  a soft, fast settle for pickers/menus (date & time pickers).
+     GPU-only (opacity + scale), auto-stripped under reduced motion. */
+  @keyframes phila-pop {
+    from {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .pop {
+    animation: phila-pop 0.16s var(--ease-out) both;
+    transform-origin: top center;
+  }
+
   /* Scroll-reveal  GPU-only, driven by a tiny IntersectionObserver island.
      Hidden only when JS is present, so no-JS content is never invisible. */
   .js .reveal {

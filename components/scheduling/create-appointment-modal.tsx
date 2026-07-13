@@ -5,6 +5,8 @@ import { AlertCircle, Check, MapPin, Plus, UserPlus, Video, X } from "lucide-rea
 import { Dialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
 import { SearchSelect } from "@/components/ui/search-select";
+import { DatePicker } from "@/components/ui/date-picker";
+import { TimePicker } from "@/components/ui/time-picker";
 import { Input, Label, Textarea, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
@@ -27,6 +29,12 @@ export interface SchedulingOptions {
 }
 
 function hm(t: string): number { return Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)); }
+
+/** Local wall-clock today (yyyy-mm-dd) — the earliest bookable day. */
+function localToday(): string {
+  const t = new Date();
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+}
 
 const DURATIONS = [30, 45, 60, 90];
 
@@ -229,11 +237,16 @@ export function CreateAppointmentModal({
 
         <div className="grid grid-cols-2 gap-3">
           <Row label="Date" error={attempted ? errors.date : undefined}>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} invalid={Boolean(attempted && errors.date)} />
+            <DatePicker
+              value={date}
+              onChange={setDate}
+              min={localToday()}
+              isDayDisabled={options.businessHours ? (d) => !options.businessHours![isoWeekday(d) as keyof BusinessHours] : undefined}
+              invalid={Boolean(attempted && errors.date)}
+            />
           </Row>
           <Row label="Time" error={attempted ? errors.time : undefined}>
-            {/* step=300s → the time picker moves in 5-minute increments (no minute-by-minute wheel). */}
-            <Input type="time" step={300} value={time} onChange={(e) => setTime(e.target.value)} invalid={Boolean(attempted && errors.time)} />
+            <TimePicker value={time} onChange={setTime} invalid={Boolean(attempted && errors.time)} />
           </Row>
         </div>
 

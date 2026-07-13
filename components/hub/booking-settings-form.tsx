@@ -30,6 +30,13 @@ const HORIZON = [
   { value: "90", label: "90 days" },
   { value: "180", label: "6 months" },
 ];
+const INTERVAL = [
+  { value: "0", label: "Session length" },
+  { value: "15", label: "Every 15 min" },
+  { value: "20", label: "Every 20 min" },
+  { value: "30", label: "Every 30 min" },
+  { value: "60", label: "Every hour" },
+];
 
 const rands = (cents: number | null) => (cents === null ? "Enquire" : `R${(cents / 100).toLocaleString("en-ZA")}`);
 
@@ -99,6 +106,11 @@ export function BookingSettingsForm({
               <Label>Booking opens</Label>
               <Select value={String(s.maxDaysAhead)} options={HORIZON} onChange={(v) => set({ maxDaysAhead: Number(v) })} />
               <p className="text-[11.5px] text-text-3">How far ahead the calendar is open.</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Time-slot spacing</Label>
+              <Select value={String(s.slotIntervalMin)} options={INTERVAL} onChange={(v) => set({ slotIntervalMin: Number(v) })} />
+              <p className="text-[11.5px] text-text-3">How far apart the start times clients can pick are.</p>
             </div>
           </div>
         </Card>

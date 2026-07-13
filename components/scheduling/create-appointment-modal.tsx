@@ -20,6 +20,8 @@ export interface SchedulingOptions {
   counsellors: { id: string; name: string }[];
   rooms: { id: string; name: string }[];
   defaultCounsellorId?: string;
+  /** The org's default session length (Settings → Scheduling) — the modal's initial duration. */
+  defaultDurationMin?: number;
   /** When present, the booking is validated against the practice's working hours. */
   businessHours?: BusinessHours;
 }
@@ -70,7 +72,7 @@ export function CreateAppointmentModal({
   const [roomId, setRoomId] = useState<string | null>(initial?.roomId ?? null);
   const [date, setDate] = useState(initial?.date ?? "");
   const [time, setTime] = useState(initial?.time ?? "");
-  const [durationMin, setDurationMin] = useState(60);
+  const [durationMin, setDurationMin] = useState(options.defaultDurationMin ?? 60);
   const [recurring, setRecurring] = useState(false);
   const [recurringCount, setRecurringCount] = useState<number | null>(8);
   const [notes, setNotes] = useState("");
@@ -230,12 +232,13 @@ export function CreateAppointmentModal({
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} invalid={Boolean(attempted && errors.date)} />
           </Row>
           <Row label="Time" error={attempted ? errors.time : undefined}>
-            <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} invalid={Boolean(attempted && errors.time)} />
+            {/* step=300s → the time picker moves in 5-minute increments (no minute-by-minute wheel). */}
+            <Input type="time" step={300} value={time} onChange={(e) => setTime(e.target.value)} invalid={Boolean(attempted && errors.time)} />
           </Row>
         </div>
 
         <Row label="Duration">
-          <Select value={String(durationMin)} onChange={(v) => setDurationMin(Number(v))} options={DURATIONS.map((d) => ({ value: String(d), label: `${d} minutes` }))} />
+          <Select value={String(durationMin)} onChange={(v) => setDurationMin(Number(v))} options={Array.from(new Set([...DURATIONS, durationMin])).sort((a, b) => a - b).map((d) => ({ value: String(d), label: `${d} minutes` }))} />
         </Row>
 
         <Toggle label="Repeat weekly" checked={recurring} onChange={setRecurring} hint="Create a recurring series." />

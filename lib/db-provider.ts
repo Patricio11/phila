@@ -324,14 +324,29 @@ export const dbProvider: DataProvider = {
   listClientForms: (clientId) => runForClient(clientId, [], () => listClientFormsDb(clientId)),
   getIntakeForm: async (orgId) => (await getActiveIntakeFormDb(orgId)) ?? mockProvider.getIntakeForm(orgId),
 
-  // The public booking config keeps its mock-sourced settings (booking policy +
-  // intake form, persisted in later phases) but swaps in the REAL org so the
-  // availability engine honours the practice's actual (persisted) business hours.
+  // The public booking config keeps its mock-sourced service/counsellor visibility +
+  // intake form, but swaps in the REAL org AND the org's SAVED booking policy (Hub →
+  // Booking): the horizon, minimum notice, slot interval, deposit, and master switch
+  // the practice actually configured — not the mock seed. So changing the booking
+  // period on the settings page now takes effect on the public calendar.
   getBookingConfig: async (slug: string) => {
     const base = await mockProvider.getBookingConfig(slug);
     if (!base) return null;
     const [row] = await getDb().select().from(orgsTable).where(eq(orgsTable.slug, slug)).limit(1);
-    return row && !row.deletedAt ? { ...base, org: toOrg(row) } : base;
+    if (!row || row.deletedAt) return base;
+    const saved = (row.bookingSettings as {
+      publicBookingEnabled?: boolean; minNoticeHours?: number; maxDaysAhead?: number;
+      slotIntervalMin?: number; requireDeposit?: boolean; depositCents?: number;
+    } | null) ?? {};
+    return {
+      ...base,
+      org: toOrg(row),
+      enabled: saved.publicBookingEnabled ?? base.enabled,
+      minNoticeHours: saved.minNoticeHours ?? base.minNoticeHours,
+      maxDaysAhead: saved.maxDaysAhead ?? base.maxDaysAhead,
+      slotIntervalMin: saved.slotIntervalMin ?? base.slotIntervalMin,
+      deposit: { required: saved.requireDeposit ?? base.deposit.required, cents: saved.depositCents ?? base.deposit.cents },
+    };
   },
 
   // ── Directory cluster  single-table reads from the DB ────────────────

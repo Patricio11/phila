@@ -28,6 +28,7 @@ const input = z.object({
   publicBookingEnabled: z.boolean(),
   minNoticeHours: z.number().int().min(0).max(336),
   maxDaysAhead: z.number().int().min(1).max(365),
+  slotIntervalMin: z.number().int().min(0).max(240),
   requireIntake: z.boolean(),
   requireDeposit: z.boolean(),
   depositCents: z.number().int().min(0).max(10_000_00),

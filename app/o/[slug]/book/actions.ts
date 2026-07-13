@@ -92,7 +92,7 @@ export async function getAvailableSlots(
   const byStart = new Map<string, SlotOption>();
   for (const c of candidates) {
     const existing = await provider.listAppointmentsForCounsellor(c.id, { from: date, to: date });
-    const slots: Slot[] = availableSlots({ org, date, durationMin, existing, now, minNoticeHours: config.minNoticeHours });
+    const slots: Slot[] = availableSlots({ org, date, durationMin, existing, now, minNoticeHours: config.minNoticeHours, slotIntervalMin: config.slotIntervalMin });
     for (const s of slots) {
       if (!byStart.has(s.start)) {
         byStart.set(s.start, { start: s.start, label: s.label, counsellorId: c.id });

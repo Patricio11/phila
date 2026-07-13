@@ -57,6 +57,8 @@ export interface BookingConfig {
   minNoticeHours: number;
   /** How far ahead the calendar opens, in days (caps the date picker). */
   maxDaysAhead: number;
+  /** Minutes between offered start times on the public calendar (0 = same as the session length). */
+  slotIntervalMin: number;
   /** How each bookable service may be attended (keyed by service id). */
   serviceModalities: Record<string, { inPerson: boolean; online: boolean }>;
   /** Deposit to confirm a booking (collected when payments go live, Phase 13). */
@@ -90,6 +92,8 @@ export interface BookingSettings {
   minNoticeHours: number;
   /** How far ahead the calendar opens, in days. */
   maxDaysAhead: number;
+  /** Minutes between offered start times clients see (0 = same as the session length). */
+  slotIntervalMin: number;
   /** Collect the intake form during booking (vs. send it after). */
   requireIntake: boolean;
   requireDeposit: boolean;

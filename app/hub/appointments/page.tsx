@@ -41,6 +41,7 @@ export default async function HubCalendarsPage() {
     services: services.map((s) => ({ id: s.id, name: s.name, durationMin: s.durationMin })),
     counsellors: counsellors.map((c) => ({ id: c.id, name: c.name })),
     rooms: rooms.map((r) => ({ id: r.id, name: r.name })),
+    defaultDurationMin: org.scheduling.defaultDurationMin,
     businessHours: org.scheduling.businessHours,
   };
 

@@ -58,6 +58,8 @@ export function availableSlots(opts: {
   now?: string;
   /** Earliest a client may book, in hours from `now` (the org's booking policy). */
   minNoticeHours?: number;
+  /** Minutes between offered start times (0/undefined = step by the session length). */
+  slotIntervalMin?: number;
 }): Slot[] {
   const { org, date } = opts;
   const duration = opts.durationMin ?? org.scheduling.defaultDurationMin;
@@ -84,7 +86,10 @@ export function availableSlots(opts: {
   const blocked = [...breaks, ...booked];
   const slots: Slot[] = [];
 
-  for (let t = open; t + duration <= close; t += duration) {
+  // Start times step by the org's chosen interval (e.g. every 30 min) when set,
+  // else by the session length. Each candidate must still fit before close.
+  const step = opts.slotIntervalMin && opts.slotIntervalMin > 0 ? opts.slotIntervalMin : duration;
+  for (let t = open; t + duration <= close; t += step) {
     const sessionEnd = t + duration;
     const clashes = blocked.some((w) => t < w.end && sessionEnd > w.start);
     if (!clashes) slots.push({ start: instant(date, fromMinutes(t)), label: fromMinutes(t) });

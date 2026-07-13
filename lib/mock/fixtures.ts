@@ -880,6 +880,7 @@ export type BookingSettingsSeed = {
   publicBookingEnabled: boolean;
   minNoticeHours: number;
   maxDaysAhead: number;
+  slotIntervalMin: number;
   requireIntake: boolean;
   requireDeposit: boolean;
   depositCents: number;
@@ -919,6 +920,7 @@ export const bookingSettings: Record<string, BookingSettingsSeed> = {
     publicBookingEnabled: true,
     minNoticeHours: 12,
     maxDaysAhead: 60,
+    slotIntervalMin: 0,
     requireIntake: true,
     requireDeposit: false,
     depositCents: 0,

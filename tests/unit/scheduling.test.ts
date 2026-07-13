@@ -91,4 +91,20 @@ describe("availableSlots", () => {
     const slots = availableSlots({ org, date: MON, durationMin: 60, existing: [], now: `${MON}T09:00:00+02:00`, minNoticeHours: 0 });
     expect(slots).toHaveLength(9);
   });
+
+  it("steps start times by the org's slot interval when set (30-min spacing for a 60-min session)", () => {
+    const slots = availableSlots({ org, date: MON, durationMin: 60, existing: [], slotIntervalMin: 30 });
+    // 08:00 → last start that still fits before 17:00 is 16:00; every 30 min = 17 slots.
+    expect(slots).toHaveLength(17);
+    expect(slots[0]!.label).toBe("08:00");
+    expect(slots[1]!.label).toBe("08:30");
+    expect(slots.at(-1)!.label).toBe("16:00");
+    // The session must still fit — no 16:30 start (would end at 17:30, past close).
+    expect(slots.some((s) => s.label === "16:30")).toBe(false);
+  });
+
+  it("falls back to duration steps when the interval is 0 (default)", () => {
+    const slots = availableSlots({ org, date: MON, durationMin: 60, existing: [], slotIntervalMin: 0 });
+    expect(slots).toHaveLength(9); // identical to the duration-step case
+  });
 });

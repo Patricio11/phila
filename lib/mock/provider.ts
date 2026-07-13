@@ -275,6 +275,7 @@ function bookingSettingsFor(orgId: string): BookingSettings {
     publicBookingEnabled: seed?.publicBookingEnabled ?? true,
     minNoticeHours: seed?.minNoticeHours ?? 12,
     maxDaysAhead: seed?.maxDaysAhead ?? 60,
+    slotIntervalMin: seed?.slotIntervalMin ?? 0,
     requireIntake: seed?.requireIntake ?? true,
     requireDeposit: seed?.requireDeposit ?? false,
     depositCents: seed?.depositCents ?? 0,
@@ -439,6 +440,7 @@ export const mockProvider: DataProvider = {
       enabled: settings.publicBookingEnabled,
       minNoticeHours: settings.minNoticeHours,
       maxDaysAhead: settings.maxDaysAhead,
+      slotIntervalMin: settings.slotIntervalMin,
       serviceModalities: Object.fromEntries(
         settings.services.filter((s) => bookableService.has(s.serviceId)).map((s) => [s.serviceId, { inPerson: s.inPerson, online: s.online }]),
       ),

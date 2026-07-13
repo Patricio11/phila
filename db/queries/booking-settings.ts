@@ -16,6 +16,7 @@ interface SeedShape {
   publicBookingEnabled?: boolean;
   minNoticeHours?: number;
   maxDaysAhead?: number;
+  slotIntervalMin?: number;
   requireIntake?: boolean;
   requireDeposit?: boolean;
   depositCents?: number;
@@ -38,6 +39,7 @@ export async function getBookingSettingsDb(orgId: string): Promise<BookingSettin
       publicBookingEnabled: seed.publicBookingEnabled ?? true,
       minNoticeHours: seed.minNoticeHours ?? 12,
       maxDaysAhead: seed.maxDaysAhead ?? 60,
+      slotIntervalMin: seed.slotIntervalMin ?? 0,
       requireIntake: seed.requireIntake ?? true,
       requireDeposit: seed.requireDeposit ?? false,
       depositCents: seed.depositCents ?? 0,
@@ -59,6 +61,7 @@ export async function saveBookingSettingsDb(orgId: string, input: BookingSetting
       publicBookingEnabled: input.publicBookingEnabled,
       minNoticeHours: input.minNoticeHours,
       maxDaysAhead: input.maxDaysAhead,
+      slotIntervalMin: input.slotIntervalMin,
       requireIntake: input.requireIntake,
       requireDeposit: input.requireDeposit,
       depositCents: input.depositCents,

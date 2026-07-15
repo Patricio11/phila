@@ -13,7 +13,7 @@ export interface PlatformEmailResult {
   id?: string;
 }
 
-export async function sendPlatformEmail(opts: { to: string; subject: string; html: string; text: string }): Promise<PlatformEmailResult> {
+export async function sendPlatformEmail(opts: { to: string; subject: string; html: string; text: string; replyTo?: string }): Promise<PlatformEmailResult> {
   const creds = await getResendCreds();
   if (!creds) {
     console.info(`[email:dormant] → ${opts.to} · ${opts.subject}`);
@@ -23,7 +23,7 @@ export async function sendPlatformEmail(opts: { to: string; subject: string; htm
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${creds.apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: `Phila <${creds.from}>`, to: opts.to, subject: opts.subject, html: opts.html, text: opts.text }),
+      body: JSON.stringify({ from: `Phila <${creds.from}>`, to: opts.to, subject: opts.subject, html: opts.html, text: opts.text, reply_to: opts.replyTo || undefined }),
     });
     if (!res.ok) return { status: "failed", detail: `Resend HTTP ${res.status}` };
     const json = (await res.json()) as { id?: string };

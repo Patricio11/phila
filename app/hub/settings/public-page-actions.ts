@@ -13,6 +13,12 @@ import { savePublicPageContent } from "@/db/queries/public-page";
 const item = z.object({ title: z.string().trim().max(120), body: z.string().trim().max(600) });
 const faq = z.object({ question: z.string().trim().max(200), answer: z.string().trim().max(900) });
 const nullableStr = (max: number) => z.string().trim().max(max).nullable().transform((v) => (v ? v : null));
+// A social link: https URL (or bare handle-less wa.me). Empty string = not set.
+const socialUrl = z.string().trim().max(300).refine((v) => v === "" || /^https:\/\/\S+$/i.test(v), "Links must start with https://");
+const socials = z.object({
+  whatsapp: socialUrl.optional(), instagram: socialUrl.optional(), facebook: socialUrl.optional(),
+  x: socialUrl.optional(), linkedin: socialUrl.optional(), youtube: socialUrl.optional(), tiktok: socialUrl.optional(),
+});
 
 const input = z.object({
   slug: z.string().min(1),
@@ -32,6 +38,10 @@ const input = z.object({
   showContact: z.boolean(),
   contactEmail: nullableStr(120),
   contactPhone: nullableStr(40),
+  socials,
+  showSocials: z.boolean(),
+  showContactForm: z.boolean(),
+  contactFormEmail: z.string().trim().email("Enter a valid email for contact messages.").max(120).or(z.literal("")).nullable().transform((v) => (v ? v : null)),
   ctaText: z.string().trim().min(2).max(40),
   seoTitle: nullableStr(70),
   seoDescription: nullableStr(180),
@@ -42,6 +52,8 @@ export async function savePublicPage(raw: z.infer<typeof input>): Promise<{ ok: 
   const parsed = input.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the content." };
   const { slug, ...content } = parsed.data;
+  // Keep only filled-in social links.
+  content.socials = Object.fromEntries(Object.entries(content.socials).filter(([, v]) => v));
 
   await savePublicPageContent(membership.orgId, content);
   await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `org:${membership.orgId}/public_page`, reason: "edit_public_page" });

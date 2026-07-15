@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { BarChart3, ExternalLink, Eye, EyeOff, GripVertical, Plus, Save, Trash2 } from "lucide-react";
 import type { PublicPageContent } from "@/lib/data-provider";
+import { SOCIAL_PLATFORMS, type SocialPlatform } from "@/lib/domain/enums";
+import { SocialIcon, SOCIAL_META } from "@/components/public/social-icons";
 import { Card, CardHead } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea, Label } from "@/components/ui/input";
@@ -88,6 +90,40 @@ export function PublicPageEditor({ slug, initial, stats }: { slug: string; initi
           <Field label="Email"><Input value={c.contactEmail ?? ""} onChange={(e) => set("contactEmail", e.target.value || null)} placeholder="reception@practice.co.za" /></Field>
         </div>
         <p className="text-[12.5px] text-text-3">Your locations come from <b className="text-text-2">Rooms / sites</b>.</p>
+      </SectionCard>
+
+      <SectionCard title="Social links" on={c.showSocials} onToggle={(v) => set("showSocials", v)}>
+        <p className="text-[12.5px] text-text-3">Paste the links you have — only the ones you fill in appear on your page, as neat brand icons.</p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {SOCIAL_PLATFORMS.map((p: SocialPlatform) => {
+            const filled = Boolean(c.socials[p]);
+            return (
+              <div key={p} className="flex items-center gap-2.5 rounded-control border border-border bg-surface-2/40 p-2">
+                <span className={cn("grid size-8 shrink-0 place-items-center rounded-lg transition-colors", filled ? "bg-accent text-white" : "bg-surface text-text-3")}>
+                  <SocialIcon platform={p} className="size-4" />
+                </span>
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <div className="text-[11px] font-semibold text-text-2">{SOCIAL_META[p].label}</div>
+                  <input
+                    value={c.socials[p] ?? ""}
+                    onChange={(e) => set("socials", { ...c.socials, [p]: e.target.value })}
+                    placeholder={SOCIAL_META[p].placeholder}
+                    aria-label={`${SOCIAL_META[p].label} link`}
+                    className="h-7 w-full rounded-[6px] border border-border bg-surface px-2 text-[12px] text-text placeholder:text-text-3/70 focus:border-accent/50 focus:outline-none"
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Contact form" on={c.showContactForm} onToggle={(v) => set("showContactForm", v)}>
+        <p className="text-[12.5px] text-text-3">Visitors can send you a message straight from your page — name, a way to reach them, and their message (they&apos;re asked not to share anything sensitive). Every message is kept safely and lands in the inbox below.</p>
+        <Field label="Send messages to">
+          <Input type="email" value={c.contactFormEmail ?? ""} onChange={(e) => set("contactFormEmail", e.target.value || null)} placeholder={c.contactEmail ?? "reception@practice.co.za"} />
+        </Field>
+        <p className="text-[12px] text-text-3">Leave blank to use your contact email{c.contactEmail ? ` (${c.contactEmail})` : ""}. Replies go straight to the visitor — their address is the reply-to.</p>
       </SectionCard>
 
       <SectionCard title="Search engine (SEO)" alwaysOn>

@@ -448,10 +448,32 @@ export const orgPublicPages = pgTable("org_public_pages", {
   showContact: boolean("show_contact").default(true).notNull(),
   contactEmail: text("contact_email"),
   contactPhone: text("contact_phone"),
+  /** Social profile URLs keyed by platform (facebook, instagram, whatsapp, x, linkedin, youtube, tiktok). */
+  socials: jsonb("socials").$type<Partial<Record<string, string>>>().default({}).notNull(),
+  showSocials: boolean("show_socials").default(false).notNull(),
+  /** Public contact form — messages land by email (below) + in-app; stored in public_contact_messages. */
+  showContactForm: boolean("show_contact_form").default(false).notNull(),
+  contactFormEmail: text("contact_form_email"),
   ctaText: text("cta_text").default("Book a session").notNull(),
   seoTitle: text("seo_title"),
   seoDescription: text("seo_description"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
+/**
+ * Messages from the public contact form (Phase 17 / builder upgrade). Deliberately
+ * minimal — name + a way to reply + the message; the public form never invites
+ * clinical detail. Org-scoped (RLS); the write comes from the public action (owner).
+ */
+export const publicContactMessages = pgTable("public_contact_messages", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  name: text("name").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  message: text("message").notNull(),
+  status: text("status").default("new").notNull(), // new | handled
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
 });
 
 /** PII-free public-page analytics (Phase 17)  page views + booking-funnel events. No visitor data. */

@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq, gte } from "drizzle-orm";
 import { getDb } from "@/db/client";
-import { orgPublicPages, publicPageEvents, orgs } from "@/db/schema";
+import { orgPublicPages, publicPageEvents, publicContactMessages, orgs } from "@/db/schema";
 import { getStorageProvider } from "@/lib/storage";
 import type { PublicPageContent } from "@/lib/data-provider";
 
@@ -40,6 +40,10 @@ export function defaultContent(opts: { intro?: string; about?: string }): Public
     showContact: true,
     contactEmail: null,
     contactPhone: null,
+    socials: {},
+    showSocials: false,
+    showContactForm: false,
+    contactFormEmail: null,
     ctaText: "Book a session",
     seoTitle: null,
     seoDescription: null,
@@ -54,6 +58,8 @@ function toContent(r: typeof orgPublicPages.$inferSelect): PublicPageContent {
     showServices: r.showServices, showTeam: r.showTeam,
     faqItems: r.faqItems, showFaq: r.showFaq,
     showContact: r.showContact, contactEmail: r.contactEmail, contactPhone: r.contactPhone,
+    socials: (r.socials ?? {}) as PublicPageContent["socials"], showSocials: r.showSocials,
+    showContactForm: r.showContactForm, contactFormEmail: r.contactFormEmail,
     ctaText: r.ctaText, seoTitle: r.seoTitle, seoDescription: r.seoDescription,
   };
 }
@@ -70,9 +76,18 @@ export async function savePublicPageContent(orgId: string, c: PublicPageContent)
     approachTitle: c.approachTitle, approachItems: c.approachItems, showApproach: c.showApproach,
     showServices: c.showServices, showTeam: c.showTeam, faqItems: c.faqItems, showFaq: c.showFaq,
     showContact: c.showContact, contactEmail: c.contactEmail, contactPhone: c.contactPhone,
+    socials: c.socials, showSocials: c.showSocials,
+    showContactForm: c.showContactForm, contactFormEmail: c.contactFormEmail,
     ctaText: c.ctaText, seoTitle: c.seoTitle, seoDescription: c.seoDescription, updatedAt: new Date(),
   };
   await getDb().insert(orgPublicPages).values({ orgId, ...set }).onConflictDoUpdate({ target: orgPublicPages.orgId, set });
+}
+
+/* ---- Public contact form (builder upgrade) ---------------------------- */
+
+/** Store a public contact-form submission (owner write — no session on /o pages). */
+export async function createContactMessage(orgId: string, m: { name: string; email: string | null; phone: string | null; message: string }): Promise<void> {
+  await getDb().insert(publicContactMessages).values({ orgId, name: m.name, email: m.email, phone: m.phone, message: m.message, createdAt: new Date() });
 }
 
 /** PII-free funnel event (Phase 17): view | book_click | booked. */

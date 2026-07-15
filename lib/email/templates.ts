@@ -76,6 +76,23 @@ export function railEmailHtml(opts: { subject: string; practiceName: string; bod
   });
 }
 
+/** A public contact-form message, forwarded to the practice (reply-to = the visitor). */
+export function contactMessageEmail(vars: { practiceName: string; name: string; email: string | null; phone: string | null; message: string; inboxUrl: string }): Email {
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const reach = [vars.email, vars.phone].filter(Boolean).join(" · ") || "no contact details left";
+  return {
+    subject: `New message from ${vars.name} — via your Phila page`,
+    html: shell({
+      preheader: `${vars.name}: ${vars.message.slice(0, 90)}`,
+      heading: `New message from your public page`,
+      body: `Someone reached out through <strong>${esc(vars.practiceName)}</strong>'s page.<br><br><strong>From:</strong> ${esc(vars.name)}<br><strong>Reach them:</strong> ${esc(reach)}<br><br><div style="border-left:3px solid ${BORDER};padding-left:12px;color:${INK};">${esc(vars.message).replace(/\n/g, "<br>")}</div>`,
+      cta: { label: "Open your messages", url: vars.inboxUrl },
+      footnote: `Replying to this email goes straight to ${esc(vars.name)}. Every message is also kept in your Phila hub.`,
+    }),
+    text: `New message via ${vars.practiceName}'s Phila page.\n\nFrom: ${vars.name}\nReach them: ${reach}\n\n${vars.message}\n\nAll messages: ${vars.inboxUrl}`,
+  };
+}
+
 /** Sent on signup  the mandatory email-verification link. */
 export function verificationEmail(url: string, name: string | null): Email {
   const first = (name ?? "").trim().split(/\s+/)[0] || "there";

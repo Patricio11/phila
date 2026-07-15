@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { ArrowRight, Clock, Mail, MapPin, Monitor, Phone, ShieldCheck } from "lucide-react";
 import type { OrgPublicPage, PublicPageContent } from "@/lib/data-provider";
+import { SOCIAL_PLATFORMS } from "@/lib/domain/enums";
 import { contrastSafeAccent } from "@/lib/contrast";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { CredentialChip } from "@/components/ui/credential-chip";
 import { Avatar } from "@/components/ui/avatar";
 import { Tag } from "@/components/ui/tag";
 import { Reveal } from "@/components/marketing/reveal";
+import { ContactForm } from "@/components/public/contact-form";
+import { SocialIcon, SOCIAL_META } from "@/components/public/social-icons";
 import { initials } from "@/lib/utils";
 
 /**
@@ -165,31 +168,68 @@ export function OrgPublicShell({ page, logoUrl = null }: { page: OrgPublicPage; 
         </Section>
       )}
 
-      {/* Contact + location */}
-      {c?.showContact !== false && (
-        <Section title="Visit or contact us">
-          <div className="grid gap-3 sm:grid-cols-2">
-            {page.sites.map((s) => (
-              <div key={s.id} className="flex items-start gap-3 rounded-card border border-border bg-surface p-5 shadow-sm">
-                <span className="inline-flex size-9 items-center justify-center rounded-control bg-accent-soft text-accent"><MapPin className="size-[18px]" strokeWidth={1.9} aria-hidden /></span>
-                <div><div className="text-[14px] font-[620] text-text">{s.name}</div><div className="text-[12.5px] text-text-3">{s.province}</div></div>
-              </div>
-            ))}
-            {(c?.showOnlineBadge ?? page.offersOnline) && (
-              <div className="flex items-start gap-3 rounded-card border border-border bg-surface p-5 shadow-sm">
-                <span className="inline-flex size-9 items-center justify-center rounded-control bg-info-soft text-info"><Monitor className="size-[18px]" strokeWidth={1.9} aria-hidden /></span>
-                <div><div className="text-[14px] font-[620] text-text">Online sessions</div><div className="text-[12.5px] text-text-3">Secure video, anywhere in South Africa</div></div>
+      {/* Contact + location (+ message form + socials) */}
+      {(() => {
+        const socialEntries = SOCIAL_PLATFORMS.filter((p) => c?.socials?.[p]);
+        const showSocials = Boolean(c?.showSocials) && socialEntries.length > 0;
+        const showForm = Boolean(c?.showContactForm);
+        if (c?.showContact === false && !showForm && !showSocials) return null;
+        return (
+          <Section title="Visit or contact us" id="contact">
+            {c?.showContact !== false && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {page.sites.map((s) => (
+                  <div key={s.id} className="flex items-start gap-3 rounded-card border border-border bg-surface p-5 shadow-sm">
+                    <span className="inline-flex size-9 items-center justify-center rounded-control bg-accent-soft text-accent"><MapPin className="size-[18px]" strokeWidth={1.9} aria-hidden /></span>
+                    <div><div className="text-[14px] font-[620] text-text">{s.name}</div><div className="text-[12.5px] text-text-3">{s.province}</div></div>
+                  </div>
+                ))}
+                {(c?.showOnlineBadge ?? page.offersOnline) && (
+                  <div className="flex items-start gap-3 rounded-card border border-border bg-surface p-5 shadow-sm">
+                    <span className="inline-flex size-9 items-center justify-center rounded-control bg-info-soft text-info"><Monitor className="size-[18px]" strokeWidth={1.9} aria-hidden /></span>
+                    <div><div className="text-[14px] font-[620] text-text">Online sessions</div><div className="text-[12.5px] text-text-3">Secure video, anywhere in South Africa</div></div>
+                  </div>
+                )}
+                {(c?.contactEmail || c?.contactPhone) && (
+                  <div className="flex flex-col gap-2 rounded-card border border-border bg-surface p-5 shadow-sm">
+                    {c?.contactPhone && <a href={`tel:${c.contactPhone.replace(/\s/g, "")}`} className="inline-flex items-center gap-2 text-[13.5px] text-text-2 transition-colors hover:text-text"><Phone className="size-4 text-text-3" strokeWidth={2} aria-hidden /> {c.contactPhone}</a>}
+                    {c?.contactEmail && <a href={`mailto:${c.contactEmail}`} className="inline-flex items-center gap-2 text-[13.5px] text-text-2 transition-colors hover:text-text"><Mail className="size-4 text-text-3" strokeWidth={2} aria-hidden /> {c.contactEmail}</a>}
+                  </div>
+                )}
               </div>
             )}
-            {(c?.contactEmail || c?.contactPhone) && (
-              <div className="flex flex-col gap-2 rounded-card border border-border bg-surface p-5 shadow-sm">
-                {c?.contactPhone && <a href={`tel:${c.contactPhone.replace(/\s/g, "")}`} className="inline-flex items-center gap-2 text-[13.5px] text-text-2 transition-colors hover:text-text"><Phone className="size-4 text-text-3" strokeWidth={2} aria-hidden /> {c.contactPhone}</a>}
-                {c?.contactEmail && <a href={`mailto:${c.contactEmail}`} className="inline-flex items-center gap-2 text-[13.5px] text-text-2 transition-colors hover:text-text"><Mail className="size-4 text-text-3" strokeWidth={2} aria-hidden /> {c.contactEmail}</a>}
+
+            {showForm && (
+              <div className={c?.showContact !== false ? "mt-6" : undefined}>
+                <div className="mx-auto max-w-2xl">
+                  <h3 className="mb-3 text-[16px] font-[660] tracking-[-0.01em] text-text">Send us a message</h3>
+                  <ContactForm slug={org.slug} practiceName={org.name} />
+                </div>
               </div>
             )}
-          </div>
-        </Section>
-      )}
+
+            {showSocials && (
+              <div className={showForm || c?.showContact !== false ? "mt-7" : undefined}>
+                <div className="flex flex-wrap items-center justify-center gap-2.5">
+                  <span className="mr-1 text-[12px] font-medium text-text-3">Find us on</span>
+                  {socialEntries.map((p) => (
+                    <a
+                      key={p}
+                      href={c!.socials[p]!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`${org.name} on ${SOCIAL_META[p].label}`}
+                      className="grid size-10 place-items-center rounded-full border border-border bg-surface text-text-2 shadow-sm transition-all hover:-translate-y-0.5 hover:border-transparent hover:bg-[var(--brand)] hover:text-white hover:shadow-md"
+                    >
+                      <SocialIcon platform={p} className="size-[18px]" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Section>
+        );
+      })()}
 
       {/* Final CTA band */}
       <section className="mx-auto w-full max-w-[1080px] px-4 py-10 sm:px-6">

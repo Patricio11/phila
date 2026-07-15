@@ -365,6 +365,13 @@
       "when": 1783521220549,
       "tag": "0051_clever_iron_lad",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1784105550000,
+      "tag": "0052_whole_silvermane",
+      "breakpoints": true
     }
   ]
 }

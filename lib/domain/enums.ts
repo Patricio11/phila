@@ -306,3 +306,7 @@ export type AgeBand = (typeof AGE_BANDS)[number];
 
 /** Currency is South African Rand throughout. */
 export const CURRENCY = "ZAR" as const;
+
+/** The social platforms the public-page builder offers out of the box (fixed display order). */
+export const SOCIAL_PLATFORMS = ["whatsapp", "instagram", "facebook", "x", "linkedin", "youtube", "tiktok"] as const;
+export type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number];

@@ -41,7 +41,7 @@ import type {
   Site,
   StorageUsage,
 } from "@/lib/domain/types";
-import type { FormAssignmentStatus, FormKind, FormStatus } from "@/lib/domain/enums";
+import type { FormAssignmentStatus, FormKind, FormStatus, SocialPlatform } from "@/lib/domain/enums";
 
 /** Everything the booking flow (`/o/[slug]/book`) needs in one fetch. */
 export interface BookingConfig {
@@ -121,10 +121,19 @@ export interface PublicPageContent {
   showContact: boolean;
   contactEmail: string | null;
   contactPhone: string | null;
+  /** Social profile URLs by platform; only filled ones render. */
+  socials: Partial<Record<SocialPlatform, string>>;
+  showSocials: boolean;
+  /** Public contact form — submissions store org-side + email the address below. */
+  showContactForm: boolean;
+  contactFormEmail: string | null;
   ctaText: string;
   seoTitle: string | null;
   seoDescription: string | null;
 }
+
+// Client-safe home for the platform list; the type is re-exported for convenience.
+export type { SocialPlatform } from "@/lib/domain/enums";
 
 export interface OrgPublicPage {
   org: Org;

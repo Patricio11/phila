@@ -124,6 +124,24 @@ export function PublicPageEditor({ slug, initial, stats }: { slug: string; initi
           <Input type="email" value={c.contactFormEmail ?? ""} onChange={(e) => set("contactFormEmail", e.target.value || null)} placeholder={c.contactEmail ?? "reception@practice.co.za"} />
         </Field>
         <p className="text-[12px] text-text-3">Leave blank to use your contact email{c.contactEmail ? ` (${c.contactEmail})` : ""}. Replies go straight to the visitor — their address is the reply-to.</p>
+        <Field label="Layout">
+          <div className="flex gap-2">
+            <LayoutChoice
+              label="Stacked"
+              hint="Form under your contact cards"
+              on={c.contactLayout === "stacked"}
+              onClick={() => set("contactLayout", "stacked")}
+              diagram={<div className="flex h-full w-full flex-col gap-1"><div className="grid flex-1 grid-cols-2 gap-1"><div className="rounded-[3px] bg-current opacity-40" /><div className="rounded-[3px] bg-current opacity-40" /></div><div className="flex-1 rounded-[3px] bg-current opacity-70" /></div>}
+            />
+            <LayoutChoice
+              label="Side by side"
+              hint="Cards left · form right"
+              on={c.contactLayout === "side"}
+              onClick={() => set("contactLayout", "side")}
+              diagram={<div className="grid h-full w-full grid-cols-2 gap-1"><div className="flex flex-col gap-1"><div className="flex-1 rounded-[3px] bg-current opacity-40" /><div className="flex-1 rounded-[3px] bg-current opacity-40" /></div><div className="rounded-[3px] bg-current opacity-70" /></div>}
+            />
+          </div>
+        </Field>
       </SectionCard>
 
       <SectionCard title="Search engine (SEO)" alwaysOn>
@@ -137,6 +155,26 @@ export function PublicPageEditor({ slug, initial, stats }: { slug: string; initi
         <Button onClick={save} loading={pending}><Save className="size-4" strokeWidth={2} aria-hidden /> Save public page</Button>
       </div>
     </div>
+  );
+}
+
+function LayoutChoice({ label, hint, on, onClick, diagram }: { label: string; hint: string; on: boolean; onClick: () => void; diagram: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={on}
+      className={cn(
+        "flex flex-1 items-center gap-3 rounded-control border p-2.5 text-left transition-colors",
+        on ? "border-accent bg-accent-soft/40" : "border-border bg-surface hover:bg-surface-hover",
+      )}
+    >
+      <span className={cn("h-12 w-16 shrink-0 rounded-[6px] border p-1", on ? "border-accent/40 text-accent" : "border-border text-text-3")}>{diagram}</span>
+      <span className="min-w-0">
+        <span className={cn("block text-[12.5px] font-[620]", on ? "text-accent" : "text-text")}>{label}</span>
+        <span className="block text-[11px] leading-snug text-text-3">{hint}</span>
+      </span>
+    </button>
   );
 }
 

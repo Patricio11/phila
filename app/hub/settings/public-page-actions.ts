@@ -42,6 +42,7 @@ const input = z.object({
   showSocials: z.boolean(),
   showContactForm: z.boolean(),
   contactFormEmail: z.string().trim().email("Enter a valid email for contact messages.").max(120).or(z.literal("")).nullable().transform((v) => (v ? v : null)),
+  contactLayout: z.enum(["stacked", "side"]),
   ctaText: z.string().trim().min(2).max(40),
   seoTitle: nullableStr(70),
   seoDescription: nullableStr(180),

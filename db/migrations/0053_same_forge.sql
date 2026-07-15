@@ -1,0 +1,1 @@
+ALTER TABLE "org_public_pages" ADD COLUMN "contact_layout" text DEFAULT 'stacked' NOT NULL;

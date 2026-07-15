@@ -454,6 +454,8 @@ export const orgPublicPages = pgTable("org_public_pages", {
   /** Public contact form — messages land by email (below) + in-app; stored in public_contact_messages. */
   showContactForm: boolean("show_contact_form").default(false).notNull(),
   contactFormEmail: text("contact_form_email"),
+  /** Contact section layout: form stacked under the cards, or side-by-side (cards left · form right). */
+  contactLayout: text("contact_layout").default("stacked").notNull(), // stacked | side
   ctaText: text("cta_text").default("Book a session").notNull(),
   seoTitle: text("seo_title"),
   seoDescription: text("seo_description"),

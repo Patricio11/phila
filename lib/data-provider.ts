@@ -127,6 +127,8 @@ export interface PublicPageContent {
   /** Public contact form — submissions store org-side + email the address below. */
   showContactForm: boolean;
   contactFormEmail: string | null;
+  /** Contact section layout: form under the cards, or beside them (cards left · form right). */
+  contactLayout: "stacked" | "side";
   ctaText: string;
   seoTitle: string | null;
   seoDescription: string | null;

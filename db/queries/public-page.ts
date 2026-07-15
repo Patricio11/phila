@@ -44,6 +44,7 @@ export function defaultContent(opts: { intro?: string; about?: string }): Public
     showSocials: false,
     showContactForm: false,
     contactFormEmail: null,
+    contactLayout: "stacked",
     ctaText: "Book a session",
     seoTitle: null,
     seoDescription: null,
@@ -60,6 +61,7 @@ function toContent(r: typeof orgPublicPages.$inferSelect): PublicPageContent {
     showContact: r.showContact, contactEmail: r.contactEmail, contactPhone: r.contactPhone,
     socials: (r.socials ?? {}) as PublicPageContent["socials"], showSocials: r.showSocials,
     showContactForm: r.showContactForm, contactFormEmail: r.contactFormEmail,
+    contactLayout: (r.contactLayout === "side" ? "side" : "stacked") as PublicPageContent["contactLayout"],
     ctaText: r.ctaText, seoTitle: r.seoTitle, seoDescription: r.seoDescription,
   };
 }
@@ -77,7 +79,7 @@ export async function savePublicPageContent(orgId: string, c: PublicPageContent)
     showServices: c.showServices, showTeam: c.showTeam, faqItems: c.faqItems, showFaq: c.showFaq,
     showContact: c.showContact, contactEmail: c.contactEmail, contactPhone: c.contactPhone,
     socials: c.socials, showSocials: c.showSocials,
-    showContactForm: c.showContactForm, contactFormEmail: c.contactFormEmail,
+    showContactForm: c.showContactForm, contactFormEmail: c.contactFormEmail, contactLayout: c.contactLayout,
     ctaText: c.ctaText, seoTitle: c.seoTitle, seoDescription: c.seoDescription, updatedAt: new Date(),
   };
   await getDb().insert(orgPublicPages).values({ orgId, ...set }).onConflictDoUpdate({ target: orgPublicPages.orgId, set });

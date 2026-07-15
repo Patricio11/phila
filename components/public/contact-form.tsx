@@ -48,12 +48,9 @@ export function ContactForm({ slug, practiceName }: { slug: string; practiceName
           <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} maxLength={120} autoComplete="email" className={inputCls} placeholder="you@email.co.za" />
         </PublicField>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <PublicField label="Phone (optional)">
-          <input inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} maxLength={40} autoComplete="tel" className={inputCls} placeholder="082 123 4567" />
-        </PublicField>
-        <div className="hidden sm:block" aria-hidden />
-      </div>
+      <PublicField label="Phone (optional)">
+        <input inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} maxLength={40} autoComplete="tel" className={inputCls} placeholder="082 123 4567" />
+      </PublicField>
       <PublicField label="Your message" required>
         <textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} required minLength={10} maxLength={2000} rows={4} className={`${inputCls} min-h-[110px] resize-y py-2.5`} placeholder="How can we help?" />
       </PublicField>

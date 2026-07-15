@@ -372,6 +372,13 @@
       "when": 1784105550000,
       "tag": "0052_whole_silvermane",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1784138418103,
+      "tag": "0053_same_forge",
+      "breakpoints": true
     }
   ]
 }

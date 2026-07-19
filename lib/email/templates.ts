@@ -47,7 +47,7 @@ function shell(opts: { preheader: string; heading: string; body: string; cta?: {
     </table>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
       <tr><td style="padding:16px 32px;text-align:center;color:${MUTED};font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;">
-        Phila · counselling practice platform · South Africa<br>You're receiving this because an account was created with this address.
+        © ${new Date().getFullYear()} Phila · counselling practice platform · South Africa<br>You're receiving this because an account was created with this address.
       </td></tr>
     </table>
   </td></tr>

@@ -64,6 +64,7 @@ export function AuthShell({
 
         <p className="mx-auto mt-8 max-w-[400px] text-center text-[11px] text-text-3">
           By continuing you agree to Phila&apos;s terms and POPIA-compliant processing of your information.
+          <br />© {new Date().getFullYear()} Phila
         </p>
       </main>
     </div>

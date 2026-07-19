@@ -129,7 +129,7 @@ export function GrantReportPack({ view, orgName, orgProvince, logoUrl, generated
 
       <footer className="mt-8 border-t border-[#ccc] pt-3 text-[10.5px] leading-relaxed text-[#777]">
         This report contains aggregate, k-anonymised figures only — no participant is identifiable. Prepared under POPIA;
-        participant consent is recorded and auditable. Generated with Phila · philasa.com.
+        participant consent is recorded and auditable. © {new Date(generatedAt).getFullYear()} {orgName}. Generated with Phila · philasa.com.
       </footer>
     </article>
   );

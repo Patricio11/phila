@@ -265,7 +265,7 @@ export function OrgPublicShell({ page, logoUrl = null }: { page: OrgPublicPage; 
       <footer className="border-t border-border bg-surface-2/50">
         <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-2 px-4 py-8 text-[12px] text-text-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <span className="inline-flex items-center gap-1.5"><ShieldCheck className="size-3.5" aria-hidden /> Your information is kept confidential and protected under POPIA.</span>
-          <span>Powered by <Link href="/" className="font-semibold text-text-2 hover:text-text">Phila</Link></span>
+          <span>© {new Date().getFullYear()} {org.name} · Powered by <Link href="/" className="font-semibold text-text-2 hover:text-text">Phila</Link></span>
         </div>
       </footer>
     </div>

@@ -251,6 +251,9 @@ export const clients = pgTable("clients", {
   feePolicy: jsonb("fee_policy").$type<{ kind: "standard" | "percentage" | "fixed" | "waived"; value?: number }>(),
   /** How the client found the practice (W7) — one of REFERRAL_SOURCES; null = not captured. */
   referralSource: text("referral_source"),
+  /** Phase 31 — legal hold: while true, retention pruning + erasure are blocked (litigation/inquiry). */
+  legalHold: boolean("legal_hold").default(false).notNull(),
+  legalHoldReason: text("legal_hold_reason"),
   /** Client self-service profile: { dateOfBirth, address, emergencyName, emergencyPhone, preferredContact }. */
   profile: jsonb("profile").$type<Record<string, string>>().default({}).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),

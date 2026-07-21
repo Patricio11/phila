@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { FileCheck } from "lucide-react";
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import type { BusinessHours } from "@/lib/domain/types";
@@ -208,12 +209,34 @@ export default async function HubSettingsPage() {
           </>
         }
         security={
-          <Card>
-            <CardHead title="Security" />
-            <div className="px-[17px] pb-[17px]">
-              <SecuritySettings initialTwoFactor={principal.twoFactorEnabled} />
-            </div>
-          </Card>
+          <>
+            <Card>
+              <CardHead title="Security" />
+              <div className="px-[17px] pb-[17px]">
+                <SecuritySettings initialTwoFactor={principal.twoFactorEnabled} />
+              </div>
+            </Card>
+
+            <Card>
+              <CardHead title="Compliance & POPIA" />
+              <div className="space-y-3 px-[17px] pb-[17px]">
+                <p className="text-[12.5px] text-text-2">
+                  Everything runs from what you already record: consent evidence, the access audit, HPCSA-aware
+                  retention clocks, and Phila&apos;s operator register. One click assembles it into an
+                  auditor-ready pack — nothing to maintain.
+                </p>
+                <a
+                  href="/reports/popia"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-10 items-center gap-2 rounded-control bg-accent px-4 text-[13.5px] font-medium text-white shadow-sm transition-[filter] hover:brightness-95"
+                >
+                  <FileCheck className="size-4" strokeWidth={2} aria-hidden /> Download compliance pack
+                </a>
+                <p className="text-[11px] text-text-3">Opens as a printable page — save it to PDF. Each generation is recorded in the audit trail.</p>
+              </div>
+            </Card>
+          </>
         }
       />
     </div>

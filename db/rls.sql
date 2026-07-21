@@ -106,7 +106,7 @@ create policy org_isolation on funder_contacts using (app_is_super() or exists (
 do $$
 declare t text;
 begin
-  foreach t in array array['platform_integrations','ai_providers','user_presence','onboarding_requirements','platform_feature_flags']
+  foreach t in array array['platform_integrations','ai_providers','user_presence','onboarding_requirements','platform_feature_flags','breach_log']
   loop
     execute format('alter table %I enable row level security', t);
     execute format('alter table %I force row level security', t);

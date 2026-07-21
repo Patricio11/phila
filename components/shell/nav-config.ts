@@ -150,6 +150,7 @@ export const adminNav: NavSection[] = [
       { label: "Feature control", href: "/admin/features", icon: ToggleRight, ready: true },
       { label: "AI rail", href: "/admin/ai", icon: Bot, ready: true },
       { label: "Integrations", href: "/admin/integrations", icon: Blocks, ready: true },
+      { label: "Compliance", href: "/admin/compliance", icon: ShieldCheck, ready: true },
       { label: "Audit", href: "/admin/audit", icon: ScrollText, ready: true },
     ],
   },

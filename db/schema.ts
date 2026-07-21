@@ -466,6 +466,26 @@ export const orgPublicPages = pgTable("org_public_pages", {
 });
 
 /**
+ * Phase 31.3 — the POPIA s22 breach log. Platform-first (super-admin logs and
+ * manages incidents; an org-scoped incident carries its orgId so the org's POPIA
+ * pack can honestly include it). RLS: super-only, like the other platform tables.
+ */
+export const breachLog = pgTable("breach_log", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: text("org_id"), // null = platform-wide incident
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  severity: text("severity").notNull(), // low | medium | high | critical
+  status: text("status").default("open").notNull(), // open | contained | notified | closed
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+  discoveredAt: timestamp("discovered_at", { withTimezone: true }).notNull(),
+  containment: text("containment"),
+  createdBy: text("created_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
+/**
  * Messages from the public contact form (Phase 17 / builder upgrade). Deliberately
  * minimal — name + a way to reply + the message; the public form never invites
  * clinical detail. Org-scoped (RLS); the write comes from the public action (owner).

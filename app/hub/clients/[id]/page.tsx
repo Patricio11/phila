@@ -21,6 +21,8 @@ import { EditClientButton } from "@/components/hub/edit-client-button";
 import { ClientFeeControl } from "@/components/hub/client-fee-control";
 import { AddToWaitlistButton } from "@/components/hub/add-to-waitlist-button";
 import { getClientFeeDb, getClientReferralDb } from "@/db/queries/clients";
+import { clientRetentionDb } from "@/db/queries/dsar";
+import { DataPrivacyCard } from "@/components/hub/data-privacy-card";
 import { REFERRAL_SOURCE_LABELS, type ReferralSource } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
 
@@ -52,6 +54,7 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
   const pricedServices = services.filter((s) => (s.priceCents ?? 0) > 0).map((s) => ({ name: s.name, priceCents: s.priceCents ?? 0 }));
   const referralsOn = Boolean(dossier.org.features.referrals);
   const referralSource = referralsOn && isDbMode ? await getClientReferralDb(membership.orgId, id) : null;
+  const retention = isDbMode ? await clientRetentionDb(membership.orgId, id, now) : null;
 
   // Hub oversight is a recorded PII access  but private clinical notes are never on this page.
   await logAccess({
@@ -190,6 +193,19 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
               )}
             </div>
           </Card>
+
+          {retention && (
+            <Card>
+              <CardHead title="Data & privacy" />
+              <DataPrivacyCard
+                clientId={id}
+                clientName={client.name}
+                retentionLabel={retention.label}
+                legalHold={retention.legalHold}
+                legalHoldReason={retention.legalHoldReason}
+              />
+            </Card>
+          )}
 
           <Card>
             <CardHead title="Documents" count={documents.length} />

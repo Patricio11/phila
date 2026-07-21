@@ -6,6 +6,7 @@ import { PageHead } from "@/components/shell/page-head";
 import { Card, CardHead } from "@/components/ui/card";
 import { ClientProfileForm, type ClientProfile } from "@/components/client/client-profile-form";
 import { SecuritySettings } from "@/components/hub/security-settings";
+import { DataRequestsCard } from "@/components/client/data-requests-card";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Profile" };
@@ -54,6 +55,8 @@ export default async function MeProfilePage() {
           <SecuritySettings initialTwoFactor={principal.twoFactorEnabled} />
         </div>
       </Card>
+
+      <DataRequestsCard />
     </div>
   );
 }

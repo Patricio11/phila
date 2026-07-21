@@ -21,7 +21,9 @@ export type AuditAction =
   | "consent.change"
   | "file.access"
   | "client.action"
-  | "admin.action";
+  | "admin.action"
+  | "dsar.export"
+  | "dsar.erase";
 
 export interface AuditEvent {
   action: AuditAction;
@@ -77,6 +79,9 @@ const FAIL_STRICT: ReadonlySet<AuditAction> = new Set<AuditAction>([
   "note.read_hub_override",
   "demographics.read",
   "pii.export",
+  // Phase 31 — a DSAR export/erasure can never proceed unlogged.
+  "dsar.export",
+  "dsar.erase",
 ]);
 
 /**

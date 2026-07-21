@@ -100,3 +100,46 @@ export async function setClientTwoFactor(raw: { enabled: boolean }): Promise<{ o
   });
   return { ok: true };
 }
+
+/**
+ * Phase 31.1 — client-initiated DSAR request. The client doesn't run the export/
+ * erasure themselves; the request is routed to the practice (the responsible
+ * party), who runs the one-click action from the client's Data & privacy panel.
+ */
+export async function requestMyData(
+  raw: { kind: "export" | "deletion" },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const kind = raw.kind === "deletion" ? "deletion" : "export";
+  const { principal, clientId } = await requireClient();
+  if (!isDb()) return { ok: false, error: "Not available in demo mode." };
+
+  const { getDb } = await import("@/db/client");
+  const { clients, orgMembers } = await import("@/db/schema");
+  const { and, eq, inArray } = await import("drizzle-orm");
+  const { createNotification } = await import("@/db/queries/notifications");
+
+  const db = getDb();
+  const [me] = await db.select({ orgId: clients.orgId, name: clients.name }).from(clients).where(eq(clients.id, clientId)).limit(1);
+  if (!me) return { ok: false, error: "Account not found." };
+
+  const admins = await db.select({ userId: orgMembers.userId })
+    .from(orgMembers)
+    .where(and(eq(orgMembers.orgId, me.orgId), inArray(orgMembers.teamRole, ["org_admin", "front_desk"]), eq(orgMembers.status, "active")));
+  for (const a of admins) {
+    await createNotification({
+      userId: a.userId, orgId: me.orgId, kind: "dsar_request",
+      title: kind === "export" ? `${me.name} requested a copy of their data` : `${me.name} requested deletion of their data`,
+      body: `Open their profile → Data & privacy to action it (POPIA request, respond within a reasonable time).`,
+      href: `/hub/clients/${clientId}`,
+    });
+  }
+
+  await logAccess({
+    action: "client.action",
+    actor: { userId: principal.userId, platformRole: "client", teamRole: null },
+    orgId: me.orgId,
+    target: `client:${clientId}`,
+    reason: kind === "export" ? "dsar_request_export" : "dsar_request_deletion",
+  });
+  return { ok: true };
+}

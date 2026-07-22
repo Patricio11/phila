@@ -1045,13 +1045,26 @@ over in one smooth step  and any reschedule can carry a reason kept on the recor
 
 ---
 
+## 🛡️ PHASE 31: COMPLIANCE & DATA-SUBJECT READINESS ✅ (2026-07-21)
+*POPIA × HPCSA legal-readiness, built to the "never complicate an org's life" principle — computed
+retention clocks (6y / minors→21 / incapacity; one advisor-editable file), one-click DSAR export +
+honoured-where-lawful erasure + legal holds (fail-strict audited), a report-only pruner cron gated on an
+explicit platform enable, the s22 breach register with audit-derived affected-subjects + a drafted notice,
+the one-click POPIA pack (`/reports/popia`), the platform s72 sub-processor register orgs inherit, the
+dismissible IO nudge, `docs/compliance/` (DPIA · IO checklist · DPA register), and the CI compliance
+sweep (no client PII in funder payloads + suppression proven live, AI labelling, no safeguarding
+auto-action). Closes the Phase-19 DSAR/retention/breach/pack items and broadens Phase 20's tests.
+Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
+
+---
+
 ## 🔒 PHASE 19: TRUST, SECURITY & POPIA HARDENING
 *Goal: be allowed in the room with the most sensitive data there is.*
 - [ ] **Data residency:** migrate Postgres to an SA region (AWS `af-south-1` / Azure SA North) on the `db/client.ts` swap; confirm storage + AI inference residency posture; document cross-border flows.
 - [~] Field-level encryption **live** (Phase 10); **security headers done** + **per-IP auth rate limiting done** (W2); a **shared-store (Upstash) rate limiter** for the public non-auth surfaces + an observability skeleton remain.
-- [ ] **DPIA**; data-subject tools (export / erasure) wired to real soft-delete + pruner cron; retention policy + breach log.
+- [x] **DPIA**; data-subject tools (export / erasure) wired to real soft-delete + pruner cron; retention policy + breach log. ✅ *(delivered by Phase 31 — DSAR export/erasure, HPCSA retention clocks + report-only pruner, s22 breach register, DPIA in `docs/compliance/`)*
 - [ ] **Opt-out / DMA registry** screen before any marketing send (per the SA direct-marketing registry; manual suppression-list import until the API is published); block + audit if registered.
-- [ ] One-click **POPIA pack** per org (consent records + lawful-basis evidence + audit + retention + breach log)  "compliance you can show the Information Regulator."
+- [x] One-click **POPIA pack** per org  ✅ *(Phase 31 — `/reports/popia`, assembled from live consent/audit/retention/breach records + the s72 sub-processor chain, fail-strict audited on generation)*
 
 ---
 

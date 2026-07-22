@@ -395,3 +395,20 @@ export async function connectChannel(
   });
   return { ok: true };
 }
+
+/**
+ * Phase 31.5 — the optional Information-Officer nudge. One checkbox, stored on
+ * the org profile; never mandatory, never blocks anything.
+ */
+export async function markIoRegistered(): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { membership } = await requireHub();
+  if (process.env.DATA_PROVIDER !== "db") return { ok: false, error: "Not available in demo mode." };
+  const { getDb } = await import("@/db/client");
+  const { orgs } = await import("@/db/schema");
+  const { eq, sql } = await import("drizzle-orm");
+  await getDb().update(orgs)
+    .set({ profile: sql`coalesce(${orgs.profile}, '{}'::jsonb) || jsonb_build_object('ioRegisteredAt', ${new Date().toISOString()}::text)` })
+    .where(eq(orgs.id, membership.orgId));
+  await logAccess({ action: "admin.action", actor: { userId: "hub", platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `org:${membership.orgId}`, reason: "io_registered_marked" });
+  return { ok: true };
+}

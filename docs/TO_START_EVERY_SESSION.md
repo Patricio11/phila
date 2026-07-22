@@ -185,6 +185,15 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
 > detail, the platform-admin console, internal messages)  seeded from the same fixtures so they agree, but not yet
 > DB-backed. "Fully DB-backed app-wide" is not yet true; those surfaces migrate as their phases come up.
 
+- **Production readiness W1–W7 + Phase 31** (compliance & data-subject readiness)  ✅ **2026-07-21**. The full
+  W-pass shipped (trial lifecycle, security hardening + RLS runtime cutover, feature governance + editable plan
+  catalogue, two-tenant seed, docs, settings IA, and the W7 moat: sliding-scale fees, unified timeline, referrals,
+  no-show follow-up, PHQ-9+GAD-7 trends, funder report pack, waitlist auto-fill, WhatsApp-first 24h-window comms,
+  portal reschedule/pay). **Phase 31**: computed HPCSA retention clocks + legal holds, one-click DSAR export +
+  honoured-where-lawful erasure (fail-strict audited), report-only pruner cron, s22 breach register, the one-click
+  POPIA pack (`/reports/popia`), s72 sub-processor register, IO nudge, `docs/compliance/`, and the CI compliance
+  sweep. See `docs/completed/PHASE_31_COMPLETE.md` + `docs/PRODUCTION_READINESS_PLAN.md`.
+
 - *(Update this block as phases ship. Part A is mock-first; Part B wires real behind the unchanged UI.)*
 
 ---
@@ -293,4 +302,4 @@ the Care-Confidentiality Rule, the AI-Honesty Rule, or the Safeguarding Rule  **
 time.** Prioritise correctness, POPIA compliance, tenant isolation, performance, and accessibility
 over visual flourish  then make it genuinely beautiful within those limits.
 
-*Last updated: 2026-06-30 · Phila · philasa.com · Stack: Next.js · Neon · Better Auth · Supabase Storage · LiveKit*
+*Last updated: 2026-07-21 · Phila · philasa.com · Stack: Next.js · Neon · Better Auth · Supabase Storage · LiveKit*

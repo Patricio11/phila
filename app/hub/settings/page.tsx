@@ -27,6 +27,7 @@ import { InvoiceSettingsForm } from "@/components/hub/invoice-settings-form";
 import { YourPlanCard } from "@/components/hub/your-plan-card";
 import { trialDaysLeft } from "@/lib/billing/plans";
 import { SecuritySettings } from "@/components/hub/security-settings";
+import { IoNudge } from "@/components/hub/io-nudge";
 import { VideoSettingsCard } from "@/components/hub/video-settings";
 import { getVideoSettings } from "@/db/queries/video";
 import { AiSettingsCard } from "@/components/hub/ai-settings";
@@ -220,6 +221,7 @@ export default async function HubSettingsPage() {
             <Card>
               <CardHead title="Compliance & POPIA" />
               <div className="space-y-3 px-[17px] pb-[17px]">
+                <IoNudge registered={Boolean((p as Record<string, string>).ioRegisteredAt)} />
                 <p className="text-[12.5px] text-text-2">
                   Everything runs from what you already record: consent evidence, the access audit, HPCSA-aware
                   retention clocks, and Phila&apos;s operator register. One click assembles it into an

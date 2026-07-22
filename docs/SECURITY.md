@@ -79,3 +79,25 @@ Authorisation is defence in depth. No single layer is trusted alone.
   suppression (`applyKAnon`). Suppressed cells are labelled "too few to report", never dropped
   silently. A funder is external, read-only, scoped to their grant(s), sees only k-anon aggregates,
   and every view is audited  a funder can never re-identify a client.
+
+## Erasure vs retention (POPIA × HPCSA — Phase 31)
+
+**Policy: erasure is honoured where lawful, and refused with an honest, dated reason
+where retention is mandated.** Implemented in `lib/compliance/retention.ts` (every
+number is a named constant — an advisor correction is a one-line change):
+
+- **Clocks are computed, never configured.** Standard clinical records: ≥6 years from
+  the last entry. Clients who were minors at the last entry: until age 21 (whichever
+  clock ends later wins). Recorded incapacity: indefinite. Derived from record facts
+  (last entry, date of birth) — an org never sets retention.
+- **A deletion request always de-identifies the reachable PII immediately** (name →
+  pseudonym, contact + profile cleared, special-category demographics deleted, record
+  soft-deleted off caseloads). If the clock has lapsed, destruction is lawful; if not,
+  the clinical record is retained **restricted** under its clock and the requester is
+  given the dated reason.
+- **Legal holds** (`clients.legal_hold`) block both erasure and pruning until lifted.
+- **The pruner** (`/api/cron/retention`) ships report-only; destruction requires the
+  explicit platform env `RETENTION_PRUNER_MODE=destroy`, never touches a record inside
+  its clock or under hold, and every destruction is fail-strict audited (`dsar.erase`).
+- **DSAR exports and erasures are fail-strict audited** — if the audit line cannot be
+  written, the action is refused (same guarantee as clinical-note reads).

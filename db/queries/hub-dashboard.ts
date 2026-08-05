@@ -163,6 +163,8 @@ export async function getHubDashboardDb(orgId: string, nowISO: string): Promise<
     .limit(60);
   const activity = activityRows
     .filter((r) => !["pii.read", "note.read", "note.read_hub_override", "demographics.read", "funder.view", "file.access"].includes(r.action))
+    // Page-view reads are "who looked", not "what happened" — same rule as above.
+    .filter((r) => !["view_member"].includes(r.reason ?? ""))
     .slice(0, 12)
     .map((r) => ({ action: r.action, reason: r.reason, target: r.target, actorName: r.actorName, at: r.at.toISOString() }));
 

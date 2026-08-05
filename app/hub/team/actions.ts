@@ -279,3 +279,48 @@ export async function offboardMember(
   revalidatePath("/hub/team");
   return { ok: true, summary };
 }
+
+/* ---- Counsellor availability (feedback #5) — ORG-managed, counsellors read-only ---- */
+
+const windowSchema = z.object({
+  weekday: z.number().int().min(1).max(7),
+  start: z.string().regex(/^\d{2}:\d{2}$/),
+  end: z.string().regex(/^\d{2}:\d{2}$/),
+});
+const availabilityInput = z.object({
+  counsellorId: z.string().min(1),
+  windows: z.array(windowSchema).max(28),
+});
+
+/**
+ * Replace a counsellor's weekly working windows. Only the org (requireHub =
+ * org_admin) may edit — counsellors see their pattern read-only. Every save is
+ * audited as `update_availability`, which surfaces on the dashboard Activity
+ * feed. No windows at all = the counsellor inherits the org's business hours.
+ */
+export async function saveMemberAvailability(
+  raw: z.infer<typeof availabilityInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = availabilityInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Check the availability times." };
+  const d = parsed.data;
+  for (const w of d.windows) {
+    if (w.end <= w.start) return { ok: false, error: "Each window must end after it starts." };
+  }
+
+  if (isDb()) {
+    const { saveCounsellorAvailabilityDb } = await import("@/db/queries/availability");
+    await saveCounsellorAvailabilityDb(membership.orgId, d.counsellorId, d.windows);
+  }
+
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
+    orgId: membership.orgId,
+    target: `counsellor:${d.counsellorId}/availability`,
+    reason: "update_availability",
+  });
+  revalidatePath("/hub/team");
+  return { ok: true };
+}

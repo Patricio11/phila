@@ -60,6 +60,9 @@ export function availableSlots(opts: {
   minNoticeHours?: number;
   /** Minutes between offered start times (0/undefined = step by the session length). */
   slotIntervalMin?: number;
+  /** The counsellor's own working windows for this weekday (feedback #5).
+   *  undefined = inherit the org's business hours; [] = not working that day. */
+  windows?: { start: string; end: string }[];
 }): Slot[] {
   const { org, date } = opts;
   const duration = opts.durationMin ?? org.scheduling.defaultDurationMin;
@@ -89,8 +92,12 @@ export function availableSlots(opts: {
   // Start times step by the org's chosen interval (e.g. every 30 min) when set,
   // else by the session length. Each candidate must still fit before close.
   const step = opts.slotIntervalMin && opts.slotIntervalMin > 0 ? opts.slotIntervalMin : duration;
+  // The counsellor's own windows (org-managed) intersect the business hours;
+  // no windows prop = the counsellor works the org's full hours.
+  const windows = opts.windows?.map((w) => ({ start: toMinutes(w.start), end: toMinutes(w.end) }));
   for (let t = open; t + duration <= close; t += step) {
     const sessionEnd = t + duration;
+    if (windows && !windows.some((w) => t >= w.start && sessionEnd <= w.end)) continue;
     const clashes = blocked.some((w) => t < w.end && sessionEnd > w.start);
     if (!clashes) slots.push({ start: instant(date, fromMinutes(t)), label: fromMinutes(t) });
   }

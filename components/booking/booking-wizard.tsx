@@ -206,14 +206,11 @@ export function BookingWizard({
       {step === 0 && (
         <ServiceStep
           services={config.services}
-          counsellors={config.counsellors}
           serviceModalities={config.serviceModalities}
           serviceId={state.serviceId}
           modality={state.modality}
-          counsellorId={state.counsellorId}
           onService={(id) => patch({ serviceId: id, modality: defaultModality(id), date: null, slotStart: null, slotCounsellorId: null })}
           onModality={(modality) => patch({ modality })}
-          onCounsellor={(id) => patch({ counsellorId: id, slotStart: null, slotCounsellorId: null })}
         />
       )}
       {step === 1 && (
@@ -223,7 +220,7 @@ export function BookingWizard({
           durationMin={durationMin}
           maxDaysAhead={config.maxDaysAhead}
           minNoticeHours={config.minNoticeHours}
-          counsellorId={state.counsellorId}
+          counsellorId={null}
           date={state.date}
           slotStart={state.slotStart}
           onPickDate={(date) => patch({ date, slotStart: null, slotCounsellorId: null })}

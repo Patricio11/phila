@@ -33,6 +33,11 @@ const REASONS: Record<string, Meta> = {
   popia_pack_generated: { icon: FileCheck2, text: "POPIA compliance pack generated" },
   note_signed: { icon: FileCheck2, text: "Clinical note signed" },
   sign_note: { icon: FileCheck2, text: "Clinical note signed" },
+  update_availability: { icon: CalendarClock, text: "Counsellor availability updated" },
+  archive_member_migrated: { icon: UserPlus, text: "Counsellor archived — caseload moved across" },
+  archive_member_cancelled: { icon: CalendarX, text: "Counsellor archived — upcoming sessions cancelled" },
+  archive_member: { icon: ShieldCheck, text: "Team member archived" },
+  restore_member: { icon: ShieldCheck, text: "Team member restored" },
 };
 
 function humanize(r: ActivityRow): Meta {

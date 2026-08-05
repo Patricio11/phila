@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { AlertCircle, Check, MapPin, Plus, UserPlus, Video, X } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
@@ -10,7 +10,7 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { Input, Label, Textarea, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { createAppointment, createClientForBooking } from "@/lib/scheduling/actions";
+import { createAppointment, createClientForBooking, getAvailableCounsellors } from "@/lib/scheduling/actions";
 import { isoWeekday } from "@/lib/domain/helpers";
 import type { BusinessHours } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
@@ -88,6 +88,28 @@ export function CreateAppointmentModal({
 
   const isOnline = type === "Online";
 
+  // Feedback #5 — once a date + time are picked, only counsellors actually
+  // available then are offered. Keyed fetch: a stale response simply never
+  // matches the current key, so no synchronous resets are needed.
+  const availKey = `${date}|${time}|${durationMin}`;
+  const [avail, setAvail] = useState<{ key: string; ids: string[] } | null>(null);
+  useEffect(() => {
+    if (!date || !time) return;
+    const key = `${date}|${time}|${durationMin}`;
+    let alive = true;
+    getAvailableCounsellors({ orgId: options.orgId, date, time, durationMin }).then((res) => {
+      if (alive && res.ok && res.available) setAvail({ key, ids: res.available });
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, [date, time, durationMin, options.orgId]);
+  const availability = date && time && avail?.key === availKey ? avail : null;
+  const freeSet = useMemo(() => (availability ? new Set(availability.ids) : null), [availability]);
+  // The picked counsellor stays visible even when busy — the validation below explains why.
+  const counsellorOptions = freeSet
+    ? options.counsellors.filter((c) => freeSet.has(c.id) || c.id === counsellorId)
+    : options.counsellors;
+  const freeCount = freeSet ? options.counsellors.filter((c) => freeSet.has(c.id)).length : null;
+
   const onService = (id: string) => {
     setServiceId(id);
     const svc = options.services.find((s) => s.id === id);
@@ -99,6 +121,7 @@ export function CreateAppointmentModal({
     if (!clientId) e.client = "Pick a client.";
     if (!serviceId) e.service = "Pick a service.";
     if (!counsellorId) e.counsellor = "Pick a counsellor.";
+    else if (freeSet && !freeSet.has(counsellorId)) e.counsellor = "Not available at that time — pick another counsellor or time.";
     if (!date) e.date = "Pick a date.";
     if (!time) e.time = "Pick a time.";
     if (!isOnline && !roomId) e.room = "Pick a room.";
@@ -122,7 +145,7 @@ export function CreateAppointmentModal({
       }
     }
     return e;
-  }, [clientId, serviceId, counsellorId, date, time, isOnline, roomId, durationMin, options.businessHours]);
+  }, [clientId, serviceId, counsellorId, date, time, isOnline, roomId, durationMin, options.businessHours, freeSet]);
 
   const submit = () => {
     setAttempted(true);
@@ -221,7 +244,14 @@ export function CreateAppointmentModal({
           <Select value={serviceId} onChange={onService} invalid={Boolean(attempted && errors.service)} placeholder="Choose a service" options={options.services.map((s) => ({ value: s.id, label: s.name, hint: `${s.durationMin} min` }))} />
         </Row>
         <Row label="Counsellor" error={attempted ? errors.counsellor : undefined}>
-          <SearchSelect avatars value={counsellorId} onChange={setCounsellorId} invalid={Boolean(attempted && errors.counsellor)} placeholder="Choose a counsellor" searchPlaceholder="Search counsellors…" ariaLabel="Counsellor" options={options.counsellors.map((c) => ({ value: c.id, label: c.name }))} />
+          <SearchSelect avatars value={counsellorId} onChange={setCounsellorId} invalid={Boolean(attempted && errors.counsellor)} placeholder="Choose a counsellor" searchPlaceholder="Search counsellors…" ariaLabel="Counsellor" options={counsellorOptions.map((c) => ({ value: c.id, label: c.name }))} />
+          {freeCount !== null && (
+            <p className={cn("text-[11.5px]", freeCount === 0 ? "text-danger" : "text-text-3")}>
+              {freeCount === 0
+                ? `No counsellors are available at ${time} — try another time.`
+                : `${freeCount} of ${options.counsellors.length} counsellors available at ${time}.`}
+            </p>
+          )}
         </Row>
 
         <Row label="Where">

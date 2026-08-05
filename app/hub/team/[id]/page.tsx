@@ -14,6 +14,8 @@ import { CredentialChip } from "@/components/ui/credential-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TeamRoleChip, ROLE_REACH } from "@/components/hub/team-role-chip";
 import { TransferCaseloadButton } from "@/components/hub/transfer-caseload-button";
+import { AvailabilityEditor } from "@/components/hub/availability-editor";
+import type { BusinessHours } from "@/lib/domain/types";
 import { ManageMemberButton } from "@/components/hub/manage-member-modal";
 import { SendSetupLinkButton } from "@/components/hub/send-setup-link-button";
 import { now as clockNow } from "@/lib/clock";
@@ -48,6 +50,14 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
     provider.listCounsellors(membership.orgId),
   ]);
   if (!detail) notFound();
+
+  // Feedback #5 — the counsellor's ORG-managed working windows (empty = follows
+  // practice hours). Editing is hub-only; the counsellor sees it read-only.
+  const availability = detail.counsellorId && process.env.DATA_PROVIDER === "db"
+    ? await (await import("@/db/queries/availability")).getCounsellorAvailabilityDb(membership.orgId, detail.counsellorId)
+    : [];
+  const org = await provider.getOrg(membership.orgId);
+  const orgHours = (org?.scheduling.businessHours ?? {}) as BusinessHours;
 
   // Candidate supervisors: counsellors who are supervisors, excluding this member.
   const supervisorOptions = counsellors
@@ -180,6 +190,18 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
             <p className="mt-2 text-[11.5px] text-text-3">Role on file: {TEAM_ROLE_LABELS[member.teamRole]}{member.isSupervisor ? " · supervisor" : ""}.</p>
             {detail.supervisorName && <p className="mt-1 text-[11.5px] text-text-3">Supervised by {detail.supervisorName}.</p>}
           </Card>
+
+          {detail.counsellorId && (
+            <Card>
+              <CardHead title="Availability" />
+              <AvailabilityEditor
+                counsellorId={detail.counsellorId}
+                firstName={member.name.split(" ")[0] ?? member.name}
+                initial={availability}
+                orgHours={orgHours}
+              />
+            </Card>
+          )}
 
           {roomSchedule.length > 0 && (
             <Card>

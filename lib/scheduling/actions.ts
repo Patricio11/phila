@@ -17,6 +17,36 @@ import type { Province } from "@/lib/domain/enums";
 const BOOKERS = ["counsellor", "org_admin", "front_desk"] as const;
 
 /**
+ * Feedback #5 — who can take a session at this date + time? Backs the booking
+ * modal's live counsellor filter. `available: null` means "no filtering" (mock
+ * mode), so the modal degrades gracefully.
+ */
+const availInput = z.object({
+  orgId: z.string().min(1),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  time: z.string().regex(/^\d{2}:\d{2}$/),
+  durationMin: z.number().int().positive().max(600),
+});
+
+export async function getAvailableCounsellors(
+  raw: z.infer<typeof availInput>,
+): Promise<{ ok: true; available: string[] | null } | { ok: false; error: string }> {
+  const { membership } = await requireOrg([...BOOKERS]);
+  const parsed = availInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid request" };
+  const d = parsed.data;
+  if (d.orgId !== membership.orgId) return { ok: false, error: "Wrong practice." };
+  if (process.env.DATA_PROVIDER !== "db") return { ok: true, available: null };
+
+  const [org] = await getDb().select({ scheduling: orgs.scheduling }).from(orgs).where(eq(orgs.id, d.orgId)).limit(1);
+  const businessHours = ((org?.scheduling as { businessHours?: unknown })?.businessHours ?? {}) as import("@/lib/domain/types").BusinessHours;
+  const startISO = new Date(`${d.date}T${d.time}:00+02:00`).toISOString(); // SAST wall clock, no DST
+  const { availableCounsellorsAtDb } = await import("@/db/queries/availability");
+  const res = await availableCounsellorsAtDb(d.orgId, startISO, d.durationMin, businessHours);
+  return { ok: true, available: res.available };
+}
+
+/**
  * Create a client inline from the booking modal (Phase 17.2). The chosen counsellor
  * becomes the client's primary counsellor; province defaults to the org's. Returns
  * the new client so the modal can select it immediately.

@@ -2,7 +2,8 @@
 
 import { z } from "zod";
 import { getDataProvider } from "@/lib/data-provider";
-import { availableSlots, type Slot } from "@/lib/domain/helpers";
+import { availableSlots, isoWeekday, type Slot } from "@/lib/domain/helpers";
+import { getOrgAvailabilityMapDb } from "@/db/queries/availability";
 import { logAccess } from "@/lib/audit";
 import { CONSENT_PURPOSES } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
@@ -86,21 +87,29 @@ export async function getAvailableSlots(
   const latest = addDays(today, config.maxDaysAhead);
   if (date < today || date > latest) return { ok: true, slots: [] };
 
-  // Compute each candidate's free slots, then union by start time. For "any
-  // available" the first free counsellor at a given time is assigned. The slot
-  // engine drops any start sooner than the org's minimum notice.
-  const byStart = new Map<string, SlotOption>();
+  // Compute each candidate's free slots (respecting their ORG-managed working
+  // windows — no windows = the org's full hours), then union by start time. A
+  // slot is offered while ANY counsellor is free, and each start is assigned to
+  // the LEAST-LOADED free counsellor that day, so work spreads fairly (#5).
+  const availability = process.env.DATA_PROVIDER === "db" ? await getOrgAvailabilityMapDb(org.id) : new Map();
+  const wd = isoWeekday(date);
+  const byStart = new Map<string, { start: string; label: string; options: { id: string; load: number }[] }>();
   for (const c of candidates) {
+    const pattern = availability.get(c.id);
+    const windows = pattern === undefined ? undefined : pattern.filter((w: { weekday: number }) => w.weekday === wd);
     const existing = await provider.listAppointmentsForCounsellor(c.id, { from: date, to: date });
-    const slots: Slot[] = availableSlots({ org, date, durationMin, existing, now, minNoticeHours: config.minNoticeHours, slotIntervalMin: config.slotIntervalMin });
+    const slots: Slot[] = availableSlots({ org, date, durationMin, existing, now, minNoticeHours: config.minNoticeHours, slotIntervalMin: config.slotIntervalMin, windows });
+    const load = existing.filter((a) => a.state === "scheduled" || a.state === "completed").length;
     for (const s of slots) {
-      if (!byStart.has(s.start)) {
-        byStart.set(s.start, { start: s.start, label: s.label, counsellorId: c.id });
-      }
+      const entry = byStart.get(s.start) ?? { start: s.start, label: s.label, options: [] };
+      entry.options.push({ id: c.id, load });
+      byStart.set(s.start, entry);
     }
   }
 
-  const slots = [...byStart.values()].sort((a, b) => a.start.localeCompare(b.start));
+  const slots = [...byStart.values()]
+    .map((e) => ({ start: e.start, label: e.label, counsellorId: e.options.sort((a, b) => a.load - b.load || a.id.localeCompare(b.id))[0]!.id }))
+    .sort((a, b) => a.start.localeCompare(b.start));
   return { ok: true, slots };
 }
 

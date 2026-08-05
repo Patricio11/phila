@@ -548,6 +548,20 @@ export const whatsappWindows = pgTable("whatsapp_windows", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 }, (t) => [uniqueIndex("whatsapp_window_uq").on(t.orgId, t.phoneKey)]);
 
+/**
+ * Feedback #5 — per-counsellor working windows, ORG-managed (counsellors view,
+ * never edit). Multiple windows per weekday ("Mon 08:00-13:00" + "Mon 15:00-18:00").
+ * No rows for a counsellor = inherits the org's business hours (sane default).
+ */
+export const counsellorAvailability = pgTable("counsellor_availability", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  counsellorId: text("counsellor_id").notNull(),
+  weekday: integer("weekday").notNull(), // 1 = Monday … 7 = Sunday
+  start: text("start").notNull(), // "HH:MM"
+  end: text("end").notNull(),
+});
+
 /** Phila credit balances per metered channel (sms, email). WhatsApp is BYO (org pays Meta). */
 export const creditBalances = pgTable("credit_balances", {
   orgId: text("org_id").notNull().references(() => orgs.id),

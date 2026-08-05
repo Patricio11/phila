@@ -58,7 +58,7 @@ export function HubDashboardStats({ data, paymentsOn }: { data: HubDashboard; pa
       {/* How the money arrived */}
       <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-3">
         <StatCard icon={CreditCard} label="Paid online" value={rands(s.onlineCents)} coverage={paymentsOn ? "via your payment gateway" : "gateway not connected"} />
-        <StatCard icon={HandCoins} label="Cash / EFT" value={rands(s.manualCents)} coverage="recorded by the practice" />
+        <StatCard icon={HandCoins} label="Cash / Card / EFT" value={rands(s.manualCents)} coverage="recorded by the practice" />
         <StatCard icon={Users} label="Clients seen" value={s.clientsSeen} coverage={`${s.newClients} new client${s.newClients === 1 ? "" : "s"}`} />
       </div>
 

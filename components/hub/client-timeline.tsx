@@ -66,7 +66,7 @@ export function ClientTimeline({
       icon: meta.icon,
       tone: meta.tone,
       title: future && s.state === "scheduled" ? "Upcoming session" : meta.label,
-      detail: `${s.serviceName}${s.counsellorName ? ` · ${s.counsellorName}` : ""}`,
+      detail: `${s.serviceName}${s.counsellorName ? ` · ${s.counsellorName}` : ""}${s.heldByPhone ? ` · held by phone${s.callDurationMin ? ` (${s.callDurationMin} min)` : ""}` : ""}`,
     });
   }
 

@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CalendarDays, Check, Clock, Copy, Hourglass, MapPin, NotebookPen, Repeat, Stethoscope, User, UserX, Video, X } from "lucide-react";
+import { AlertTriangle, CalendarDays, Check, Clock, Copy, Hourglass, MapPin, NotebookPen, Phone, Repeat, Stethoscope, User, UserX, Video, X } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
 import { Dialog } from "@/components/ui/dialog";
@@ -197,6 +197,14 @@ export function AppointmentDetail({
               value={appt.type === "online" ? "Secure video room" : (appt.roomName ?? "In person")}
             />
             {appt.rescheduleNote && <Row icon={NotebookPen} label="Rescheduled  reason" value={appt.rescheduleNote} wide />}
+            {appt.heldByPhone && (
+              <Row
+                icon={Phone}
+                label="Held by phone"
+                value={`${appt.callDurationMin ? `${appt.callDurationMin} min call` : "Phone call"}${appt.phoneNote ? ` · ${appt.phoneNote}` : ""}`}
+                wide
+              />
+            )}
           </dl>
 
           {/* Online join link  the counsellor joins, or copies the invite for the client */}

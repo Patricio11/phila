@@ -292,6 +292,11 @@ export const appointments = pgTable("appointments", {
   reminded1h: boolean("reminded_1h").default(false).notNull(),
   /** When a no-show was followed up (rebooked or dismissed) — so it stops nagging (W7). */
   noShowFollowUpAt: timestamp("no_show_follow_up_at", { withTimezone: true }),
+  /** Feedback #6 — the session was actually held over a PHONE CALL (recorded after
+   *  the fact, e.g. the client had no data). Honest record of how care happened. */
+  heldByPhone: boolean("held_by_phone").default(false).notNull(),
+  callDurationMin: integer("call_duration_min"), // actual call length, may differ from booked
+  phoneNote: text("phone_note"), // optional context ("no data, called on 082…") — NOT the clinical note
 });
 
 /* ── Clinical cluster (Phase 10) ───────────────────────────────────────── */

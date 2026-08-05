@@ -80,6 +80,9 @@ Cross-tenant / cross-role checks (signed in):
 - ☐ **Messages** → the seeded team threads render; sending a message persists (live if the Supabase anon key is set, else on refresh)
 - ☐ **Rooms** shows the room schedule
 
+**Held by phone** (feedback #6)
+- ☐ On a session page, the **Held by phone** card records that the session happened over a phone call — real call length (prefilled with the booked duration) + optional context; the header, sessions list (Recent tab), calendar detail, hub session view, and client timeline all show the **Phone · N min** marker; **Undo** clears it; the hub Activity feed logs "Session held by phone call"
+
 **AI scribe** (only if a provider is switched on in `/admin/ai` **and** the org consent is on):
 - ☐ In a session note, type a few clinical cues (≥ ~8 chars) → **AI draft** returns a professional, non-diagnostic note + the funder fields (presenting issue / risk / outcome / referral)
 - ☐ **"Draft with AI"** on the care plan produces a client-facing summary

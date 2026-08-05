@@ -10,6 +10,7 @@ import {
   Lock,
   MapPin,
   Paperclip,
+  Phone,
   Send,
   Sparkles,
   Target,
@@ -19,7 +20,7 @@ import type { SessionEditorData } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
 import { Button } from "@/components/ui/button";
 import { Card, CardHead } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/input";
+import { Input, Textarea } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { Avatar } from "@/components/ui/avatar";
 import { SafeguardingPanel } from "@/components/workspace/safeguarding-panel";
@@ -28,6 +29,7 @@ import { cn } from "@/lib/utils";
 import {
   generateAiDraft,
   generateCarePlanDraft,
+  markHeldByPhone,
   markProgress,
   saveNoteDraft,
   shareCarePlan,
@@ -85,6 +87,16 @@ export function SessionEditor({
   const [state, setState] = useState<AppointmentState>(appt.state);
   const [careSummary, setCareSummary] = useState(data.carePlan?.summary ?? "");
   const [extraction, setExtraction] = useState<AiExtraction | null>(null);
+
+  // Feedback #6 — the honest "how the session really happened" record.
+  const [phone, setPhone] = useState<{ held: boolean; duration: number | null; note: string }>({
+    held: appt.heldByPhone ?? false,
+    duration: appt.callDurationMin ?? null,
+    note: appt.phoneNote ?? "",
+  });
+  const [phoneEditing, setPhoneEditing] = useState(false);
+  const [phoneDraft, setPhoneDraft] = useState<{ duration: string; note: string }>({ duration: String(appt.durationMin), note: "" });
+  const [savingPhone, startPhone] = useTransition();
 
   const [generating, startGenerate] = useTransition();
   const [signing, startSign] = useTransition();
@@ -181,6 +193,28 @@ export function SessionEditor({
       toast({ tone: "success", title: `Marked ${PROGRESS.find((p) => p.state === next)?.label.toLowerCase() ?? next}` });
     });
 
+  const savePhone = () => {
+    const duration = Number(phoneDraft.duration);
+    if (!Number.isInteger(duration) || duration < 1 || duration > 600) {
+      return toast({ tone: "error", title: "Enter the call length in minutes (1–600)." });
+    }
+    startPhone(async () => {
+      const res = await markHeldByPhone({ appointmentId: appt.id, held: true, callDurationMin: duration, note: phoneDraft.note.trim() || undefined });
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      setPhone({ held: true, duration, note: phoneDraft.note.trim() });
+      setPhoneEditing(false);
+      toast({ tone: "success", title: "Recorded as a phone call", description: `${duration} min on the record — your note works as normal.` });
+    });
+  };
+
+  const undoPhone = () =>
+    startPhone(async () => {
+      const res = await markHeldByPhone({ appointmentId: appt.id, held: false });
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      setPhone({ held: false, duration: null, note: "" });
+      toast({ tone: "success", title: "Phone-call record removed" });
+    });
+
   const onDraftCare = () =>
     startDraftCare(async () => {
       const res = await generateCarePlanDraft({ appointmentId: appt.id, cues: body });
@@ -218,6 +252,11 @@ export function SessionEditor({
               {appt.type === "online" ? <Video className="size-3.5 text-info" strokeWidth={2} aria-hidden /> : <MapPin className="size-3.5 text-text-3" strokeWidth={2} aria-hidden />}
               {appt.type === "online" ? "Online" : (appt.roomName ?? "In person")}
             </span>
+            {phone.held && (
+              <span className="inline-flex items-center gap-1 rounded-chip bg-accent-soft px-2 py-0.5 text-[11.5px] font-semibold text-accent">
+                <Phone className="size-3" strokeWidth={2.2} aria-hidden /> Held by phone{phone.duration ? ` · ${phone.duration} min` : ""}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -374,6 +413,57 @@ export function SessionEditor({
               </Button>
             </Card>
           )}
+
+          {/* Held by phone — the after-the-fact honest record (feedback #6) */}
+          <Card className="p-4">
+            <div className="flex items-center gap-1.5 text-[13px] font-[600] text-text">
+              <Phone className="size-4 text-text-3" strokeWidth={2} aria-hidden /> Held by phone
+            </div>
+            {phone.held ? (
+              <>
+                <p className="mt-2 text-[12.5px] text-text-2">
+                  This session happened over a phone call{phone.duration ? ` · ${phone.duration} min` : ""}.
+                </p>
+                {phone.note && <p className="mt-1 text-[12px] italic text-text-3">&ldquo;{phone.note}&rdquo;</p>}
+                <Button variant="ghost" size="sm" className="mt-2.5" onClick={undoPhone} loading={savingPhone}>Undo</Button>
+              </>
+            ) : phoneEditing ? (
+              <div className="mt-2.5 space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={600}
+                    value={phoneDraft.duration}
+                    onChange={(e) => setPhoneDraft((v) => ({ ...v, duration: e.target.value }))}
+                    className="w-24"
+                    aria-label="Call length in minutes"
+                  />
+                  <span className="text-[12.5px] text-text-2">minutes on the call</span>
+                </div>
+                <Input
+                  value={phoneDraft.note}
+                  onChange={(e) => setPhoneDraft((v) => ({ ...v, note: e.target.value }))}
+                  placeholder="Optional — e.g. client had no data"
+                  aria-label="Phone call context (optional)"
+                />
+                <div className="flex items-center gap-2">
+                  <Button size="sm" onClick={savePhone} loading={savingPhone}>Save</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setPhoneEditing(false)} disabled={savingPhone}>Cancel</Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="mt-1 text-[12px] text-text-2">
+                  Client couldn&apos;t {appt.type === "online" ? "connect" : "make it in"}? Record that this session
+                  happened over a phone call, with the real call length.
+                </p>
+                <Button variant="ghost" size="sm" className="mt-2.5" onClick={() => { setPhoneDraft({ duration: String(appt.durationMin), note: "" }); setPhoneEditing(true); }}>
+                  <Phone className="size-3.5" strokeWidth={2} aria-hidden /> Record phone call
+                </Button>
+              </>
+            )}
+          </Card>
 
           <Card className="p-4">
             <div className="text-[13px] font-[600] text-text">Mark progress</div>

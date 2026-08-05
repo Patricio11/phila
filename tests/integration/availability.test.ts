@@ -17,7 +17,7 @@ const { getCounsellorAvailabilityDb, saveCounsellorAvailabilityDb, availableCoun
 const { availableSlots } = await import("@/lib/domain/helpers");
 
 const ORG = "org_avail_probe";
-const HOURS = { 1: { start: "08:00", end: "17:00" }, 2: { start: "08:00", end: "17:00" }, 3: { start: "08:00", end: "17:00" }, 4: { start: "08:00", end: "17:00" }, 5: { start: "08:00", end: "17:00" } };
+const HOURS: import("@/lib/domain/types").BusinessHours = { 1: { start: "08:00", end: "17:00" }, 2: { start: "08:00", end: "17:00" }, 3: { start: "08:00", end: "17:00" }, 4: { start: "08:00", end: "17:00" }, 5: { start: "08:00", end: "17:00" }, 6: null, 7: null };
 
 /** Next Monday at least a week out — far from seeded data, always a working day. */
 function nextMonday(): string {

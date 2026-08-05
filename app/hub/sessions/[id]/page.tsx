@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Check, Clock, FileText, MapPin, ShieldCheck, Sparkles, Target, Video } from "lucide-react";
+import { ArrowLeft, Check, Clock, FileText, MapPin, Phone, ShieldCheck, Sparkles, Target, Video } from "lucide-react";
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
@@ -63,6 +63,11 @@ export default async function HubSessionNotePage({ params }: { params: Promise<{
           {appt.type === "online" ? <Video className="size-3.5 text-info" strokeWidth={2} aria-hidden /> : <MapPin className="size-3.5 text-text-3" strokeWidth={2} aria-hidden />}
           {appt.type === "online" ? "Online" : (appt.roomName ?? "In person")}
         </span>
+        {appt.heldByPhone && (
+          <span className="inline-flex items-center gap-1 rounded-chip bg-accent-soft px-2 py-0.5 text-[11.5px] font-semibold text-accent">
+            <Phone className="size-3" strokeWidth={2.2} aria-hidden /> Held by phone{appt.callDurationMin ? ` · ${appt.callDurationMin} min` : ""}
+          </span>
+        )}
       </div>
 
       <div className="flex items-start gap-2.5 rounded-control border border-accent/25 bg-accent-soft/40 p-3.5">

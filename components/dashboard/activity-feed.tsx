@@ -1,4 +1,4 @@
-import { CalendarPlus, CalendarX, CalendarClock, FileCheck2, Gavel, HandCoins, MessageSquareText, Pencil, ShieldCheck, UserPlus, Sparkles } from "lucide-react";
+import { CalendarPlus, CalendarX, CalendarClock, FileCheck2, Gavel, HandCoins, MessageSquareText, Pencil, Phone, ShieldCheck, UserPlus, Sparkles } from "lucide-react";
 import type { ActivityRow } from "@/db/queries/hub-dashboard";
 
 /**
@@ -34,6 +34,8 @@ const REASONS: Record<string, Meta> = {
   note_signed: { icon: FileCheck2, text: "Clinical note signed" },
   sign_note: { icon: FileCheck2, text: "Clinical note signed" },
   update_availability: { icon: CalendarClock, text: "Counsellor availability updated" },
+  session_held_by_phone: { icon: Phone, text: "Session held by phone call" },
+  session_phone_unmarked: { icon: Phone, text: "Phone-call record removed from a session" },
   archive_member_migrated: { icon: UserPlus, text: "Counsellor archived — caseload moved across" },
   archive_member_cancelled: { icon: CalendarX, text: "Counsellor archived — upcoming sessions cancelled" },
   archive_member: { icon: ShieldCheck, text: "Team member archived" },

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, CheckCircle2, ChevronRight, NotebookPen, Search, UserX, Video } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronRight, NotebookPen, Phone, Search, UserX, Video } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
 import { Card } from "@/components/ui/card";
@@ -77,7 +77,9 @@ export function SessionsList({ sessions, nowISO }: { sessions: AppointmentView[]
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span className="text-[13.5px] font-medium text-text">{s.clientName}</span>
-                  {s.type === "online" ? (
+                  {s.heldByPhone ? (
+                    <Tag tone="neutral"><Phone className="size-3" strokeWidth={2} aria-hidden /> Phone{s.callDurationMin ? ` · ${s.callDurationMin} min` : ""}</Tag>
+                  ) : s.type === "online" ? (
                     <Tag tone="online"><Video className="size-3" strokeWidth={2} aria-hidden /> Online</Tag>
                   ) : s.roomName ? (
                     <Tag tone="neutral">{s.roomName}</Tag>

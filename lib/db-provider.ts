@@ -75,6 +75,7 @@ function toAppt(r: ApptRow): Appointment {
     type: r.type as AppointmentType, roomId: r.roomId, startsAt: r.startsAt.toISOString(),
     durationMin: r.durationMin, state: r.state as AppointmentState, tags: r.tags, seriesId: r.seriesId,
     rescheduleNote: r.rescheduleNote,
+    heldByPhone: r.heldByPhone, callDurationMin: r.callDurationMin, phoneNote: r.phoneNote,
   };
 }
 /** Inclusive [from, to] day-range predicate over a timestamptz column. */

@@ -1093,7 +1093,14 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   the counsellor-selection step entirely (new clients don't know the team) — a time is offered while
   *any* counsellor is free, several counsellors can hold the same hour, and each booking auto-assigns
   to the **least-loaded** free counsellor that day. Proven by `tests/integration/availability.test.ts`.
-- [ ] **#6–#10** — remaining items arrive one at a time (known so far: a **hybrid** appointment type).
+- [x] **#6  Held by phone** *(2026-08-05)*: sessions that actually happened over a **phone call**
+  (client had no data) are recorded honestly — **not** a booking type, an after-the-fact record. The
+  session page gets a "Held by phone" card: one tap records the **real call duration** (prefilled with
+  the booked length) + optional context; undoable. The marker shows on the session header, the sessions
+  list, the calendar appointment detail, the hub read-only session view, and the client timeline; the
+  clinical note is untouched. Stored as `held_by_phone` + `call_duration_min` + `phone_note`
+  (migration 0057); audited as `session_held_by_phone` → Activity feed.
+- [ ] **#7–#10** — remaining items arrive one at a time (known so far: a **hybrid** appointment type).
 
 ---
 

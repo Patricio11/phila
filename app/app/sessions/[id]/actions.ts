@@ -207,6 +207,49 @@ export async function markProgress(
   return { ok: true };
 }
 
+/**
+ * Feedback #6 — record that a session was actually HELD BY PHONE (e.g. the client
+ * had no data for the video room). Set after the fact by the counsellor or hub;
+ * captures the real call duration + optional context. Honest record — the session
+ * type/booking never changes, only how it truly happened. Audited → Activity feed.
+ */
+const phoneInput = z.object({
+  appointmentId: z.string().min(1),
+  held: z.boolean(),
+  callDurationMin: z.number().int().min(1).max(600).nullable().optional(),
+  note: z.string().trim().max(300).optional(),
+});
+
+export async function markHeldByPhone(
+  raw: z.infer<typeof phoneInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg([...CLINICIANS]);
+  const parsed = phoneInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Check the call details." };
+  const d = parsed.data;
+  if (d.held && !d.callDurationMin) return { ok: false, error: "How long was the call?" };
+
+  if (process.env.DATA_PROVIDER === "db") {
+    const res = await getDb()
+      .update(appointments)
+      .set(d.held
+        ? { heldByPhone: true, callDurationMin: d.callDurationMin ?? null, phoneNote: d.note || null }
+        : { heldByPhone: false, callDurationMin: null, phoneNote: null })
+      .where(and(eq(appointments.id, d.appointmentId), eq(appointments.orgId, membership.orgId)))
+      .returning({ id: appointments.id });
+    if (res.length === 0) return { ok: false, error: "That session couldn't be found." };
+  }
+
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
+    orgId: membership.orgId,
+    target: `appointment:${d.appointmentId}/phone`,
+    reason: d.held ? "session_held_by_phone" : "session_phone_unmarked",
+  });
+  return { ok: true };
+}
+
 const careInput = z.object({
   clientId: z.string().min(1),
   summary: z.string().min(1, "Add something to share before sharing."),

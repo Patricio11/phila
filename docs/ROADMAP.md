@@ -1058,6 +1058,45 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
 
 ---
 
+## 📣 PILOT FEEDBACK  BATCH 1 (~10 items, delivered one at a time)
+*Real usage feedback worked through item by item — each one built, **proven live with screenshots**
+(kept in `screenshots/`), tested, and committed before the next begins. Started 2026-08-04.*
+
+- [x] **#1  Calendar truth + liveness** *(2026-08-04 · `9ba231b`)*: a new appointment appears on the
+  calendar **without a refresh** (`router.refresh()` on create + render-time state re-sync), and events
+  render at the correct **SAST** wall-clock time (an 11:00 booking showed 09:00 — UTC slicing replaced
+  with `Africa/Johannesburg` Intl formatters). Also: every outbound transport fetch got a 10s
+  `AbortSignal.timeout` and booking actions cap the notify wait at 4s, so a slow provider can never
+  hang a booking.
+- [x] **#2  Calendar filters** *(2026-08-04 · `2bbef07`)*: filter the calendar by **counsellor**
+  (searchable avatar dropdown, defaults to "All counsellors") and by **type** (All / In person / Online —
+  hybrid arrives with a later feedback item). Two-row header (filters + New on top; ‹ Today › + date
+  range + Day/Week/Month/Agenda below). The avatar+role-subtitle dropdown style is now the shared
+  `SearchSelect avatars` mode, used consistently (messaging picker, booking modal, calendar).
+- [x] **#3  Dashboard rework** *(2026-08-04 · `809fe69`+`6c2aacc`)*: Picktime-inspired `/hub` overview —
+  **period filter** (Today / This week / This month / Last month), tiles for bookings + **income received /
+  projected** (projected = unpaid invoices *issued* in the period), a **Paid online vs Cash / Card / EFT**
+  payment split (gateway orgs), the bookings **area chart** (house SVG style), **Coming up next**, and the
+  **Activity feed** (the org's own audit trail, humanised; read-noise excluded). Outcomes-captured /
+  credential-checks / open-intakes tiles retired.
+- [x] **#4  Counsellor offboarding — archive-only** *(2026-08-05 · `283aa7f`)*: "delete counsellor" done
+  the Phila way — **nothing is ever deleted** (HPCSA record-keeping). The offboard dialog shows the
+  member's honest workload, then either **migrates** the caseload + future sessions to a successor
+  (history stays put) or **cancels** upcoming sessions with clients notified; sign-in is revoked,
+  every note/session/outcome stays on the record permanently, and the member can be restored. Audited
+  (`archive_member_migrated` / `_cancelled`); integration-tested (nothing-deleted proven).
+- [x] **#5  Counsellor availability** *(2026-08-05 · `b5b5bca`)*: **org-managed** weekly working windows
+  per counsellor (`counsellor_availability`, migration 0056 + RLS) — no pattern = follows the practice
+  hours; counsellors see theirs **read-only** (only the org edits; every save audited as
+  `update_availability` → Activity feed). The **hub modal** live-filters the counsellor list once a
+  date + time are picked ("3 of 6 counsellors available at 10:00"). The **public booking page** drops
+  the counsellor-selection step entirely (new clients don't know the team) — a time is offered while
+  *any* counsellor is free, several counsellors can hold the same hour, and each booking auto-assigns
+  to the **least-loaded** free counsellor that day. Proven by `tests/integration/availability.test.ts`.
+- [ ] **#6–#10** — remaining items arrive one at a time (known so far: a **hybrid** appointment type).
+
+---
+
 ## 🔒 PHASE 19: TRUST, SECURITY & POPIA HARDENING
 *Goal: be allowed in the room with the most sensitive data there is.*
 - [ ] **Data residency:** migrate Postgres to an SA region (AWS `af-south-1` / Azure SA North) on the `db/client.ts` swap; confirm storage + AI inference residency posture; document cross-border flows.
@@ -1194,4 +1233,4 @@ shared by an explicit, consented counsellor action  never the private note.
 > trends, session counts, and org-posted narrative. **Never** an individual client, note, care plan,
 > contact, demographic row, or any other grant. Read-only; every view audited.
 
-*Last updated: 2026-07-08 · Version 1.2 · Phila · philasa.com · Stack: Next.js · Neon · Better Auth · Supabase Storage · LiveKit*
+*Last updated: 2026-08-05 · Version 1.3 · Phila · philasa.com · Stack: Next.js · Neon · Better Auth · Supabase Storage · LiveKit*

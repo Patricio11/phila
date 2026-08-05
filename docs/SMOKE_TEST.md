@@ -91,9 +91,20 @@ Cross-tenant / cross-role checks (signed in):
 
 Sign in as **Thandeka**.
 
-**Overview + credits**
-- ☐ `/hub` overview renders with real KPIs
+**Overview + credits** (dashboard reworked — feedback #3)
+- ☐ `/hub` overview renders with real KPIs; the **period filter** (Today / This week / This month / Last month) recomputes tiles, the payment split (**Paid online** vs **Cash / Card / EFT**), and the bookings **chart** instantly
+- ☐ **Coming up next** lists the next sessions; the **Activity feed** shows humanised org events ("New session booked", "Counsellor availability updated") with who + when — no read-noise ("who looked") entries
 - ☐ (If credits are low) a **"top up"** nudge banner appears linking to Billing & usage *(to force it: lower a balance in the DB, e.g. `update credit_balances set balance=12 where org_id='org_masizakhe' and channel='sms'`)*
+
+**Calendar** (`/hub/appointments`) (feedback #1/#2)
+- ☐ Creating an appointment shows it on the calendar **immediately, no refresh**, at the correct **SAST** time
+- ☐ The **counsellor filter** (avatar dropdown, default "All counsellors") and **type filter** (All / In person / Online) narrow the calendar live
+- ☐ In the **New appointment** modal, picking a date + time shows "**N of M counsellors available at HH:MM**" and the counsellor dropdown only offers free counsellors
+
+**Team — availability & offboarding** (`/hub/team` → a counsellor) (feedback #4/#5)
+- ☐ The member page has an **Availability** card — "follows the practice working hours" by default; **Set availability** opens the weekly editor (seeded from practice hours); saving lands on the dashboard **Activity feed**
+- ☐ Signed in as that **counsellor**, `/app/settings` shows **Your availability** read-only ("managed by your practice") — no edit controls
+- ☐ **Archive** on an active counsellor opens the offboard dialog: honest workload counts, then **migrate to a successor** or **cancel upcoming (clients notified)** — afterwards their sessions/notes/history are all still on the record (nothing deleted), and the member can be restored
 
 **Billing & usage** (`/hub/billing`)
 - ☐ SMS + email balances, **AI spend vs cap** bar, recent message activity, top-up history all render
@@ -146,6 +157,7 @@ Sign in as **Thandeka**.
 
 **Booking** (`/o/masizakhe/book`)
 - ☐ Pick a service (deep-link `?service=` preselects) → time → intake → consent → confirm
+- ☐ **No counsellor step** (feedback #5) — the page says "we'll match you with an available counsellor"; a time is offered while *any* counsellor is free and the booking auto-assigns the **least-loaded** free counsellor (the confirm step shows who)
 - ☐ Online booking returns a **room link**; in-person assigns a room
 - ☐ Booking the appointment increments the **booked** count on the editor stats (PII-free funnel)
 

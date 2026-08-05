@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isRemote } from "@/lib/domain/enums";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Cake, CalendarClock, GraduationCap, Languages, Mail, MapPin, Phone, ShieldCheck, Users, Video } from "lucide-react";
 import { requireHub } from "@/lib/auth/guard";
@@ -227,7 +228,7 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
                       <li key={a.id} className="flex items-center gap-2 text-[12.5px]">
                         <span className="w-32 shrink-0 tabular-nums text-text-3">{timeOf(a.startsAt)}</span>
                         <span className="min-w-0 flex-1 truncate text-text-2">{a.clientName}</span>
-                        {a.type === "online" ? <Video className="size-3.5 shrink-0 text-info" strokeWidth={2} aria-hidden /> : null}
+                        {isRemote(a.type) ? <Video className="size-3.5 shrink-0 text-info" strokeWidth={2} aria-hidden /> : null}
                       </li>
                     ))}
                   </ul>

@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { isRemote } from "@/lib/domain/enums";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, MapPin, Plus, Video } from "lucide-react";
+import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, MapPin, MonitorSmartphone, Plus, Video } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
 import type { BusinessHours } from "@/lib/domain/types";
@@ -111,7 +112,7 @@ export function CalendarView({
   const [confirm, setConfirm] = useState<{ appt: AppointmentView; newStart: string } | null>(null);
   // Feedback #2 — calendar filters: one counsellor, and/or a session type.
   const [filterCounsellor, setFilterCounsellor] = useState<string | null>(null);
-  const [filterType, setFilterType] = useState<"all" | "in_person" | "online">("all");
+  const [filterType, setFilterType] = useState<"all" | "in_person" | "online" | "hybrid">("all");
   const [detail, setDetail] = useState<AppointmentView | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -176,6 +177,7 @@ export function CalendarView({
               { key: "all", label: "All", icon: null },
               { key: "in_person", label: "In person", icon: MapPin },
               { key: "online", label: "Online", icon: Video },
+              { key: "hybrid", label: "Hybrid", icon: MonitorSmartphone },
             ] as const).map((t) => (
               <button
                 key={t.key}
@@ -343,7 +345,7 @@ function TimeGrid({ dates, today, nowMin, businessHours, events, onCreate, onEve
                         style={{ top, height, left: `calc(${(col / cols) * 100}% + 2px)`, width: `calc(${100 / cols}% - 4px)` }}
                       >
                         <div className="flex items-center gap-1 text-[11px] font-semibold tabular-nums leading-tight">
-                          <StatusDot tone={DOT[ev.state]} />{hhmm(ev.startsAt)}{ev.type === "online" && <Video className="size-2.5" strokeWidth={2.5} aria-hidden />}
+                          <StatusDot tone={DOT[ev.state]} />{hhmm(ev.startsAt)}{isRemote(ev.type) && <Video className="size-2.5" strokeWidth={2.5} aria-hidden />}
                         </div>
                         <div className="truncate text-[11.5px] font-medium leading-tight">{ev.clientName}</div>
                         {height > 44 && <div className="truncate text-[10.5px] opacity-70">{ev.serviceName}</div>}

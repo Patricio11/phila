@@ -12,7 +12,7 @@ import { createClientDb } from "@/db/queries/clients";
 import { isSlotTakenError, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
 import { notifyAppointmentBooked } from "@/lib/messaging/notify";
 import { now as clockNow } from "@/lib/clock";
-import type { Province } from "@/lib/domain/enums";
+import { needsRoom, type Province } from "@/lib/domain/enums";
 
 const BOOKERS = ["counsellor", "org_admin", "front_desk"] as const;
 
@@ -92,7 +92,7 @@ const input = z.object({
   clientId: z.string().min(1),
   serviceId: z.string().min(1),
   counsellorId: z.string().min(1),
-  type: z.enum(["online", "in_person"]),
+  type: z.enum(["online", "in_person", "hybrid"]),
   roomId: z.string().nullable(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   time: z.string().regex(/^\d{2}:\d{2}$/),
@@ -110,7 +110,7 @@ export async function createAppointment(
   const parsed = input.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Please complete the appointment details." };
   const data = parsed.data;
-  if (data.type === "in_person" && !data.roomId)
+  if (needsRoom(data.type) && !data.roomId)
     return { ok: false, error: "Pick a room for an in-person session." };
 
   if (process.env.DATA_PROVIDER === "db") {

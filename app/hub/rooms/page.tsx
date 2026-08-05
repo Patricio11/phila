@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isRemote } from "@/lib/domain/enums";
 import { notFound } from "next/navigation";
 import { Accessibility, ArrowRight, Building2, CircleDot, DoorOpen, Gauge, Video, Wrench } from "lucide-react";
 import { requireHub } from "@/lib/auth/guard";
@@ -225,7 +226,7 @@ function RoomCard({ rv, days }: { rv: RoomView; days: DayCell[] }) {
                   <span className="w-28 shrink-0 tabular-nums text-text-3">{timeOf(b.startsAt)}</span>
                   <span className="min-w-0 flex-1 truncate text-text-2">{b.clientName}</span>
                   <span className="shrink-0 text-text-3">{b.counsellorName.split(" ")[0]}</span>
-                  {b.type === "online" && <Video className="size-3 text-info" strokeWidth={2} aria-hidden />}
+                  {isRemote(b.type) && <Video className="size-3 text-info" strokeWidth={2} aria-hidden />}
                 </li>
               ))}
             </ul>

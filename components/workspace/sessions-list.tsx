@@ -81,6 +81,8 @@ export function SessionsList({ sessions, nowISO }: { sessions: AppointmentView[]
                     <Tag tone="neutral"><Phone className="size-3" strokeWidth={2} aria-hidden /> Phone{s.callDurationMin ? ` · ${s.callDurationMin} min` : ""}</Tag>
                   ) : s.type === "online" ? (
                     <Tag tone="online"><Video className="size-3" strokeWidth={2} aria-hidden /> Online</Tag>
+                  ) : s.type === "hybrid" ? (
+                    <Tag tone="online"><Video className="size-3" strokeWidth={2} aria-hidden /> Hybrid{s.roomName ? ` · ${s.roomName}` : ""}</Tag>
                   ) : s.roomName ? (
                     <Tag tone="neutral">{s.roomName}</Tag>
                   ) : null}

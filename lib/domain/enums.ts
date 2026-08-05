@@ -40,8 +40,18 @@ export const APPOINTMENT_STATES = [
 ] as const;
 export type AppointmentState = (typeof APPOINTMENT_STATES)[number];
 
-export const APPOINTMENT_TYPES = ["online", "in_person"] as const;
+export const APPOINTMENT_TYPES = ["online", "in_person", "hybrid"] as const;
 export type AppointmentType = (typeof APPOINTMENT_TYPES)[number];
+
+/**
+ * Hybrid (feedback #7) = online for the CLIENT, in-person for the ROOM: the
+ * counsellor holds a practice room while the client joins by video link. Every
+ * surface picks the predicate it actually cares about instead of `=== "online"`.
+ */
+/** The client joins remotely — send/show the video join link. */
+export const isRemote = (type: AppointmentType): boolean => type === "online" || type === "hybrid";
+/** The counsellor occupies a practice room — a room is required + conflict-checked. */
+export const needsRoom = (type: AppointmentType): boolean => type === "in_person" || type === "hybrid";
 
 /** Professional registration bodies relevant in South Africa. */
 export const CREDENTIAL_STATUSES = [

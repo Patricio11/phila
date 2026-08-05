@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { isRemote } from "@/lib/domain/enums";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, CalendarDays, Check, Clock, Copy, Hourglass, MapPin, NotebookPen, Phone, Repeat, Stethoscope, User, UserX, Video, X } from "lucide-react";
@@ -80,7 +81,7 @@ export function AppointmentDetail({
 
   // Fetch the signed join link when viewing an online session (state set only async).
   useEffect(() => {
-    if (!appt || appt.type !== "online") return;
+    if (!appt || !isRemote(appt.type)) return;
     let live = true;
     const id = appt.id;
     getAppointmentJoinLink({ appointmentId: id }).then((res) => { if (live && res.ok) setJoin({ id, url: res.url }); });
@@ -192,9 +193,9 @@ export function AppointmentDetail({
             <Row icon={Hourglass} label="Duration" value={`${appt.durationMin} min`} />
             <Row icon={Stethoscope} label="Counsellor" value={appt.counsellorName} />
             <Row
-              icon={appt.type === "online" ? Video : MapPin}
-              label={appt.type === "online" ? "Online" : "Location"}
-              value={appt.type === "online" ? "Secure video room" : (appt.roomName ?? "In person")}
+              icon={isRemote(appt.type) ? Video : MapPin}
+              label={appt.type === "online" ? "Online" : appt.type === "hybrid" ? "Hybrid" : "Location"}
+              value={appt.type === "online" ? "Secure video room" : appt.type === "hybrid" ? `${appt.roomName ?? "Practice room"} · client joins online` : (appt.roomName ?? "In person")}
             />
             {appt.rescheduleNote && <Row icon={NotebookPen} label="Rescheduled  reason" value={appt.rescheduleNote} wide />}
             {appt.heldByPhone && (
@@ -208,7 +209,7 @@ export function AppointmentDetail({
           </dl>
 
           {/* Online join link  the counsellor joins, or copies the invite for the client */}
-          {appt.type === "online" && appt.state !== "cancelled" && (
+          {isRemote(appt.type) && appt.state !== "cancelled" && (
             <div className="flex flex-wrap items-center gap-2 rounded-card border border-accent/25 bg-accent-soft/20 p-3">
               <Video className="size-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
               <span className="min-w-0 flex-1 text-[12.5px] text-text-2">{joinUrl ? "Secure Phila video room  ready to join" : "Preparing the room link…"}</span>

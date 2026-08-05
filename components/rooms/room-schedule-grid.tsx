@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { isRemote } from "@/lib/domain/enums";
 import { useRouter } from "next/navigation";
 import { Plus, Video } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
@@ -109,7 +110,7 @@ export function RoomScheduleGrid({
                     return (
                       <div key={b.id} className="pointer-events-none absolute inset-x-0.5 z-10 overflow-hidden rounded-[6px] border px-1.5 py-1" style={{ top, height, borderColor: `${colour}55`, background: `${colour}1a` }}>
                         <div className="flex items-center gap-1 text-[10.5px] font-semibold tabular-nums leading-tight text-text">
-                          {hhmm(b.startsAt)}{b.type === "online" && <Video className="size-2.5" strokeWidth={2.5} aria-hidden />}
+                          {hhmm(b.startsAt)}{isRemote(b.type) && <Video className="size-2.5" strokeWidth={2.5} aria-hidden />}
                         </div>
                         <div className="truncate text-[11px] font-medium leading-tight text-text">{b.clientName}</div>
                         {height > 40 && <div className="truncate text-[10px] text-text-2">{b.counsellorName.split(" ")[0]}</div>}

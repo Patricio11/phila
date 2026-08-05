@@ -63,6 +63,10 @@ export function AppointmentRow({ appt, phase }: { appt: AppointmentView; phase: 
             <Tag tone="online">
               <Video className="size-3" strokeWidth={2} aria-hidden /> Online
             </Tag>
+          ) : appt.type === "hybrid" ? (
+            <Tag tone="online">
+              <Video className="size-3" strokeWidth={2} aria-hidden /> Hybrid{appt.roomName ? ` · ${appt.roomName}` : ""}
+            </Tag>
           ) : appt.roomName ? (
             <Tag tone="neutral">{appt.roomName}</Tag>
           ) : null}

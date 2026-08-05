@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isRemote } from "@/lib/domain/enums";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Check, Clock, FileText, MapPin, Phone, ShieldCheck, Sparkles, Target, Video } from "lucide-react";
 import { requireHub } from "@/lib/auth/guard";
@@ -60,8 +61,8 @@ export default async function HubSessionNotePage({ params }: { params: Promise<{
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-text-2">
         <span className="inline-flex items-center gap-1"><Clock className="size-3.5 text-text-3" strokeWidth={2} aria-hidden /> {whenLabel(appt.startsAt)}</span>
         <span className="inline-flex items-center gap-1">
-          {appt.type === "online" ? <Video className="size-3.5 text-info" strokeWidth={2} aria-hidden /> : <MapPin className="size-3.5 text-text-3" strokeWidth={2} aria-hidden />}
-          {appt.type === "online" ? "Online" : (appt.roomName ?? "In person")}
+          {isRemote(appt.type) ? <Video className="size-3.5 text-info" strokeWidth={2} aria-hidden /> : <MapPin className="size-3.5 text-text-3" strokeWidth={2} aria-hidden />}
+          {appt.type === "online" ? "Online" : appt.type === "hybrid" ? `Hybrid · ${appt.roomName ?? "practice room"}` : (appt.roomName ?? "In person")}
         </span>
         {appt.heldByPhone && (
           <span className="inline-flex items-center gap-1 rounded-chip bg-accent-soft px-2 py-0.5 text-[11.5px] font-semibold text-accent">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { isRemote } from "@/lib/domain/enums";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -249,8 +250,8 @@ export function SessionEditor({
             <span>{appt.serviceName}</span>
             <span className="inline-flex items-center gap-1"><Clock className="size-3.5 text-text-3" strokeWidth={2} aria-hidden /> {whenLabel(appt.startsAt)}</span>
             <span className="inline-flex items-center gap-1">
-              {appt.type === "online" ? <Video className="size-3.5 text-info" strokeWidth={2} aria-hidden /> : <MapPin className="size-3.5 text-text-3" strokeWidth={2} aria-hidden />}
-              {appt.type === "online" ? "Online" : (appt.roomName ?? "In person")}
+              {isRemote(appt.type) ? <Video className="size-3.5 text-info" strokeWidth={2} aria-hidden /> : <MapPin className="size-3.5 text-text-3" strokeWidth={2} aria-hidden />}
+              {appt.type === "online" ? "Online" : appt.type === "hybrid" ? `Hybrid · ${appt.roomName ?? "practice room"}` : (appt.roomName ?? "In person")}
             </span>
             {phone.held && (
               <span className="inline-flex items-center gap-1 rounded-chip bg-accent-soft px-2 py-0.5 text-[11.5px] font-semibold text-accent">
@@ -400,9 +401,9 @@ export function SessionEditor({
 
         {/* Side: progress + video + care plan */}
         <div className="space-y-5">
-          {appt.type === "online" && (
+          {isRemote(appt.type) && (
             <Card className="p-4">
-              <div className="text-[13px] font-[600] text-text">Online session</div>
+              <div className="text-[13px] font-[600] text-text">{appt.type === "hybrid" ? `Hybrid session · ${appt.roomName ?? "practice room"}` : "Online session"}</div>
               <p className="mt-1 text-[12px] text-text-2">
                 {videoEnabled ? "Secure, in-region video room." : "This org uses its own meeting link."}
               </p>
@@ -455,7 +456,7 @@ export function SessionEditor({
             ) : (
               <>
                 <p className="mt-1 text-[12px] text-text-2">
-                  Client couldn&apos;t {appt.type === "online" ? "connect" : "make it in"}? Record that this session
+                  Client couldn&apos;t {isRemote(appt.type) ? "connect" : "make it in"}? Record that this session
                   happened over a phone call, with the real call length.
                 </p>
                 <Button variant="ghost" size="sm" className="mt-2.5" onClick={() => { setPhoneDraft({ duration: String(appt.durationMin), note: "" }); setPhoneEditing(true); }}>

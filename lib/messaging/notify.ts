@@ -147,7 +147,7 @@ export async function notifyAppointmentBooked(appointmentId: string): Promise<vo
     const start = row.a.startsAt;
     const clientFirst = (row.clientName ?? "the client").split(" ")[0] ?? "the client";
     const when = `${fmtLong(start)} at ${fmtTime(start)}`;
-    const isOnline = row.a.type === "online";
+    const isOnline = row.a.type === "online" || row.a.type === "hybrid"; // hybrid: the client joins online
     const where = isOnline ? "online (secure video)" : "in person";
     const joinLink = isOnline ? `${APP_URL}${videoJoinPath(appointmentId, start.toISOString())}` : undefined;
     const vars = {

@@ -1100,7 +1100,15 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   list, the calendar appointment detail, the hub read-only session view, and the client timeline; the
   clinical note is untouched. Stored as `held_by_phone` + `call_duration_min` + `phone_note`
   (migration 0057); audited as `session_held_by_phone` → Activity feed.
-- [ ] **#7–#10** — remaining items arrive one at a time (known so far: a **hybrid** appointment type).
+- [x] **#7  Hybrid session type** *(2026-08-05)*: a third type — **online for the client, in-person
+  for the room**. The counsellor holds a practice room (required, conflict-checked, counts toward room
+  utilisation) while the client joins by the normal secure video link; the client experience is
+  identical to online. Booking modal gains the Hybrid "Where" card; the calendar type filter becomes
+  All / In person / Online / Hybrid; detail + session views show "Hybrid · room · client joins online".
+  Implemented via `isRemote()` / `needsRoom()` predicates in `lib/domain/enums.ts` replacing scattered
+  `=== "online"` checks (no migration — the type column is text). Public booking untouched (an internal
+  operational choice).
+- [ ] **#8–#10** — remaining items arrive one at a time.
 
 ---
 

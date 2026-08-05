@@ -1,6 +1,7 @@
 "use client";
 
 import { CalendarDays, CalendarPlus, Clock, MapPin, Video } from "lucide-react";
+import { isRemote } from "@/lib/domain/enums";
 import type { AppointmentView } from "@/lib/data-provider";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,7 @@ function downloadIcs(appt: AppointmentView) {
     `DTSTART:${z(start)}`,
     `DTEND:${z(end)}`,
     `SUMMARY:Counselling session with ${appt.counsellorName}`,
-    `LOCATION:${appt.type === "online" ? "Online (join from your Phila portal)" : (appt.roomName ?? "In person")}`,
+    `LOCATION:${isRemote(appt.type) ? "Online (join from your Phila portal)" : (appt.roomName ?? "In person")}`,
     "BEGIN:VALARM", "TRIGGER:-PT1H", "ACTION:DISPLAY", "DESCRIPTION:Counselling session in 1 hour", "END:VALARM",
     "END:VEVENT", "END:VCALENDAR",
   ].join("\r\n");
@@ -87,7 +88,7 @@ export function UpcomingSessionCard({
   const nowMs = new Date(nowISO).getTime();
   const startMs = new Date(appt.startsAt).getTime();
   const minsUntil = (startMs - nowMs) / 60_000;
-  const joinable = appt.type === "online" && minsUntil <= JOIN_WINDOW_MIN && minsUntil > -appt.durationMin;
+  const joinable = isRemote(appt.type) && minsUntil <= JOIN_WINDOW_MIN && minsUntil > -appt.durationMin;
 
   return (
     <div className="overflow-hidden rounded-card border border-border bg-surface shadow-sm">
@@ -104,7 +105,7 @@ export function UpcomingSessionCard({
             <div className="text-[15px] font-[640] text-text">{appt.counsellorName}</div>
             <div className="text-[13px] text-text-2">{appt.serviceName}</div>
           </div>
-          {appt.type === "online" ? (
+          {isRemote(appt.type) ? (
             <span className="inline-flex items-center gap-1 rounded-chip bg-info-soft px-2 py-1 text-[11.5px] font-medium text-info">
               <Video className="size-3.5" strokeWidth={2} aria-hidden /> Online
             </span>
@@ -115,13 +116,13 @@ export function UpcomingSessionCard({
           <Row icon={<CalendarDays className="size-4" />} text={relativeWhen(appt.startsAt, nowMs)} />
           <Row icon={<Clock className="size-4" />} text={`${appt.durationMin} minutes`} />
           <Row
-            icon={appt.type === "online" ? <Video className="size-4" /> : <MapPin className="size-4" />}
-            text={appt.type === "online" ? "Secure video  join from here" : (appt.roomName ?? "In person")}
+            icon={isRemote(appt.type) ? <Video className="size-4" /> : <MapPin className="size-4" />}
+            text={isRemote(appt.type) ? "Secure video  join from here" : (appt.roomName ?? "In person")}
           />
         </div>
 
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-          {appt.type === "online" && (
+          {isRemote(appt.type) && (
             joinable && joinUrl ? (
               <Button asChild className="w-full">
                 <a href={joinUrl} target="_blank" rel="noopener noreferrer">

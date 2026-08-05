@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isRemote, type AppointmentType } from "@/lib/domain/enums";
 import { CalendarHeart, Video } from "lucide-react";
 import type { UpcomingRow } from "@/db/queries/hub-dashboard";
 
@@ -38,8 +39,8 @@ export function ComingUpNext({ upcoming }: { upcoming: UpcomingRow[] }) {
                   {u.priceCents ? `R${Math.round(u.priceCents / 100).toLocaleString("en-ZA")} · ` : ""}{u.counsellorName} · {TIME.format(d)} · {u.durationMin} min
                 </span>
               </span>
-              {u.type === "online" ? (
-                <span className="inline-flex shrink-0 items-center gap-1 rounded-chip bg-info-soft px-2 py-0.5 text-[11px] font-medium text-info"><Video className="size-3" strokeWidth={2.2} aria-hidden /> Online</span>
+              {isRemote(u.type as AppointmentType) ? (
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-chip bg-info-soft px-2 py-0.5 text-[11px] font-medium text-info"><Video className="size-3" strokeWidth={2.2} aria-hidden /> {u.type === "hybrid" ? "Hybrid" : "Online"}</span>
               ) : (
                 <span className="shrink-0 rounded-chip bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent">Scheduled</span>
               )}

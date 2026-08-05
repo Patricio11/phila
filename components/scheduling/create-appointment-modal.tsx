@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { AlertCircle, Check, MapPin, Plus, UserPlus, Video, X } from "lucide-react";
+import { AlertCircle, Check, MapPin, MonitorSmartphone, Plus, UserPlus, Video, X } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
 import { SearchSelect } from "@/components/ui/search-select";
@@ -45,7 +45,7 @@ export interface CreateInitial {
   clientId?: string;
   serviceId?: string;
   roomId?: string;
-  type?: "In person" | "Online";
+  type?: "In person" | "Online" | "Hybrid";
 }
 
 export function CreateAppointmentModal({
@@ -87,6 +87,8 @@ export function CreateAppointmentModal({
   const [sendConfirmation, setSendConfirmation] = useState(true);
 
   const isOnline = type === "Online";
+  // Hybrid (feedback #7): the counsellor holds a room, the client joins online.
+  const roomNeeded = type !== "Online";
 
   // Feedback #5 — once a date + time are picked, only counsellors actually
   // available then are offered. Keyed fetch: a stale response simply never
@@ -124,7 +126,7 @@ export function CreateAppointmentModal({
     else if (freeSet && !freeSet.has(counsellorId)) e.counsellor = "Not available at that time — pick another counsellor or time.";
     if (!date) e.date = "Pick a date.";
     if (!time) e.time = "Pick a time.";
-    if (!isOnline && !roomId) e.room = "Pick a room.";
+    if (roomNeeded && !roomId) e.room = "Pick a room.";
 
     // Working-hours guard  an in-person or online booking can't fall on a
     // closed day or outside the practice's hours (Phase 11 enforces server-side).
@@ -145,7 +147,7 @@ export function CreateAppointmentModal({
       }
     }
     return e;
-  }, [clientId, serviceId, counsellorId, date, time, isOnline, roomId, durationMin, options.businessHours, freeSet]);
+  }, [clientId, serviceId, counsellorId, date, time, roomNeeded, roomId, durationMin, options.businessHours, freeSet]);
 
   const submit = () => {
     setAttempted(true);
@@ -156,7 +158,7 @@ export function CreateAppointmentModal({
         clientId: clientId!,
         serviceId: serviceId!,
         counsellorId: counsellorId!,
-        type: isOnline ? "online" : "in_person",
+        type: isOnline ? "online" : type === "Hybrid" ? "hybrid" : "in_person",
         roomId: isOnline ? null : roomId,
         date,
         time,
@@ -255,12 +257,13 @@ export function CreateAppointmentModal({
         </Row>
 
         <Row label="Where">
-          <div className="grid grid-cols-2 gap-2.5">
-            <WhereCard active={!isOnline} icon={MapPin} title="In person" desc="At your practice room" onClick={() => setType("In person")} />
+          <div className="grid grid-cols-3 gap-2.5">
+            <WhereCard active={type === "In person"} icon={MapPin} title="In person" desc="At your practice room" onClick={() => setType("In person")} />
             <WhereCard active={isOnline} icon={Video} title="Online" desc="Secure video room" onClick={() => { setType("Online"); setRoomId(null); }} />
+            <WhereCard active={type === "Hybrid"} icon={MonitorSmartphone} title="Hybrid" desc="You in a room, client online" onClick={() => setType("Hybrid")} />
           </div>
         </Row>
-        {!isOnline && (
+        {roomNeeded && (
           <Row label="Room" error={attempted ? errors.room : undefined}>
             <Select value={roomId} onChange={setRoomId} invalid={Boolean(attempted && errors.room)} placeholder="Choose a room" options={options.rooms.map((r) => ({ value: r.id, label: r.name }))} />
           </Row>

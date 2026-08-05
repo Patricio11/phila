@@ -1,6 +1,7 @@
 "use client";
 
 import { Video } from "lucide-react";
+import { isRemote } from "@/lib/domain/enums";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { BusinessHours } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
@@ -84,7 +85,7 @@ export function CounsellorWeekRooms({
                     return (
                       <div key={b.id} className="absolute inset-x-1 z-10 overflow-hidden rounded-[6px] border border-border bg-surface px-1.5 py-1 shadow-sm" style={{ top, height }}>
                         <div className="flex items-center gap-1 text-[10.5px] font-semibold tabular-nums leading-tight text-text">
-                          {hhmm(b.startsAt)}{b.type === "online" && <Video className="size-2.5 text-info" strokeWidth={2.5} aria-hidden />}
+                          {hhmm(b.startsAt)}{isRemote(b.type) && <Video className="size-2.5 text-info" strokeWidth={2.5} aria-hidden />}
                         </div>
                         <div className="truncate text-[11px] font-medium leading-tight text-text">{b.clientName}</div>
                       </div>

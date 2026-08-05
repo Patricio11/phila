@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isRemote } from "@/lib/domain/enums";
 import { notFound } from "next/navigation";
 import { ArrowRight, CalendarPlus, Heart, Phone, ShieldCheck, Sprout } from "lucide-react";
 import { requireClient } from "@/lib/auth/guard";
@@ -67,7 +68,7 @@ export default async function MeHomePage() {
       />
 
       {upcoming ? (
-        <UpcomingSessionCard appt={upcoming} nowISO={now} joinUrl={upcoming.type === "online" ? videoJoinPath(upcoming.id, upcoming.startsAt) : null} pendingKind={pendingKind} />
+        <UpcomingSessionCard appt={upcoming} nowISO={now} joinUrl={isRemote(upcoming.type) ? videoJoinPath(upcoming.id, upcoming.startsAt) : null} pendingKind={pendingKind} />
       ) : (
         <Card className="p-2">
           <EmptyState

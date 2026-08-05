@@ -17,7 +17,7 @@ export interface CreateAppointmentInput {
   clientId: string;
   serviceId: string;
   counsellorId: string;
-  type: "online" | "in_person";
+  type: "online" | "in_person" | "hybrid";
   roomId: string | null;
   date: string; // YYYY-MM-DD
   time: string; // HH:MM SAST

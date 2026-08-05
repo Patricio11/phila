@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isRemote } from "@/lib/domain/enums";
 import { ChevronRight, Video } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
@@ -80,7 +81,7 @@ export function SessionTimeline({
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 {no != null && <span className="text-[11px] font-semibold uppercase tracking-wide text-text-3">Session {no}</span>}
                 <span className="text-[13.5px] font-[620] text-text">{appt.serviceName}</span>
-                {appt.type === "online" ? (
+                {isRemote(appt.type) ? (
                   <Tag tone="online"><Video className="size-3" strokeWidth={2} aria-hidden /> Online</Tag>
                 ) : appt.roomName ? (
                   <Tag tone="neutral">{appt.roomName}</Tag>
@@ -115,7 +116,7 @@ export function SessionTimeline({
                 <span className="relative mt-3 flex size-3.5 items-center justify-center">
                   {isUpcoming && <span className={cn("absolute inline-flex size-full animate-ping rounded-full opacity-60", s.dot)} />}
                   <span className={cn("relative inline-flex size-3.5 rounded-full ring-4", s.ring, s.hollow ? "border-2 border-text-3 bg-surface" : s.dot)}>
-                    {appt.type === "online" && !s.hollow && <Video className="m-auto size-2 text-surface" strokeWidth={2.5} aria-hidden />}
+                    {isRemote(appt.type) && !s.hollow && <Video className="m-auto size-2 text-surface" strokeWidth={2.5} aria-hidden />}
                   </span>
                 </span>
                 {!isLast && <span className="w-px flex-1 bg-border" />}

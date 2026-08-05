@@ -1117,6 +1117,16 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   permanent appointments record). `/hub/rooms` gains a live **"Right now"** band (N of M in use,
   pulsing per-room chips), room cards get an **"In use · who · until when"** flag and a relative
   **Next up** timeline, and the dashboard gains a **"Rooms right now"** widget.
+- [x] **No-mock sweep** *(2026-08-05)*: audited every provider method + server action for mock
+  leftovers. Fixed: **counsellor "Your week in rooms"** read the mock (a saved assignment never
+  reached the counsellor) → real DB override; **staff profiles** were `profile: null` in DB mode
+  (blank member pages) → new `team_profiles` table (migration 0058 + RLS), seeded, read by the team
+  detail, and **saveMyProfile persists** (name follows to user + counsellor rows); **changePassword**
+  (staff) now routes through Better Auth (verify → re-hash → revoke other sessions);
+  **sendInvoiceReminder** actually sends (platform email with the pay-link when the gateway is on +
+  an in-app portal notification, honest per-channel toast). Confirmed dead-but-unused: 4 legacy
+  interface methods (conversations, counsellor invoices, intake) superseded by messaging/invoicing/forms.
+  2FA toggle stays an honest audited placeholder until the W2 TOTP enrolment UI.
 - [ ] **#9–#10** — remaining items arrive one at a time.
 
 ---

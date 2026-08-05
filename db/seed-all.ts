@@ -21,6 +21,7 @@ import {
   sites as sitesFx,
   rooms as roomsFx,
   roomAssignments as roomAssignmentsFx,
+  teamProfiles as teamProfilesFx,
   clients as clientsFx,
   demographics as demographicsFx,
   consents as consentsFx,
@@ -153,6 +154,15 @@ async function main() {
     const orgId = roomsFx.find((r) => r.id === ra.roomId)?.orgId;
     if (!orgId) continue;
     await db.insert(schema.roomAssignments).values({ id: ra.id, orgId, counsellorId: ra.counsellorId, roomId: ra.roomId, days: ra.days, start: ra.start, end: ra.end }).onConflictDoNothing();
+  }
+  for (const tp of Object.values(teamProfilesFx)) {
+    const [existingTp] = await db.select({ id: schema.teamProfiles.id }).from(schema.teamProfiles)
+      .where(and(eq(schema.teamProfiles.orgId, ORG), eq(schema.teamProfiles.userId, tp.userId))).limit(1);
+    if (existingTp) continue;
+    await db.insert(schema.teamProfiles).values({
+      orgId: ORG, userId: tp.userId, phone: tp.phone ?? null, dateOfBirth: tp.dateOfBirth ?? null, address: tp.address ?? null,
+      languages: tp.languages ?? [], bio: tp.bio ?? null, qualifications: tp.qualifications ?? [], specialties: tp.specialties ?? [],
+    });
   }
   for (const c of clientsFx) {
     await db.insert(schema.clients).values({

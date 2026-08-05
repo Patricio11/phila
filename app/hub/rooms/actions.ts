@@ -8,8 +8,8 @@ import { PROVINCES, ROOM_STATUSES } from "@/lib/domain/enums";
 import { saveRoom as persistRoom, saveSites as persistSites } from "@/db/queries/catalogue";
 
 /**
- * Room CRUD (mock). Validates + audits and returns success; Phase 10/11 persist
- * rooms and validate room conflicts. The schedule + utilisation are derived.
+ * Room CRUD — persisted in DB mode. The schedule + utilisation are derived
+ * from the appointments record; conflicts are enforced at booking time.
  */
 const input = z.object({
   id: z.string().optional(),
@@ -47,9 +47,8 @@ const sitesInput = z.object({
 });
 
 /**
- * Manage the org's sites/branches (mock). Rooms live at a site, so a practice
- * with more than one location manages them here. Validated + audited; Phase 10
- * persists. A site with rooms can't simply vanish  that guard lands with the DB.
+ * Manage the org's sites/branches — persisted in DB mode. Rooms live at a site,
+ * so a practice with more than one location manages them here. Validated + audited.
  */
 export async function saveSites(
   raw: z.infer<typeof sitesInput>,

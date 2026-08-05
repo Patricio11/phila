@@ -3,7 +3,7 @@ import { and, eq, gte, isNull, sql } from "drizzle-orm";
 import { hashPassword } from "better-auth/crypto";
 import { activeDb, runForOrg } from "@/lib/db/scoped";
 import { getDb } from "@/db/client";
-import { orgMembers, counsellors, clients, appointments, services, rooms, roomAssignments } from "@/db/schema";
+import { orgMembers, counsellors, clients, appointments, services, rooms, roomAssignments, teamProfiles } from "@/db/schema";
 import { user, account } from "@/db/auth-schema";
 import type { TeamMemberView, TeamMemberDetail, MemberStatus, AppointmentView } from "@/lib/data-provider";
 import type { TeamRole, CredentialBody, CredentialStatus, AppointmentState, AppointmentType } from "@/lib/domain/enums";
@@ -153,6 +153,7 @@ export async function getTeamMemberDetailDb(orgId: string, userId: string, now: 
     if (!m) return null;
 
     const [couns] = await db.select().from(counsellors).where(and(eq(counsellors.orgId, orgId), eq(counsellors.userId, userId))).limit(1);
+    const [tp] = await db.select().from(teamProfiles).where(and(eq(teamProfiles.orgId, orgId), eq(teamProfiles.userId, userId))).limit(1);
     const member = toMember({ ...m, credBody: couns?.credentialBody ?? null, credStatus: couns?.credentialStatus ?? null, cid: couns?.id ?? null });
 
     let caseload: TeamMemberDetail["caseload"] = [];
@@ -193,7 +194,10 @@ export async function getTeamMemberDetailDb(orgId: string, userId: string, now: 
 
     return {
       member,
-      profile: null,
+      profile: tp ? {
+        phone: tp.phone ?? "", dateOfBirth: tp.dateOfBirth ?? "", address: tp.address ?? "",
+        languages: tp.languages, bio: tp.bio ?? "", qualifications: tp.qualifications, specialties: tp.specialties,
+      } : null,
       registrationNo: couns?.credentialRegNo ?? null,
       counsellorId: couns?.id ?? null,
       supervisorId: couns?.supervisorId ?? null,

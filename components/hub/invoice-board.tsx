@@ -77,7 +77,11 @@ export function InvoiceBoard({ rows, nowISO, orgName, province, vatRatePercent, 
       const res = await sendInvoiceReminder({ invoiceId: r.invoice.id });
       setPendingId(null);
       if (!res.ok) return toast({ tone: "error", title: res.error });
-      toast({ tone: "default", title: `Reminder queued for ${r.clientName.split(" ")[0]}`, description: "It goes out by WhatsApp + email once messaging is connected." });
+      toast({
+        tone: "success",
+        title: `Reminder sent to ${r.clientName.split(" ")[0]}`,
+        description: res.emailed ? "By email + in their portal." : "In their portal (no email on file).",
+      });
     });
   };
 

@@ -558,6 +558,20 @@ export const whatsappWindows = pgTable("whatsapp_windows", {
  * never edit). Multiple windows per weekday ("Mon 08:00-13:00" + "Mon 15:00-18:00").
  * No rows for a counsellor = inherits the org's business hours (sane default).
  */
+/** A staff member's own profile (feedback sweep — was mock-only, profile: null in DB mode). */
+export const teamProfiles = pgTable("team_profiles", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  userId: text("user_id").notNull(),
+  phone: text("phone"),
+  dateOfBirth: text("date_of_birth"), // "yyyy-mm-dd"
+  address: text("address"),
+  languages: jsonb("languages").$type<string[]>().default([]).notNull(),
+  bio: text("bio"),
+  qualifications: jsonb("qualifications").$type<{ qualification: string; institution: string; year: number }[]>().default([]).notNull(),
+  specialties: jsonb("specialties").$type<string[]>().default([]).notNull(),
+});
+
 export const counsellorAvailability = pgTable("counsellor_availability", {
   id: uuid("id").defaultRandom().primaryKey(),
   orgId: text("org_id").notNull().references(() => orgs.id),

@@ -449,6 +449,38 @@ export const dbProvider: DataProvider = {
     };
   }),
 
+  // The counsellor's own "Your week in rooms" — REAL assignments + bookings
+  // (feedback #8: this fell back to the mock, so a saved assignment never
+  // reached the counsellor's view).
+  getCounsellorRooms: async (counsellorId: string, now: string) => {
+    const [c] = await getDb().select().from(counsellorsTable).where(eq(counsellorsTable.id, counsellorId)).limit(1);
+    if (!c) return { assignments: [], bookings: [] };
+    return runForOrg(c.orgId, async () => {
+      const db = activeDb();
+      const weekDates = weekDatesOf(now);
+      const [assignRows, roomRows, siteRows, views] = await Promise.all([
+        db.select().from(roomAssignmentsTable).where(eq(roomAssignmentsTable.counsellorId, counsellorId)),
+        db.select().from(roomsTable).where(eq(roomsTable.orgId, c.orgId)),
+        db.select().from(sitesTable).where(eq(sitesTable.orgId, c.orgId)),
+        counsellorApptViews(counsellorId),
+      ]);
+      return {
+        assignments: assignRows.map((ra) => {
+          const room = roomRows.find((r) => r.id === ra.roomId);
+          return {
+            roomName: room?.name ?? "Room",
+            siteName: siteRows.find((s) => s.id === room?.siteId)?.name ?? "",
+            colour: room?.colour ?? "#1C7D58",
+            days: ra.days, start: ra.start, end: ra.end,
+          };
+        }),
+        bookings: views
+          .filter((a) => a.roomId && weekDates.some((d) => a.startsAt.startsWith(d)))
+          .sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
+      };
+    });
+  },
+
   // ── Scheduling cluster  real appointments from the DB ────────────────
   listAppointmentsForCounsellor: async (counsellorId: string, opts?: { from?: string; to?: string }): Promise<Appointment[]> => {
     const rows = await getDb().select().from(appointmentsTable).where(and(eq(appointmentsTable.counsellorId, counsellorId), ...dayRange(appointmentsTable.startsAt, opts)));

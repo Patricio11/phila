@@ -1,24 +1,19 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import {
-  AlertTriangle,
-  BadgeCheck,
-  CalendarDays,
-  ClipboardList,
-  UserPlus,
-  UserX,
-  Users,
-} from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { now as clockNow } from "@/lib/clock";
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { getCreditBalances } from "@/db/queries/messaging";
 import { LOW_CREDIT_THRESHOLD } from "@/lib/payments/packs";
 import { logAccess } from "@/lib/audit";
-import { coverageNote, isoWeekday, WEEK_CAPACITY } from "@/lib/domain/helpers";
+import { isoWeekday, WEEK_CAPACITY } from "@/lib/domain/helpers";
 import { PageHead } from "@/components/shell/page-head";
 import { Card, CardHead } from "@/components/ui/card";
-import { StatCard } from "@/components/ui/stat-card";
+import { HubDashboardStats } from "@/components/dashboard/hub-dashboard-stats";
+import { ComingUpNext } from "@/components/dashboard/coming-up-next";
+import { ActivityFeed } from "@/components/dashboard/activity-feed";
+import { getHubDashboardDb } from "@/db/queries/hub-dashboard";
 import { Avatar } from "@/components/ui/avatar";
 import { CredentialChip } from "@/components/ui/credential-chip";
 import { AttentionList } from "@/components/dashboard/attention-list";
@@ -28,9 +23,6 @@ import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-function rands(cents: number): string {
-  return `R${Math.round(cents / 100).toLocaleString("en-ZA")}`;
-}
 function addDays(date: string, n: number): string {
   const d = new Date(`${date}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);
@@ -44,8 +36,10 @@ export default async function HubOverviewPage() {
   const now = clockNow();
   const overview = await provider.getHubOverview(membership.orgId, now);
   if (!overview) notFound();
+  const org = await provider.getOrg(membership.orgId);
 
   const credits = await getCreditBalances(membership.orgId);
+  const dashboard = await getHubDashboardDb(membership.orgId, now);
   const lowCredits = (["sms", "email"] as const).filter((c) => credits[c] < LOW_CREDIT_THRESHOLD);
 
   // Verification gate  a nudge (not a wall) until the practice is verified.
@@ -93,54 +87,18 @@ export default async function HubOverviewPage() {
         </Link>
       )}
 
-      <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-3">
-        <StatCard
-          icon={Users}
-          label="Clients this week"
-          value={overview.clientsWeek}
-          coverage={`${overview.clientsToday} today · ${overview.clientsMonth} this month`}
-        />
-        <StatCard
-          icon={UserPlus}
-          label="New clients this week"
-          value={overview.newClientsWeek}
-          coverage={`${overview.newClientsToday} today · ${overview.newClientsMonth} this month`}
-        />
-        <StatCard
-          icon={UserX}
-          label="No-show rate"
-          value={`${overview.noShowRate}%`}
-          coverage="this week"
-        />
-        <StatCard
-          icon={ClipboardList}
-          label="Open intakes"
-          value={overview.openIntakes}
-          coverage="awaiting a first session"
-        />
-        <StatCard
-          icon={BadgeCheck}
-          label="Credential checks"
-          value={overview.pendingCredentials}
-          coverage={overview.pendingCredentials === 0 ? "all verified" : "pending verification"}
-        />
-        <StatCard
-          icon={CalendarDays}
-          label="Outcomes captured"
-          value={overview.outcomesCoverage.captured}
-          coverage={coverageNote(overview.outcomesCoverage.captured, overview.outcomesCoverage.total, "clients measured")}
-        />
-      </div>
+      <HubDashboardStats data={dashboard} paymentsOn={Boolean(org?.features.payments)} />
 
-      {/* Income  actual & predicted, day / week / month */}
-      <Card>
-        <CardHead title="Income  actual & predicted" />
-        <div className="grid grid-cols-3 divide-x divide-border px-[17px] pb-[17px] pt-1">
-          <IncomeCol label="Today" actual={rands(overview.income.todayCents)} predicted={rands(overview.income.predictedTodayCents)} />
-          <IncomeCol label="This week" actual={rands(overview.income.weekCents)} predicted={rands(overview.income.predictedWeekCents)} />
-          <IncomeCol label="This month" actual={rands(overview.incomeMonthCents)} predicted={rands(overview.incomePredictionCents)} />
-        </div>
-      </Card>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHead title="Coming up next" count={dashboard.upcoming.length} />
+          <ComingUpNext upcoming={dashboard.upcoming} />
+        </Card>
+        <Card>
+          <CardHead title="Activity feed" />
+          <ActivityFeed activity={dashboard.activity} />
+        </Card>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -177,16 +135,6 @@ export default async function HubOverviewPage() {
           </div>
         </Card>
       </div>
-    </div>
-  );
-}
-
-function IncomeCol({ label, actual, predicted }: { label: string; actual: string; predicted: string }) {
-  return (
-    <div className="px-4 first:pl-0">
-      <div className="text-[11.5px] font-medium uppercase tracking-wide text-text-3">{label}</div>
-      <div className="mt-1 text-[20px] font-bold tabular-nums tracking-[-0.02em] text-text">{actual}</div>
-      <div className="mt-0.5 text-[11.5px] text-text-2">predicted {predicted}</div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, gte, isNull, sql } from "drizzle-orm";
 import { hashPassword } from "better-auth/crypto";
 import { activeDb, runForOrg } from "@/lib/db/scoped";
 import { getDb } from "@/db/client";
@@ -203,5 +203,39 @@ export async function getTeamMemberDetailDb(orgId: string, userId: string, now: 
       upcoming,
       stats,
     };
+  });
+}
+
+/* ---- Counsellor offboarding (feedback #4) — archive-only, records kept ---- */
+
+/**
+ * The live workload behind a member: are they a counsellor, and what would
+ * archiving orphan? Drives the offboard dialog's honest summary.
+ */
+export async function memberWorkloadDb(orgId: string, userId: string): Promise<{ counsellorId: string | null; upcoming: number; clients: number }> {
+  return runForOrg(orgId, async () => {
+    const [c] = await activeDb().select({ id: counsellors.id }).from(counsellors)
+      .where(and(eq(counsellors.orgId, orgId), eq(counsellors.userId, userId))).limit(1);
+    if (!c) return { counsellorId: null, upcoming: 0, clients: 0 };
+    const [up] = await activeDb().select({ n: sql<number>`count(*)::int` }).from(appointments)
+      .where(and(eq(appointments.orgId, orgId), eq(appointments.counsellorId, c.id), eq(appointments.state, "scheduled"), gte(appointments.startsAt, new Date())));
+    const [cl] = await activeDb().select({ n: sql<number>`count(*)::int` }).from(clients)
+      .where(and(eq(clients.orgId, orgId), eq(clients.primaryCounsellorId, c.id), isNull(clients.deletedAt)));
+    return { counsellorId: c.id, upcoming: up?.n ?? 0, clients: cl?.n ?? 0 };
+  });
+}
+
+/**
+ * Cancel a counsellor's upcoming sessions (the offboard "cancel" path). The
+ * rows are marked cancelled with an honest reason — NEVER deleted; the full
+ * history stays on record. Returns the ids so the caller can notify clients.
+ */
+export async function cancelUpcomingForCounsellorDb(orgId: string, counsellorId: string, reason: string): Promise<string[]> {
+  return runForOrg(orgId, async () => {
+    const rows = await activeDb().update(appointments)
+      .set({ state: "cancelled", cancelReason: reason })
+      .where(and(eq(appointments.orgId, orgId), eq(appointments.counsellorId, counsellorId), eq(appointments.state, "scheduled"), gte(appointments.startsAt, new Date())))
+      .returning({ id: appointments.id });
+    return rows.map((r) => r.id);
   });
 }

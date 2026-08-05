@@ -198,3 +198,84 @@ export async function transferCaseload(
   revalidatePath("/hub/clients");
   return { ok: true, clients: result.clients, movedSessions: result.moved, skippedSessions: result.skipped };
 }
+
+/* ---- Counsellor offboarding (feedback #4) — archive-only, records kept ---- */
+
+/** The dialog's honest summary: is this member a counsellor, and what would archiving orphan? */
+export async function getMemberWorkload(
+  raw: { userId: string },
+): Promise<{ ok: true; counsellorId: string | null; upcoming: number; clients: number } | { ok: false; error: string }> {
+  const { membership } = await requireHub();
+  if (!raw?.userId) return { ok: false, error: "Invalid request" };
+  if (!isDb()) return { ok: true, counsellorId: null, upcoming: 0, clients: 0 };
+  const { memberWorkloadDb } = await import("@/db/queries/team");
+  const w = await memberWorkloadDb(membership.orgId, raw.userId);
+  return { ok: true, ...w };
+}
+
+const offboardInput = z.object({
+  userId: z.string().min(1),
+  mode: z.enum(["migrate", "cancel", "none"]),
+  toCounsellorId: z.string().optional(),
+});
+
+/**
+ * Archive a counsellor PROPERLY: their caseload + upcoming sessions are either
+ * migrated to a successor or cancelled (clients notified, dormant-safe) — then
+ * sign-in is revoked. NOTHING is deleted: every note, session, outcome, and
+ * audit line stays on the record permanently (HPCSA + Outcome-Honesty).
+ */
+export async function offboardMember(
+  raw: z.infer<typeof offboardInput>,
+): Promise<{ ok: true; summary: string } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = offboardInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid request" };
+  const d = parsed.data;
+  if (d.userId === principal.userId) return { ok: false, error: "You can't archive your own account." };
+
+  let summary = "Sign-in revoked. Their history stays on record.";
+  if (isDb()) {
+    const { memberWorkloadDb, cancelUpcomingForCounsellorDb, setMemberStatusDb } = await import("@/db/queries/team");
+    const w = await memberWorkloadDb(membership.orgId, d.userId);
+
+    if (w.counsellorId && (w.upcoming > 0 || w.clients > 0)) {
+      if (d.mode === "migrate") {
+        if (!d.toCounsellorId) return { ok: false, error: "Choose who takes over their caseload." };
+        const res = await transferCaseloadDb(membership.orgId, w.counsellorId, d.toCounsellorId);
+        summary = `${res.clients} client${res.clients === 1 ? "" : "s"} and ${res.moved} session${res.moved === 1 ? "" : "s"} moved across`
+          + (res.skipped > 0 ? ` · ${res.skipped} clashed and need${res.skipped === 1 ? "s" : ""} rebooking` : "")
+          + ". History stays on record.";
+        await notifyCounsellor(d.toCounsellorId, {
+          kind: "caseload_transfer",
+          title: "A caseload has been moved to you",
+          body: `${res.clients} clients and ${res.moved} upcoming sessions are now yours.`,
+          href: "/app/clients",
+        });
+      } else if (d.mode === "cancel") {
+        const ids = await cancelUpcomingForCounsellorDb(membership.orgId, w.counsellorId, "Counsellor left the practice");
+        // Clients are told, dormant-safe; bounded so the archive answers promptly.
+        const { notifyAppointment } = await import("@/lib/messaging/notify");
+        await Promise.race([
+          Promise.allSettled(ids.map((id) => notifyAppointment(id, "cancelled"))),
+          new Promise((resolve) => setTimeout(resolve, 5_000)),
+        ]);
+        summary = `${ids.length} upcoming session${ids.length === 1 ? "" : "s"} cancelled and clients notified. History stays on record.`;
+      } else {
+        return { ok: false, error: "Choose what happens to their caseload first." };
+      }
+    }
+    const res = await setMemberStatusDb(membership.orgId, d.userId, "archived");
+    if (!res.ok) return { ok: false, error: "That member couldn't be found." };
+  }
+
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
+    orgId: membership.orgId,
+    target: `member:${d.userId}`,
+    reason: d.mode === "migrate" ? "archive_member_migrated" : d.mode === "cancel" ? "archive_member_cancelled" : "archive_member",
+  });
+  revalidatePath("/hub/team");
+  return { ok: true, summary };
+}

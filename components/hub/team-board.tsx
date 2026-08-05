@@ -18,7 +18,8 @@ import { useToast } from "@/components/ui/toast";
 import { ROLE_REACH, TeamRoleChip } from "@/components/hub/team-role-chip";
 import { RoleGuide } from "@/components/hub/role-guide";
 import { ManageMemberDialog } from "@/components/hub/manage-member-modal";
-import { inviteMember, setMemberStatus, sendSetupLink } from "@/app/hub/team/actions";
+import { inviteMember, setMemberStatus, sendSetupLink, getMemberWorkload } from "@/app/hub/team/actions";
+import { OffboardMemberDialog } from "@/components/hub/offboard-member-dialog";
 import { cn } from "@/lib/utils";
 
 function joined(iso: string): string {
@@ -41,6 +42,13 @@ export function TeamBoard({ members }: { members: TeamMemberView[] }) {
   // Supervisors available to assign, for the quick-manage dialog.
   const supervisorOptions = useMemo(
     () => members.filter((m) => m.teamRole === "counsellor" && m.isSupervisor && m.counsellorId)
+      .map((m) => ({ id: m.counsellorId as string, name: m.name })),
+    [members],
+  );
+
+  // Every ACTIVE counsellor — the successor list for offboarding.
+  const counsellorOptions = useMemo(
+    () => members.filter((m) => m.teamRole === "counsellor" && m.status === "active" && m.counsellorId)
       .map((m) => ({ id: m.counsellorId as string, name: m.name })),
     [members],
   );
@@ -106,7 +114,7 @@ export function TeamBoard({ members }: { members: TeamMemberView[] }) {
         ) : (
           <ul className="divide-y divide-border">
             {rows.map((m) => (
-              <MemberRow key={m.userId} member={m} supervisorOptions={supervisorOptions} />
+              <MemberRow key={m.userId} member={m} supervisorOptions={supervisorOptions} counsellorOptions={counsellorOptions} />
             ))}
           </ul>
         )}
@@ -117,7 +125,7 @@ export function TeamBoard({ members }: { members: TeamMemberView[] }) {
   );
 }
 
-function MemberRow({ member: m, supervisorOptions }: { member: TeamMemberView; supervisorOptions: { id: string; name: string }[] }) {
+function MemberRow({ member: m, supervisorOptions, counsellorOptions }: { member: TeamMemberView; supervisorOptions: { id: string; name: string }[]; counsellorOptions: { id: string; name: string }[] }) {
   const [manageOpen, setManageOpen] = useState(false);
 
   return (
@@ -159,7 +167,7 @@ function MemberRow({ member: m, supervisorOptions }: { member: TeamMemberView; s
         <div className="mt-0.5 text-[10.5px] text-text-3">Since {joined(m.joinedAt)}</div>
       </div>
 
-      <RowMenu member={m} onManage={() => setManageOpen(true)} />
+      <RowMenu member={m} onManage={() => setManageOpen(true)} counsellorOptions={counsellorOptions} />
 
       <ManageMemberDialog
         member={m}
@@ -186,7 +194,7 @@ function StatusChip({ status }: { status: MemberStatus }) {
   );
 }
 
-function RowMenu({ member: m, onManage }: { member: TeamMemberView; onManage: () => void }) {
+function RowMenu({ member: m, onManage, counsellorOptions }: { member: TeamMemberView; onManage: () => void; counsellorOptions: { id: string; name: string }[] }) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [openUp, setOpenUp] = useState(false);
@@ -209,11 +217,22 @@ function RowMenu({ member: m, onManage }: { member: TeamMemberView; onManage: ()
     return () => document.removeEventListener("mousedown", onDown);
   }, [open]);
 
+  const [offboard, setOffboard] = useState<{ counsellorId: string | null; upcoming: number; clients: number } | null>(null);
+
+  // Active members go through the proper offboarding dialog (workload → choice).
+  // Revoking a pending invite stays a one-tap action — there is nothing to hand over.
   const archive = () => start(async () => {
-    const res = await setMemberStatus({ userId: m.userId, status: "archived" });
+    if (m.status === "invited") {
+      const res = await setMemberStatus({ userId: m.userId, status: "archived" });
+      setOpen(false);
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      toast({ tone: "success", title: "Invite revoked" });
+      return;
+    }
+    const w = await getMemberWorkload({ userId: m.userId });
     setOpen(false);
-    if (!res.ok) return toast({ tone: "error", title: res.error });
-    toast({ tone: "success", title: `${m.name.split(" ")[0]} archived`, description: "Sign-in revoked. History is kept." });
+    if (!w.ok) return toast({ tone: "error", title: w.error });
+    setOffboard({ counsellorId: w.counsellorId, upcoming: w.upcoming, clients: w.clients });
   });
 
   const restore = () => start(async () => {
@@ -258,6 +277,16 @@ function RowMenu({ member: m, onManage }: { member: TeamMemberView; onManage: ()
             </MenuButton>
           )}
         </div>
+      )}
+
+      {offboard && (
+        <OffboardMemberDialog
+          open
+          onClose={() => setOffboard(null)}
+          member={{ userId: m.userId, name: m.name }}
+          workload={offboard}
+          counsellorOptions={counsellorOptions}
+        />
       )}
     </div>
   );

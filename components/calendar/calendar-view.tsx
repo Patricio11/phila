@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, Plus, Video } from "lucide-react";
+import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, MapPin, Plus, Video } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
 import type { BusinessHours } from "@/lib/domain/types";
@@ -12,6 +12,7 @@ import { CreateAppointmentModal, type CreateInitial, type SchedulingOptions } fr
 import { AppointmentDetail } from "@/components/calendar/appointment-detail";
 import { Button } from "@/components/ui/button";
 import { StatusDot, type DotTone } from "@/components/ui/status-dot";
+import { SearchSelect } from "@/components/ui/search-select";
 import { useToast } from "@/components/ui/toast";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
@@ -98,12 +99,19 @@ export function CalendarView({
   const [anchor, setAnchor] = useState(today);
   const [events, setEvents] = useState(initialEvents);
   // Fresh server data (e.g. after a create → router.refresh()) must flow into the
-  // local list — a useState initializer alone would keep showing the stale props.
-  useEffect(() => setEvents(initialEvents), [initialEvents]);
+  // local list. Render-time reset (the React-endorsed derive-from-props pattern).
+  const [prevInitial, setPrevInitial] = useState(initialEvents);
+  if (prevInitial !== initialEvents) {
+    setPrevInitial(initialEvents);
+    setEvents(initialEvents);
+  }
   const [createOpen, setCreateOpen] = useState(false);
   const [createInit, setCreateInit] = useState<CreateInitial | null>(null);
   const [createKey, setCreateKey] = useState(0);
   const [confirm, setConfirm] = useState<{ appt: AppointmentView; newStart: string } | null>(null);
+  // Feedback #2 — calendar filters: one counsellor, and/or a session type.
+  const [filterCounsellor, setFilterCounsellor] = useState<string | null>(null);
+  const [filterType, setFilterType] = useState<"all" | "in_person" | "online">("all");
   const [detail, setDetail] = useState<AppointmentView | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -126,6 +134,12 @@ export function CalendarView({
     return `${fmt(ws, { day: "numeric", month: "short" })} – ${fmt(addDays(ws, 6), { day: "numeric", month: "short" })}`;
   }, [view, anchor]);
 
+  // What the views draw; drag-conflict checks still see EVERY appointment.
+  const visible = useMemo(
+    () => events.filter((e) => (!filterCounsellor || e.counsellorId === filterCounsellor) && (filterType === "all" || e.type === filterType)),
+    [events, filterCounsellor, filterType],
+  );
+
   const doReschedule = () => {
     if (!confirm) return;
     setPending(true);
@@ -140,35 +154,70 @@ export function CalendarView({
 
   return (
     <div className="overflow-hidden rounded-card border border-border bg-surface shadow-sm">
-      {/* Header */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2.5 sm:px-4">
-        <div className="flex items-center gap-1">
-          <IconBtn label="Previous" onClick={() => step(-1)}><ChevronLeft className="size-4.5" aria-hidden /></IconBtn>
-          <button type="button" onClick={() => setAnchor(today)} className="h-8 rounded-control border border-border px-3 text-[12.5px] font-medium text-text-2 transition-colors hover:bg-surface-hover hover:text-text">Today</button>
-          <IconBtn label="Next" onClick={() => step(1)}><ChevronRight className="size-4.5" aria-hidden /></IconBtn>
-        </div>
-        <h2 className="ml-1 text-[14.5px] font-[650] tracking-[-0.01em] text-text">{title}</h2>
-        <div className="ml-auto flex items-center gap-2">
+      {/* Header — two calm rows: filters/actions on top, navigation below. */}
+      <div className="space-y-2 border-b border-border px-3 py-2.5 sm:px-4">
+        <div className="flex flex-wrap items-center gap-2">
+          {scheduling.counsellors.length > 1 && (
+            <div className="w-52">
+              <SearchSelect
+                avatars
+                value={filterCounsellor}
+                onChange={(v) => setFilterCounsellor(v || null)}
+                placeholder="All counsellors"
+                searchPlaceholder="Search team…"
+                ariaLabel="Filter by counsellor"
+                options={[{ value: "", label: "All counsellors", hint: "Every calendar" }, ...scheduling.counsellors.map((c) => ({ value: c.id, label: c.name, hint: "Counsellor" }))]}
+              />
+            </div>
+          )}
+          <div className="ml-auto flex flex-wrap items-center gap-2">
           <div className="inline-flex rounded-control border border-border p-0.5">
+            {([
+              { key: "all", label: "All", icon: null },
+              { key: "in_person", label: "In person", icon: MapPin },
+              { key: "online", label: "Online", icon: Video },
+            ] as const).map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setFilterType(t.key)}
+                aria-pressed={filterType === t.key}
+                className={cn("inline-flex h-7 items-center gap-1 rounded-[6px] px-2.5 text-[12px] font-medium transition-colors", filterType === t.key ? "bg-accent-soft text-accent" : "text-text-2 hover:text-text")}
+              >
+                {t.icon && <t.icon className="size-3" strokeWidth={2.2} aria-hidden />}{t.label}
+              </button>
+            ))}
+          </div>
+          <Button size="sm" onClick={() => openCreate()}><Plus className="size-4" strokeWidth={2.2} aria-hidden /> New</Button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1">
+            <IconBtn label="Previous" onClick={() => step(-1)}><ChevronLeft className="size-4.5" aria-hidden /></IconBtn>
+            <button type="button" onClick={() => setAnchor(today)} className="h-8 rounded-control border border-border px-3 text-[12.5px] font-medium text-text-2 transition-colors hover:bg-surface-hover hover:text-text">Today</button>
+            <IconBtn label="Next" onClick={() => step(1)}><ChevronRight className="size-4.5" aria-hidden /></IconBtn>
+          </div>
+          <h2 className="ml-1 text-[14.5px] font-[650] tracking-[-0.01em] text-text">{title}</h2>
+          <div className="ml-auto inline-flex rounded-control border border-border p-0.5">
             {(["day", "week", "month", "agenda"] as View[]).map((v) => (
               <button key={v} type="button" onClick={() => setView(v)} className={cn("h-7 rounded-[6px] px-2.5 text-[12px] font-medium capitalize transition-colors", view === v ? "bg-accent-soft text-accent" : "text-text-2 hover:text-text")}>{v}</button>
             ))}
           </div>
-          <Button size="sm" onClick={() => openCreate()}><Plus className="size-4" strokeWidth={2.2} aria-hidden /> New</Button>
         </div>
       </div>
 
       {view === "month" ? (
-        <MonthView anchor={anchor} today={today} events={events} businessHours={businessHours} onDay={(d) => { setAnchor(d); setView("day"); }} onCreate={(d) => openCreate(d)} onEvent={(e) => setDetail(e)} />
+        <MonthView anchor={anchor} today={today} events={visible} businessHours={businessHours} onDay={(d) => { setAnchor(d); setView("day"); }} onCreate={(d) => openCreate(d)} onEvent={(e) => setDetail(e)} />
       ) : view === "agenda" ? (
-        <AgendaView anchor={anchor} today={today} events={events} onEvent={(e) => setDetail(e)} />
+        <AgendaView anchor={anchor} today={today} events={visible} onEvent={(e) => setDetail(e)} />
       ) : (
         <TimeGrid
           dates={view === "day" ? [anchor] : Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(anchor), i))}
           today={today}
           nowMin={nowMin}
           businessHours={businessHours}
-          events={events}
+          events={visible}
           onCreate={openCreate}
           onEvent={(e) => setDetail(e)}
           onDrop={(appt, newStart) => newStart !== appt.startsAt && setConfirm({ appt, newStart })}

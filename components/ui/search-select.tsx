@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, ChevronDown, Search } from "lucide-react";
+import { Check, ChevronDown, Search, Users } from "lucide-react";
+import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
 export interface SearchOption {
@@ -26,6 +27,7 @@ export function SearchSelect({
   emptyText = "No matches",
   footer,
   ariaLabel,
+  avatars = false,
 }: {
   value: string | null;
   onChange: (v: string) => void;
@@ -37,6 +39,8 @@ export function SearchSelect({
   emptyText?: string;
   footer?: (close: () => void) => React.ReactNode;
   ariaLabel?: string;
+  /** People-picker look (the messaging pattern): avatar + name with the hint as a subtitle. */
+  avatars?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -99,11 +103,29 @@ export function SearchSelect({
                     role="option"
                     aria-selected={o.value === value}
                     onClick={() => { onChange(o.value); setOpen(false); setQ(""); }}
-                    className={cn("flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[13px] transition-colors hover:bg-surface-hover", o.value === value && "bg-accent-soft/40")}
+                    className={cn(
+                      "flex w-full items-center gap-2 px-3 text-left text-[13px] transition-colors hover:bg-surface-hover",
+                      avatars ? "gap-3 py-2.5" : "justify-between py-2",
+                      o.value === value && "bg-accent-soft/40",
+                    )}
                   >
-                    <span className="truncate text-text">{o.label}</span>
+                    {avatars && (
+                      o.value === "" ? (
+                        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-surface-2 text-text-3"><Users className="size-4" strokeWidth={2} aria-hidden /></span>
+                      ) : (
+                        <Avatar name={o.label} size="sm" />
+                      )
+                    )}
+                    {avatars ? (
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13.5px] font-[550] text-text">{o.label}</span>
+                        {o.hint && <span className="block truncate text-[11.5px] text-text-3">{o.hint}</span>}
+                      </span>
+                    ) : (
+                      <span className="truncate text-text">{o.label}</span>
+                    )}
                     <span className="flex shrink-0 items-center gap-2">
-                      {o.hint && <span className="text-[11.5px] text-text-3">{o.hint}</span>}
+                      {!avatars && o.hint && <span className="text-[11.5px] text-text-3">{o.hint}</span>}
                       {o.value === value && <Check className="size-3.5 text-accent" strokeWidth={2.4} aria-hidden />}
                     </span>
                   </button>

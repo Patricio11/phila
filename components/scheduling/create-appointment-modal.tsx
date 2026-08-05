@@ -201,6 +201,7 @@ export function CreateAppointmentModal({
             </div>
           ) : (
             <SearchSelect
+              avatars
               value={clientId}
               onChange={setClientId}
               invalid={Boolean(attempted && errors.client)}
@@ -220,7 +221,7 @@ export function CreateAppointmentModal({
           <Select value={serviceId} onChange={onService} invalid={Boolean(attempted && errors.service)} placeholder="Choose a service" options={options.services.map((s) => ({ value: s.id, label: s.name, hint: `${s.durationMin} min` }))} />
         </Row>
         <Row label="Counsellor" error={attempted ? errors.counsellor : undefined}>
-          <SearchSelect value={counsellorId} onChange={setCounsellorId} invalid={Boolean(attempted && errors.counsellor)} placeholder="Choose a counsellor" searchPlaceholder="Search counsellors…" ariaLabel="Counsellor" options={options.counsellors.map((c) => ({ value: c.id, label: c.name }))} />
+          <SearchSelect avatars value={counsellorId} onChange={setCounsellorId} invalid={Boolean(attempted && errors.counsellor)} placeholder="Choose a counsellor" searchPlaceholder="Search counsellors…" ariaLabel="Counsellor" options={options.counsellors.map((c) => ({ value: c.id, label: c.name }))} />
         </Row>
 
         <Row label="Where">

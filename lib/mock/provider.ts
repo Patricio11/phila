@@ -1220,6 +1220,8 @@ export const mockProvider: DataProvider = {
           assignments: roomAssignments
             .filter((ra) => ra.roomId === room.id)
             .map((ra) => ({
+              id: ra.id,
+              counsellorId: ra.counsellorId,
               counsellorName: counsellors.find((c) => c.id === ra.counsellorId)?.name ?? "",
               days: ra.days,
               start: ra.start,
@@ -1281,6 +1283,8 @@ export const mockProvider: DataProvider = {
       assignments: roomAssignments
         .filter((ra) => ra.roomId === room.id)
         .map((ra) => ({
+          id: ra.id,
+          counsellorId: ra.counsellorId,
           counsellorName: counsellors.find((c) => c.id === ra.counsellorId)?.name ?? "",
           days: ra.days,
           start: ra.start,

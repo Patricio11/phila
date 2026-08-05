@@ -10,7 +10,8 @@ import { Tag } from "@/components/ui/tag";
 import { Avatar } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { EditRoomButton } from "@/components/rooms/room-buttons";
-import { AssignCounsellorButton } from "@/components/rooms/assign-counsellor";
+import { AssignCounsellorButton, AssignmentRow } from "@/components/rooms/assign-counsellor";
+import { RoomHistory } from "@/components/rooms/room-history";
 import { RoomScheduleGrid } from "@/components/rooms/room-schedule-grid";
 import { now as clockNow } from "@/lib/clock";
 
@@ -141,18 +142,14 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
               {detail.assignments.length === 0 ? (
                 <EmptyState icon={DoorOpen} title="No assignments" body="Assign counsellors by day and time." />
               ) : (
-                detail.assignments.map((a, i) => (
-                  <div key={i} className="flex items-center gap-2.5">
-                    <Avatar name={a.counsellorName} size="sm" />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[13px] font-medium text-text">{a.counsellorName}</div>
-                      <div className="text-[11.5px] text-text-3">{a.days.map((d) => DOW[d]).join(" & ")} · {a.start}–{a.end}</div>
-                    </div>
-                  </div>
+                detail.assignments.map((a) => (
+                  <AssignmentRow key={a.id} assignment={a} roomId={room.id} />
                 ))
               )}
             </div>
           </Card>
+
+          <RoomHistory roomId={room.id} today={detail.perDay.find((d) => d.isToday)?.date ?? detail.perDay[0]!.date} />
         </div>
       </div>
     </div>

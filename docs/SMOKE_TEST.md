@@ -110,6 +110,12 @@ Sign in as **Thandeka**.
 - ☐ Signed in as that **counsellor**, `/app/settings` shows **Your availability** read-only ("managed by your practice") — no edit controls
 - ☐ **Archive** on an active counsellor opens the offboard dialog: honest workload counts, then **migrate to a successor** or **cancel upcoming (clients notified)** — afterwards their sessions/notes/history are all still on the record (nothing deleted), and the member can be restored
 
+**Rooms — live & recorded** (`/hub/rooms`) (feedback #8)
+- ☐ The **Right now** band shows "N of M rooms in use" with pulsing chips; a room with a session running shows **"In use · who · until when"** on its card; **Next up** shows relative times ("in 40 min")
+- ☐ On a room page, **Assign** really persists (check `room_assignments`): assigning over a counsellor's availability, their other room, or another counsellor's slot first shows **honest warnings** with "Assign anyway"; assignments are removable (hover the row); both actions land on the Activity feed
+- ☐ **Who was in this room**: pick any date → counsellors · sessions · hours from the permanent record
+- ☐ The dashboard shows the **Rooms right now** widget with per-room live status
+
 **Billing & usage** (`/hub/billing`)
 - ☐ SMS + email balances, **AI spend vs cap** bar, recent message activity, top-up history all render
 - ☐ Credit packs show with prices; **Buy** a pack → if Paystack is on, redirects to checkout; if off, an honest "not switched on yet" message

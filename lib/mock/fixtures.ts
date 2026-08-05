@@ -745,6 +745,11 @@ export const roomAssignments: RoomAssignment[] = [
   { id: "ra2", counsellorId: "couns_thabo", roomId: "room_s2", days: [2, 4], start: "09:00", end: "15:00" },
   { id: "ra3", counsellorId: "couns_aisha", roomId: "room_j1", days: [1, 2, 3, 4, 5], start: "08:00", end: "12:00" },
   { id: "ra4", counsellorId: "couns_pieter", roomId: "room_j1", days: [3], start: "13:00", end: "17:00" },
+  // Rotation is the point (feedback #8): the same counsellor holds different rooms
+  // on different days, and one room hosts several counsellors across the week.
+  { id: "ra5", counsellorId: "couns_nomsa", roomId: "room_s2", days: [5], start: "08:00", end: "13:00" },
+  { id: "ra6", counsellorId: "couns_thabo", roomId: "room_s1", days: [5], start: "09:00", end: "15:00" },
+  { id: "ra7", counsellorId: "couns_pieter", roomId: "room_s1", days: [2, 4], start: "13:00", end: "17:00" },
 ];
 
 /** A few more invoices across clients so org invoicing has real spread. */

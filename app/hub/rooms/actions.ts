@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 import { PROVINCES, ROOM_STATUSES } from "@/lib/domain/enums";
@@ -77,23 +78,82 @@ const assignInput = z.object({
   days: z.array(z.number().int().min(1).max(7)).min(1, "Pick at least one day."),
   start: z.string().regex(/^\d{2}:\d{2}$/),
   end: z.string().regex(/^\d{2}:\d{2}$/),
+  /** Second submit after the dialog showed the warnings — the org knows better. */
+  force: z.boolean().optional(),
 });
 
-/** Assign a counsellor to a room on a recurring day/time pattern (room schedule). */
+/**
+ * Feedback #8 — REAL now. Assign a counsellor to a room on a recurring day/time
+ * pattern (many counsellors per room; rotation is just more rows). Availability-
+ * aware: the save first surfaces honest warnings (the counsellor's working
+ * windows, their other rooms, this room's other claims) and only proceeds when
+ * the org confirms. Audited → dashboard Activity feed.
+ */
 export async function saveRoomAssignment(
   raw: z.infer<typeof assignInput>,
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { membership } = await requireHub();
+): Promise<{ ok: true } | { ok: false; error: string } | { ok: false; warnings: string[] }> {
+  const { principal, membership } = await requireHub();
   const parsed = assignInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the assignment." };
   if (parsed.data.end <= parsed.data.start) return { ok: false, error: "End time must be after the start." };
+  const d = parsed.data;
+
+  if (process.env.DATA_PROVIDER === "db") {
+    const { assignmentWarningsDb, saveRoomAssignmentDb } = await import("@/db/queries/room-assignments");
+    if (!d.force) {
+      const warnings = await assignmentWarningsDb(membership.orgId, d);
+      if (warnings.length > 0) return { ok: false, warnings };
+    }
+    await saveRoomAssignmentDb(membership.orgId, d);
+  }
 
   await logAccess({
     action: "admin.action",
-    actor: { userId: "hub", platformRole: null, teamRole: "org_admin" },
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
     orgId: membership.orgId,
-    target: `room:${parsed.data.roomId}/assignment`,
+    target: `room:${d.roomId}/assignment/${d.counsellorId}`,
     reason: "assign_counsellor",
   });
+  revalidatePath(`/hub/rooms/${d.roomId}`);
+  revalidatePath("/hub/rooms");
   return { ok: true };
+}
+
+/** Remove one assignment row. History is untouched — it lives on appointments. */
+export async function removeRoomAssignment(
+  raw: { assignmentId: string; roomId: string },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  if (!raw?.assignmentId) return { ok: false, error: "Invalid assignment." };
+
+  if (process.env.DATA_PROVIDER === "db") {
+    const { removeRoomAssignmentDb } = await import("@/db/queries/room-assignments");
+    const removed = await removeRoomAssignmentDb(membership.orgId, raw.assignmentId);
+    if (!removed) return { ok: false, error: "That assignment couldn't be found." };
+  }
+
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `room:${raw.roomId}/assignment/${raw.assignmentId}`,
+    reason: "remove_room_assignment",
+  });
+  revalidatePath(`/hub/rooms/${raw.roomId}`);
+  revalidatePath("/hub/rooms");
+  return { ok: true };
+}
+
+/** Who was in this room on a date — the permanent record (feedback #8). */
+export async function getRoomHistory(
+  raw: { roomId: string; date: string },
+): Promise<{ ok: true; history: import("@/db/queries/room-assignments").RoomHistoryDay } | { ok: false; error: string }> {
+  const { membership } = await requireHub();
+  if (!raw?.roomId || !/^\d{4}-\d{2}-\d{2}$/.test(raw?.date ?? "")) return { ok: false, error: "Invalid request." };
+  if (process.env.DATA_PROVIDER !== "db") {
+    return { ok: true, history: { date: raw.date, counsellors: [], sessions: [], totalMinutes: 0 } };
+  }
+  const { getRoomHistoryDb } = await import("@/db/queries/room-assignments");
+  const history = await getRoomHistoryDb(membership.orgId, raw.roomId, raw.date);
+  return { ok: true, history };
 }

@@ -1108,7 +1108,16 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   Implemented via `isRemote()` / `needsRoom()` predicates in `lib/domain/enums.ts` replacing scattered
   `=== "online"` checks (no migration — the type column is text). Public booking untouched (an internal
   operational choice).
-- [ ] **#8–#10** — remaining items arrive one at a time.
+- [x] **#8  Rooms fully functional** *(2026-08-05)*: the Assign-counsellor flow — a Part-A mock until
+  now — **persists for real** (`db/queries/room-assignments.ts`): many counsellors per room, each on
+  their own day/time pattern, so rotation ("Room 1 Mon, Room 2 Fri") is just rows; removable; audited →
+  Activity feed. Saves are **availability-aware** with honest warnings (the counsellor's working
+  windows, their other rooms, this room's other claims) + "Assign anyway". **"Who was in this room"**
+  on the room page answers the record question for any date (counsellors · sessions · hours, from the
+  permanent appointments record). `/hub/rooms` gains a live **"Right now"** band (N of M in use,
+  pulsing per-room chips), room cards get an **"In use · who · until when"** flag and a relative
+  **Next up** timeline, and the dashboard gains a **"Rooms right now"** widget.
+- [ ] **#9–#10** — remaining items arrive one at a time.
 
 ---
 

@@ -14,6 +14,8 @@ import { HubDashboardStats } from "@/components/dashboard/hub-dashboard-stats";
 import { ComingUpNext } from "@/components/dashboard/coming-up-next";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { getHubDashboardDb } from "@/db/queries/hub-dashboard";
+import { RoomsRightNow } from "@/components/dashboard/rooms-right-now";
+import { roomsRightNowDb, type RoomNow } from "@/db/queries/room-assignments";
 import { Avatar } from "@/components/ui/avatar";
 import { CredentialChip } from "@/components/ui/credential-chip";
 import { AttentionList } from "@/components/dashboard/attention-list";
@@ -40,6 +42,7 @@ export default async function HubOverviewPage() {
 
   const credits = await getCreditBalances(membership.orgId);
   const dashboard = await getHubDashboardDb(membership.orgId, now);
+  const roomsNow: RoomNow[] = process.env.DATA_PROVIDER === "db" ? await roomsRightNowDb(membership.orgId, now) : [];
   const lowCredits = (["sms", "email"] as const).filter((c) => credits[c] < LOW_CREDIT_THRESHOLD);
 
   // Verification gate  a nudge (not a wall) until the practice is verified.
@@ -90,10 +93,13 @@ export default async function HubOverviewPage() {
       <HubDashboardStats data={dashboard} paymentsOn={Boolean(org?.features.payments)} />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHead title="Coming up next" count={dashboard.upcoming.length} />
-          <ComingUpNext upcoming={dashboard.upcoming} />
-        </Card>
+        <div className="space-y-6">
+          <Card>
+            <CardHead title="Coming up next" count={dashboard.upcoming.length} />
+            <ComingUpNext upcoming={dashboard.upcoming} />
+          </Card>
+          <RoomsRightNow rooms={roomsNow} />
+        </div>
         <Card>
           <CardHead title="Activity feed" />
           <ActivityFeed activity={dashboard.activity} />

@@ -401,7 +401,7 @@ export const dbProvider: DataProvider = {
         room,
         siteName: siteRows.find((s) => s.id === room.siteId)?.name ?? "",
         utilisation: roomUtilisation({ appointments: roomAppts, businessHours: org.scheduling.businessHours, weekDates }),
-        assignments: assignmentRows.filter((ra) => ra.roomId === room.id).map((ra) => ({ counsellorName: counsellorRows.find((c) => c.id === ra.counsellorId)?.name ?? "", days: ra.days, start: ra.start, end: ra.end })),
+        assignments: assignmentRows.filter((ra) => ra.roomId === room.id).map((ra) => ({ id: ra.id, counsellorId: ra.counsellorId, counsellorName: counsellorRows.find((c) => c.id === ra.counsellorId)?.name ?? "", days: ra.days, start: ra.start, end: ra.end })),
         bookings: roomAppts.filter((a) => weekDates.some((d) => a.startsAt.startsWith(d))).sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
       };
     });
@@ -444,7 +444,7 @@ export const dbProvider: DataProvider = {
       perDay,
       freeHours: Math.round((perDay.reduce((s, d) => s + d.freeMin, 0) / 60) * 10) / 10,
       capacityNote: `Seats ${room.capacity}${room.equipment.length ? ` · ${room.equipment.join(", ")}` : ""}`,
-      assignments: assignmentRows.filter((ra) => ra.roomId === room.id).map((ra) => ({ counsellorName: counsellorRows.find((c) => c.id === ra.counsellorId)?.name ?? "", days: ra.days, start: ra.start, end: ra.end })),
+      assignments: assignmentRows.filter((ra) => ra.roomId === room.id).map((ra) => ({ id: ra.id, counsellorId: ra.counsellorId, counsellorName: counsellorRows.find((c) => c.id === ra.counsellorId)?.name ?? "", days: ra.days, start: ra.start, end: ra.end })),
       bookings: roomAppts.filter((a) => weekDates.some((d) => a.startsAt.startsWith(d))).sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
     };
   }),

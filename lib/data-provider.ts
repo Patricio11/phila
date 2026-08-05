@@ -392,7 +392,7 @@ export interface RoomView {
   room: Room;
   siteName: string;
   utilisation: { meetings: number; bookedHours: number; utilisationPct: number; busiestDay: string | null };
-  assignments: { counsellorName: string; days: number[]; start: string; end: string }[];
+  assignments: { id: string; counsellorId: string; counsellorName: string; days: number[]; start: string; end: string }[];
   bookings: AppointmentView[];
 }
 
@@ -414,7 +414,7 @@ export interface RoomDetail {
   perDay: RoomDayOccupancy[];
   freeHours: number;
   capacityNote: string;
-  assignments: { counsellorName: string; days: number[]; start: string; end: string }[];
+  assignments: { id: string; counsellorId: string; counsellorName: string; days: number[]; start: string; end: string }[];
   bookings: AppointmentView[];
 }
 

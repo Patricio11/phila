@@ -96,7 +96,15 @@ export async function createAppointment(
       throw e;
     }
     // In-app (always) + email (rail); the first session of a series carries the notice.
-    if (data.sendConfirmation) await notifyAppointmentBooked(firstId);
+    if (data.sendConfirmation) {
+      // The booking must answer promptly even if a provider is slow — give the
+      // notification chain a bounded head start, then let it finish in the
+      // background (every transport also carries its own 10s fetch timeout).
+      await Promise.race([
+        notifyAppointmentBooked(firstId),
+        new Promise((resolve) => setTimeout(resolve, 4_000)),
+      ]);
+    }
     // Auto-raise an invoice for the (first) session — priced services only, org-toggleable.
     try {
       const [svc] = await getDb().select({ name: servicesTable.name, priceCents: servicesTable.priceCents }).from(servicesTable).where(eq(servicesTable.id, data.serviceId)).limit(1);

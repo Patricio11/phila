@@ -22,6 +22,7 @@ export async function sendPlatformEmail(opts: { to: string; subject: string; htm
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
+      signal: AbortSignal.timeout(10_000),
       headers: { Authorization: `Bearer ${creds.apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ from: `Phila <${creds.from}>`, to: opts.to, subject: opts.subject, html: opts.html, text: opts.text, reply_to: opts.replyTo || undefined }),
     });

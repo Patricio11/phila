@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, Plus, Video } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
@@ -33,9 +34,23 @@ function addDays(date: string, n: number): string { const d = parse(date); d.set
 function addMonths(date: string, n: number): string { const d = parse(date); d.setUTCMonth(d.getUTCMonth() + n); return ymdOf(d); }
 function startOfWeek(date: string): string { return addDays(date, -(isoWeekday(date) - 1)); }
 function startOfMonth(date: string): string { return `${date.slice(0, 7)}-01`; }
-function minutesOf(iso: string): number { return Number(iso.slice(11, 13)) * 60 + Number(iso.slice(14, 16)); }
+/**
+ * SAST wall-clock for an instant. `startsAt` arrives as a UTC ISO string — slicing
+ * it directly showed events two hours early (11:00 SAST rendered at 09:00) and could
+ * even file an early-morning session under the previous day. One formatter, cached.
+ */
+const SAST_CLOCK = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Africa/Johannesburg",
+  year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false,
+});
+function sast(iso: string): { date: string; hhmm: string } {
+  const s = SAST_CLOCK.format(new Date(iso)); // "2026-07-23, 11:00"
+  return { date: s.slice(0, 10), hhmm: s.slice(-5) };
+}
+function minutesOf(iso: string): number { const t = sast(iso).hhmm; return Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)); }
 function hm(hhmm: string): number { return Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5)); }
-function hhmm(iso: string): string { return iso.slice(11, 16); }
+function hhmm(iso: string): string { return sast(iso).hhmm; }
+function isOnDay(iso: string, date: string): boolean { return sast(iso).date === date; }
 function fmt(date: string, opts: Intl.DateTimeFormatOptions): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "UTC", ...opts }).format(parse(date));
 }
@@ -71,6 +86,7 @@ export function CalendarView({
   clientBasePath?: string;
 }) {
   const { toast } = useToast();
+  const router = useRouter();
   const today = useMemo(() => new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(nowISO)), [nowISO]);
   const nowMin = useMemo(() => {
     const hm = new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Johannesburg", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(nowISO));
@@ -81,6 +97,9 @@ export function CalendarView({
   const [view, setView] = useState<View>("week");
   const [anchor, setAnchor] = useState(today);
   const [events, setEvents] = useState(initialEvents);
+  // Fresh server data (e.g. after a create → router.refresh()) must flow into the
+  // local list — a useState initializer alone would keep showing the stale props.
+  useEffect(() => setEvents(initialEvents), [initialEvents]);
   const [createOpen, setCreateOpen] = useState(false);
   const [createInit, setCreateInit] = useState<CreateInitial | null>(null);
   const [createKey, setCreateKey] = useState(0);
@@ -156,7 +175,7 @@ export function CalendarView({
         />
       )}
 
-      <CreateAppointmentModal key={createKey} open={createOpen} onClose={() => setCreateOpen(false)} options={scheduling} initial={createInit ?? undefined} />
+      <CreateAppointmentModal key={createKey} open={createOpen} onClose={() => setCreateOpen(false)} options={scheduling} initial={createInit ?? undefined} onCreated={() => router.refresh()} />
 
       <AppointmentDetail
         key={detail?.id ?? "none"}
@@ -234,7 +253,7 @@ function TimeGrid({ dates, today, nowMin, businessHours, events, onCreate, onEve
             const wd = isoWeekday(date);
             const bh = businessHours[wd];
             const isToday = date === today;
-            const dayEvents = events.filter((e) => e.startsAt.startsWith(date));
+            const dayEvents = events.filter((e) => isOnDay(e.startsAt, date));
             const laid = layout(dayEvents);
             return (
               <div key={date} className="border-l border-border first:border-l-0">
@@ -331,7 +350,7 @@ function MonthView({ anchor, today, events, businessHours, onDay, onCreate, onEv
           const inMonth = date.slice(0, 7) === month;
           const isToday = date === today;
           const closed = !businessHours[isoWeekday(date)];
-          const dayEvents = events.filter((e) => e.startsAt.startsWith(date)).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+          const dayEvents = events.filter((e) => isOnDay(e.startsAt, date)).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
           return (
             <div key={date} className={cn("group min-h-[104px] border-b border-l border-border p-1.5 [&:nth-child(7n+1)]:border-l-0", !inMonth && "bg-surface-2/40", closed && inMonth && "bg-surface-2/30")}>
               <div className="flex items-center justify-between">
@@ -361,12 +380,12 @@ function MonthView({ anchor, today, events, businessHours, onDay, onCreate, onEv
 /* ---- Agenda view ------------------------------------------------------ */
 function AgendaView({ anchor, today, events, onEvent }: { anchor: string; today: string; events: AppointmentView[]; onEvent: (e: AppointmentView) => void }) {
   const days = Array.from({ length: 14 }, (_, i) => addDays(anchor, i));
-  const has = days.some((d) => events.some((e) => e.startsAt.startsWith(d)));
+  const has = days.some((d) => events.some((e) => isOnDay(e.startsAt, d)));
   if (!has) return <div className="p-2"><EmptyState icon={CalendarDays} title="Nothing scheduled" body="The next two weeks are clear from here." /></div>;
   return (
     <div className="divide-y divide-border">
       {days.map((date) => {
-        const dayEvents = events.filter((e) => e.startsAt.startsWith(date)).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+        const dayEvents = events.filter((e) => isOnDay(e.startsAt, date)).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
         if (dayEvents.length === 0) return null;
         return (
           <div key={date} className="flex gap-4 px-4 py-3">

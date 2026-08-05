@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CreateAppointmentModal, type SchedulingOptions } from "@/components/scheduling/create-appointment-modal";
@@ -17,6 +18,7 @@ export function CreateAppointmentButton({
   /** Wire a global ⌘K / Ctrl-K to open the modal (use on one primary surface only). */
   hotkey?: boolean;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   // Computed once; the label may differ between server ("Ctrl") and a Mac client
   // ("⌘"), so the <kbd> suppresses the hydration mismatch on that text.
@@ -47,7 +49,7 @@ export function CreateAppointmentButton({
           <kbd suppressHydrationWarning className="ml-1.5 hidden rounded border border-current/25 px-1.5 py-0.5 text-[10px] font-medium leading-none opacity-70 sm:inline-block">{mod === "⌘" ? "⌘K" : "Ctrl K"}</kbd>
         )}
       </Button>
-      <CreateAppointmentModal open={open} onClose={() => setOpen(false)} options={options} />
+      <CreateAppointmentModal open={open} onClose={() => setOpen(false)} options={options} onCreated={() => router.refresh()} />
     </>
   );
 }

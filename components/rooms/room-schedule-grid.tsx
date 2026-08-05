@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Video } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { BusinessHours } from "@/lib/domain/types";
@@ -35,6 +36,7 @@ export function RoomScheduleGrid({
   bookings: AppointmentView[];
   scheduling: SchedulingOptions;
 }) {
+  const router = useRouter();
   const [createOpen, setCreateOpen] = useState(false);
   const [init, setInit] = useState<CreateInitial | null>(null);
   const [key, setKey] = useState(0);
@@ -121,7 +123,7 @@ export function RoomScheduleGrid({
         </div>
       </div>
 
-      <CreateAppointmentModal key={key} open={createOpen} onClose={() => setCreateOpen(false)} options={scheduling} initial={init ?? undefined} />
+      <CreateAppointmentModal key={key} open={createOpen} onClose={() => setCreateOpen(false)} options={scheduling} initial={init ?? undefined} onCreated={() => router.refresh()} />
     </div>
   );
 }

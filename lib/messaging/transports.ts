@@ -21,6 +21,7 @@ export async function sendWhatsApp(creds: { phoneNumberId: string | null; access
     const token = decryptField(creds.accessTokenEnc);
     const res = await fetch(`https://graph.facebook.com/v21.0/${creds.phoneNumberId}/messages`, {
       method: "POST",
+      signal: AbortSignal.timeout(10_000),
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ messaging_product: "whatsapp", recipient_type: "individual", to, type: "text", text: { body } }),
     });
@@ -48,6 +49,7 @@ export async function sendWhatsAppTemplate(
     const components = params.length ? [{ type: "body", parameters: params.map((text) => ({ type: "text", text })) }] : undefined;
     const res = await fetch(`https://graph.facebook.com/v21.0/${creds.phoneNumberId}/messages`, {
       method: "POST",
+      signal: AbortSignal.timeout(10_000),
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         messaging_product: "whatsapp", recipient_type: "individual", to, type: "template",
@@ -73,6 +75,7 @@ export async function verifyWhatsApp(
   try {
     const token = decryptField(creds.accessTokenEnc);
     const res = await fetch(`https://graph.facebook.com/v21.0/${creds.phoneNumberId}?fields=display_phone_number,verified_name,quality_rating`, {
+      signal: AbortSignal.timeout(10_000),
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return { ok: false, detail: `Meta HTTP ${res.status} — check the Phone Number ID and token.` };
@@ -108,6 +111,7 @@ export async function sendSms(to: string, body: string): Promise<TransportResult
     const auth = Buffer.from(`${creds.tokenId}:${creds.tokenSecret}`).toString("base64");
     const res = await fetch("https://api.bulksms.com/v1/messages", {
       method: "POST",
+      signal: AbortSignal.timeout(10_000),
       headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
       body: JSON.stringify({ to, body, encoding: "UNICODE" }),
     });
@@ -125,6 +129,7 @@ export async function sendEmail(to: string, subject: string, body: string, fromN
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
+      signal: AbortSignal.timeout(10_000),
       headers: { Authorization: `Bearer ${creds.apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ from: `${fromName || "Phila"} <${creds.from}>`, to, subject, text: body, html: html || undefined, reply_to: replyTo || undefined }),
     });

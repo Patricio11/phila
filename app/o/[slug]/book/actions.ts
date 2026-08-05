@@ -209,7 +209,10 @@ export async function submitBooking(
       // Online → a real, time-bound signed join link to the LiveKit room for this appointment.
       if (input.modality === "online") joinUrl = videoJoinPath(res.appointmentId, input.startsAt);
       // Email (rail) + always-on in-app for the counsellor + client (Phase 17.2).
-      await notifyAppointmentBooked(res.appointmentId);
+      await Promise.race([
+        notifyAppointmentBooked(res.appointmentId),
+        new Promise((resolve) => setTimeout(resolve, 4_000)),
+      ]);
       // Auto-raise an invoice for the session (priced services only; org-toggleable) so
       // the client can pay online. Best-effort — never break a booking over billing.
       try { await createInvoiceForBookingDb({ orgId: config.org.id, appointmentId: res.appointmentId, clientId: res.clientId, serviceName: service.name, amountCents: service.priceCents ?? 0, issuedAt: new Date(clockNow()) }); } catch { /* never break booking */ }

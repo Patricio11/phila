@@ -1173,6 +1173,13 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   supervision/CPD evidence, "N present · M absent" on the session row, audited. Also fixed: the video
   token API rejected **hybrid** appointments. Tables `supervision_class_sessions` + `_attendance`
   (migration 0060 + RLS).
+- [x] **Operational reports** *(2026-08-06)*: a **Reports** tab in Insights (Picktime-style, fully
+  live): seven report types over the permanent records — Bookings summary · Cancelled (with reasons) ·
+  No-shows · By counsellor (booked/completed/no-shows/hours/billed/collected) · By service · Fully
+  paid · Payment pending (overdue flag) — across six periods (Today → YTD), with **search within
+  results**, honest totals lines, coloured status chips, and the shared **CSV / Excel / PDF export**;
+  report views audited `pii.read`, every export audited **`pii.export`** with type+format+row count.
+  (`db/queries/reports.ts`, `components/hub/reports-tab.tsx`.)
 
 ---
 

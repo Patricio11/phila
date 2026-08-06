@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { LineChart, PieChart } from "lucide-react";
+import { FileBarChart, LineChart, PieChart } from "lucide-react";
 import type { HubInsights, ReportingResult } from "@/lib/data-provider";
 import { HubInsightsView } from "@/components/hub/hub-insights-view";
 import { ReportingView } from "@/components/hub/reporting-view";
+import { ReportsTab } from "@/components/hub/reports-tab";
 import { cn } from "@/lib/utils";
 
-type TabKey = "practice" | "funder";
+type TabKey = "practice" | "reports" | "funder";
 const TABS: { key: TabKey; label: string; icon: typeof LineChart }[] = [
   { key: "practice", label: "Practice", icon: LineChart },
+  { key: "reports", label: "Reports", icon: FileBarChart },
   { key: "funder", label: "Funder reporting", icon: PieChart },
 ];
 
@@ -50,6 +52,9 @@ export function InsightsWorkspace({ insights, reporting, orgName }: { insights: 
 
       <div role="tabpanel" hidden={tab !== "practice"}>
         <HubInsightsView initial={insights} />
+      </div>
+      <div role="tabpanel" hidden={tab !== "reports"}>
+        <ReportsTab orgName={orgName} />
       </div>
       <div role="tabpanel" hidden={tab !== "funder"}>
         <ReportingView initial={reporting} orgName={orgName} />

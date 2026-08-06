@@ -152,6 +152,7 @@ Sign in as **Thandeka**.
 - ☐ Client-mix cuts honour consent (coverage shown)
 - ☐ The **Funder reporting** tab shows headline stats (**Clients reported**, **Improved ≥5 on PHQ-9 %**, **Provinces reached**), key-findings bullets + a paragraph from real figures, k-anon breakdowns ("too few to report" where suppressed), and **Download CSV** (k-anonymised)
 - ☐ The old `/hub/reporting` URL **redirects here** (bookmarks don't break)
+- ☐ **Reports tab** (batch 2): seven report types (Bookings summary → Payment pending) across six periods load live; **search** filters the rows; **Export** downloads CSV / Excel / PDF matching the table; every export lands in the audit log as `pii.export` with the row count
 
 **Forms** (`/hub/forms`)
 - ☐ The library shows the seeded **Intake** + **"After your session"** feedback forms with sent/completed counts

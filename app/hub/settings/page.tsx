@@ -8,6 +8,7 @@ import { SettingsTabs } from "@/components/hub/settings-tabs";
 import { ClientPortalSettings } from "@/components/hub/client-portal-settings";
 import { FundersFeatureToggle } from "@/components/hub/funders-feature-toggle";
 import { ReferralsFeatureToggle } from "@/components/hub/referrals-feature-toggle";
+import { LanguageFeatureToggle } from "@/components/hub/language-feature-toggle";
 import { Card, CardHead } from "@/components/ui/card";
 import { IntegrationToggles } from "@/components/hub/integration-toggles";
 import { PaymentConnectionCard } from "@/components/hub/payment-connection-card";
@@ -50,6 +51,11 @@ export default async function HubSettingsPage() {
     provider.getOrgSubscription(membership.orgId, clockNow()),
   ]);
   if (!settings || !org) notFound();
+  // Phase 32.0 - the language feature's full resolution, so the switch is honest
+  // about being locked by a Phila kill-switch / override / plan.
+  const langRes = process.env.DATA_PROVIDER === "db"
+    ? await (await import("@/db/queries/features")).resolveFeatureDb(membership.orgId, "language")
+    : null;
   const videoSettings = await getVideoSettings(membership.orgId);
   const [aiSettings, aiSpent, aiProvider, gateway] = await Promise.all([
     getAiSettings(membership.orgId),
@@ -189,6 +195,11 @@ export default async function HubSettingsPage() {
                 <IntegrationToggles initial={org.features} />
                 <FundersFeatureToggle initial={Boolean(org.features.funders)} />
                 <ReferralsFeatureToggle initial={Boolean(org.features.referrals)} />
+                <LanguageFeatureToggle
+                  initial={langRes ? langRes.selfEnabled : Boolean(org.features.language)}
+                  locked={langRes ? !langRes.orgControllable : false}
+                  lockedReason={langRes && !langRes.orgControllable ? langRes.reason : undefined}
+                />
               </div>
             </Card>
             <div className="grid items-start gap-6 lg:grid-cols-2">

@@ -168,7 +168,7 @@ Sign in as **Thandeka**.
 - ☐ Grant dashboard shows the **At a glance** status line + indicators **actual vs target** with a paced "expected" marker + on-track/at-risk/behind
 - ☐ Post a **narrative update** → it saves and appears in the list (and later on the funder portal)
 
-**Language of record (Phase 32.0)**
+**Language of record (Phase 32.0)** *(feature-switched: Settings → Integrations per org; super-admin kill-switch in `/admin` Feature control. Off = none of the below exists and booking runs pre-32.0)*
 - ☐ Team → open a counsellor (e.g. Aisha Patel) → a **Languages** card shows native-name chips; **Edit languages** offers toggle chips grouped by tier ("Live translation ready" etc.); saving persists and is audited
 - ☐ A client dossier shows **Record language** (or the recorded language + a "needs interpretation" chip); recording a home language + "how is the gap handled today" saves to the client row
 - ☐ Clients hub: a **language filter** appears beside the counsellor filter; the clients **Export** includes a Language column

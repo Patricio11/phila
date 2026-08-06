@@ -347,6 +347,9 @@ export async function saveSpokenLanguages(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { principal, membership } = await requireHub();
   if (!raw?.counsellorId || !Array.isArray(raw?.codes)) return { ok: false, error: "Invalid request." };
+  if (isDb() && !(await (await import("@/db/queries/features")).effectiveFeaturesDb(membership.orgId)).language) {
+    return { ok: false, error: "Language of record isn't switched on for this practice." };
+  }
   const { LANGUAGE_BY_CODE } = await import("@/lib/domain/languages");
   const codes = [...new Set(raw.codes)].filter((c) => LANGUAGE_BY_CODE.has(c));
 

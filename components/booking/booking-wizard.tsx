@@ -18,13 +18,18 @@ import { ConfirmStep } from "@/components/booking/steps/confirm-step";
 import { SuccessStep } from "@/components/booking/steps/success-step";
 import { cn } from "@/lib/utils";
 
-const STEPS: BookingStepMeta[] = [
-  { key: "service", label: "Service" },
-  { key: "language", label: "Language" },
-  { key: "time", label: "Time" },
-  { key: "intake", label: "About you" },
-  { key: "confirm", label: "Confirm" },
-];
+// The Language step (Phase 32.0) only exists when the org's `language` feature is
+// on (platform kill-switch → override → plan → self-toggle). Off = the wizard is
+// exactly what it was before 32.0.
+function buildSteps(languageEnabled: boolean): BookingStepMeta[] {
+  return [
+    { key: "service", label: "Service" },
+    ...(languageEnabled ? [{ key: "language", label: "Language" }] : []),
+    { key: "time", label: "Time" },
+    { key: "intake", label: "About you" },
+    { key: "confirm", label: "Confirm" },
+  ];
+}
 
 type Saved = { state: BookingState; step: number };
 
@@ -45,14 +50,17 @@ export function BookingWizard({
   config,
   initialServiceId,
   logoUrl = null,
+  languageEnabled = false,
 }: {
   config: BookingConfig;
   initialServiceId: string | null;
   logoUrl?: string | null;
+  languageEnabled?: boolean;
 }) {
   const { org } = config;
   const slug = org.slug;
   const brand = contrastSafeAccent(org.brandAccent);
+  const STEPS = buildSteps(languageEnabled);
 
   const [state, setState] = useState<BookingState>({
     ...EMPTY_BOOKING,
@@ -101,15 +109,17 @@ export function BookingWizard({
     return mm.online ? "online" : "in_person";
   }
 
+  const stepKey = STEPS[step]?.key ?? "service";
+
   const canAdvance = (() => {
-    switch (step) {
-      case 0:
+    switch (stepKey) {
+      case "service":
         return Boolean(state.serviceId) && Boolean(state.modality);
-      case 1:
+      case "language":
         return Boolean(state.language);
-      case 2:
+      case "time":
         return Boolean(state.slotStart);
-      case 3:
+      case "intake":
         return isIntakeValid(config.intakeForm.fields, state.intake, { contactPair: CONTACT_PAIR });
       default:
         return true;
@@ -140,7 +150,7 @@ export function BookingWizard({
     const payload = {
       slug,
       serviceId: state.serviceId!,
-      language: state.language,
+      language: languageEnabled ? state.language : null,
       counsellorId: state.slotCounsellorId!,
       startsAt: state.slotStart!,
       modality: state.modality ?? ("in_person" as const),
@@ -208,7 +218,7 @@ export function BookingWizard({
 
   return (
     <BookingShell orgName={org.name} orgSlug={slug} brand={brand} steps={STEPS} current={step} logoUrl={logoUrl}>
-      {step === 0 && (
+      {stepKey === "service" && (
         <ServiceStep
           services={config.services}
           serviceModalities={config.serviceModalities}
@@ -218,13 +228,13 @@ export function BookingWizard({
           onModality={(modality) => patch({ modality })}
         />
       )}
-      {step === 1 && (
+      {stepKey === "language" && (
         <LanguageStep
           language={state.language}
           onLanguage={(code) => patch({ language: code, slotStart: null, slotCounsellorId: null })}
         />
       )}
-      {step === 2 && (
+      {stepKey === "time" && (
         <TimeStep
           slug={slug}
           businessHours={org.scheduling.businessHours}
@@ -232,14 +242,14 @@ export function BookingWizard({
           maxDaysAhead={config.maxDaysAhead}
           minNoticeHours={config.minNoticeHours}
           counsellorId={null}
-          language={state.language}
+          language={languageEnabled ? state.language : null}
           date={state.date}
           slotStart={state.slotStart}
           onPickDate={(date) => patch({ date, slotStart: null, slotCounsellorId: null })}
           onPickSlot={(start, counsellorId) => patch({ slotStart: start, slotCounsellorId: counsellorId })}
         />
       )}
-      {step === 3 && (
+      {stepKey === "intake" && (
         <IntakeStep
           form={config.intakeForm}
           values={state.intake}
@@ -247,7 +257,7 @@ export function BookingWizard({
           showErrors={showErrors}
         />
       )}
-      {step === 4 && (
+      {stepKey === "confirm" && (
         <ConfirmStep
           config={config}
           state={state}
@@ -272,9 +282,9 @@ export function BookingWizard({
         )}
 
         <div className="ml-auto flex items-center gap-3">
-          {showErrors && !canAdvance && step <= 2 && (
+          {showErrors && !canAdvance && (stepKey === "service" || stepKey === "language" || stepKey === "time") && (
             <span className="text-[12.5px] text-danger">
-              {step === 0 ? "Choose a service to continue." : step === 1 ? "Choose a language to continue." : "Pick a time to continue."}
+              {stepKey === "service" ? "Choose a service to continue." : stepKey === "language" ? "Choose a language to continue." : "Pick a time to continue."}
             </span>
           )}
           {isConfirm ? (

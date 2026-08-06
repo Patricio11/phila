@@ -44,5 +44,15 @@ export default async function BookPage({
   const initialServiceId = config.services.some((s) => s.id === service) ? service! : null;
   const logoUrl = process.env.DATA_PROVIDER === "db" ? await getOrgLogoUrlPublic(config.org.id) : null;
 
-  return <BookingWizard config={config} initialServiceId={initialServiceId} logoUrl={logoUrl} />;
+  // Phase 32.0 behind the feature switch: off = the wizard is exactly pre-32.0.
+  let languageEnabled = false;
+  if (process.env.DATA_PROVIDER === "db") {
+    const { effectiveFeaturesDb } = await import("@/db/queries/features");
+    languageEnabled = (await effectiveFeaturesDb(config.org.id)).language;
+  } else {
+    const org = await provider.getOrg(config.org.id);
+    languageEnabled = Boolean(org?.features.language);
+  }
+
+  return <BookingWizard config={config} initialServiceId={initialServiceId} logoUrl={logoUrl} languageEnabled={languageEnabled} />;
 }

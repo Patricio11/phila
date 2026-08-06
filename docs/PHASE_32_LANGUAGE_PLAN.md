@@ -253,6 +253,13 @@ org_language_settings
   monthly_minute_cap int
 ```
 
+> **Shipped adjustment (32.0):** the on/off itself lives in the standard feature registry as the
+> `language` org feature - platform kill-switch (`/admin` Feature control) → per-org override →
+> plan → the org's own "Language of record" switch in Settings → Integrations. Off = the system
+> runs exactly as before 32.0 (no booking step, no chips, no matching), with recorded data kept.
+> `org_language_settings.enabled` is therefore NOT the master switch; the table remains for the
+> rail/retention/cap configuration that 32.1+ needs.
+
 `home_language` is **special personal information**. In South Africa home language correlates
 strongly with ethnic origin, so it is treated exactly like `race`: consent-gated under the existing
 `demographics` purpose, k-anon floor on export, never on a public or cross-org payload. Add it to

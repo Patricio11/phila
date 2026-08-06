@@ -59,13 +59,18 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
     ? await (await import("@/db/queries/availability")).getCounsellorAvailabilityDb(membership.orgId, detail.counsellorId)
     : [];
   // Phase 32.0 - the counsellor's normalised spoken languages (matching truth).
+  // Behind the `language` feature: off = the card never renders.
+  let languageOn = false;
   let spokenLanguages: string[] = [];
   if (detail.counsellorId && process.env.DATA_PROVIDER === "db") {
-    const { getDb } = await import("@/db/client");
-    const { counsellors: counsellorsTable } = await import("@/db/schema");
-    const { eq } = await import("drizzle-orm");
-    const [row] = await getDb().select({ s: counsellorsTable.spokenLanguages }).from(counsellorsTable).where(eq(counsellorsTable.id, detail.counsellorId)).limit(1);
-    spokenLanguages = row?.s ?? [];
+    languageOn = (await (await import("@/db/queries/features")).effectiveFeaturesDb(membership.orgId)).language;
+    if (languageOn) {
+      const { getDb } = await import("@/db/client");
+      const { counsellors: counsellorsTable } = await import("@/db/schema");
+      const { eq } = await import("drizzle-orm");
+      const [row] = await getDb().select({ s: counsellorsTable.spokenLanguages }).from(counsellorsTable).where(eq(counsellorsTable.id, detail.counsellorId)).limit(1);
+      spokenLanguages = row?.s ?? [];
+    }
   }
   const org = await provider.getOrg(membership.orgId);
   const orgHours = (org?.scheduling.businessHours ?? {}) as BusinessHours;
@@ -202,7 +207,7 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
             {detail.supervisorName && <p className="mt-1 text-[11.5px] text-text-3">Supervised by {detail.supervisorName}.</p>}
           </Card>
 
-          {detail.counsellorId && (
+          {detail.counsellorId && languageOn && (
             <Card>
               <CardHead title="Languages" />
               <SpokenLanguagesEditor counsellorId={detail.counsellorId} firstName={member.name.split(" ")[0] ?? member.name} initial={spokenLanguages} />

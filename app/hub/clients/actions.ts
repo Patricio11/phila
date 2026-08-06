@@ -349,6 +349,9 @@ export async function recordClientLanguage(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { principal, membership } = await requireHub();
   if (!raw?.clientId) return { ok: false, error: "Invalid client." };
+  if (process.env.DATA_PROVIDER === "db" && !(await (await import("@/db/queries/features")).effectiveFeaturesDb(membership.orgId)).language) {
+    return { ok: false, error: "Language of record isn't switched on for this practice." };
+  }
   const { LANGUAGE_BY_CODE, GAP_HANDLING_LABELS } = await import("@/lib/domain/languages");
   const lang = raw.homeLanguage && LANGUAGE_BY_CODE.has(raw.homeLanguage) ? raw.homeLanguage : null;
   const gap = raw.gapHandling && GAP_HANDLING_LABELS[raw.gapHandling] ? raw.gapHandling : null;

@@ -36,16 +36,21 @@ export default async function HubClientsPage() {
 
   const counsellorOpts = counsellors.map((c) => ({ id: c.id, name: c.name }));
 
+  // Phase 32.0 behind the feature switch: off = no Language column or filter.
+  const languageOn = process.env.DATA_PROVIDER === "db"
+    ? (await (await import("@/db/queries/features")).effectiveFeaturesDb(membership.orgId)).language
+    : Boolean(org?.features.language);
+
   // Feedback #9 - the export table (built here so the file matches the live list).
   const day = (iso: string | null | undefined) => iso ? new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "2-digit", month: "short", year: "numeric" }).format(new Date(iso)) : "";
   const exportTable = {
     filenameBase: `clients-${membership.orgName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${now.slice(0, 10)}`,
     title: "Clients",
     subtitle: `${membership.orgName} · ${day(now)} · ${rows.length} client${rows.length === 1 ? "" : "s"}`,
-    headers: ["Name", "Phone", "Email", "Province", "Language", "Counsellor", "Status", "Safeguarding", "Next session", "Last session", "Client since"],
+    headers: ["Name", "Phone", "Email", "Province", ...(languageOn ? ["Language"] : []), "Counsellor", "Status", "Safeguarding", "Next session", "Last session", "Client since"],
     rows: rows.map((r) => [
       r.client.name, r.client.phone ?? "", r.client.email ?? "", r.client.province,
-      languageName(r.client.homeLanguage),
+      ...(languageOn ? [languageName(r.client.homeLanguage)] : []),
       r.counsellorName, r.status, r.client.riskFlag ? "Flagged" : "",
       day(r.nextSession?.startsAt), day(r.lastSession?.startsAt), day(r.client.createdAt),
     ]),
@@ -71,7 +76,7 @@ export default async function HubClientsPage() {
 
       <DedupeBanner groups={duplicates} />
 
-      <HubClientsTable rows={rows} removedRows={removedRows} counsellors={counsellorOpts} />
+      <HubClientsTable rows={rows} removedRows={removedRows} counsellors={counsellorOpts} languageOn={languageOn} />
     </div>
   );
 }

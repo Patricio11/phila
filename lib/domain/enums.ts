@@ -177,7 +177,7 @@ export const AI_FEATURES = [
 export type AiFeature = (typeof AI_FEATURES)[number];
 
 /** Per-org feature toggles  dormant by default (Dormant-by-Default Rule). */
-export const ORG_FEATURES = ["ai", "video", "whatsapp", "sms", "payments", "funders", "referrals"] as const;
+export const ORG_FEATURES = ["ai", "video", "whatsapp", "sms", "payments", "funders", "referrals", "language"] as const;
 export type OrgFeature = (typeof ORG_FEATURES)[number];
 
 /* ---- Documents (Phase 18) ---------------------------------------------- */

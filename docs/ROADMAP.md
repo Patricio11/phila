@@ -1211,6 +1211,15 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   speaker), and `interpretation_needed` is computed honestly at intake. The hub appointment modal
   hints **"Speaks isiZulu"** per counsellor and counts free speakers in the availability caption.
   Migrations 0061/0062; home_language is SPECIAL PI (demographics-gated, k-anon on export).
+- [x] **Language behind a real switch** *(2026-08-06)*: `language` is a registered org feature in
+  the entitlement chain (platform kill-switch → per-org override → plan → the org's own toggle).
+  The super admin can turn it off across Phila from **Feature control**; each practice has its own
+  honest **Language of record** switch in Settings → Integrations (locked with the reason shown
+  when Phila decides). Off = the system runs exactly as before 32.0: the booking wizard drops the
+  Language step, the team Languages card / dossier control / clients filter + export column /
+  modal speaker caption all disappear, server actions refuse language writes, and matching
+  ignores language - while anything already recorded is kept, never deleted. Proven live both
+  ways: killed platform-wide → every surface gone; restored → the step returns instantly.
 
 ---
 

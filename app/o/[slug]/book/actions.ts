@@ -95,8 +95,9 @@ export async function getAvailableSlots(
   // the LEAST-LOADED free counsellor that day, so work spreads fairly (#5).
   const availability = process.env.DATA_PROVIDER === "db" ? await getOrgAvailabilityMapDb(org.id) : new Map();
   // Phase 32.0 - who speaks the chosen language (prefer a match over translation).
+  // Gated on the org's `language` feature: client input never re-enables it.
   let speakers = new Set<string>();
-  if (language && process.env.DATA_PROVIDER === "db") {
+  if (language && process.env.DATA_PROVIDER === "db" && (await (await import("@/db/queries/features")).effectiveFeaturesDb(org.id)).language) {
     const { getDb } = await import("@/db/client");
     const { counsellors: counsellorsTable } = await import("@/db/schema");
     const { eq } = await import("drizzle-orm");
@@ -221,6 +222,8 @@ export async function submitBooking(
   // → null until the org turns video on).
   if (process.env.DATA_PROVIDER === "db") {
     try {
+      // Feature-gated (Phase 32.0): with `language` off, nothing language-shaped persists.
+      const languageOn = (await (await import("@/db/queries/features")).effectiveFeaturesDb(config.org.id)).language;
       const res = await persistBooking({
         orgId: config.org.id,
         province: config.org.province,
@@ -228,7 +231,7 @@ export async function submitBooking(
         counsellorId: counsellor.id,
         startsAt: input.startsAt,
         durationMin: service.durationMin,
-        language: input.language ?? null,
+        language: languageOn ? (input.language ?? null) : null,
         modality: input.modality,
         intake: input.intake,
         consents: input.consents,

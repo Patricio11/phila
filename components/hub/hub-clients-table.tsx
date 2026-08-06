@@ -43,7 +43,7 @@ function shortDate(iso: string | null | undefined): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "short" }).format(new Date(iso));
 }
 
-export function HubClientsTable({ rows, removedRows, counsellors }: { rows: OrgClientRow[]; removedRows: OrgClientRow[]; counsellors: { id: string; name: string }[] }) {
+export function HubClientsTable({ rows, removedRows, counsellors, languageOn = false }: { rows: OrgClientRow[]; removedRows: OrgClientRow[]; counsellors: { id: string; name: string }[]; languageOn?: boolean }) {
   const { toast } = useToast();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("all");
@@ -261,7 +261,7 @@ export function HubClientsTable({ rows, removedRows, counsellors }: { rows: OrgC
           search={{ placeholder: "Search clients…", getText: (r) => `${r.client.name} ${r.counsellorName} ${r.client.province}` }}
           toolbar={
             <div className="flex items-center gap-2">
-              {presentLanguages.length > 0 && (
+              {languageOn && presentLanguages.length > 0 && (
                 <div className="w-40">
                   <Select
                     value={languageFilter}

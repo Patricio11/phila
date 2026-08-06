@@ -29,6 +29,7 @@ export const FEATURE_REGISTRY: Record<OrgFeature, FeatureMeta> = {
   payments: { key: "payments", label: "Payments", description: "The org's own gateway so clients pay them directly for invoices.", category: "payments", globallyDisableable: true },
   funders: { key: "funders", label: "Funders & grants", description: "M&E reporting and funder-portal sharing (k-anonymised).", category: "reporting", globallyDisableable: false },
   referrals: { key: "referrals", label: "Referral tracking", description: "Capture how each client found the practice and see where clients come from in Insights.", category: "reporting", globallyDisableable: false },
+  language: { key: "language", label: "Language of record", description: "Home language on clients, spoken languages on counsellors, a language step in public booking, and speaker-first matching (Phase 32).", category: "clinical", globallyDisableable: true },
 };
 
 export const FEATURE_LIST: FeatureMeta[] = ORG_FEATURES.map((f) => FEATURE_REGISTRY[f]);
@@ -47,6 +48,7 @@ export function planIncludesFeature(plan: Plan | undefined, feature: OrgFeature)
     case "sms": return plan.messaging;
     case "payments":
     case "funders":
-    case "referrals": return true; // available on every plan; org-toggleable
+    case "referrals":
+    case "language": return true; // available on every plan; org-toggleable
   }
 }

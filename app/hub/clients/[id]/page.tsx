@@ -55,6 +55,10 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
   const pricedServices = services.filter((s) => (s.priceCents ?? 0) > 0).map((s) => ({ name: s.name, priceCents: s.priceCents ?? 0 }));
   const referralsOn = Boolean(dossier.org.features.referrals);
   const referralSource = referralsOn && isDbMode ? await getClientReferralDb(membership.orgId, id) : null;
+  // Phase 32.0 behind the feature switch (kill-switch → override → plan → self-toggle).
+  const languageOn = isDbMode
+    ? (await (await import("@/db/queries/features")).effectiveFeaturesDb(membership.orgId)).language
+    : Boolean(dossier.org.features.language);
   const retention = isDbMode ? await clientRetentionDb(membership.orgId, id, now) : null;
 
   // Hub oversight is a recorded PII access  but private clinical notes are never on this page.
@@ -109,13 +113,15 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
         {client.phone && <span className="inline-flex items-center gap-1"><Phone className="size-3.5 text-text-3" strokeWidth={2} aria-hidden /> {client.phone}</span>}
         {client.email && <span className="inline-flex items-center gap-1"><Mail className="size-3.5 text-text-3" strokeWidth={2} aria-hidden /> {client.email}</span>}
         {client.riskFlag && <span className="inline-flex items-center gap-1.5 text-danger"><StatusDot tone="rose" /> Safeguarding flag</span>}
-        <ClientLanguageControl
-          clientId={client.id}
-          firstName={client.name.split(" ")[0] ?? client.name}
-          homeLanguage={client.homeLanguage ?? null}
-          gapHandling={client.languageGapHandling ?? null}
-          interpretationNeeded={Boolean(client.interpretationNeeded)}
-        />
+        {languageOn && (
+          <ClientLanguageControl
+            clientId={client.id}
+            firstName={client.name.split(" ")[0] ?? client.name}
+            homeLanguage={client.homeLanguage ?? null}
+            gapHandling={client.languageGapHandling ?? null}
+            interpretationNeeded={Boolean(client.interpretationNeeded)}
+          />
+        )}
         {referralSource && <span className="inline-flex items-center gap-1"><Share2 className="size-3.5 text-text-3" strokeWidth={2} aria-hidden /> Found you via {REFERRAL_SOURCE_LABELS[referralSource as ReferralSource] ?? referralSource}</span>}
       </div>
 

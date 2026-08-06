@@ -47,9 +47,10 @@ export async function getAvailableCounsellors(
   const res = await availableCounsellorsAtDb(d.orgId, startISO, d.durationMin, businessHours);
 
   // Phase 32.0 - prefer a language match over translation, visibly.
+  // Behind the `language` feature: off = the caption and hints never appear.
   let speakers: string[] = [];
   let clientLanguage: string | null = null;
-  if (d.clientId) {
+  if (d.clientId && (await (await import("@/db/queries/features")).effectiveFeaturesDb(d.orgId)).language) {
     const { clients, counsellors } = await import("@/db/schema");
     const { and, eq } = await import("drizzle-orm");
     const [c] = await getDb().select({ lang: clients.homeLanguage }).from(clients)

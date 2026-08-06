@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState, useTransition } from "react";
+import { za } from "@/lib/format";
 import { Check, Pencil, Sparkles, X } from "lucide-react";
 import type { PlanWithUsage } from "@/lib/data-provider";
 import type { Plan } from "@/lib/domain/types";
@@ -12,7 +13,7 @@ import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 function rands(cents: number): string {
-  return `R${Math.round(cents / 100).toLocaleString("en-ZA")}`;
+  return `R${za(Math.round(cents / 100))}`;
 }
 function tokens(n: number): string {
   if (n === 0) return "No AI";

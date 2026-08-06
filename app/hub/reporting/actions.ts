@@ -35,7 +35,7 @@ export async function runReport(raw: z.infer<typeof filters>): Promise<Reporting
   return provider.getReporting(membership.orgId, now, parsed);
 }
 
-export async function exportFunderReport(format: "pdf" | "csv"): Promise<{ ok: true }> {
+export async function exportFunderReport(format: "pdf" | "csv" | "excel"): Promise<{ ok: true }> {
   const { membership } = await requireHub();
   await logAccess({
     action: "pii.export",

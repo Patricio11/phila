@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { Check, Copy, Download, FileText, Loader2, Lock, MapPin, Sparkles, TrendingDown, Users } from "lucide-react";
+import { Check, Copy, Loader2, Lock, MapPin, Sparkles, TrendingDown, Users } from "lucide-react";
 import type { Breakdown, ReportingFilters, ReportingResult } from "@/lib/data-provider";
 import { AGE_BANDS, EMPLOYMENT_STATUSES, GENDERS, PROVINCES } from "@/lib/domain/enums";
 import { AGE_BAND_LABELS, EMPLOYMENT_LABELS, GENDER_LABELS } from "@/lib/domain/labels";
@@ -15,6 +15,7 @@ import { DonutChart } from "@/components/charts/donut-chart";
 import { useToast } from "@/components/ui/toast";
 import { coverageNote } from "@/lib/domain/helpers";
 import { exportFunderReport, runReport } from "@/app/hub/reporting/actions";
+import { ExportMenu } from "@/components/hub/export-menu";
 
 const PERIODS = ["This month", "This quarter", "Year to date", "Last 12 months"] as const;
 
@@ -55,26 +56,22 @@ function buildNarrative(result: ReportingResult, period: string, orgName: string
   );
 }
 
-function buildCsv(result: ReportingResult, period: string, orgName: string): string {
-  const q = (s: string) => `"${s.replace(/"/g, '""')}"`;
-  const lines: string[] = [];
-  lines.push(q(`${orgName}  funder report`) + "," + q(period));
-  lines.push(q("Clients matched") + "," + result.matched);
-  lines.push(q("With demographic consent") + "," + q(`${result.withDemographics} of ${result.totalClients}`));
-  lines.push("");
-  const section = (title: string, rows: Breakdown[]) => {
-    lines.push(q(title));
-    rows.forEach((r) => lines.push(q(r.label) + "," + (r.suppressed ? q("suppressed (<k)") : String(r.count ?? 0))));
-    lines.push("");
+/** The k-anonymised figures as one flat table — suppression written through. */
+function buildExportRows(result: ReportingResult): string[][] {
+  const rows: string[][] = [
+    ["Summary", "Clients matched", String(result.matched)],
+    ["Summary", "With demographic consent", `${result.withDemographics} of ${result.totalClients}`],
+  ];
+  const section = (title: string, list: Breakdown[]) => {
+    for (const r of list) rows.push([title, r.label, r.suppressed ? "suppressed (<k)" : String(r.count ?? 0)]);
   };
   section("By province", result.byProvince);
   section("By gender", result.byGender);
   section("By population group", result.byPopulationGroup);
   section("By age band", result.byAgeBand);
   section("By employment", result.byEmployment);
-  lines.push(q("PHQ-9 outcome trend (date, mean score)"));
-  result.outcome.points.forEach((p) => lines.push(q(p.label) + "," + p.value));
-  return lines.join("\n");
+  for (const p of result.outcome.points) rows.push(["PHQ-9 trend (mean, lower is better)", p.label, String(p.value)]);
+  return rows;
 }
 
 export function ReportingView({ initial, orgName }: { initial: ReportingResult; orgName: string }) {
@@ -84,7 +81,6 @@ export function ReportingView({ initial, orgName }: { initial: ReportingResult; 
   const [period, setPeriod] = useState<string>("This quarter");
   const [copied, setCopied] = useState(false);
   const [pending, startTransition] = useTransition();
-  const [exporting, startExport] = useTransition();
 
   const narrative = useMemo(() => buildNarrative(result, period, orgName), [result, period, orgName]);
 
@@ -104,26 +100,6 @@ export function ReportingView({ initial, orgName }: { initial: ReportingResult; 
     }
   };
 
-  const downloadCsv = () => {
-    const csv = buildCsv(result, period, orgName);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `funder-report-${period.toLowerCase().replace(/\s+/g, "-")}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    startExport(async () => {
-      await exportFunderReport("csv");
-      toast({ tone: "success", title: "CSV exported", description: "k-anonymised  small cells suppressed, nothing identifiable." });
-    });
-  };
-
-  const exportPdf = () =>
-    startExport(async () => {
-      await exportFunderReport("pdf");
-      toast({ tone: "success", title: "Funder report ready (PDF)", description: "Aggregate, k-anonymised, audited. Use your browser's print-to-PDF on this page for a copy now." });
-    });
 
   return (
     <div className="space-y-5">
@@ -194,19 +170,23 @@ export function ReportingView({ initial, orgName }: { initial: ReportingResult; 
         </Card>
       </div>
 
-      {/* Export */}
+      {/* Export — the shared house export (CSV / Excel / PDF), k-anon written through */}
       <Card className="p-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-0 flex-1">
             <div className="text-[13.5px] font-[600] text-text">Export  {period}</div>
-            <p className="text-[12px] text-text-2">Aggregate, k-anonymised, audited. The CSV downloads now; the narrative above is included with your figures.</p>
+            <p className="text-[12px] text-text-2">Aggregate, k-anonymised, audited — small cells export as &ldquo;suppressed&rdquo;, nothing identifiable ever leaves.</p>
           </div>
-          <Button variant="ghost" onClick={downloadCsv} loading={exporting}>
-            <Download className="size-4" strokeWidth={2} aria-hidden /> Download CSV
-          </Button>
-          <Button onClick={exportPdf} loading={exporting}>
-            <FileText className="size-4" strokeWidth={2} aria-hidden /> Funder report (PDF)
-          </Button>
+          <ExportMenu
+            table={{
+              filenameBase: `funder-report-${period.toLowerCase().replace(/\s+/g, "-")}`,
+              title: "Funder report",
+              subtitle: `${orgName} · ${period} · ${result.matched} clients reported · aggregate & k-anonymised`,
+              headers: ["Section", "Category", "Value"],
+              rows: buildExportRows(result),
+            }}
+            onExported={async (format) => { await exportFunderReport(format); }}
+          />
         </div>
       </Card>
     </div>

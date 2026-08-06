@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { za } from "@/lib/format";
 import { isRemote } from "@/lib/domain/enums";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -245,7 +246,7 @@ export function AppointmentDetail({
               {invoice !== "none" && invoice.forId === appt.id ? (
                 <>
                   <span className="text-[12.5px] font-medium tabular-nums text-text">{invoice.number}</span>
-                  <span className="text-[12.5px] tabular-nums text-text-2">R{(invoice.amountCents / 100).toLocaleString("en-ZA")}</span>
+                  <span className="text-[12.5px] tabular-nums text-text-2">R{za((invoice.amountCents / 100))}</span>
                   <span className={cn(
                     "rounded-chip px-2 py-0.5 text-[11px] font-semibold",
                     invoice.status === "paid" ? "bg-accent-soft text-accent" : invoice.status === "cancelled" ? "bg-surface-2 text-text-3" : "bg-warn-soft text-warn",

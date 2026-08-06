@@ -1,6 +1,7 @@
 "use client";
 
 import { CalendarDays, Clock, MapPin, MessageCircle, User, Video, Wallet } from "lucide-react";
+import { za } from "@/lib/format";
 import type { BookingConfig } from "@/lib/data-provider";
 import type { BookingState } from "@/components/booking/types";
 import { StepHeader } from "@/components/booking/step-header";
@@ -62,7 +63,7 @@ export function ConfirmStep({
         <div className="mt-4 flex items-start gap-2.5 rounded-control border border-border bg-surface-2/50 p-3.5">
           <Wallet className="mt-0.5 size-4 shrink-0 text-text-3" strokeWidth={2} aria-hidden />
           <p className="text-[12.5px] leading-relaxed text-text-2">
-            A deposit of <span className="font-semibold text-text">R{(config.deposit.cents / 100).toLocaleString("en-ZA")}</span> confirms your slot. You&apos;ll be prompted to pay securely right after booking.
+            A deposit of <span className="font-semibold text-text">R{za((config.deposit.cents / 100))}</span> confirms your slot. You&apos;ll be prompted to pay securely right after booking.
           </p>
         </div>
       ) : null}

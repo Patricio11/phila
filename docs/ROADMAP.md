@@ -1180,6 +1180,15 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   results**, honest totals lines, coloured status chips, and the shared **CSV / Excel / PDF export**;
   report views audited `pii.read`, every export audited **`pii.export`** with type+format+row count.
   (`db/queries/reports.ts`, `components/hub/reports-tab.tsx`.)
+- [x] **One export everywhere + a hydration bug hunt** *(2026-08-06)*: the shared **ExportMenu
+  (CSV · Excel · PDF)** is now the house standard — **Funder reporting**'s old Download-CSV button
+  replaced (k-anon suppression written through as "suppressed (<k)"; audited `funder_export_k_anon`
+  for every format), the **Practice tab** gained the export (period metrics vs previous period), and
+  the **platform audit ledger** export moved to it (and exporting the ledger is now genuinely
+  audited — the old button only *claimed* to be). En route, found & fixed a real bug: money rendered
+  with `toLocaleString("en-ZA")` differs between Node ("1,800") and Chrome ("1 800"), causing React
+  hydration failures that silently killed click handlers (the funder Export was dead). New
+  deterministic `za()` formatter (`lib/format.ts`) swept across all 20 client components.
 
 ---
 

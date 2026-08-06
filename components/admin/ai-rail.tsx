@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { za } from "@/lib/format";
 import { Check, KeyRound, Lock, Zap } from "lucide-react";
 import type { AiRailConfig } from "@/lib/domain/types";
 import { Card, CardHead } from "@/components/ui/card";
@@ -18,7 +19,7 @@ const PROVIDERS = [
 const STATUSES = ["off", "mock", "live"] as const;
 
 function rands(cents: number): string {
-  return `R${Math.round(cents / 100).toLocaleString("en-ZA")}`;
+  return `R${za(Math.round(cents / 100))}`;
 }
 
 /**

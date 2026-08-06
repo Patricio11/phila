@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { za } from "@/lib/format";
 import { isRemote, type AppointmentType } from "@/lib/domain/enums";
 import { CalendarHeart, Video } from "lucide-react";
 import type { UpcomingRow } from "@/db/queries/hub-dashboard";
@@ -36,7 +37,7 @@ export function ComingUpNext({ upcoming }: { upcoming: UpcomingRow[] }) {
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[13.5px] font-[600] text-text">{u.serviceName} with {u.clientName}</span>
                 <span className="mt-0.5 block text-[12px] text-text-3">
-                  {u.priceCents ? `R${Math.round(u.priceCents / 100).toLocaleString("en-ZA")} · ` : ""}{u.counsellorName} · {TIME.format(d)} · {u.durationMin} min
+                  {u.priceCents ? `R${za(Math.round(u.priceCents / 100))} · ` : ""}{u.counsellorName} · {TIME.format(d)} · {u.durationMin} min
                 </span>
               </span>
               {isRemote(u.type as AppointmentType) ? (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { za } from "@/lib/format";
 import Link from "next/link";
 import { ClipboardList, ExternalLink, Save, Wallet } from "lucide-react";
 import type { BookingSettings } from "@/lib/data-provider";
@@ -38,7 +39,7 @@ const INTERVAL = [
   { value: "60", label: "Every hour" },
 ];
 
-const rands = (cents: number | null) => (cents === null ? "Enquire" : `R${(cents / 100).toLocaleString("en-ZA")}`);
+const rands = (cents: number | null) => (cents === null ? "Enquire" : `R${za((cents / 100))}`);
 
 export function BookingSettingsForm({
   initial,

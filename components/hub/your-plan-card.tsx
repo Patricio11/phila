@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { za } from "@/lib/format";
 import { Check, Sparkles } from "lucide-react";
 import type { OrgSubscription } from "@/lib/data-provider";
 import { Button } from "@/components/ui/button";
 
 function rands(cents: number): string {
-  return `R${(cents / 100).toLocaleString("en-ZA")}`;
+  return `R${za((cents / 100))}`;
 }
 function monthYear(iso: string): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "long", year: "numeric" }).format(new Date(iso));

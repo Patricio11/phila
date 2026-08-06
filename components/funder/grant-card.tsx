@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { za } from "@/lib/format";
 import { ArrowRight, CalendarRange, Target, Users } from "lucide-react";
 import type { GrantSummary } from "@/lib/data-provider";
 import type { FunderType } from "@/lib/domain/enums";
@@ -13,7 +14,7 @@ const FUNDER_TYPE_LABEL: Record<FunderType, string> = {
 };
 
 function rands(cents: number): string {
-  return `R${(cents / 100).toLocaleString("en-ZA")}`;
+  return `R${za((cents / 100))}`;
 }
 function period(start: string, end: string): string {
   const f = (d: string) => new Intl.DateTimeFormat("en-ZA", { timeZone: "UTC", month: "short", year: "numeric" }).format(new Date(`${d}T12:00:00Z`));

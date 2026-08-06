@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { za } from "@/lib/format";
 import { Check, Sparkles } from "lucide-react";
 import type { Plan } from "@/lib/domain/types";
 import { TRIAL_DAYS } from "@/lib/billing/plans";
@@ -6,7 +7,7 @@ import { SectionHeading } from "@/components/marketing/section-heading";
 import { Reveal } from "@/components/marketing/reveal";
 import { cn } from "@/lib/utils";
 
-const rand = (cents: number) => `R${Math.round(cents / 100).toLocaleString("en-ZA")}`;
+const rand = (cents: number) => `R${za(Math.round(cents / 100))}`;
 
 function features(p: Plan): string[] {
   return [

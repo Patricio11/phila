@@ -1,40 +1,15 @@
 "use client";
 
-import { Download } from "lucide-react";
 import type { PlatformAuditEvent } from "@/lib/domain/types";
 import { DataTable, type Column } from "@/components/ui/data-table";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/toast";
+import { ExportMenu } from "@/components/hub/export-menu";
+import { auditLedgerExport } from "@/app/admin/audit/actions";
 
 function when(iso: string): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
 }
-function csvCell(v: string): string {
-  return `"${v.replace(/"/g, '""')}"`;
-}
 
 export function AuditTable({ events }: { events: PlatformAuditEvent[] }) {
-  const { toast } = useToast();
-
-  const exportCsv = () => {
-    const header = "At,Action,Actor,Organisation,Target,Reason";
-    const lines = events.map((e) => [e.at, e.action, e.actor, e.orgName ?? "", e.target, e.reason ?? ""].map(csvCell).join(","));
-    const csv = [header, ...lines].join("\n");
-    try {
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "phila-audit.csv";
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      /* download blocked  the export itself is still recorded */
-    }
-    // Exporting the audit ledger is itself an audited action.
-    toast({ tone: "success", title: "Audit log exported", description: "The export is recorded in the ledger." });
-  };
-
   const columns: Column<PlatformAuditEvent>[] = [
     { key: "at", header: "Time", sortValue: (e) => e.at, render: (e) => <span className="whitespace-nowrap tabular-nums text-text-2">{when(e.at)}</span> },
     { key: "action", header: "Action", sortValue: (e) => e.action, render: (e) => <span className="font-medium text-text">{e.action}</span> },
@@ -51,9 +26,19 @@ export function AuditTable({ events }: { events: PlatformAuditEvent[] }) {
       rowKey={(e) => e.id}
       search={{ placeholder: "Search the ledger…", getText: (e) => `${e.action} ${e.actor} ${e.orgName ?? ""} ${e.target} ${e.reason ?? ""}` }}
       toolbar={
-        <Button size="sm" variant="ghost" className="ml-auto" onClick={exportCsv}>
-          <Download className="size-4" strokeWidth={2} aria-hidden /> Export CSV
-        </Button>
+        <div className="ml-auto">
+          {/* The house export (CSV / Excel / PDF) — and exporting the ledger is itself audited. */}
+          <ExportMenu
+            table={{
+              filenameBase: "phila-audit",
+              title: "Platform audit ledger",
+              subtitle: `${events.length} events`,
+              headers: ["At", "Action", "Actor", "Organisation", "Target", "Reason"],
+              rows: events.map((e) => [e.at, e.action, e.actor, e.orgName ?? "platform", e.target, e.reason ?? ""]),
+            }}
+            onExported={async (format) => { await auditLedgerExport({ format, count: events.length }); }}
+          />
+        </div>
       }
     />
   );

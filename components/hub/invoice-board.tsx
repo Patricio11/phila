@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { za } from "@/lib/format";
 import Link from "next/link";
 import { BellRing, Check, FilePlus2, Link2 } from "lucide-react";
 import type { Invoice } from "@/lib/domain/types";
@@ -26,7 +27,7 @@ const STATUS: Record<PaymentStatus, { label: string; cls: string }> = {
 };
 
 function rands(cents: number): string {
-  return `R${(cents / 100).toLocaleString("en-ZA")}`;
+  return `R${za((cents / 100))}`;
 }
 function shortDate(iso: string): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "short" }).format(new Date(iso));

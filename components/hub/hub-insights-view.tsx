@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { za } from "@/lib/format";
 import { CalendarCheck, CalendarClock, CalendarDays, Coins, UserPlus, UserRound } from "lucide-react";
 import type { HubInsights, InsightsFilters, InsightsBar, InsightsMix } from "@/lib/data-provider";
 import { AGE_BANDS, GENDERS, PROVINCES } from "@/lib/domain/enums";
@@ -12,6 +13,7 @@ import { FilterMenu } from "@/components/ui/filter-menu";
 import { DonutChart } from "@/components/charts/donut-chart";
 import { coverageNote } from "@/lib/domain/helpers";
 import { runInsights } from "@/app/hub/insights/actions";
+import { ExportMenu } from "@/components/hub/export-menu";
 import { cn } from "@/lib/utils";
 
 const PERIODS = [
@@ -20,7 +22,7 @@ const PERIODS = [
   { value: "quarter", label: "Last 3 months" },
 ];
 
-const rands = (cents: number) => `R${Math.round(cents / 100).toLocaleString("en-ZA")}`;
+const rands = (cents: number) => `R${za(Math.round(cents / 100))}`;
 
 /** Period-over-period delta for a StatCard trend chip (Phase 16). */
 function trend(cur: number, prev: number | undefined, fmt: (n: number) => string = (n) => `${n > 0 ? "+" : ""}${n}`): { direction: "up" | "down" | "flat"; label: string } | undefined {
@@ -52,10 +54,30 @@ export function HubInsightsView({ initial }: { initial: HubInsights }) {
         <StatCard icon={CalendarClock} label="This month" value={data.sessionsMonth} />
       </div>
 
-      {/* Period switch */}
+      {/* Period switch + the shared export (aggregate figures only — no client rows) */}
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-[15px] font-semibold text-text">How it&apos;s going</h2>
-        <div className="w-44"><Select value={data.period} options={PERIODS} onChange={(v) => update({ period: v as InsightsFilters["period"] })} /></div>
+        <div className="flex items-center gap-2">
+          <div className="w-44"><Select value={data.period} options={PERIODS} onChange={(v) => update({ period: v as InsightsFilters["period"] })} /></div>
+          <ExportMenu
+            table={{
+              filenameBase: `practice-insights-${String(data.period).toLowerCase().replace(/\s+/g, "-")}`,
+              title: "Practice insights",
+              subtitle: `${data.period} · aggregate practice figures`,
+              headers: ["Metric", "Value", "Previous period"],
+              rows: [
+                ["Sessions completed", String(data.completed), String(data.previous?.completed ?? "")],
+                ["Upcoming", String(data.upcoming), ""],
+                ["Attendance", `${data.attendanceRate}%`, data.previous ? `${data.previous.attendanceRate}%` : ""],
+                ["No-shows", String(data.noShows), String(data.previous?.noShows ?? "")],
+                ["Cancelled", String(data.cancelled), ""],
+                ["New clients", String(data.newClients), String(data.previous?.newClients ?? "")],
+                ["Active clients", String(data.activeClients), ""],
+                ["Revenue (paid)", rands(data.revenueActualCents), data.previous ? rands(data.previous.revenueActualCents) : ""],
+              ],
+            }}
+          />
+        </div>
       </div>
 
       {/* Operational metrics for the period  with period-over-period trend chips */}

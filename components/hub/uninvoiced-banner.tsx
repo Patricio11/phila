@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { za } from "@/lib/format";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,7 +44,7 @@ export function UninvoicedBanner({ rows }: { rows: { appointmentId: string; clie
         <Receipt className="size-4 shrink-0 text-warn" strokeWidth={2} aria-hidden />
         <p className="min-w-0 flex-1 text-[13px] text-text">
           <span className="font-semibold">{rows.length} completed session{rows.length === 1 ? "" : "s"}</span> ha{rows.length === 1 ? "s" : "ve"} no
-          invoice — about <span className="font-semibold tabular-nums">R{totalR.toLocaleString("en-ZA")}</span> unbilled.
+          invoice — about <span className="font-semibold tabular-nums">R{za(totalR)}</span> unbilled.
         </p>
         <button type="button" onClick={() => setOpen((v) => !v)} className="inline-flex items-center gap-1 text-[12.5px] font-medium text-text-2 hover:text-text">
           {open ? "Hide" : "Review"} <ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} strokeWidth={2} aria-hidden />
@@ -57,7 +58,7 @@ export function UninvoicedBanner({ rows }: { rows: { appointmentId: string; clie
               <span className="w-14 shrink-0 tabular-nums text-text-3">{day(r.startsAt)}</span>
               <span className="min-w-0 flex-1 truncate text-text-2">{r.clientName}</span>
               <span className="hidden shrink-0 text-text-3 sm:inline">{r.serviceName}</span>
-              <span className="shrink-0 tabular-nums text-text">R{Math.round(r.priceCents / 100).toLocaleString("en-ZA")}</span>
+              <span className="shrink-0 tabular-nums text-text">R{za(Math.round(r.priceCents / 100))}</span>
             </li>
           ))}
         </ul>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { za } from "@/lib/format";
 import { HandCoins, Check, Pencil, X } from "lucide-react";
 import { setClientFee } from "@/app/hub/clients/actions";
 import { effectiveFeeCents, feeLabel, isSubsidised, type FeeKind, type FeePolicy } from "@/lib/billing/fees";
@@ -9,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
-const rands = (c: number) => `R${Math.round(c / 100).toLocaleString("en-ZA")}`;
+const rands = (c: number) => `R${za(Math.round(c / 100))}`;
 
 const KINDS: { kind: FeeKind; label: string; hint: string }[] = [
   { kind: "standard", label: "Standard", hint: "Pays the full list price" },

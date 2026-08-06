@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, Clock, MapPin, Video } from "lucide-react";
+import { za } from "@/lib/format";
 import type { Service } from "@/lib/domain/types";
 import type { BookingState } from "@/components/booking/types";
 import { StepHeader } from "@/components/booking/step-header";
@@ -55,7 +56,7 @@ export function ServiceStep({
                   </span>
                 </span>
                 <span className="text-[14px] font-semibold tabular-nums text-text">
-                  {s.priceCents === null ? "Enquire" : `R${(s.priceCents / 100).toLocaleString("en-ZA")}`}
+                  {s.priceCents === null ? "Enquire" : `R${za((s.priceCents / 100))}`}
                 </span>
                 <span
                   className={cn(

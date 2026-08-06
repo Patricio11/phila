@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { za } from "@/lib/format";
 import { useRouter } from "next/navigation";
 import { Smartphone, Mail, HardDrive, Bot, Plus, Check } from "lucide-react";
 import type { OrgResourceMeters } from "@/db/queries/resources";
@@ -11,7 +12,7 @@ import { grantMessagingCredits, setOrgStorageLimit, setOrgAiCap } from "@/app/ad
 import { cn } from "@/lib/utils";
 
 const GB = 1024 ** 3;
-const rands = (cents: number) => `R${Math.round(cents / 100).toLocaleString("en-ZA")}`;
+const rands = (cents: number) => `R${za(Math.round(cents / 100))}`;
 const gb = (bytes: number) => (bytes / GB).toFixed(bytes >= GB ? 1 : 2).replace(/\.0+$/, "");
 
 export function OrgResourceMeters({ orgId, meters }: { orgId: string; meters: OrgResourceMeters }) {

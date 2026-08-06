@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { za } from "@/lib/format";
 import { useState } from "react";
 import { Ban, Play, Plus, UserCheck } from "lucide-react";
 import type { PlatformOrgRow } from "@/lib/data-provider";
@@ -19,7 +20,7 @@ const SUB: Record<SubscriptionStatus, { label: string; cls: string }> = {
 };
 
 function rands(cents: number): string {
-  return `R${Math.round(cents / 100).toLocaleString("en-ZA")}`;
+  return `R${za(Math.round(cents / 100))}`;
 }
 
 /** The verification lifecycle stage (email → onboarding → submitted → verified). */

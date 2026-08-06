@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { za } from "@/lib/format";
 import { useRouter } from "next/navigation";
 import { Check, Sparkles } from "lucide-react";
 import type { Plan } from "@/lib/domain/types";
@@ -10,7 +11,7 @@ import { useToast } from "@/components/ui/toast";
 import { setOrgPlan } from "@/app/admin/orgs/actions";
 
 function rands(cents: number): string {
-  return `R${Math.round(cents / 100).toLocaleString("en-ZA")}`;
+  return `R${za(Math.round(cents / 100))}`;
 }
 
 /** Move an org between plans (W3.4c) — entitlements + quotas follow immediately. */

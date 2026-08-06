@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { za } from "@/lib/format";
 import { CalendarDays, CreditCard, HandCoins, TrendingUp, Users, Wallet } from "lucide-react";
 import type { HubDashboard, DashPeriod } from "@/db/queries/hub-dashboard";
 import { StatCard } from "@/components/ui/stat-card";
@@ -21,7 +22,7 @@ const PERIODS: { key: DashPeriod; label: string }[] = [
   { key: "lastMonth", label: "Last month" },
 ];
 
-const rands = (cents: number) => `R${Math.round(cents / 100).toLocaleString("en-ZA")}`;
+const rands = (cents: number) => `R${za(Math.round(cents / 100))}`;
 
 export function HubDashboardStats({ data, paymentsOn }: { data: HubDashboard; paymentsOn: boolean }) {
   const [period, setPeriod] = useState<DashPeriod>("week");

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { za } from "@/lib/format";
 import { Bell, Check, MessageCircle, Minus, Phone, Mail, Zap } from "lucide-react";
 import type { MessagingSettings, WhatsappConnectionView } from "@/db/queries/messaging";
 import { cn } from "@/lib/utils";
@@ -48,8 +49,8 @@ export function MessagingSummary({ settings, whatsapp, credits, quietHours }: { 
       </div>
 
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[12.5px] text-text-2">
-        <span><span className="font-semibold tabular-nums text-text">{credits.sms.toLocaleString("en-ZA")}</span> SMS credits</span>
-        <span><span className="font-semibold tabular-nums text-text">{credits.email.toLocaleString("en-ZA")}</span> email credits</span>
+        <span><span className="font-semibold tabular-nums text-text">{za(credits.sms)}</span> SMS credits</span>
+        <span><span className="font-semibold tabular-nums text-text">{za(credits.email)}</span> email credits</span>
         {quietHours && <span>Quiet hours <span className="font-medium text-text">{quietHours}</span></span>}
       </div>
 

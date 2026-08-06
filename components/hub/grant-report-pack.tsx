@@ -1,6 +1,7 @@
 import type { GrantView } from "@/lib/data-provider";
+import { za } from "@/lib/format";
 
-const rands = (c: number) => `R${Math.round(c / 100).toLocaleString("en-ZA")}`;
+const rands = (c: number) => `R${za(Math.round(c / 100))}`;
 function longDate(iso: string): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "long", year: "numeric" }).format(new Date(iso));
 }

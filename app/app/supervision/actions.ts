@@ -197,3 +197,36 @@ export async function markClassAttendance(
   revalidatePath("/app/supervision");
   return { ok: true };
 }
+
+/* ---- Fix what you wrote (batch 2d): edit/delete your OWN posts ---- */
+
+const editPostInput = z.object({ postId: z.string().min(1), body: z.string().trim().min(1, "Write something first.").max(3000) });
+
+export async function editClassPost(
+  raw: z.infer<typeof editPostInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg(["counsellor"]);
+  const parsed = editPostInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Write something first." };
+  if (isDb()) {
+    const { updateClassPostDb } = await import("@/db/queries/classrooms");
+    const ok = await updateClassPostDb(membership.orgId, parsed.data.postId, principal.userId, parsed.data.body);
+    if (!ok) return { ok: false, error: "You can only edit your own posts." };
+  }
+  revalidatePath("/app/supervision");
+  return { ok: true };
+}
+
+export async function deleteClassPost(
+  raw: { postId: string },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg(["counsellor"]);
+  if (!raw?.postId) return { ok: false, error: "Invalid post." };
+  if (isDb()) {
+    const { deleteClassPostDb } = await import("@/db/queries/classrooms");
+    const ok = await deleteClassPostDb(membership.orgId, raw.postId, principal.userId);
+    if (!ok) return { ok: false, error: "You can only delete your own posts." };
+  }
+  revalidatePath("/app/supervision");
+  return { ok: true };
+}

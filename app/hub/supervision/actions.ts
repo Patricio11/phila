@@ -65,3 +65,37 @@ export async function setClassroomMember(
   revalidatePath("/hub/supervision");
   return { ok: true };
 }
+
+const editClassInput = z.object({
+  classId: z.string().min(1),
+  name: z.string().trim().min(2, "Give the classroom a name.").max(80),
+  supervisorId: z.string().min(1, "Pick the supervisor."),
+  description: z.string().trim().max(400).optional(),
+});
+
+/** Edit a classroom (batch 2d) — fix the name/description, or hand it to another supervisor. */
+export async function updateClassroom(
+  raw: z.infer<typeof editClassInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = editClassInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the details." };
+
+  if (isDb()) {
+    const { updateClassDb } = await import("@/db/queries/classrooms");
+    const ok = await updateClassDb(membership.orgId, parsed.data.classId, {
+      name: parsed.data.name, description: parsed.data.description || null, supervisorId: parsed.data.supervisorId,
+    });
+    if (!ok) return { ok: false, error: "That classroom couldn't be found." };
+  }
+
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `classroom:${parsed.data.classId}`,
+    reason: "update_classroom",
+  });
+  revalidatePath("/hub/supervision");
+  return { ok: true };
+}

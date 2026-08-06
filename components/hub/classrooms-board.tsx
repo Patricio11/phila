@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Copy, GraduationCap, Plus, UserMinus, UserPlus } from "lucide-react";
+import { Check, Copy, GraduationCap, Pencil, Plus, UserMinus, UserPlus } from "lucide-react";
 import type { ClassSummary } from "@/db/queries/classrooms";
 import { Dialog } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
-import { createClassroom, setClassroomMember } from "@/app/hub/supervision/actions";
+import { createClassroom, setClassroomMember, updateClassroom } from "@/app/hub/supervision/actions";
 
 function ago(iso: string | null): string {
   if (!iso) return "no posts yet";
@@ -38,6 +38,30 @@ export function ClassroomsBoard({ classes, supervisors, counsellors }: {
   const [description, setDescription] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
   const [manageId, setManageId] = useState<string | null>(null);
+  // Edit (batch 2d) — fix a typo, rewrite the description, or hand the class over.
+  const [editing, setEditing] = useState<ClassSummary | null>(null);
+  const [eName, setEName] = useState("");
+  const [eSupervisorId, setESupervisorId] = useState<string | null>(null);
+  const [eDescription, setEDescription] = useState("");
+
+  const openEdit = (c: ClassSummary) => {
+    setEditing(c);
+    setEName(c.name);
+    setESupervisorId(c.supervisorId);
+    setEDescription(c.description ?? "");
+  };
+
+  const saveEdit = () => {
+    if (!editing) return;
+    if (eName.trim().length < 2 || !eSupervisorId) return toast({ tone: "error", title: "Give the classroom a name and a supervisor." });
+    start(async () => {
+      const res = await updateClassroom({ classId: editing.id, name: eName.trim(), supervisorId: eSupervisorId!, description: eDescription.trim() || undefined });
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      toast({ tone: "success", title: "Classroom updated" });
+      setEditing(null);
+      router.refresh();
+    });
+  };
 
   const errors = { name: name.trim().length < 2 ? "Give the classroom a name." : "", supervisor: !supervisorId ? "Pick the supervisor." : "" };
 
@@ -108,9 +132,14 @@ export function ClassroomsBoard({ classes, supervisors, counsellors }: {
                     {c.members.length === 0 && <span className="text-[12px] text-text-3">Nobody yet — add members below.</span>}
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setManageId(c.id)}>
-                  <UserPlus className="size-3.5" strokeWidth={2} aria-hidden /> Manage members
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setManageId(c.id)}>
+                    <UserPlus className="size-3.5" strokeWidth={2} aria-hidden /> Manage members
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
+                    <Pencil className="size-3.5" strokeWidth={2} aria-hidden /> Edit
+                  </Button>
+                </div>
               </div>
             </Card>
           ))}
@@ -153,6 +182,43 @@ export function ClassroomsBoard({ classes, supervisors, counsellors }: {
           <div className="space-y-1.5">
             <Label>Description (optional)</Label>
             <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What this class covers — case discussions, readings, HPCSA CPD…" className="min-h-[64px]" />
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Edit classroom */}
+      <Dialog
+        open={Boolean(editing)}
+        onClose={() => setEditing(null)}
+        title="Edit classroom"
+        description="Fix the name or description, or hand the class to another supervisor — the roster stays."
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setEditing(null)} disabled={pending}>Cancel</Button>
+            <Button onClick={saveEdit} loading={pending}>Save changes</Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label>Name</Label>
+            <Input value={eName} onChange={(e) => setEName(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Supervisor</Label>
+            <SearchSelect
+              avatars
+              value={eSupervisorId}
+              onChange={setESupervisorId}
+              placeholder="Choose a supervisor"
+              searchPlaceholder="Search supervisors…"
+              ariaLabel="Edit classroom supervisor"
+              options={supervisors.map((s) => ({ value: s.id, label: s.name, hint: "Supervisor" }))}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Description (optional)</Label>
+            <Textarea value={eDescription} onChange={(e) => setEDescription(e.target.value)} className="min-h-[64px]" />
           </div>
         </div>
       </Dialog>

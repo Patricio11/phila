@@ -1189,6 +1189,11 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   with `toLocaleString("en-ZA")` differs between Node ("1,800") and Chrome ("1 800"), causing React
   hydration failures that silently killed click handlers (the funder Export was dead). New
   deterministic `za()` formatter (`lib/format.ts`) swept across all 20 client components.
+- [x] **Classroom editing** *(2026-08-06)*: **Edit** on every classroom card (name · description ·
+  hand the class to another supervisor — the roster stays; audited `update_classroom`), and in the
+  stream everyone can **edit or delete their OWN posts** (hover controls, inline editor;
+  author-only enforced server-side — proven: another member's posts show no controls and the
+  server rejects edits to others' posts).
 
 ---
 

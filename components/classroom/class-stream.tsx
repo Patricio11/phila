@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { GraduationCap, Send, Users } from "lucide-react";
+import { Check, GraduationCap, Pencil, Send, Trash2, Users, X } from "lucide-react";
 import type { ClassSessionView, ClassView } from "@/db/queries/classrooms";
 import { ClassSessions } from "@/components/classroom/class-sessions";
 import { Card } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { postClassMessage } from "@/app/app/supervision/actions";
+import { postClassMessage, editClassPost, deleteClassPost } from "@/app/app/supervision/actions";
 import { cn } from "@/lib/utils";
 
 function when(iso: string): string {
@@ -21,11 +21,31 @@ function when(iso: string): string {
  * The classroom stream (batch 2) — announcements + replies for a supervision
  * class, Classroom-style. No clinical content here; notes stay in sign-off.
  */
-export function ClassStream({ cls, sessions = [], canManage = false, nowISO, showCode = false }: { cls: ClassView; sessions?: ClassSessionView[]; canManage?: boolean; nowISO?: string; showCode?: boolean }) {
+export function ClassStream({ cls, sessions = [], canManage = false, nowISO, showCode = false, meUserId }: { cls: ClassView; sessions?: ClassSessionView[]; canManage?: boolean; nowISO?: string; showCode?: boolean; meUserId?: string }) {
   const { toast } = useToast();
   const router = useRouter();
   const [body, setBody] = useState("");
   const [pending, start] = useTransition();
+  // Fix what you wrote (batch 2d) — edit/delete your OWN posts.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editBody, setEditBody] = useState("");
+
+  const saveEdit = () =>
+    start(async () => {
+      if (!editingId) return;
+      const res = await editClassPost({ postId: editingId, body: editBody });
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      setEditingId(null);
+      router.refresh();
+    });
+
+  const removePost = (postId: string) =>
+    start(async () => {
+      const res = await deleteClassPost({ postId });
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      toast({ tone: "success", title: "Post deleted" });
+      router.refresh();
+    });
 
   const post = () =>
     start(async () => {
@@ -99,15 +119,39 @@ export function ClassStream({ cls, sessions = [], canManage = false, nowISO, sho
         ) : (
           <ul className="space-y-3">
             {cls.posts.map((p) => (
-              <li key={p.id} className="flex gap-2.5">
+              <li key={p.id} className="group flex gap-2.5">
                 <Avatar name={p.authorName} size="sm" />
                 <div className={cn("min-w-0 flex-1 rounded-card border p-3", p.isSupervisor ? "border-accent/25 bg-accent-soft/25" : "border-border bg-surface")}>
                   <div className="flex flex-wrap items-center gap-2 text-[12px]">
                     <span className="font-semibold text-text">{p.authorName}</span>
                     {p.isSupervisor && <span className="rounded-chip bg-accent-soft px-1.5 py-0.5 text-[10.5px] font-semibold text-accent">Supervisor</span>}
                     <span className="ml-auto text-text-3">{when(p.createdAt)}</span>
+                    {meUserId === p.authorUserId && editingId !== p.id && (
+                      <span className="flex gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                        <button type="button" onClick={() => { setEditingId(p.id); setEditBody(p.body); }} aria-label="Edit post" className="rounded p-1 text-text-3 hover:text-text">
+                          <Pencil className="size-3.5" strokeWidth={2} aria-hidden />
+                        </button>
+                        <button type="button" onClick={() => removePost(p.id)} disabled={pending} aria-label="Delete post" className="rounded p-1 text-text-3 hover:text-danger">
+                          <Trash2 className="size-3.5" strokeWidth={2} aria-hidden />
+                        </button>
+                      </span>
+                    )}
                   </div>
-                  <p className="mt-1.5 whitespace-pre-wrap text-[13px] leading-relaxed text-text-2">{p.body}</p>
+                  {editingId === p.id ? (
+                    <div className="mt-1.5 space-y-2">
+                      <Textarea value={editBody} onChange={(e) => setEditBody(e.target.value)} className="min-h-[64px]" aria-label="Edit your post" />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={saveEdit} loading={pending} disabled={!editBody.trim()}>
+                          <Check className="size-3.5" strokeWidth={2.2} aria-hidden /> Save
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingId(null)} disabled={pending}>
+                          <X className="size-3.5" strokeWidth={2} aria-hidden /> Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-1.5 whitespace-pre-wrap text-[13px] leading-relaxed text-text-2">{p.body}</p>
+                  )}
                 </div>
               </li>
             ))}

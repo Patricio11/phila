@@ -38,7 +38,7 @@ export default async function SupervisionPage() {
           <PageHead title="Your supervision" summary="Your supervisor, where your notes stand, and their feedback." />
           <MySupervision view={view} />
           {classes.map((cls) => (
-            <ClassStream key={cls.id} cls={cls} sessions={sessions.filter((s) => s.classId === cls.id)} nowISO={nowISO} />
+            <ClassStream key={cls.id} cls={cls} sessions={sessions.filter((s) => s.classId === cls.id)} nowISO={nowISO} meUserId={principal.userId} />
           ))}
         </div>
       );
@@ -91,7 +91,7 @@ export default async function SupervisionPage() {
         <section className="space-y-4">
           <h2 className="text-[13px] font-semibold uppercase tracking-wide text-text-3">Your classrooms</h2>
           {classes.map((cls) => (
-            <ClassStream key={cls.id} cls={cls} sessions={classSessions.filter((s) => s.classId === cls.id)} canManage={cls.supervisorId === me.id} nowISO={now} showCode />
+            <ClassStream key={cls.id} cls={cls} sessions={classSessions.filter((s) => s.classId === cls.id)} canManage={cls.supervisorId === me.id} nowISO={now} showCode meUserId={principal.userId} />
           ))}
         </section>
       )}

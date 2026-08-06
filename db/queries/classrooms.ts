@@ -25,6 +25,7 @@ export interface ClassSummary {
 
 export interface ClassPost {
   id: string;
+  authorUserId: string;
   authorName: string;
   isSupervisor: boolean;
   body: string;
@@ -101,7 +102,7 @@ export async function classesForCounsellorDb(orgId: string, counsellorId: string
     return sums.map((s) => ({
       ...s,
       posts: postRows.filter((p) => p.classId === s.id).slice(0, 30)
-        .map((p) => ({ id: p.id, authorName: p.authorName, isSupervisor: p.isSupervisor, body: p.body, createdAt: p.createdAt.toISOString() })),
+        .map((p) => ({ id: p.id, authorUserId: p.authorUserId, authorName: p.authorName, isSupervisor: p.isSupervisor, body: p.body, createdAt: p.createdAt.toISOString() })),
     }));
   });
 }
@@ -252,5 +253,43 @@ export async function classAttendanceSummaryDb(orgId: string, classId: string, n
       by.set(a.counsellorId, agg);
     }
     return [...by.entries()].map(([counsellorId, v]) => ({ counsellorId, ...v }));
+  });
+}
+
+/* ---- Edits (batch 2d) — fix what you wrote wrong ---- */
+
+/** Update a classroom's details (org-managed). Changing supervisor keeps the roster. */
+export async function updateClassDb(
+  orgId: string,
+  classId: string,
+  input: { name: string; description: string | null; supervisorId: string },
+): Promise<boolean> {
+  return runForOrg(orgId, async () => {
+    const res = await activeDb().update(supervisionClasses)
+      .set({ name: input.name, description: input.description, supervisorId: input.supervisorId })
+      .where(and(eq(supervisionClasses.id, classId), eq(supervisionClasses.orgId, orgId)))
+      .returning({ id: supervisionClasses.id });
+    return res.length > 0;
+  });
+}
+
+/** Edit your OWN post (author-only; keeps it honest and simple). */
+export async function updateClassPostDb(orgId: string, postId: string, authorUserId: string, body: string): Promise<boolean> {
+  return runForOrg(orgId, async () => {
+    const res = await activeDb().update(supervisionClassPosts)
+      .set({ body })
+      .where(and(eq(supervisionClassPosts.id, postId), eq(supervisionClassPosts.orgId, orgId), eq(supervisionClassPosts.authorUserId, authorUserId)))
+      .returning({ id: supervisionClassPosts.id });
+    return res.length > 0;
+  });
+}
+
+/** Delete your OWN post. */
+export async function deleteClassPostDb(orgId: string, postId: string, authorUserId: string): Promise<boolean> {
+  return runForOrg(orgId, async () => {
+    const res = await activeDb().delete(supervisionClassPosts)
+      .where(and(eq(supervisionClassPosts.id, postId), eq(supervisionClassPosts.orgId, orgId), eq(supervisionClassPosts.authorUserId, authorUserId)))
+      .returning({ id: supervisionClassPosts.id });
+    return res.length > 0;
   });
 }

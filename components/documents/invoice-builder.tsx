@@ -6,6 +6,7 @@ import { ArrowLeft, CreditCard, Plus, Printer, Send, Trash2 } from "lucide-react
 import type { InvoiceSettings } from "@/lib/data-provider";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { SearchSelect } from "@/components/ui/search-select";
 import { useToast } from "@/components/ui/toast";
 import { computeVat } from "@/lib/domain/helpers";
 
@@ -105,7 +106,15 @@ export function InvoiceBuilder({
           <div>
             <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#8b938e]">Bill to</div>
             <div className="no-print mt-1 w-56">
-              <Select value={clientId} onChange={setClientId} options={clients.map((c) => ({ value: c.id, label: c.name }))} />
+              <SearchSelect
+                avatars
+                value={clientId}
+                onChange={(v) => { if (v) setClientId(v); }}
+                placeholder="Choose a client"
+                searchPlaceholder="Search clients…"
+                ariaLabel="Bill to"
+                options={clients.map((c) => ({ value: c.id, label: c.name }))}
+              />
             </div>
             <div className="mt-1 hidden text-[14px] font-medium print:block">{clientName}</div>
           </div>

@@ -1144,6 +1144,17 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
 
 **Batch 1 complete — all 10 items delivered, each proven live before commit.**
 
+## 📣 PILOT FEEDBACK  BATCH 2
+- [x] **Invoicing fully functional** *(2026-08-06)*: booking-time invoicing already worked for single
+  bookings, but recurring-series members and completed sessions never billed (190 completed sessions ·
+  ~R85 550 unbilled in the demo org). Now: **completion is the billing moment** — marking a session
+  Completed auto-raises its invoice (`ensureInvoiceForAppointmentDb`, sliding-scale fees + the org's
+  auto-invoice toggle honoured); the **appointment detail shows its invoice inline** (number · amount ·
+  Paid/Unpaid chip · Open invoicing) with a **Generate invoice** button when missing; the **Invoicing
+  page banner** surfaces every completed-but-uninvoiced session ("190 sessions · R85 550 unbilled")
+  with one-click set-based backfill (185 invoices in seconds, sequential numbering); **Bill to** in the
+  invoice builder is the searchable avatar client picker. All audited; proven live.
+
 ---
 
 ## 🔒 PHASE 19: TRUST, SECURITY & POPIA HARDENING

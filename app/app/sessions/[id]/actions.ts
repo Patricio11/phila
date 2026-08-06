@@ -196,6 +196,14 @@ export async function markProgress(
     const changed = await setAppointmentState(membership.orgId, parsed.data.appointmentId, parsed.data.state);
     if (changed === 0) return { ok: false, error: "That session couldn't be found." };
     if (parsed.data.state === "no_show") await notifyAppointment(parsed.data.appointmentId, "no_show");
+    // Completion is the billing moment: a completed session always carries its
+    // invoice (recurring members bill per occurrence; the org toggle is honoured).
+    if (parsed.data.state === "completed") {
+      try {
+        const { ensureInvoiceForAppointmentDb } = await import("@/db/queries/invoices");
+        await ensureInvoiceForAppointmentDb(membership.orgId, parsed.data.appointmentId, new Date(clockNow()), { respectAutoToggle: true });
+      } catch { /* billing must never block the clinical action; the invoicing page backfill catches it */ }
+    }
   }
   await logAccess({
     action: "admin.action",

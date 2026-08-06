@@ -129,6 +129,7 @@ Sign in as **Thandeka**.
 - ☐ Credit packs show with prices; **Buy** a pack → if Paystack is on, redirects to checkout; if off, an honest "not switched on yet" message
 
 **Invoicing** (`/hub/invoicing`)
+- ☐ **Billing never slips** (batch 2): marking a session **Completed** auto-raises its invoice; the appointment detail modal shows the invoice inline (number · amount · status) or a **Generate invoice** button; the invoicing page banner lists completed-but-uninvoiced sessions with one-click **Generate N invoices**; **Bill to** in the builder is searchable
 - ☐ Invoice board shows outstanding / overdue / paid totals
 - ☐ Open an invoice → A4 preview renders
 - ☐ If the org gateway is connected (Settings → Payments), an unpaid invoice shows a **Pay link** button → copies a `/pay/<token>` URL

@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { isRemote } from "@/lib/domain/enums";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CalendarDays, Check, Clock, Copy, Hourglass, MapPin, NotebookPen, Phone, Repeat, Stethoscope, User, UserX, Video, X } from "lucide-react";
+import { AlertTriangle, CalendarDays, Check, Clock, Copy, Hourglass, MapPin, NotebookPen, Phone, Receipt, Repeat, Stethoscope, User, UserX, Video, X } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
 import { Dialog } from "@/components/ui/dialog";
@@ -16,6 +16,7 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { StatusDot, type DotTone } from "@/components/ui/status-dot";
 import { useToast } from "@/components/ui/toast";
 import { rescheduleAppointment, cancelAppointment, getAppointmentJoinLink } from "@/app/app/appointments/actions";
+import { getAppointmentInvoice, generateAppointmentInvoice } from "@/app/hub/invoicing/actions";
 import { markProgress } from "@/app/app/sessions/[id]/actions";
 import { cn } from "@/lib/utils";
 
@@ -76,6 +77,9 @@ export function AppointmentDetail({
   const [scope, setScope] = useState<EditScope>("this");
   const [reason, setReason] = useState("");
   const [join, setJoin] = useState<{ id: string; url: string } | null>(null);
+  // Feedback batch 2 — the session's invoice, inline (billing never slips out of view).
+  const [invoice, setInvoice] = useState<{ id: string; forId: string; number: string; amountCents: number; status: string; dueAt: string } | null | "none">(null);
+  const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const joinUrl = appt && join?.id === appt.id ? join.url : null;
 
@@ -88,6 +92,32 @@ export function AppointmentDetail({
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appt?.id, appt?.type]);
+
+  // Fetch the linked invoice whenever a booking is opened.
+  useEffect(() => {
+    if (!appt) return;
+    let live = true;
+    const id = appt.id;
+    setInvoice(null);
+    getAppointmentInvoice({ appointmentId: id }).then((res) => {
+      if (live && res.ok) setInvoice(res.invoice ? { ...res.invoice, forId: id } : "none");
+    }).catch(() => {});
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appt?.id]);
+
+  const generateInvoice = () => {
+    if (!appt) return;
+    setGenerating(true);
+    void (async () => {
+      const res = await generateAppointmentInvoice({ appointmentId: appt.id });
+      setGenerating(false);
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      const refreshed = await getAppointmentInvoice({ appointmentId: appt.id });
+      if (refreshed.ok && refreshed.invoice) setInvoice({ ...refreshed.invoice, forId: appt.id });
+      toast({ tone: "success", title: `Invoice ${res.number} raised`, description: "It's on the invoicing board — unpaid until reconciled." });
+    })();
+  };
 
   const copyJoin = async () => {
     if (!joinUrl) return;
@@ -207,6 +237,33 @@ export function AppointmentDetail({
               />
             )}
           </dl>
+
+          {/* Billing — the invoice lives with the session (feedback batch 2) */}
+          {invoice !== null && (
+            <div className="flex flex-wrap items-center gap-2 rounded-card border border-border bg-surface-2/40 px-3.5 py-2.5">
+              <Receipt className="size-4 shrink-0 text-text-3" strokeWidth={2} aria-hidden />
+              {invoice !== "none" && invoice.forId === appt.id ? (
+                <>
+                  <span className="text-[12.5px] font-medium tabular-nums text-text">{invoice.number}</span>
+                  <span className="text-[12.5px] tabular-nums text-text-2">R{(invoice.amountCents / 100).toLocaleString("en-ZA")}</span>
+                  <span className={cn(
+                    "rounded-chip px-2 py-0.5 text-[11px] font-semibold",
+                    invoice.status === "paid" ? "bg-accent-soft text-accent" : invoice.status === "cancelled" ? "bg-surface-2 text-text-3" : "bg-warn-soft text-warn",
+                  )}>
+                    {invoice.status === "paid" ? "Paid" : invoice.status === "cancelled" ? "Cancelled" : "Unpaid"}
+                  </span>
+                  <Link href="/hub/invoicing" className="ml-auto text-[12px] font-medium text-accent hover:underline">Open invoicing</Link>
+                </>
+              ) : (
+                <>
+                  <span className="text-[12.5px] text-text-2">No invoice for this session yet.</span>
+                  {canManage && appt.state !== "cancelled" && (
+                    <Button size="sm" variant="ghost" className="ml-auto" onClick={generateInvoice} loading={generating}>Generate invoice</Button>
+                  )}
+                </>
+              )}
+            </div>
+          )}
 
           {/* Online join link  the counsellor joins, or copies the invite for the client */}
           {isRemote(appt.type) && appt.state !== "cancelled" && (

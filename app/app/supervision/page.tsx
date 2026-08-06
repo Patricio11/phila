@@ -24,18 +24,22 @@ export default async function SupervisionPage() {
     // your notes stand, and the feedback that came back.
     if (process.env.DATA_PROVIDER === "db") {
       const { getMySupervisionDb } = await import("@/db/queries/supervision");
-      const { classesForCounsellorDb } = await import("@/db/queries/classrooms");
+      const { classesForCounsellorDb, sessionsForClassesDb } = await import("@/db/queries/classrooms");
       const [view, classes] = await Promise.all([
         getMySupervisionDb(membership.orgId, me.id),
         classesForCounsellorDb(membership.orgId, me.id),
       ]);
+      const sessions = await sessionsForClassesDb(membership.orgId, classes.map((c) => c.id));
       const { MySupervision } = await import("@/components/workspace/my-supervision");
       const { ClassStream } = await import("@/components/classroom/class-stream");
+      const nowISO = clockNow();
       return (
         <div className="rise space-y-6">
           <PageHead title="Your supervision" summary="Your supervisor, where your notes stand, and their feedback." />
           <MySupervision view={view} />
-          {classes.map((cls) => <ClassStream key={cls.id} cls={cls} />)}
+          {classes.map((cls) => (
+            <ClassStream key={cls.id} cls={cls} sessions={sessions.filter((s) => s.classId === cls.id)} nowISO={nowISO} />
+          ))}
         </div>
       );
     }
@@ -67,9 +71,12 @@ export default async function SupervisionPage() {
     reason: "view_supervision_queue",
   });
 
-  // The supervisor's classrooms (batch 2) — stream + members under the queue.
+  // The supervisor's classrooms (batch 2) — stream + sessions under the queue.
   const classes = process.env.DATA_PROVIDER === "db"
     ? await (await import("@/db/queries/classrooms")).classesForCounsellorDb(membership.orgId, me.id)
+    : [];
+  const classSessions = process.env.DATA_PROVIDER === "db"
+    ? await (await import("@/db/queries/classrooms")).sessionsForClassesDb(membership.orgId, classes.map((c) => c.id))
     : [];
   const { ClassStream } = await import("@/components/classroom/class-stream");
 
@@ -83,7 +90,9 @@ export default async function SupervisionPage() {
       {classes.length > 0 && (
         <section className="space-y-4">
           <h2 className="text-[13px] font-semibold uppercase tracking-wide text-text-3">Your classrooms</h2>
-          {classes.map((cls) => <ClassStream key={cls.id} cls={cls} showCode />)}
+          {classes.map((cls) => (
+            <ClassStream key={cls.id} cls={cls} sessions={classSessions.filter((s) => s.classId === cls.id)} canManage={cls.supervisorId === me.id} nowISO={now} showCode />
+          ))}
         </section>
       )}
     </div>

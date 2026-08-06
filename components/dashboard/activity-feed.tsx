@@ -35,6 +35,8 @@ const REASONS: Record<string, Meta> = {
   sign_note: { icon: FileCheck2, text: "Clinical note signed" },
   update_availability: { icon: CalendarClock, text: "Counsellor availability updated" },
   create_classroom: { icon: Pencil, text: "Supervision classroom created" },
+  schedule_class_session: { icon: CalendarPlus, text: "Class session scheduled" },
+  mark_attendance: { icon: FileCheck2, text: "Class attendance register marked" },
   add_classroom_member: { icon: UserPlus, text: "Counsellor added to a classroom" },
   remove_classroom_member: { icon: UserPlus, text: "Counsellor removed from a classroom" },
   generate_invoice: { icon: HandCoins, text: "Invoice raised for a session" },

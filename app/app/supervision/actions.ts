@@ -106,3 +106,94 @@ export async function postClassMessage(
   revalidatePath("/app/supervision");
   return { ok: true };
 }
+
+/* ---- Live class sessions + attendance (batch 2b) ---- */
+
+const sessionInput = z.object({
+  classId: z.string().min(1),
+  title: z.string().trim().min(2, "Give the session a title.").max(120),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  time: z.string().regex(/^\d{2}:\d{2}$/),
+  durationMin: z.number().int().min(15).max(480),
+  mode: z.enum(["online", "in_person"]),
+  location: z.string().trim().max(160).optional(),
+});
+
+/** Schedule a class meeting. Everyone gets the link (in-app) + it lands on the stream. */
+export async function scheduleClassSession(
+  raw: z.infer<typeof sessionInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg(["counsellor", "org_admin"]);
+  const parsed = sessionInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the session details." };
+  const d = parsed.data;
+
+  if (isDb()) {
+    const { scheduleClassSessionDb, postToClassDb } = await import("@/db/queries/classrooms");
+    const startsAt = new Date(`${d.date}T${d.time}:00+02:00`); // SAST wall clock
+    const res = await scheduleClassSessionDb(membership.orgId, {
+      classId: d.classId, title: d.title, startsAt, durationMin: d.durationMin,
+      mode: d.mode, location: d.location || null, createdByUserId: principal.userId,
+    });
+    if (!res.ok) return { ok: false, error: "That classroom couldn't be found." };
+
+    const whenLabel = new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }).format(startsAt);
+    // The stream carries the announcement; online sessions carry the join line.
+    const meId = await counsellorIdForUser(membership.orgId, principal.userId);
+    if (meId) {
+      await postToClassDb(membership.orgId, d.classId, { userId: principal.userId, counsellorId: meId, name: principal.name },
+        `📅 ${d.title} — ${whenLabel} · ${d.durationMin} min · ${d.mode === "online" ? "online (join from this page when it's time)" : (d.location || "in person")}`);
+    }
+    try {
+      const { notifyCounsellor } = await import("@/db/queries/notifications");
+      await Promise.allSettled((res.notifyCounsellorIds ?? []).filter((id) => id !== meId).map((cid) =>
+        notifyCounsellor(cid, {
+          kind: "class_session",
+          title: `Class session: ${d.title}`,
+          body: `${res.className} · ${whenLabel} · ${d.mode === "online" ? "online — the join link is on your Supervision page" : (d.location || "in person")}`,
+          href: "/app/supervision",
+        }),
+      ));
+    } catch { /* never break scheduling */ }
+  }
+
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
+    orgId: membership.orgId,
+    target: `classroom:${d.classId}/session`,
+    reason: "schedule_class_session",
+  });
+  revalidatePath("/app/supervision");
+  return { ok: true };
+}
+
+const attendanceInput = z.object({
+  sessionId: z.string().min(1),
+  marks: z.array(z.object({ counsellorId: z.string().min(1), status: z.enum(["present", "absent"]) })).max(100),
+});
+
+/** The register: the supervisor marks who attended. Kept permanently (CPD evidence). */
+export async function markClassAttendance(
+  raw: z.infer<typeof attendanceInput>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg(["counsellor", "org_admin"]);
+  const parsed = attendanceInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Check the register." };
+
+  if (isDb()) {
+    const { markAttendanceDb } = await import("@/db/queries/classrooms");
+    const ok = await markAttendanceDb(membership.orgId, parsed.data.sessionId, parsed.data.marks);
+    if (!ok) return { ok: false, error: "That session couldn't be found." };
+  }
+
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
+    orgId: membership.orgId,
+    target: `class_session:${parsed.data.sessionId}/attendance`,
+    reason: `mark_attendance:${parsed.data.marks.filter((m) => m.status === "present").length}p_${parsed.data.marks.filter((m) => m.status === "absent").length}a`,
+  });
+  revalidatePath("/app/supervision");
+  return { ok: true };
+}

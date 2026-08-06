@@ -2,7 +2,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { activeDb, runForOrg } from "@/lib/db/scoped";
-import { supervisionClasses, supervisionClassMembers, supervisionClassPosts, counsellors } from "@/db/schema";
+import { supervisionClasses, supervisionClassMembers, supervisionClassPosts, supervisionClassSessions, supervisionClassAttendance, counsellors } from "@/db/schema";
 
 /**
  * Supervision classrooms (batch 2) — a class per supervisor, Classroom-style:
@@ -146,5 +146,111 @@ export async function setClassMemberDb(orgId: string, classId: string, counsello
         .where(and(eq(supervisionClassMembers.classId, classId), eq(supervisionClassMembers.counsellorId, counsellorId)));
     }
     return true;
+  });
+}
+
+/* ---- Live class sessions + attendance (batch 2b) ---- */
+
+export interface ClassSessionView {
+  id: string;
+  classId: string;
+  title: string;
+  startsAt: string;
+  durationMin: number;
+  mode: "online" | "in_person";
+  location: string | null;
+  /** counsellorId → status; empty = attendance not marked yet. */
+  attendance: Record<string, "present" | "absent">;
+}
+
+/** Schedule a session. Returns the class + roster so the caller can notify. */
+export async function scheduleClassSessionDb(
+  orgId: string,
+  input: { classId: string; title: string; startsAt: Date; durationMin: number; mode: "online" | "in_person"; location?: string | null; createdByUserId: string },
+): Promise<{ ok: boolean; id?: string; className?: string; notifyCounsellorIds?: string[] }> {
+  return runForOrg(orgId, async () => {
+    const db = activeDb();
+    const [cls] = await db.select().from(supervisionClasses).where(and(eq(supervisionClasses.id, input.classId), eq(supervisionClasses.orgId, orgId))).limit(1);
+    if (!cls) return { ok: false };
+    const [row] = await db.insert(supervisionClassSessions).values({
+      orgId, classId: input.classId, title: input.title, startsAt: input.startsAt,
+      durationMin: input.durationMin, mode: input.mode, location: input.location ?? null,
+      createdByUserId: input.createdByUserId,
+    }).returning({ id: supervisionClassSessions.id });
+    const members = await db.select().from(supervisionClassMembers).where(eq(supervisionClassMembers.classId, input.classId));
+    return {
+      ok: true, id: row!.id, className: cls.name,
+      notifyCounsellorIds: [...new Set([cls.supervisorId, ...members.map((m) => m.counsellorId)])],
+    };
+  });
+}
+
+/** Sessions for a set of classes (streams show upcoming + recent past). */
+export async function sessionsForClassesDb(orgId: string, classIds: string[]): Promise<ClassSessionView[]> {
+  if (classIds.length === 0) return [];
+  return runForOrg(orgId, async () => {
+    const db = activeDb();
+    const rows = await db.select().from(supervisionClassSessions)
+      .where(and(eq(supervisionClassSessions.orgId, orgId), inArray(supervisionClassSessions.classId, classIds)));
+    const att = rows.length
+      ? await db.select().from(supervisionClassAttendance).where(inArray(supervisionClassAttendance.sessionId, rows.map((r) => r.id)))
+      : [];
+    return rows
+      .map((r): ClassSessionView => ({
+        id: r.id, classId: r.classId, title: r.title, startsAt: r.startsAt.toISOString(),
+        durationMin: r.durationMin, mode: r.mode as "online" | "in_person", location: r.location,
+        attendance: Object.fromEntries(att.filter((a) => a.sessionId === r.id).map((a) => [a.counsellorId, a.status as "present" | "absent"])),
+      }))
+      .sort((a, b) => b.startsAt.localeCompare(a.startsAt));
+  });
+}
+
+/** One session + its class (the video-room page + token API load this). */
+export async function classSessionDb(orgId: string | null, sessionId: string) {
+  const { getDb } = await import("@/db/client");
+  const db = getDb(); // owner read: the room page authorises by org membership itself
+  const [s] = await db.select().from(supervisionClassSessions).where(eq(supervisionClassSessions.id, sessionId)).limit(1);
+  if (!s || (orgId && s.orgId !== orgId)) return null;
+  const [cls] = await db.select().from(supervisionClasses).where(eq(supervisionClasses.id, s.classId)).limit(1);
+  const members = await db.select().from(supervisionClassMembers).where(eq(supervisionClassMembers.classId, s.classId));
+  return cls ? { session: s, cls, memberIds: members.map((m) => m.counsellorId) } : null;
+}
+
+/** Replace the attendance register for a session (supervisor marks it). */
+export async function markAttendanceDb(
+  orgId: string,
+  sessionId: string,
+  marks: { counsellorId: string; status: "present" | "absent" }[],
+): Promise<boolean> {
+  return runForOrg(orgId, async () => {
+    const db = activeDb();
+    const [s] = await db.select({ id: supervisionClassSessions.id }).from(supervisionClassSessions)
+      .where(and(eq(supervisionClassSessions.id, sessionId), eq(supervisionClassSessions.orgId, orgId))).limit(1);
+    if (!s) return false;
+    await db.delete(supervisionClassAttendance).where(eq(supervisionClassAttendance.sessionId, sessionId));
+    if (marks.length > 0) {
+      await db.insert(supervisionClassAttendance).values(marks.map((m) => ({ orgId, sessionId, counsellorId: m.counsellorId, status: m.status })));
+    }
+    return true;
+  });
+}
+
+/** Per-member attendance across a class's PAST sessions (org + supervisor oversight). */
+export async function classAttendanceSummaryDb(orgId: string, classId: string, nowISO: string): Promise<{ counsellorId: string; present: number; marked: number }[]> {
+  return runForOrg(orgId, async () => {
+    const db = activeDb();
+    const sessions = await db.select().from(supervisionClassSessions)
+      .where(and(eq(supervisionClassSessions.classId, classId), eq(supervisionClassSessions.orgId, orgId)));
+    const past = sessions.filter((s) => s.startsAt.getTime() < new Date(nowISO).getTime()).map((s) => s.id);
+    if (!past.length) return [];
+    const att = await db.select().from(supervisionClassAttendance).where(inArray(supervisionClassAttendance.sessionId, past));
+    const by = new Map<string, { present: number; marked: number }>();
+    for (const a of att) {
+      const agg = by.get(a.counsellorId) ?? { present: 0, marked: 0 };
+      agg.marked += 1;
+      if (a.status === "present") agg.present += 1;
+      by.set(a.counsellorId, agg);
+    }
+    return [...by.entries()].map(([counsellorId, v]) => ({ counsellorId, ...v }));
   });
 }

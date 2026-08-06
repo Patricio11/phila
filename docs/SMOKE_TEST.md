@@ -84,6 +84,7 @@ Cross-tenant / cross-role checks (signed in):
 - ☐ As a **supervised** counsellor (e.g. Aisha), `/app/supervision` shows **Your supervision**: your supervisor's card (+ Message link), notes awaiting review, changes-requested feedback with a link to revise, recent sign-offs; a sign-off decision pops an in-app notification
 - ☐ As the **org**, `/hub/supervision` creates a **classroom** per supervisor — supervisees auto-join, the card shows the class **code** (copyable) + members, roster is editable
 - ☐ The **stream**: the supervisor posts (tagged "Supervisor"), members see it in `/app/supervision`, get an in-app notification, and can reply
+- ☐ **Class sessions**: the supervisor schedules one (online or in person) — members are notified, it auto-posts to the stream, and online sessions show a **Join** button (early clicks land in the waiting room; the room is staff-only); on a past session, **Mark register** records Present/Absent per member ("2 present · 1 absent" stays on the row)
 
 **Held by phone** (feedback #6)
 - ☐ On a session page, the **Held by phone** card records that the session happened over a phone call — real call length (prefilled with the booked duration) + optional context; the header, sessions list (Recent tab), calendar detail, hub session view, and client timeline all show the **Phone · N min** marker; **Undo** clears it; the hub Activity feed logs "Session held by phone call"

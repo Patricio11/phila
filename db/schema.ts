@@ -589,6 +589,30 @@ export const supervisionClassPosts = pgTable("supervision_class_posts", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** Live class meetings — scheduled per classroom; online ones ride our video rooms. */
+export const supervisionClassSessions = pgTable("supervision_class_sessions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  classId: uuid("class_id").notNull(),
+  title: text("title").notNull(),
+  startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+  durationMin: integer("duration_min").notNull(),
+  mode: text("mode").notNull(), // "online" | "in_person"
+  location: text("location"), // in-person venue note
+  createdByUserId: text("created_by_user_id").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** The attendance register — marked by the supervisor; the org sees the counts. */
+export const supervisionClassAttendance = pgTable("supervision_class_attendance", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  sessionId: uuid("session_id").notNull(),
+  counsellorId: text("counsellor_id").notNull(),
+  status: text("status").notNull(), // "present" | "absent"
+  markedAt: timestamp("marked_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** A staff member's own profile (feedback sweep — was mock-only, profile: null in DB mode). */
 export const teamProfiles = pgTable("team_profiles", {
   id: uuid("id").defaultRandom().primaryKey(),

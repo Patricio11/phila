@@ -19,13 +19,34 @@ export async function POST(req: Request) {
   if (!cfg) {
     return NextResponse.json({ error: "Video isn't configured yet." }, { status: 503 });
   }
-  const body = (await req.json().catch(() => ({}))) as { appointmentId?: string; name?: string; t?: string };
+  const body = (await req.json().catch(() => ({}))) as { appointmentId?: string; classSessionId?: string; name?: string; t?: string };
+
+  // Class sessions (batch 2b): staff-only rooms — authorised by org membership
+  // (supervisor / member / org admin), never by link.
+  const classSessionId = body.classSessionId?.trim();
+  if (classSessionId) {
+    const principal = await getCurrentPrincipal();
+    if (!principal) return NextResponse.json({ error: "Sign in to join this class." }, { status: 401 });
+    const { classSessionDb } = await import("@/db/queries/classrooms");
+    const found = await classSessionDb(null, classSessionId);
+    if (!found) return NextResponse.json({ error: "Class session not found." }, { status: 404 });
+    const m = principal.memberships.find((x) => x.orgId === found.cls.orgId);
+    if (!m) return NextResponse.json({ error: "This class isn't in your practice." }, { status: 403 });
+    const { counsellorIdForUser } = await import("@/db/queries/session-notes");
+    const meId = await counsellorIdForUser(found.cls.orgId, principal.userId);
+    const allowed = m.teamRole === "org_admin" || (meId && (found.cls.supervisorId === meId || found.memberIds.includes(meId)));
+    if (!allowed) return NextResponse.json({ error: "You're not in this classroom." }, { status: 403 });
+    const isHost = meId === found.cls.supervisorId;
+    const token = await mintToken(cfg, { roomName: `phila_class_${classSessionId}`, identity: `staff_${principal.userId}`, name: principal.name, canPublish: true });
+    return NextResponse.json({ token, url: cfg.wsUrl, identity: `staff_${principal.userId}`, name: principal.name, role: isHost ? "host" : "guest" });
+  }
+
   const appointmentId = body.appointmentId?.trim();
   if (!appointmentId) return NextResponse.json({ error: "Missing appointment." }, { status: 400 });
 
   const [appt] = await getDb().select().from(appointments).where(eq(appointments.id, appointmentId)).limit(1);
   if (!appt) return NextResponse.json({ error: "Session not found." }, { status: 404 });
-  if (appt.type !== "online") return NextResponse.json({ error: "This session isn't online." }, { status: 400 });
+  if (appt.type !== "online" && appt.type !== "hybrid") return NextResponse.json({ error: "This session isn't online." }, { status: 400 });
 
   const principal = await getCurrentPrincipal();
   // Host = a clinical/admin member of the appointment's org; other roles + guests must

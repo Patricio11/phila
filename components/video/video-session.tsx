@@ -7,6 +7,8 @@ import "@livekit/components-styles";
 
 interface Props {
   appointmentId: string;
+  /** Class-session rooms authorise by membership, not link (batch 2b). */
+  classSessionId?: string;
   sig: string;
   orgName: string;
   hostName: string;
@@ -22,7 +24,7 @@ interface Props {
  * (switch video off for an audio-only call), screen share, and leave. The token is
  * minted server-side; nothing is recorded.
  */
-export function VideoSession({ appointmentId, sig, orgName, hostName, serviceName, startsAtLabel, defaultName, isHost }: Props) {
+export function VideoSession({ appointmentId, classSessionId, sig, orgName, hostName, serviceName, startsAtLabel, defaultName, isHost }: Props) {
   const [choices, setChoices] = useState<LocalUserChoices>();
   const [token, setToken] = useState<string>();
   const [url, setUrl] = useState<string>();
@@ -36,7 +38,7 @@ export function VideoSession({ appointmentId, sig, orgName, hostName, serviceNam
       const res = await fetch("/api/video/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ appointmentId, t: sig, name: c.username }),
+        body: JSON.stringify(classSessionId ? { classSessionId, name: c.username } : { appointmentId, t: sig, name: c.username }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Couldn't join the room."); setChoices(undefined); return; }

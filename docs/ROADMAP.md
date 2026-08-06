@@ -1164,6 +1164,15 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   code on the card, org-managed roster — and a shared **stream** in `/app/supervision` for the
   supervisor (posts tagged "Supervisor") and members (replies + in-app notifications to the class).
   Foundation for classwork/assignments later. Proven live end-to-end.
+- [x] **Class sessions + attendance** *(2026-08-06)*: classrooms hold real **live sessions** —
+  the supervisor schedules one (title · date/time · duration · **online or in person**); everyone is
+  notified in-app and the session auto-posts to the stream; **online sessions carry a Join button**
+  into a staff-only video room (`/class-room/[id]`, authorised by org membership — supervisor, class
+  member, or org admin; same waiting-room/doors-open logic as client sessions). After a session the
+  supervisor marks the **attendance register** (Present/Absent per member) — kept permanently as
+  supervision/CPD evidence, "N present · M absent" on the session row, audited. Also fixed: the video
+  token API rejected **hybrid** appointments. Tables `supervision_class_sessions` + `_attendance`
+  (migration 0060 + RLS).
 
 ---
 

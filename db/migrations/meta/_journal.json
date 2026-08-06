@@ -421,6 +421,13 @@
       "when": 1785995418712,
       "tag": "0059_talented_the_fallen",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1786001624454,
+      "tag": "0060_careless_toxin",
+      "breakpoints": true
     }
   ]
 }

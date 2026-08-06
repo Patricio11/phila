@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { GraduationCap, Send, Users } from "lucide-react";
-import type { ClassView } from "@/db/queries/classrooms";
+import type { ClassSessionView, ClassView } from "@/db/queries/classrooms";
+import { ClassSessions } from "@/components/classroom/class-sessions";
 import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/input";
@@ -20,7 +21,7 @@ function when(iso: string): string {
  * The classroom stream (batch 2) — announcements + replies for a supervision
  * class, Classroom-style. No clinical content here; notes stay in sign-off.
  */
-export function ClassStream({ cls, showCode = false }: { cls: ClassView; showCode?: boolean }) {
+export function ClassStream({ cls, sessions = [], canManage = false, nowISO, showCode = false }: { cls: ClassView; sessions?: ClassSessionView[]; canManage?: boolean; nowISO?: string; showCode?: boolean }) {
   const { toast } = useToast();
   const router = useRouter();
   const [body, setBody] = useState("");
@@ -63,6 +64,18 @@ export function ClassStream({ cls, showCode = false }: { cls: ClassView; showCod
           ))}
           {cls.members.length > 8 && <span className="text-[11.5px] text-text-3">+{cls.members.length - 8} more</span>}
         </div>
+
+        {/* Live sessions + register (batch 2b) */}
+        {nowISO && (
+          <ClassSessions
+            classId={cls.id}
+            className={cls.name}
+            members={cls.members}
+            sessions={sessions}
+            canManage={canManage}
+            nowISO={nowISO}
+          />
+        )}
 
         {/* Composer */}
         <div className="rounded-control border border-border bg-surface p-2.5">

@@ -2,8 +2,8 @@ import { CalendarPlus, CalendarX, CalendarClock, FileCheck2, Gavel, HandCoins, M
 import type { ActivityRow } from "@/db/queries/hub-dashboard";
 
 /**
- * Feedback #3 — the Activity feed: the org's own audit trail, worded like a
- * human. Reads (note/PII access) are deliberately excluded — this is "what
+ * Feedback #3 - the Activity feed: the org's own audit trail, worded like a
+ * human. Reads (note/PII access) are deliberately excluded - this is "what
  * happened", not "who looked". Every row still lives, verbatim, in the audit log.
  */
 type Meta = { icon: typeof Pencil; text: string };
@@ -46,8 +46,8 @@ const REASONS: Record<string, Meta> = {
   create_room: { icon: Pencil, text: "New room added" },
   update_room: { icon: Pencil, text: "Room details updated" },
   session_phone_unmarked: { icon: Phone, text: "Phone-call record removed from a session" },
-  archive_member_migrated: { icon: UserPlus, text: "Counsellor archived — caseload moved across" },
-  archive_member_cancelled: { icon: CalendarX, text: "Counsellor archived — upcoming sessions cancelled" },
+  archive_member_migrated: { icon: UserPlus, text: "Counsellor archived - caseload moved across" },
+  archive_member_cancelled: { icon: CalendarX, text: "Counsellor archived - upcoming sessions cancelled" },
   archive_member: { icon: ShieldCheck, text: "Team member archived" },
   restore_member: { icon: ShieldCheck, text: "Team member restored" },
 };

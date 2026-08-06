@@ -30,7 +30,7 @@ const PERIODS = [
 ];
 
 /**
- * Operational reports (batch 2c) — pick a report + period, the table loads
+ * Operational reports (batch 2c) - pick a report + period, the table loads
  * live, search within it, export as CSV / Excel / PDF (every export audited).
  */
 export function ReportsTab({ orgName }: { orgName: string }) {
@@ -114,7 +114,7 @@ export function ReportsTab({ orgName }: { orgName: string }) {
           </div>
         ) : !report || rows.length === 0 ? (
           <p className="px-4 py-10 text-center text-[13px] text-text-3">
-            {query ? "No rows match your search." : "Nothing in this period — try a wider one."}
+            {query ? "No rows match your search." : "Nothing in this period - try a wider one."}
           </p>
         ) : (
           <div className={cn("overflow-x-auto", loading && "opacity-60")}>

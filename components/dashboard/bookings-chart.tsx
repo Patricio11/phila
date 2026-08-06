@@ -4,8 +4,8 @@ import { useRef, useState } from "react";
 
 /**
  * Bookings-over-the-period area chart, in the house inline-SVG idiom (see
- * outcome-sparkline): one accent series — soft gradient fill, 2px stroke,
- * recessive gridlines, sparse x labels — plus a crosshair + tooltip on hover.
+ * outcome-sparkline): one accent series - soft gradient fill, 2px stroke,
+ * recessive gridlines, sparse x labels - plus a crosshair + tooltip on hover.
  * Single series, so the card title is the legend (dataviz rules).
  */
 export function BookingsChart({ series }: { series: { label: string; count: number }[] }) {

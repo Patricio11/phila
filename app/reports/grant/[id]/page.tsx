@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Grant report", robots: { index: false } };
 
 /**
- * The funder / M&E report pack — a standalone (shell-less) printable page so it saves
+ * The funder / M&E report pack - a standalone (shell-less) printable page so it saves
  * cleanly to PDF. Org-guarded; a grant that isn't the org's 404s. Reads are k-anonymised.
  */
 export default async function GrantReportPage({ params }: { params: Promise<{ id: string }> }) {

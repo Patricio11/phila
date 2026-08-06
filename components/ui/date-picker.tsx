@@ -5,7 +5,7 @@ import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight } from "lucide-rea
 import { cn } from "@/lib/utils";
 
 /**
- * Phila's own calendar picker (never the native control — DESIGN §6). A calm
+ * Phila's own calendar picker (never the native control - DESIGN §6). A calm
  * month grid in the product's language: Monday-first (matches the business-hours
  * model), today ringed, the chosen day filled accent, closed/past days quietly
  * disabled. Clicking the "July 2026" header jumps to a years → months view, so a
@@ -60,7 +60,7 @@ export function DatePicker({
   onChange: (value: string) => void;
   /** Earliest selectable day (yyyy-mm-dd). */
   min?: string;
-  /** Latest selectable day (yyyy-mm-dd) — e.g. today for a date of birth. */
+  /** Latest selectable day (yyyy-mm-dd) - e.g. today for a date of birth. */
   max?: string;
   /** Extra per-day rule, e.g. the practice's closed days. */
   isDayDisabled?: (isoDate: string) => boolean;
@@ -104,7 +104,7 @@ export function DatePicker({
   const disabled = (d: string) => (min ? d < min : false) || (max ? d > max : false) || (isDayDisabled?.(d) ?? false);
   const cells = monthGrid(view.year, view.month);
   const viewYm = `${view.year}-${pad(view.month + 1)}`;
-  // Don't page past the months that hold `min`/`max` — everything beyond is dead.
+  // Don't page past the months that hold `min`/`max` - everything beyond is dead.
   const atMinMonth = min ? viewYm <= min.slice(0, 7) : false;
   const atMaxMonth = max ? viewYm >= max.slice(0, 7) : false;
 

@@ -1,5 +1,5 @@
 /**
- * Sliding-scale / subsidised fees (W7) — an NGO reality that no SA competitor handles.
+ * Sliding-scale / subsidised fees (W7) - an NGO reality that no SA competitor handles.
  * A client can pay the list price, a percentage of it (sliding scale), a flat fee, or
  * nothing (funded). This is pure so it's unit-testable and shared by invoicing + UI.
  */
@@ -11,7 +11,7 @@ export interface FeePolicy {
   value?: number;
 }
 
-/** The default when no policy is set — the client pays the full list price. */
+/** The default when no policy is set - the client pays the full list price. */
 export const STANDARD_FEE: FeePolicy = { kind: "standard" };
 
 /** What the client actually pays for a session, given the service's list price. Never negative. */

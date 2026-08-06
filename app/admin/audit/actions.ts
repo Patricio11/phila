@@ -3,7 +3,7 @@
 import { requireSuperAdmin } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 
-/** Exporting the platform audit ledger is itself an audited action — for real. */
+/** Exporting the platform audit ledger is itself an audited action - for real. */
 export async function auditLedgerExport(
   raw: { format: string; count: number },
 ): Promise<{ ok: true }> {

@@ -2,7 +2,7 @@ import { ORG_FEATURES, type OrgFeature } from "@/lib/domain/enums";
 import type { Plan } from "@/lib/domain/types";
 
 /**
- * The feature registry (W3.1) — one place describing every org feature, so the admin
+ * The feature registry (W3.1) - one place describing every org feature, so the admin
  * console, the entitlement resolver, and Dormant-by-Default all agree. Built on the
  * existing `ORG_FEATURES`; new features register here. `meteredResource` links a
  * feature to a metered pool (credits/quota) for W3.5.

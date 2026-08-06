@@ -11,7 +11,7 @@ import { useToast } from "@/components/ui/toast";
 import { transferCaseload } from "@/app/hub/team/actions";
 
 /**
- * Transfer a leaving counsellor's whole caseload to a colleague (Phase 18.8) —
+ * Transfer a leaving counsellor's whole caseload to a colleague (Phase 18.8) -
  * one pick, one confirm. Clients + upcoming sessions move; every past session,
  * note, and outcome stays exactly where it happened.
  */
@@ -40,7 +40,7 @@ export function TransferCaseloadButton({
     start(async () => {
       const res = await transferCaseload({ fromCounsellorId, toCounsellorId: toId });
       if (!res.ok) return toast({ tone: "error", title: res.error });
-      const clashes = res.skippedSessions > 0 ? ` ${res.skippedSessions} session${res.skippedSessions === 1 ? "" : "s"} clashed with ${toName.split(" ")[0]}'s diary — reschedule those.` : "";
+      const clashes = res.skippedSessions > 0 ? ` ${res.skippedSessions} session${res.skippedSessions === 1 ? "" : "s"} clashed with ${toName.split(" ")[0]}'s diary - reschedule those.` : "";
       toast({
         tone: "success",
         title: `Caseload transferred to ${toName.split(" ")[0]}`,
@@ -62,7 +62,7 @@ export function TransferCaseloadButton({
         open={open}
         onClose={() => { if (!pending) { setOpen(false); setToId(null); } }}
         title="Transfer caseload"
-        description={`Move all of ${fromName.split(" ")[0]}'s clients to another counsellor — e.g. when an internship or contract ends.`}
+        description={`Move all of ${fromName.split(" ")[0]}'s clients to another counsellor - e.g. when an internship or contract ends.`}
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => { setOpen(false); setToId(null); }} disabled={pending}>Cancel</Button>

@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /**
- * W3 — platform feature governance. Screenshots the global feature-control matrix and
+ * W3 - platform feature governance. Screenshots the global feature-control matrix and
  * the per-org feature entitlement panel on an org detail page.
  */
 async function signIn(page: Page, email: string, password = "phila1234") {

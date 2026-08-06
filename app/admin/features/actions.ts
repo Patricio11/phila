@@ -8,7 +8,7 @@ import { setPlatformFeatureDb } from "@/db/queries/features";
 import { ORG_FEATURES } from "@/lib/domain/enums";
 
 /**
- * Platform feature governance (W3.2) — the global kill-switch. Disabling a feature
+ * Platform feature governance (W3.2) - the global kill-switch. Disabling a feature
  * here forces it OFF for every org, instantly, above their plan + own toggle.
  */
 const input = z.object({ feature: z.enum(ORG_FEATURES), disabled: z.boolean() });

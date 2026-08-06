@@ -68,7 +68,7 @@ function PlanCard({ item, onSaved }: { item: PlanWithUsage; onSaved: (plan: Plan
       }
       onSaved(draft);
       setEditing(false);
-      toast({ tone: "success", title: `${draft.name} updated`, description: "Entitlements apply to every org on this plan — no drift." });
+      toast({ tone: "success", title: `${draft.name} updated`, description: "Entitlements apply to every org on this plan - no drift." });
     });
   };
 
@@ -120,7 +120,7 @@ function PlanCard({ item, onSaved }: { item: PlanWithUsage; onSaved: (plan: Plan
             <Entitlement label="AI" value={tokens(plan.aiTokens)} />
             <Entitlement label="Video" value={plan.videoMinutes === 0 ? "Paste-link" : `${plan.videoMinutes} min`} />
             <Entitlement label="Storage" value={`${plan.storageGb} GB`} />
-            <Entitlement label="Messaging" value={plan.messaging ? "WhatsApp + SMS" : "—"} />
+            <Entitlement label="Messaging" value={plan.messaging ? "WhatsApp + SMS" : "-"} />
             <Entitlement label="Rooms" value={plan.rooms === null ? "Unlimited" : String(plan.rooms)} />
           </ul>
 

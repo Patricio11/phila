@@ -6,7 +6,7 @@ import { retentionClock, retentionExpired } from "@/lib/compliance/retention";
 import { orgBreachesDb, type BreachView } from "@/db/queries/breaches";
 
 /**
- * Phase 31.4 — the one-click POPIA pack. Pure assembly: consent evidence,
+ * Phase 31.4 - the one-click POPIA pack. Pure assembly: consent evidence,
  * the access-audit trail, retention posture, breach entries, and (rendered by
  * the page) the platform sub-processor register. Nothing here is newly captured.
  */
@@ -26,7 +26,7 @@ export async function assemblePopiaPackDb(orgId: string, nowISO: string): Promis
   const [org] = await db.select({ id: orgs.id, name: orgs.name, province: orgs.province }).from(orgs).where(eq(orgs.id, orgId)).limit(1);
   if (!org) return null;
 
-  // Consent evidence — counts per purpose by state (the raw rows stay queryable in-app).
+  // Consent evidence - counts per purpose by state (the raw rows stay queryable in-app).
   const consentRows = await db.select({ purpose: consents.purpose, state: consents.state, n: dsql<number>`count(*)::int` })
     .from(consents).where(eq(consents.orgId, orgId)).groupBy(consents.purpose, consents.state);
   const byPurpose = new Map<string, { granted: number; revoked: number }>();
@@ -39,14 +39,14 @@ export async function assemblePopiaPackDb(orgId: string, nowISO: string): Promis
     byPurpose.set(r.purpose, e);
   }
 
-  // Access audit — 12-month shape + the most recent trail.
+  // Access audit - 12-month shape + the most recent trail.
   const yearAgo = new Date(new Date(nowISO).getTime() - 365 * 86_400_000);
   const grouped = await db.select({ action: auditLog.action, n: dsql<number>`count(*)::int` })
     .from(auditLog).where(and(eq(auditLog.orgId, orgId), gte(auditLog.at, yearAgo))).groupBy(auditLog.action);
   const recent = await db.select({ action: auditLog.action, actor: auditLog.actorUserId, target: auditLog.target, reason: auditLog.reason, at: auditLog.at })
     .from(auditLog).where(eq(auditLog.orgId, orgId)).orderBy(desc(auditLog.at)).limit(40);
 
-  // Retention posture — computed clocks across the org's clients.
+  // Retention posture - computed clocks across the org's clients.
   const cls = await db.select({ id: clients.id, profile: clients.profile, legalHold: clients.legalHold, deletedAt: clients.deletedAt, createdAt: clients.createdAt })
     .from(clients).where(eq(clients.orgId, orgId));
   const lasts = await db.select({ clientId: appointments.clientId, last: max(appointments.startsAt) })

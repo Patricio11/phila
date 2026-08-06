@@ -1,7 +1,7 @@
 import type { SocialPlatform } from "@/lib/domain/enums";
 
 /**
- * Accurate brand marks as inline SVGs (fill: currentColor) — crisp at any size,
+ * Accurate brand marks as inline SVGs (fill: currentColor) - crisp at any size,
  * theme- and brand-accent friendly. Lucide dropped brand icons, so these paths
  * are the official simple-icons shapes for each platform.
  */

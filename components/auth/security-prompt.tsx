@@ -10,7 +10,7 @@ import { TwoFactorSetup } from "@/components/auth/two-factor-setup";
 import { dismissTwoFactorPrompt } from "@/app/(auth)/actions";
 
 /**
- * Post-sign-in 2FA nudge (W2) — shown to privileged users who haven't enabled it.
+ * Post-sign-in 2FA nudge (W2) - shown to privileged users who haven't enabled it.
  * Never blocks: enrol now with the reusable TwoFactorSetup, or "remind me later"
  * (remembers the choice for two weeks) and go straight to the dashboard.
  */
@@ -37,7 +37,7 @@ export function SecurityPrompt({ next, first }: { next: string; first: string })
 
         <h1 className="text-[20px] font-[700] tracking-[-0.02em] text-text">Add an extra layer of security, {first}</h1>
         <p className="mt-2 text-[13.5px] leading-relaxed text-text-2">
-          Your account can reach client records, so we strongly recommend two-factor authentication. It takes about a minute with any authenticator app — and you can always set it up later from Settings.
+          Your account can reach client records, so we strongly recommend two-factor authentication. It takes about a minute with any authenticator app - and you can always set it up later from Settings.
         </p>
 
         <div className="mt-5">

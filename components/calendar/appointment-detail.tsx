@@ -78,7 +78,7 @@ export function AppointmentDetail({
   const [scope, setScope] = useState<EditScope>("this");
   const [reason, setReason] = useState("");
   const [join, setJoin] = useState<{ id: string; url: string } | null>(null);
-  // Feedback batch 2 — the session's invoice, inline (billing never slips out of view).
+  // Feedback batch 2 - the session's invoice, inline (billing never slips out of view).
   const [invoice, setInvoice] = useState<{ id: string; forId: string; number: string; amountCents: number; status: string; dueAt: string } | null | "none">(null);
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -116,7 +116,7 @@ export function AppointmentDetail({
       if (!res.ok) return toast({ tone: "error", title: res.error });
       const refreshed = await getAppointmentInvoice({ appointmentId: appt.id });
       if (refreshed.ok && refreshed.invoice) setInvoice({ ...refreshed.invoice, forId: appt.id });
-      toast({ tone: "success", title: `Invoice ${res.number} raised`, description: "It's on the invoicing board — unpaid until reconciled." });
+      toast({ tone: "success", title: `Invoice ${res.number} raised`, description: "It's on the invoicing board - unpaid until reconciled." });
     })();
   };
 
@@ -239,7 +239,7 @@ export function AppointmentDetail({
             )}
           </dl>
 
-          {/* Billing — the invoice lives with the session (feedback batch 2) */}
+          {/* Billing - the invoice lives with the session (feedback batch 2) */}
           {invoice !== null && (
             <div className="flex flex-wrap items-center gap-2 rounded-card border border-border bg-surface-2/40 px-3.5 py-2.5">
               <Receipt className="size-4 shrink-0 text-text-3" strokeWidth={2} aria-hidden />

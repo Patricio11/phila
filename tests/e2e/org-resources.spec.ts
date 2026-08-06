@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /**
- * W3.4/3.5 — plan management + metered resources on the org detail page.
+ * W3.4/3.5 - plan management + metered resources on the org detail page.
  */
 async function signIn(page: Page, email: string, password = "phila1234") {
   await page.goto("/login");

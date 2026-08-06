@@ -14,7 +14,7 @@ export default async function AdminUsersPage() {
     <div className="rise space-y-6">
       <PageHead
         title="Platform users"
-        summary="The operators who run Phila. Invite a colleague, resend a setup link, or revoke access — every change is audited."
+        summary="The operators who run Phila. Invite a colleague, resend a setup link, or revoke access - every change is audited."
       />
       <OperatorsTable operators={operators} selfUserId={principal.userId} />
     </div>

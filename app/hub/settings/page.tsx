@@ -225,7 +225,7 @@ export default async function HubSettingsPage() {
                 <p className="text-[12.5px] text-text-2">
                   Everything runs from what you already record: consent evidence, the access audit, HPCSA-aware
                   retention clocks, and Phila&apos;s operator register. One click assembles it into an
-                  auditor-ready pack — nothing to maintain.
+                  auditor-ready pack - nothing to maintain.
                 </p>
                 <a
                   href="/reports/popia"
@@ -235,7 +235,7 @@ export default async function HubSettingsPage() {
                 >
                   <FileCheck className="size-4" strokeWidth={2} aria-hidden /> Download compliance pack
                 </a>
-                <p className="text-[11px] text-text-3">Opens as a printable page — save it to PDF. Each generation is recorded in the audit trail.</p>
+                <p className="text-[11px] text-text-3">Opens as a printable page - save it to PDF. Each generation is recorded in the audit trail.</p>
               </div>
             </Card>
           </>

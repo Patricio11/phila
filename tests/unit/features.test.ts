@@ -3,7 +3,7 @@ import { planIncludesFeature, FEATURE_REGISTRY, FEATURE_LIST } from "@/lib/domai
 import { ORG_FEATURES } from "@/lib/domain/enums";
 import { PLANS, planById } from "@/lib/billing/plans";
 
-/** W3.1 — the feature registry + plan-entitlement mapping (pure). */
+/** W3.1 - the feature registry + plan-entitlement mapping (pure). */
 describe("feature registry", () => {
   it("describes every ORG_FEATURE exactly once", () => {
     expect(FEATURE_LIST.map((f) => f.key).sort()).toEqual([...ORG_FEATURES].sort());

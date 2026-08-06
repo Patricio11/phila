@@ -51,7 +51,7 @@ export async function signOffNote(
             ? `Your note for ${author.clientName} was signed off`
             : `Changes requested on your note for ${author.clientName}`,
           body: parsed.data.decision === "approved"
-            ? "Your supervisor approved it — nothing more to do."
+            ? "Your supervisor approved it - nothing more to do."
             : `Your supervisor left feedback: “${(parsed.data.comment ?? "").slice(0, 140)}”`,
           href: "/app/supervision",
         });
@@ -142,7 +142,7 @@ export async function scheduleClassSession(
     const meId = await counsellorIdForUser(membership.orgId, principal.userId);
     if (meId) {
       await postToClassDb(membership.orgId, d.classId, { userId: principal.userId, counsellorId: meId, name: principal.name },
-        `📅 ${d.title} — ${whenLabel} · ${d.durationMin} min · ${d.mode === "online" ? "online (join from this page when it's time)" : (d.location || "in person")}`);
+        `📅 ${d.title} - ${whenLabel} · ${d.durationMin} min · ${d.mode === "online" ? "online (join from this page when it's time)" : (d.location || "in person")}`);
     }
     try {
       const { notifyCounsellor } = await import("@/db/queries/notifications");
@@ -150,7 +150,7 @@ export async function scheduleClassSession(
         notifyCounsellor(cid, {
           kind: "class_session",
           title: `Class session: ${d.title}`,
-          body: `${res.className} · ${whenLabel} · ${d.mode === "online" ? "online — the join link is on your Supervision page" : (d.location || "in person")}`,
+          body: `${res.className} · ${whenLabel} · ${d.mode === "online" ? "online - the join link is on your Supervision page" : (d.location || "in person")}`,
           href: "/app/supervision",
         }),
       ));

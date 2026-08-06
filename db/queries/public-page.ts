@@ -87,7 +87,7 @@ export async function savePublicPageContent(orgId: string, c: PublicPageContent)
 
 /* ---- Public contact form (builder upgrade) ---------------------------- */
 
-/** Store a public contact-form submission (owner write — no session on /o pages). */
+/** Store a public contact-form submission (owner write - no session on /o pages). */
 export async function createContactMessage(orgId: string, m: { name: string; email: string | null; phone: string | null; message: string }): Promise<void> {
   await getDb().insert(publicContactMessages).values({ orgId, name: m.name, email: m.email, phone: m.phone, message: m.message, createdAt: new Date() });
 }

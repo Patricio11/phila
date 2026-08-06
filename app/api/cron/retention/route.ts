@@ -9,19 +9,19 @@ import { now as clockNow } from "@/lib/clock";
 export const dynamic = "force-dynamic";
 
 /**
- * Phase 31.2 — the retention pruner. Scans every client's computed HPCSA clock
+ * Phase 31.2 - the retention pruner. Scans every client's computed HPCSA clock
  * and, ONLY for lapsed records not under legal hold, de-identifies + destroys
  * the clinical children (notes, outcomes, demographics, care plan, document
  * rows). Appointment rows are kept pseudonymised so historical counts stay
  * honest (Outcome-Honesty Rule).
  *
- * SAFETY (plan §31.2 honest constraints — destruction is irreversible):
+ * SAFETY (plan §31.2 honest constraints - destruction is irreversible):
  *   - Ships REPORT-ONLY. Destruction requires the explicit platform env
- *     `RETENTION_PRUNER_MODE=destroy` — never on by default, never org-set.
+ *     `RETENTION_PRUNER_MODE=destroy` - never on by default, never org-set.
  *   - Auth fails closed in production (CRON_SECRET bearer, same as reminders).
  *   - A record inside its clock or under legal hold is NEVER touched.
  *   - Every destruction is FAIL-STRICT audited (`dsar.erase`, reason
- *     `retention_pruner`) — if the audit line can't be written, nothing is destroyed.
+ *     `retention_pruner`) - if the audit line can't be written, nothing is destroyed.
  */
 async function sweep(req: Request) {
   const secret = process.env.CRON_SECRET;
@@ -48,14 +48,14 @@ async function sweep(req: Request) {
     const dob = (c.profile as Record<string, string> | null)?.dateOfBirth || null;
     const clock = retentionClock({ lastEntryAt, dateOfBirth: dob });
     if (!retentionExpired(clock, nowISO)) continue;
-    if (c.legalHold) { held++; continue; } // expired but held — reported, never touched
+    if (c.legalHold) { held++; continue; } // expired but held - reported, never touched
     candidates.push({ clientId: c.id, orgId: c.orgId, retainUntil: clock.retainUntil, legalHold: false });
   }
 
   let destroyed = 0;
   if (destroy) {
     for (const cand of candidates) {
-      // Fail-strict: an unlogged destruction must not happen — logAccess throws → skip.
+      // Fail-strict: an unlogged destruction must not happen - logAccess throws → skip.
       await logAccess({
         action: "dsar.erase",
         actor: { userId: "system:retention-pruner", platformRole: "super_admin", teamRole: null },

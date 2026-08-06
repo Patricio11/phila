@@ -9,7 +9,7 @@ import { invoicePayPath } from "@/lib/payments/invoice-link";
 import { getPayableInvoice } from "@/db/queries/invoice-payments";
 
 /**
- * Invoice actions — real. Marking paid is a manual reconciliation entry (honest,
+ * Invoice actions - real. Marking paid is a manual reconciliation entry (honest,
  * never invents a settlement); reminders go out by platform email + in-app.
  */
 const markInput = z.object({ invoiceId: z.string().min(1) });
@@ -47,7 +47,7 @@ export async function getInvoicePayLink(
 /**
  * Send a real invoice reminder: an email to the client (with the pay link when
  * the org's gateway is on) + an always-on in-app notification in their portal.
- * Honest return — the UI says exactly what went out.
+ * Honest return - the UI says exactly what went out.
  */
 export async function sendInvoiceReminder(
   raw: z.infer<typeof markInput>,
@@ -88,12 +88,12 @@ export async function sendInvoiceReminder(
       });
       emailed = res.status === "sent";
     }
-    // In-app (the bell) — always on, no external dependency.
+    // In-app (the bell) - always on, no external dependency.
     const { notifyClientUser } = await import("@/db/queries/notifications");
     await notifyClientUser(row.clientId, membership.orgId, {
       kind: "invoice_reminder",
       title: `Invoice ${inv.number} is due`,
-      body: `${inv.serviceName} · ${amount} · due ${due}${payUrl ? " — you can pay online from your invoices." : ""}`,
+      body: `${inv.serviceName} · ${amount} · due ${due}${payUrl ? " - you can pay online from your invoices." : ""}`,
       href: "/me/billing",
     });
   }
@@ -108,7 +108,7 @@ export async function sendInvoiceReminder(
   return { ok: true, emailed };
 }
 
-/* ---- Feedback batch 2 — every session carries its invoice ---- */
+/* ---- Feedback batch 2 - every session carries its invoice ---- */
 
 /** The invoice linked to an appointment (the detail modal shows it inline). */
 export async function getAppointmentInvoice(
@@ -134,8 +134,8 @@ export async function generateAppointmentInvoice(
   const { now: clockNow } = await import("@/lib/clock");
   const res = await ensureInvoiceForAppointmentDb(membership.orgId, raw.appointmentId, new Date(clockNow()));
   if (res.outcome === "not_found") return { ok: false, error: "That session couldn't be found." };
-  if (res.outcome === "no_price") return { ok: false, error: "This service has no price — set one under Services first." };
-  if (res.outcome === "waived") return { ok: false, error: "This client's fee is waived — nothing to invoice." };
+  if (res.outcome === "no_price") return { ok: false, error: "This service has no price - set one under Services first." };
+  if (res.outcome === "waived") return { ok: false, error: "This client's fee is waived - nothing to invoice." };
 
   const inv = await invoiceForAppointmentDb(membership.orgId, raw.appointmentId);
   await logAccess({
@@ -148,7 +148,7 @@ export async function generateAppointmentInvoice(
   return { ok: true, number: inv?.number ?? "" };
 }
 
-/** Completed sessions with no invoice — the honest backfill list for the banner. */
+/** Completed sessions with no invoice - the honest backfill list for the banner. */
 export async function getUninvoicedCompleted(): Promise<
   { ok: true; rows: { appointmentId: string; clientName: string; serviceName: string; startsAt: string; priceCents: number }[] } | { ok: false; error: string }
 > {

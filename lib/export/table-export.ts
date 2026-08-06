@@ -1,16 +1,16 @@
 /**
- * Feedback #9 — client-side table exports. Three formats, zero dependencies:
- * CSV (UTF-8 BOM so Excel reads accents), Excel (SpreadsheetML 2003 — opens
+ * Feedback #9 - client-side table exports. Three formats, zero dependencies:
+ * CSV (UTF-8 BOM so Excel reads accents), Excel (SpreadsheetML 2003 - opens
  * natively in Excel/LibreOffice), and PDF (a print-styled window → the OS
  * "Save as PDF"). Exports are audited server-side by the caller.
  */
 
 export interface ExportTable {
-  /** Base filename, no extension — e.g. "clients-masizakhe". */
+  /** Base filename, no extension - e.g. "clients-masizakhe". */
   filenameBase: string;
   /** Document title (PDF header + Excel sheet name). */
   title: string;
-  /** Small line under the PDF title — org name · date · count. */
+  /** Small line under the PDF title - org name · date · count. */
   subtitle?: string;
   headers: string[];
   rows: string[][];
@@ -35,7 +35,7 @@ export function exportCsv(t: ExportTable): void {
 
 const xml = (v: string) => v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-/** SpreadsheetML 2003 — a real Excel file format, no library needed. */
+/** SpreadsheetML 2003 - a real Excel file format, no library needed. */
 export function exportExcel(t: ExportTable): void {
   const row = (cells: string[], bold = false) =>
     `<Row>${cells.map((c) => `<Cell${bold ? ' ss:StyleID="head"' : ""}><Data ss:Type="String">${xml(c)}</Data></Cell>`).join("")}</Row>`;
@@ -53,7 +53,7 @@ export function exportExcel(t: ExportTable): void {
   download(`${t.filenameBase}.xls`, "application/vnd.ms-excel", content);
 }
 
-/** A print-styled window — the browser's print dialog saves it as PDF. */
+/** A print-styled window - the browser's print dialog saves it as PDF. */
 export function exportPdf(t: ExportTable): void {
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>${xml(t.title)}</title>
 <style>

@@ -12,7 +12,7 @@ export type ChangeKind = "reschedule" | "cancel";
 
 /**
  * The client's "ask the practice to change my session" control (W7 portal
- * reschedule/cancel). The client never edits the booking — they request a
+ * reschedule/cancel). The client never edits the booking - they request a
  * reschedule or cancellation with a reason; `requestAppointmentChange` enforces
  * ownership + the org's notice window and notifies the practice. Shared by the
  * portal dashboard's next-session card AND every upcoming row in /me/sessions.
@@ -73,7 +73,7 @@ export function RequestChangeControl({
         open={dialog !== null}
         onClose={() => setDialog(null)}
         title={dialog === "cancel" ? "Request to cancel" : "Request to reschedule"}
-        description="Tell us briefly why — the practice will confirm the change with you. Your session doesn't change until they do."
+        description="Tell us briefly why - the practice will confirm the change with you. Your session doesn't change until they do."
         footer={
           contact ? (
             <div className="flex justify-end">

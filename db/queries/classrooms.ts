@@ -5,7 +5,7 @@ import { activeDb, runForOrg } from "@/lib/db/scoped";
 import { supervisionClasses, supervisionClassMembers, supervisionClassPosts, supervisionClassSessions, supervisionClassAttendance, counsellors } from "@/db/schema";
 
 /**
- * Supervision classrooms (batch 2) — a class per supervisor, Classroom-style:
+ * Supervision classrooms (batch 2) - a class per supervisor, Classroom-style:
  * the org creates it, the supervisor's supervisees are auto-rostered, everyone
  * in it shares a stream. No clinical content lives here (notes stay in
  * supervision sign-off); this is the teaching/announcement space.
@@ -256,7 +256,7 @@ export async function classAttendanceSummaryDb(orgId: string, classId: string, n
   });
 }
 
-/* ---- Edits (batch 2d) — fix what you wrote wrong ---- */
+/* ---- Edits (batch 2d) - fix what you wrote wrong ---- */
 
 /** Update a classroom's details (org-managed). Changing supervisor keeps the roster. */
 export async function updateClassDb(

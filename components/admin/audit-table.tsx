@@ -27,7 +27,7 @@ export function AuditTable({ events }: { events: PlatformAuditEvent[] }) {
       search={{ placeholder: "Search the ledger…", getText: (e) => `${e.action} ${e.actor} ${e.orgName ?? ""} ${e.target} ${e.reason ?? ""}` }}
       toolbar={
         <div className="ml-auto">
-          {/* The house export (CSV / Excel / PDF) — and exporting the ledger is itself audited. */}
+          {/* The house export (CSV / Excel / PDF) - and exporting the ledger is itself audited. */}
           <ExportMenu
             table={{
               filenameBase: "phila-audit",

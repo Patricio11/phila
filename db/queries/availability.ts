@@ -7,7 +7,7 @@ import { isoWeekday } from "@/lib/domain/helpers";
 import type { BusinessHours } from "@/lib/domain/types";
 
 /**
- * Feedback #5 — per-counsellor availability. ORG-managed windows per weekday;
+ * Feedback #5 - per-counsellor availability. ORG-managed windows per weekday;
  * a counsellor with no rows inherits the org's business hours. Read by the hub
  * booking modal, the public slot engine, and the counsellor's read-only view.
  */
@@ -35,7 +35,7 @@ export async function saveCounsellorAvailabilityDb(orgId: string, counsellorId: 
   });
 }
 
-/** The org-wide map counsellorId → windows (public engine + modal filter). Owner read — no session on /o. */
+/** The org-wide map counsellorId → windows (public engine + modal filter). Owner read - no session on /o. */
 export async function getOrgAvailabilityMapDb(orgId: string): Promise<Map<string, AvailabilityWindow[]>> {
   const rows = await getDb().select({ counsellorId: counsellorAvailability.counsellorId, weekday: counsellorAvailability.weekday, start: counsellorAvailability.start, end: counsellorAvailability.end })
     .from(counsellorAvailability).where(eq(counsellorAvailability.orgId, orgId));
@@ -54,7 +54,7 @@ const hm = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
  * Who can take a session at [startISO, +durationMin)? A counsellor qualifies when
  * the whole session fits one of their windows (or the org's hours when they have
  * none) AND they have no blocking booking then. Several counsellors can share the
- * hour — that's the point.
+ * hour - that's the point.
  */
 export async function availableCounsellorsAtDb(
   orgId: string,

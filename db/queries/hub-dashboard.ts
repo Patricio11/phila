@@ -4,7 +4,7 @@ import { getDb } from "@/db/client";
 import { appointments, invoices, payments, clients, services, counsellors, auditLog, user } from "@/db/schema";
 
 /**
- * Feedback #3 — the period-driven hub dashboard. One fetch computes every
+ * Feedback #3 - the period-driven hub dashboard. One fetch computes every
  * period (Today / This week / This month / Last month) so the client-side
  * filter switches instantly. Revenue is honest and derived:
  *   received  = paid invoices for the period's sessions
@@ -142,7 +142,7 @@ export async function getHubDashboardDb(orgId: string, nowISO: string): Promise<
     };
   };
 
-  // Coming up next — the practice's next five sessions.
+  // Coming up next - the practice's next five sessions.
   const upcomingRows = await db
     .select({ a: appointments, clientName: clients.name, serviceName: services.name, priceCents: services.priceCents, counsellorName: counsellors.name })
     .from(appointments)
@@ -153,7 +153,7 @@ export async function getHubDashboardDb(orgId: string, nowISO: string): Promise<
     .orderBy(appointments.startsAt)
     .limit(5);
 
-  // Activity feed — the org's own audit trail, minus read-noise.
+  // Activity feed - the org's own audit trail, minus read-noise.
   const activityRows = await db
     .select({ action: auditLog.action, reason: auditLog.reason, target: auditLog.target, actorName: user.name, at: auditLog.at })
     .from(auditLog)
@@ -163,7 +163,7 @@ export async function getHubDashboardDb(orgId: string, nowISO: string): Promise<
     .limit(60);
   const activity = activityRows
     .filter((r) => !["pii.read", "note.read", "note.read_hub_override", "demographics.read", "funder.view", "file.access"].includes(r.action))
-    // Page-view reads are "who looked", not "what happened" — same rule as above.
+    // Page-view reads are "who looked", not "what happened" - same rule as above.
     .filter((r) => !["view_member"].includes(r.reason ?? ""))
     .slice(0, 12)
     .map((r) => ({ action: r.action, reason: r.reason, target: r.target, actorName: r.actorName, at: r.at.toISOString() }));

@@ -8,7 +8,7 @@ import { PROVINCES, ROOM_STATUSES } from "@/lib/domain/enums";
 import { saveRoom as persistRoom, saveSites as persistSites } from "@/db/queries/catalogue";
 
 /**
- * Room CRUD — persisted in DB mode. The schedule + utilisation are derived
+ * Room CRUD - persisted in DB mode. The schedule + utilisation are derived
  * from the appointments record; conflicts are enforced at booking time.
  */
 const input = z.object({
@@ -47,7 +47,7 @@ const sitesInput = z.object({
 });
 
 /**
- * Manage the org's sites/branches — persisted in DB mode. Rooms live at a site,
+ * Manage the org's sites/branches - persisted in DB mode. Rooms live at a site,
  * so a practice with more than one location manages them here. Validated + audited.
  */
 export async function saveSites(
@@ -77,12 +77,12 @@ const assignInput = z.object({
   days: z.array(z.number().int().min(1).max(7)).min(1, "Pick at least one day."),
   start: z.string().regex(/^\d{2}:\d{2}$/),
   end: z.string().regex(/^\d{2}:\d{2}$/),
-  /** Second submit after the dialog showed the warnings — the org knows better. */
+  /** Second submit after the dialog showed the warnings - the org knows better. */
   force: z.boolean().optional(),
 });
 
 /**
- * Feedback #8 — REAL now. Assign a counsellor to a room on a recurring day/time
+ * Feedback #8 - REAL now. Assign a counsellor to a room on a recurring day/time
  * pattern (many counsellors per room; rotation is just more rows). Availability-
  * aware: the save first surfaces honest warnings (the counsellor's working
  * windows, their other rooms, this room's other claims) and only proceeds when
@@ -118,7 +118,7 @@ export async function saveRoomAssignment(
   return { ok: true };
 }
 
-/** Remove one assignment row. History is untouched — it lives on appointments. */
+/** Remove one assignment row. History is untouched - it lives on appointments. */
 export async function removeRoomAssignment(
   raw: { assignmentId: string; roomId: string },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
@@ -143,7 +143,7 @@ export async function removeRoomAssignment(
   return { ok: true };
 }
 
-/** Who was in this room on a date — the permanent record (feedback #8). */
+/** Who was in this room on a date - the permanent record (feedback #8). */
 export async function getRoomHistory(
   raw: { roomId: string; date: string },
 ): Promise<{ ok: true; history: import("@/db/queries/room-assignments").RoomHistoryDay } | { ok: false; error: string }> {

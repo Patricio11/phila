@@ -8,10 +8,10 @@ function longDate(iso: string): string {
 const STATUS_LABEL: Record<string, string> = { on_track: "On track", at_risk: "At risk", behind: "Behind" };
 
 /**
- * Funder / M&E report pack (W7) — a professional, print-ready monitoring report the
+ * Funder / M&E report pack (W7) - a professional, print-ready monitoring report the
  * org generates for a funder (DSD / NLC / CSI). Everything a grantee report needs:
  * performance vs targets, reach & delivery, a k-anonymised participant profile,
- * outcomes, and the narrative. Prints cleanly to PDF (A4). Aggregate + k-anon only —
+ * outcomes, and the narrative. Prints cleanly to PDF (A4). Aggregate + k-anon only -
  * no identifiable client data ever leaves.
  */
 export function GrantReportPack({ view, orgName, orgProvince, logoUrl, generatedAt }: {
@@ -64,7 +64,7 @@ export function GrantReportPack({ view, orgName, orgProvince, logoUrl, generated
         <p>{headline || "Delivery is under way against the agreed targets."}</p>
         <div className="mt-3 grid grid-cols-3 gap-3">
           <Kpi label="Clients reached" value={String(uniqueClients)} />
-          <Kpi label="Sessions delivered" value={sessions != null ? String(sessions) : "—"} />
+          <Kpi label="Sessions delivered" value={sessions != null ? String(sessions) : "-"} />
           <Kpi label="Improved ≥5 on PHQ-9" value={phqImprovedLabel(indicators)} />
         </div>
       </Section>
@@ -87,7 +87,7 @@ export function GrantReportPack({ view, orgName, orgProvince, logoUrl, generated
                 <td className="py-1.5 pr-2">{i.indicator.name}</td>
                 <td className="py-1.5 px-2 text-right tabular-nums">{i.indicator.target}{unit(i.indicator.unit)}</td>
                 <td className="py-1.5 px-2 text-right font-semibold tabular-nums">{i.actual}{unit(i.indicator.unit)}</td>
-                <td className="py-1.5 px-2 text-right tabular-nums text-[#666]">{i.expected != null ? i.expected + unit(i.indicator.unit) : "—"}</td>
+                <td className="py-1.5 px-2 text-right tabular-nums text-[#666]">{i.expected != null ? i.expected + unit(i.indicator.unit) : "-"}</td>
                 <td className="py-1.5 pl-2">{STATUS_LABEL[i.status] ?? i.status}</td>
               </tr>
             ))}
@@ -96,7 +96,7 @@ export function GrantReportPack({ view, orgName, orgProvince, logoUrl, generated
       </Section>
 
       {/* 3 · Participant profile (k-anon) */}
-      <Section n="3" title="Participant profile" note="Aggregate, k-anonymised — small cells are suppressed to protect participants (POPIA).">
+      <Section n="3" title="Participant profile" note="Aggregate, k-anonymised - small cells are suppressed to protect participants (POPIA).">
         <div className="grid grid-cols-3 gap-5">
           <Breakdown title="By gender" rows={breakdowns.byGender} />
           <Breakdown title="By age band" rows={breakdowns.byAgeBand} />
@@ -108,7 +108,7 @@ export function GrantReportPack({ view, orgName, orgProvince, logoUrl, generated
       {/* 4 · Outcomes */}
       <Section n="4" title="Outcomes">
         {phqDrop != null ? (
-          <p>Across measured participants, the average PHQ-9 score moved from <b>{first}</b> to <b>{last}</b> over the period — a {phqDrop >= 0 ? "reduction" : "change"} of <b>{Math.abs(phqDrop)} points</b> ({outcome.coverage.captured} of {outcome.coverage.total} measured). Lower PHQ-9 scores indicate reduced depression symptoms.</p>
+          <p>Across measured participants, the average PHQ-9 score moved from <b>{first}</b> to <b>{last}</b> over the period - a {phqDrop >= 0 ? "reduction" : "change"} of <b>{Math.abs(phqDrop)} points</b> ({outcome.coverage.captured} of {outcome.coverage.total} measured). Lower PHQ-9 scores indicate reduced depression symptoms.</p>
         ) : (
           <p>Outcome measurement is under way; a trend appears once two or more PHQ-9 scores are captured per participant.</p>
         )}
@@ -129,7 +129,7 @@ export function GrantReportPack({ view, orgName, orgProvince, logoUrl, generated
       )}
 
       <footer className="mt-8 border-t border-[#ccc] pt-3 text-[10.5px] leading-relaxed text-[#777]">
-        This report contains aggregate, k-anonymised figures only — no participant is identifiable. Prepared under POPIA;
+        This report contains aggregate, k-anonymised figures only - no participant is identifiable. Prepared under POPIA;
         participant consent is recorded and auditable. © {new Date(generatedAt).getFullYear()} {orgName}. Generated with Phila · philasa.com.
       </footer>
     </article>
@@ -141,7 +141,7 @@ function unit(u: string): string {
 }
 function phqImprovedLabel(indicators: GrantView["indicators"]): string {
   const i = indicators.find((x) => x.indicator.metric === "phq9_improved_5");
-  return i ? `${i.actual}%` : "—";
+  return i ? `${i.actual}%` : "-";
 }
 
 function Section({ n, title, note, children }: { n: string; title: string; note?: string; children: React.ReactNode }) {
@@ -166,7 +166,7 @@ function Breakdown({ title, rows }: { title: string; rows: { label: string; coun
     <div>
       <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[#666]">{title}</div>
       <ul className="space-y-0.5">
-        {rows.length === 0 && <li className="text-[12px] text-[#999]">—</li>}
+        {rows.length === 0 && <li className="text-[12px] text-[#999]">-</li>}
         {rows.map((r) => (
           <li key={r.label} className="flex justify-between gap-2 text-[12px]">
             <span className="truncate text-[#444]">{r.label}</span>

@@ -9,7 +9,7 @@ import { logAccess } from "@/lib/audit";
 import { invitePlatformOperatorDb, revokePlatformOperatorDb, getOperatorEmailDb } from "@/db/queries/platform";
 
 /**
- * Platform user management (super-admin). Invite/manage other platform operators —
+ * Platform user management (super-admin). Invite/manage other platform operators -
  * reuses the invited-member activation flow: create the super-admin + a credential
  * account, then email a branded set-password link (Better Auth reset token).
  */

@@ -127,7 +127,7 @@ export async function resolveNoShow(
   return { ok: true };
 }
 
-/** Send the client a "we missed you — let's rebook" follow-up over their preferred channel. */
+/** Send the client a "we missed you - let's rebook" follow-up over their preferred channel. */
 export async function sendNoShowFollowUp(
   raw: z.infer<typeof noShowInput>,
 ): Promise<{ ok: true } | { ok: false; error: string }> {

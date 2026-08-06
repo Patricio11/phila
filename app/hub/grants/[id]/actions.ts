@@ -62,7 +62,7 @@ export async function exportGrantReport(
   const parsed = exportInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid export request." };
 
-  // Confirm the grant belongs to this org BEFORE we log a pii.export against it —
+  // Confirm the grant belongs to this org BEFORE we log a pii.export against it -
   // no cross-org export, and no spurious audit entry for someone else's grant.
   if (isDb()) {
     const owner = await getGrantOrgId(parsed.data.grantId);

@@ -14,7 +14,7 @@ function day(iso: string): string {
 }
 
 /**
- * Feedback batch 2 — billing never slips: completed sessions that never got an
+ * Feedback batch 2 - billing never slips: completed sessions that never got an
  * invoice surface here with one-click generation for all of them.
  */
 export function UninvoicedBanner({ rows }: { rows: { appointmentId: string; clientName: string; serviceName: string; startsAt: string; priceCents: number }[] }) {
@@ -44,7 +44,7 @@ export function UninvoicedBanner({ rows }: { rows: { appointmentId: string; clie
         <Receipt className="size-4 shrink-0 text-warn" strokeWidth={2} aria-hidden />
         <p className="min-w-0 flex-1 text-[13px] text-text">
           <span className="font-semibold">{rows.length} completed session{rows.length === 1 ? "" : "s"}</span> ha{rows.length === 1 ? "s" : "ve"} no
-          invoice — about <span className="font-semibold tabular-nums">R{za(totalR)}</span> unbilled.
+          invoice - about <span className="font-semibold tabular-nums">R{za(totalR)}</span> unbilled.
         </p>
         <button type="button" onClick={() => setOpen((v) => !v)} className="inline-flex items-center gap-1 text-[12.5px] font-medium text-text-2 hover:text-text">
           {open ? "Hide" : "Review"} <ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} strokeWidth={2} aria-hidden />

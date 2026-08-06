@@ -48,9 +48,9 @@ export type AppointmentType = (typeof APPOINTMENT_TYPES)[number];
  * counsellor holds a practice room while the client joins by video link. Every
  * surface picks the predicate it actually cares about instead of `=== "online"`.
  */
-/** The client joins remotely — send/show the video join link. */
+/** The client joins remotely - send/show the video join link. */
 export const isRemote = (type: AppointmentType): boolean => type === "online" || type === "hybrid";
-/** The counsellor occupies a practice room — a room is required + conflict-checked. */
+/** The counsellor occupies a practice room - a room is required + conflict-checked. */
 export const needsRoom = (type: AppointmentType): boolean => type === "in_person" || type === "hybrid";
 
 /** Professional registration bodies relevant in South Africa. */
@@ -140,7 +140,7 @@ export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
 export const OUTCOME_TOOLS = ["PHQ-9", "GAD-7"] as const;
 export type OutcomeTool = (typeof OUTCOME_TOOLS)[number];
 
-/** How a client found the practice (W7 referral/source tracking) — SA-real channels. */
+/** How a client found the practice (W7 referral/source tracking) - SA-real channels. */
 export const REFERRAL_SOURCES = [
   "search",
   "whatsapp",

@@ -13,7 +13,7 @@ function when(iso: string): string {
 }
 
 /**
- * Batch 2 — "Your supervision": the supervised counsellor's own view. Who
+ * Batch 2 - "Your supervision": the supervised counsellor's own view. Who
  * supervises you, where your notes stand, and exactly what feedback came back.
  */
 export function MySupervision({ view }: { view: MySupervisionView }) {
@@ -51,7 +51,7 @@ export function MySupervision({ view }: { view: MySupervisionView }) {
             </>
           ) : (
             <p className="mt-3 text-[12.5px] leading-relaxed text-text-2">
-              No supervisor is assigned to you yet — the practice sets this under Team.
+              No supervisor is assigned to you yet - the practice sets this under Team.
             </p>
           )}
         </Card>
@@ -85,7 +85,7 @@ export function MySupervision({ view }: { view: MySupervisionView }) {
             <CardHead title="Awaiting review" count={awaiting.length} />
             <div className="px-[17px] pb-[17px]">
               {awaiting.length === 0 ? (
-                <p className="text-[12.5px] text-text-3">Nothing waiting — every signed note has been reviewed.</p>
+                <p className="text-[12.5px] text-text-3">Nothing waiting - every signed note has been reviewed.</p>
               ) : (
                 <ul className="space-y-1.5">
                   {awaiting.map((n) => (

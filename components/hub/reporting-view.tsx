@@ -56,7 +56,7 @@ function buildNarrative(result: ReportingResult, period: string, orgName: string
   );
 }
 
-/** The k-anonymised figures as one flat table — suppression written through. */
+/** The k-anonymised figures as one flat table - suppression written through. */
 function buildExportRows(result: ReportingResult): string[][] {
   const rows: string[][] = [
     ["Summary", "Clients matched", String(result.matched)],
@@ -170,12 +170,12 @@ export function ReportingView({ initial, orgName }: { initial: ReportingResult; 
         </Card>
       </div>
 
-      {/* Export — the shared house export (CSV / Excel / PDF), k-anon written through */}
+      {/* Export - the shared house export (CSV / Excel / PDF), k-anon written through */}
       <Card className="p-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-0 flex-1">
             <div className="text-[13.5px] font-[600] text-text">Export  {period}</div>
-            <p className="text-[12px] text-text-2">Aggregate, k-anonymised, audited — small cells export as &ldquo;suppressed&rdquo;, nothing identifiable ever leaves.</p>
+            <p className="text-[12px] text-text-2">Aggregate, k-anonymised, audited - small cells export as &ldquo;suppressed&rdquo;, nothing identifiable ever leaves.</p>
           </div>
           <ExportMenu
             table={{

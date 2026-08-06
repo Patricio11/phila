@@ -56,7 +56,7 @@ function shell(opts: { preheader: string; heading: string; body: string; cta?: {
 }
 
 /**
- * Wrap a messaging-rail text body in the branded shell — the notification rail's
+ * Wrap a messaging-rail text body in the branded shell - the notification rail's
  * email leg (booked / reminder / cancelled…) sends real HTML, not bare text. The
  * body's blank lines become paragraphs; an optional CTA (e.g. "Join your session")
  * renders as the standard button.
@@ -81,7 +81,7 @@ export function contactMessageEmail(vars: { practiceName: string; name: string; 
   const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const reach = [vars.email, vars.phone].filter(Boolean).join(" · ") || "no contact details left";
   return {
-    subject: `New message from ${vars.name} — via your Phila page`,
+    subject: `New message from ${vars.name} - via your Phila page`,
     html: shell({
       preheader: `${vars.name}: ${vars.message.slice(0, 90)}`,
       heading: `New message from your public page`,

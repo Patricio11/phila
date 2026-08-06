@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
  * Phase 9  real auth end-to-end. Signing in with real credentials goes through
  * Better Auth (real session cookie) and lands on that role's home, resolved from
  * the DB. (Demo quick-login buttons were removed once the app moved to real db-mode
- * auth — everyone signs in with email + password now.) Screenshots land in
+ * auth - everyone signs in with email + password now.) Screenshots land in
  * ./screenshots as living proof of each verified flow. Password: see DEMO_LOGINS.md.
  */
 const PASSWORD = "phila1234";

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 
 /**
- * Org logo (W6.1) — a real image upload via the documents storage pipeline (counts
+ * Org logo (W6.1) - a real image upload via the documents storage pipeline (counts
  * against org storage). Shown on the public micro-site + booking page and here.
  * PNG/JPG/WebP, ≤ 2 MB.
  */

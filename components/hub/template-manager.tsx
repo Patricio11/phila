@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 const TRIGGER_LABEL: Record<MessageTrigger, string> = {
   booked: "Booking confirmed", rescheduled: "Rescheduled", cancelled: "Cancelled", reminder: "Reminder", no_show: "No-show follow-up",
   document_shared: "Document shared with client", client_uploaded_document: "Client uploaded a document", form_sent: "Form sent to client",
-  waitlist_slot: "Waitlist — slot opened",
+  waitlist_slot: "Waitlist - slot opened",
 };
 const CHANNEL_META: Record<Channel, { label: string; icon: typeof Mail }> = {
   whatsapp: { label: "WhatsApp", icon: MessageCircle }, sms: { label: "SMS", icon: Smartphone }, email: { label: "Email", icon: Mail },
@@ -49,7 +49,7 @@ export function TemplateManager({ templates, practiceName }: { templates: Templa
 
 /**
  * Preview a template body with the sample values substituted, but with the dynamic
- * parts visually chipped — so it reads like a real message AND it's unmistakable that
+ * parts visually chipped - so it reads like a real message AND it's unmistakable that
  * e.g. the name is auto-filled per client (not hard-coded).
  */
 function TemplatePreview({ body, sample }: { body: string; sample: Record<string, string> }) {
@@ -62,7 +62,7 @@ function TemplatePreview({ body, sample }: { body: string; sample: Record<string
         const token = m[1]!;
         const value = sample[token];
         return (
-          <span key={i} title={`{${token}} — filled in per client`} className="rounded bg-accent-soft px-1 font-[560] text-accent">
+          <span key={i} title={`{${token}} - filled in per client`} className="rounded bg-accent-soft px-1 font-[560] text-accent">
             {value ?? `{${token}}`}
           </span>
         );
@@ -125,7 +125,7 @@ function TemplateRow({ tpl, sample }: { tpl: TemplateView; sample: Record<string
                 className="h-9 w-full rounded-control border border-border bg-surface px-2.5 text-[12.5px] text-text placeholder:text-text-3"
               />
               <p className="text-[11px] leading-snug text-text-3">
-                Inside a client&apos;s free 24-hour window we send the message above. Outside it, Meta only allows a pre-approved <b>template</b> — name it here, and build its body with placeholders in this order:{" "}
+                Inside a client&apos;s free 24-hour window we send the message above. Outside it, Meta only allows a pre-approved <b>template</b> - name it here, and build its body with placeholders in this order:{" "}
                 {WHATSAPP_TEMPLATE_PARAM_KEYS.map((k, i) => `{{${i + 1}}} ${k}`).join(" · ")}.
               </p>
             </div>

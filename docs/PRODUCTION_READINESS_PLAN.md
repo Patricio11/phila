@@ -357,7 +357,7 @@ shown on signup (no picker on the form  too much friction). Plan catalogue is **
 
 ## Workstream 3  🟠 PLATFORM FEATURE GOVERNANCE & ADMIN CONTROL *(explicit ask)*
 
-**Status:** in progress — the entitlement engine + global & per-org feature control (3.1–3.3) are **live**.
+**Status:** in progress - the entitlement engine + global & per-org feature control (3.1–3.3) are **live**.
 Plan CRUD/quotas (3.4) and unified metered resources (3.5) remain. *Give the super-admin full, real control
 to enable/disable functionality globally or per-org, and to manage subscriptions/quotas.*
 
@@ -386,42 +386,42 @@ effective(feature, org) =
       `tests/unit/features.test.ts`.
 - [x] Every platform/override change is audited (`kill_feature`/`restore_feature`, `override_*`).
 
-### 3.2 Admin: global feature control — ✅ done
-- [x] `app/admin/features/page.tsx` + new **Feature control** nav item — a matrix of all features with a
+### 3.2 Admin: global feature control - ✅ done
+- [x] `app/admin/features/page.tsx` + new **Feature control** nav item - a matrix of all features with a
       **global kill-switch** each (`FeatureMatrix`); e.g. disable **AI scribe** platform-wide instantly.
       Non-disableable features (funders) show "Always on".
-- [x] `setPlatformFeature(feature, disabled)` — guarded by `requireSuperAdmin`, persisted, audited; revalidates
+- [x] `setPlatformFeature(feature, disabled)` - guarded by `requireSuperAdmin`, persisted, audited; revalidates
       the console. E2e + screenshot.
 
-### 3.3 Admin: per-org feature control — ✅ done
+### 3.3 Admin: per-org feature control - ✅ done
 - [x] `app/admin/orgs/[id]` **Features** card (`OrgFeaturePanel`): each feature's **effective** on/off, the
       resolution **reason + source**, and a three-way **force-on / force-off / inherit** control
-      (`setOrgFeatureOverride`) — grant a beta feature to one org, or suspend `ai`/`payments` for an org in breach.
+      (`setOrgFeatureOverride`) - grant a beta feature to one org, or suspend `ai`/`payments` for an org in breach.
 - [x] Shows the org's plan (in the card header) alongside what resolves. E2e + screenshot.
 
-### 3.4 Admin: subscription & plan management — ✅ done (c)
-- [x] Plans gained a `storageGb` quota (`Plan` + `PLANS`, reused everywhere — no new catalogue). `listPlans` +
+### 3.4 Admin: subscription & plan management - ✅ done (c)
+- [x] Plans gained a `storageGb` quota (`Plan` + `PLANS`, reused everywhere - no new catalogue). `listPlans` +
       `getPlatformOrgDetail` are DB (W1.7).
-- [x] **Assign/upgrade/downgrade an org's plan** from `app/admin/orgs/[id]` — an **OrgPlanControl** card (plan
+- [x] **Assign/upgrade/downgrade an org's plan** from `app/admin/orgs/[id]` - an **OrgPlanControl** card (plan
       selector + quota summary) → `setOrgPlan`/`setOrgPlanDb` (reuses `upsertSubscription`). Entitlements + quotas
       are reflected **immediately** by the resolver (proven: moving plans changes the effective storage limit).
-- [x] **Full plan-catalogue CRUD** — a DB-backed, super-admin-editable `plans` table (migration 0042; seeded from
+- [x] **Full plan-catalogue CRUD** - a DB-backed, super-admin-editable `plans` table (migration 0042; seeded from
       the code `PLANS`, which stays as the fallback if the table is empty/unavailable, so nothing breaks). Reads
       go through `db/queries/plans.ts` (`getPlansDb`/`getPlansMapDb`/`getPlanByIdDb`/`savePlanDb`); every consumer
-      — the entitlement resolver, resource meters, platform overview, `listPlans`, the landing pricing, the hub
-      plan picker, and `OrgPlanControl` — now reads the live catalogue. `app/admin/plans` **PlansManager** edits a
+      - the entitlement resolver, resource meters, platform overview, `listPlans`, the landing pricing, the hub
+      plan picker, and `OrgPlanControl` - now reads the live catalogue. `app/admin/plans` **PlansManager** edits a
       plan's name/tagline/price/seats/AI/video/storage/rooms/messaging inline → `savePlan` action → one change
       applies to every org on the plan (no drift). Landing "Get started" carries `?plan=<id>` into signup.
 
-### 3.5 Admin: metered resources & credits — ✅ done (d)
-- [x] `getOrgResourceMetersDb` unifies the real pools — `credit_balances` (SMS/email), `org_storage_usage`
+### 3.5 Admin: metered resources & credits - ✅ done (d)
+- [x] `getOrgResourceMetersDb` unifies the real pools - `credit_balances` (SMS/email), `org_storage_usage`
       (storage used vs the plan/override limit), and `ai_usage` + `org_ai_settings` (AI spend vs monthly cap).
 - [x] `app/admin/orgs/[id]` **Resources & quotas** panel (`OrgResourceMeters`): usage bars + controls to **top up
       SMS/email credits** (reuses `grantMessagingCredits`), **set/clear a storage-limit override** (`setOrgStorageLimit`
       → `orgs.resource_limits`, migration 0041), and **set the AI monthly cap** (`setOrgAiCap` → `saveAiSettings`).
       All guarded + audited.
 - [x] Storage enforcement is now org-aware: `orgStorageLimitBytes(orgId)` (override → plan → default) replaces the
-      flat limit across all five upload paths — so changing the plan/override actually changes what uploads are
+      flat limit across all five upload paths - so changing the plan/override actually changes what uploads are
       allowed. Exhaustion still no-ops honestly (Dormant-by-Default). Proven by `tests/integration/org-resources.test.ts`.
 
 ### 3.6 Admin: enabling the new (Workstream 7) features
@@ -440,18 +440,18 @@ effective(feature, org) =
 **Status:** done. *So every page has meaningful data and every role has a login.* (`db/seed-all.ts`)
 
 - [x] Day templates for **all four** counsellors (Thabo/Aisha/Pieter added to `counsellorDayTemplates`, so the
-      mock provider populates too). Each counsellor's `/app` now has a live day — verified Aisha's dashboard.
+      mock provider populates too). Each counsellor's `/app` now has a live day - verified Aisha's dashboard.
 - [x] The 30-client M&E cohort now has **time-anchored completed sessions** (4–8 each, round-robined across the
       counsellors, spaced so the deferred overlap constraint never trips). Grant "sessions delivered" reads
       **173** (DSD) / **67** (Lotto) instead of ~0.
 - [x] `session_notes` seeded from `supervisionTemplates` (each on a real backing appointment at 16:00, clear of
       the day templates), supervisor = Nomsa → the supervision sign-off queue is real.
-- [x] Logins for **front_desk** (Lindiwe), **finance** (Riaan), **programme_manager** (Bongani — seeded
-      archived, to demo the archived-member state) — all in `DEMO_USERS`/`MEMBERS`; documented in DEMO_LOGINS.
-- [x] A **second, fully-real tenant — Thrive EAP** (`org_thrive`): its own admin (`admin@thrive-eap.co.za`) +
+- [x] Logins for **front_desk** (Lindiwe), **finance** (Riaan), **programme_manager** (Bongani - seeded
+      archived, to demo the archived-member state) - all in `DEMO_USERS`/`MEMBERS`; documented in DEMO_LOGINS.
+- [x] A **second, fully-real tenant - Thrive EAP** (`org_thrive`): its own admin (`admin@thrive-eap.co.za`) +
       counsellor (Dr Yolanda Meyer) + 4 clients + real sessions + a paid invoice. **RLS isolation proven** end-to-end
       (signed in as Thrive → sees only Thrive's clients, never Masizakhe's).
-- [x] Invoices are **`now`-relative** — a uniform shift anchors the newest to today (`onConflictDoUpdate` so a
+- [x] Invoices are **`now`-relative** - a uniform shift anchors the newest to today (`onConflictDoUpdate` so a
       re-seed re-anchors), pulling a recent paid one into the current month → "income this month" = R450, not R0.
 - [x] `document_shares` (org→counsellor) seeded so each counsellor's "Shared with me" reads true.
 - [x] Polish: real `payments` (settled invoice, credit top-up, subscription) + a fortnight of `public_page_events`
@@ -510,16 +510,16 @@ Move from today's 5 tabs to a cleaner IA:
       idea): booking a **priced** session raises an unpaid invoice (numbered, due per terms, **linked to the
       appointment**), both public + staff paths; a default-on **"Raise an invoice when a session is booked"** toggle
       lets funded/free programmes opt out. The client pays online via the existing gateway pay-link → the invoice
-      flips to **paid**. `createInvoiceForBookingDb` (the app never created invoices before — builder was print-only).
+      flips to **paid**. `createInvoiceForBookingDb` (the app never created invoices before - builder was print-only).
 - [x] **Client request-to-change** on `upcoming-session-card` (per the org's rule: the client never edits the
       booking  they **request** a reschedule/cancel with a reason; the org has a configurable notice window and a
       pending-requests queue on `/hub/appointments` with Approve/Decline). *(Supersedes the "direct reschedule/
       cancel" idea; also lands W7's "Portal reschedule/cancel".)*
-- [x] The `no_show` message already fires on marking a session no-show (session-note flow) — verified.
+- [x] The `no_show` message already fires on marking a session no-show (session-note flow) - verified.
 - [x] Counsellor own-caseload **capacity bar** on `/app` (shared `WEEK_CAPACITY`).
 - [x] **Real session-note attachments** via the documents pipeline (was local-state-only): presigned upload → scan →
       stored clinical, linked to the session, and **auto-filed into Documents under Sessions → [Client] → [Date]**.
-      Uncovered + fixed a real bug — `signedUploadUrl` sent a JSON content-type with no body, so **no** upload worked
+      Uncovered + fixed a real bug - `signedUploadUrl` sent a JSON content-type with no body, so **no** upload worked
       against live Supabase (documents/forms/messages/attachments); now verified end-to-end.
 - [x] **Bulk multi-select reassign** on the hub clients list (checkbox column + floating bar) + **empty-state CTAs**
       (funders "Add funder"/"New grant").
@@ -529,7 +529,7 @@ Move from today's 5 tabs to a cleaner IA:
 
 ## Workstream 7  🟢 NEW FEATURES (the moat)
 
-**Status:** ✅ **complete** — every moat feature shipped (only the explicitly out-of-scope, optional
+**Status:** ✅ **complete** - every moat feature shipped (only the explicitly out-of-scope, optional
 Medical-aid invoice formatting remains). *Each registers in the W3 feature registry, defaults OFF, admin-rollable.*
 Sizes: S/M/L. Grounded in existing building blocks.
 
@@ -544,14 +544,14 @@ Sizes: S/M/L. Grounded in existing building blocks.
 - [x] **Portal pay via pay-link** (S/M) ✅  the client's **Billing** page (`/me/billing`) mints a signed,
       unguessable `/pay/<token>` per unpaid invoice (`invoicePayPath` HMAC) and `InvoiceList` shows a **Pay R___**
       button when the org has payments on + the pay-button enabled, with an EFT-details fallback otherwise. The
-      token flow reuses the existing Paystack pay-link + webhook — no new surface.
+      token flow reuses the existing Paystack pay-link + webhook - no new surface.
 - [x] **Portal reschedule/cancel** (M) ✅  client-guarded `requestAppointmentChange` (ownership + org notice-window
       + change-request row + notifies counsellor & schedulers; client never edits the booking). Extracted the
       request UI into a shared `RequestChangeControl`, so it's now on **every upcoming session** in `/me/sessions`
-      (via a `SessionTimeline` render-prop) as well as the dashboard's next-session card — not just the next one.
+      (via a `SessionTimeline` render-prop) as well as the dashboard's next-session card - not just the next one.
 - [x] **Sliding-scale / subsidised fees** (M) ✅  a per-client fee policy (`clients.fee_policy`): standard,
       **sliding-scale %**, **fixed** per-session, or **waived** (funded). Pure `effectiveFeeCents` helper (unit-tested)
-      flows straight into the **auto-invoice at booking** — subsidised clients are billed their rate, waived clients
+      flows straight into the **auto-invoice at booking** - subsidised clients are billed their rate, waived clients
       raise no invoice. A **Fee arrangement** card on the client detail (label chip + a per-service preview of exactly
       what they pay, list price struck through) → `setClientFee`. *NGO reality; no competitor does it.*
 - [x] **Waitlist auto-fill** (L) ✅  `waitlist_entries` table (RLS). Add a client to the waitlist (any counsellor
@@ -570,13 +570,13 @@ Sizes: S/M/L. Grounded in existing building blocks.
       point-tool gives you. `ClientTimeline` on the hub client detail (replaced the plain session-history list).
 - [x] **WhatsApp-first comms as a headline** (S/M) ✅  the whole channel now turns on the free 24h service
       window. `whatsapp_windows` (RLS) tracks each client's last inbound (webhook records every inbound message);
-      the `deliver` chokepoint is window-aware — **free-form (free) in-window**, an approved **template**
+      the `deliver` chokepoint is window-aware - **free-form (free) in-window**, an approved **template**
       out-of-window (the `whatsappTemplateName` we already collect, now actually used), and an honest
       `window_closed` (never a Meta-bounced free-form) when neither is possible. So reminders that used to
       silently fail outside 24h now deliver. WhatsApp is promoted to the **primary channel** in Settings →
       Messaging (Primary badge + free-window explainer + a **Test connection** ping to Meta's Graph API that
       verifies the number & records `verifiedAt`); SMS/email are the metered backups. Template manager documents
-      the fixed `{{1}}..{{6}}` positional param order and highlights auto-filled tokens in previews. BYO — the org
+      the fixed `{{1}}..{{6}}` positional param order and highlights auto-filled tokens in previews. BYO - the org
       sets its own encrypted Meta creds. Unit + integration tested.
 - [x] **Funder/M&E depth** (M) ✅  the paid differentiator: a real, professional, **print-to-PDF funder report
       pack** (`/reports/grant/[id]`, a shell-less printable page). Letterhead (org + logo) → executive summary with

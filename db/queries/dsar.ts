@@ -8,7 +8,7 @@ import {
 import { retentionClock, erasureDecision, retentionLabel, type RetentionClock } from "@/lib/compliance/retention";
 
 /**
- * Phase 31.1 — data-subject request (DSAR) tooling. Assembly over new capture:
+ * Phase 31.1 - data-subject request (DSAR) tooling. Assembly over new capture:
  * everything already exists in the org's tables; these queries gather it into one
  * portable object (export) or run the lawful de-identification path (erasure).
  * Callers guard with requireHub + their own org, and audit fail-strict.
@@ -19,7 +19,7 @@ export interface DsarExport {
   organisation: { id: string; name: string };
   client: Record<string, unknown>;
   appointments: Record<string, unknown>[];
-  /** Clinical-note METADATA only — note bodies stay under the clinical record
+  /** Clinical-note METADATA only - note bodies stay under the clinical record
    *  (requestable via the practice under the HPCSA access process). */
   clinicalNotes: Record<string, unknown>[];
   carePlan: Record<string, unknown> | null;
@@ -47,7 +47,7 @@ export async function clientRetentionDb(orgId: string, clientId: string, nowISO:
   return { clock, label: retentionLabel(clock, nowISO), legalHold: c.legalHold, legalHoldReason: c.legalHoldReason, lastEntryAt };
 }
 
-/** "Everything we hold on this person" — one portable, machine-readable object. */
+/** "Everything we hold on this person" - one portable, machine-readable object. */
 export async function exportDataSubjectDb(orgId: string, clientId: string, nowISO: string): Promise<DsarExport | null> {
   const db = getDb();
   const [client] = await db.select().from(clients).where(and(eq(clients.id, clientId), eq(clients.orgId, orgId))).limit(1);
@@ -111,9 +111,9 @@ export async function exportDataSubjectDb(orgId: string, clientId: string, nowIS
 }
 
 /**
- * Erasure — POPIA honoured-where-lawful. Whatever the clock says, the reachable
+ * Erasure - POPIA honoured-where-lawful. Whatever the clock says, the reachable
  * PII is de-identified NOW (name → pseudonym, contact/profile cleared) and the
- * record is soft-deleted (drops from caseloads; history preserved for stats —
+ * record is soft-deleted (drops from caseloads; history preserved for stats -
  * Outcome-Honesty). Where retention still applies the clinical record stays under
  * its clock (the Cluster-3 pruner destroys it when lawful); the honest decision
  * is returned to show the requester.
@@ -135,7 +135,7 @@ export async function eraseDataSubjectDb(orgId: string, clientId: string, nowISO
     deletedAt: new Date(nowISO),
   }).where(and(eq(clients.id, clientId), eq(clients.orgId, orgId)));
 
-  // Special-category demographics are removed outright — never needed for the clinical record.
+  // Special-category demographics are removed outright - never needed for the clinical record.
   await db.delete(demographics).where(eq(demographics.clientId, clientId));
 
   return { ok: true, decision };

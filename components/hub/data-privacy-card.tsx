@@ -10,7 +10,7 @@ import { exportDataSubject, eraseDataSubject, setLegalHold } from "@/app/hub/cli
 import { cn } from "@/lib/utils";
 
 /**
- * Phase 31.1 — the quiet "Data & privacy" panel on the client detail. View-first,
+ * Phase 31.1 - the quiet "Data & privacy" panel on the client detail. View-first,
  * used only when someone asks: the retention clock is computed and shown (never
  * configured), Export answers a POPIA access request in one click, and Handle
  * deletion runs the honoured-where-lawful erasure with a typed confirmation.
@@ -65,20 +65,20 @@ export function DataPrivacyCard({
 
   return (
     <div className="space-y-3 px-[17px] pb-[17px]">
-      {/* Retention — computed, never configured. */}
+      {/* Retention - computed, never configured. */}
       <div className="flex items-start gap-2.5 rounded-control border border-border bg-surface-2/40 px-3 py-2.5">
         <Timer className="mt-0.5 size-4 shrink-0 text-text-3" strokeWidth={2} aria-hidden />
         <div className="min-w-0">
           <div className="text-[12px] font-[620] text-text">Record retention</div>
           <p className="text-[11.5px] leading-snug text-text-2">{retentionLabel}</p>
-          <p className="mt-0.5 text-[10.5px] text-text-3">Set automatically by HPCSA rules — nothing to configure.</p>
+          <p className="mt-0.5 text-[10.5px] text-text-3">Set automatically by HPCSA rules - nothing to configure.</p>
         </div>
       </div>
 
       {legalHold && (
         <div className="flex items-start gap-2.5 rounded-control border border-warn/30 bg-warn-soft px-3 py-2.5">
           <Gavel className="mt-0.5 size-4 shrink-0 text-warn" strokeWidth={2} aria-hidden />
-          <p className="text-[11.5px] leading-snug text-warn">Legal hold — erasure and pruning are blocked.{legalHoldReason ? ` ${legalHoldReason}` : ""}</p>
+          <p className="text-[11.5px] leading-snug text-warn">Legal hold - erasure and pruning are blocked.{legalHoldReason ? ` ${legalHoldReason}` : ""}</p>
         </div>
       )}
 
@@ -94,12 +94,12 @@ export function DataPrivacyCard({
         </Button>
       </div>
 
-      {/* Deletion request — honoured where lawful, honest where retention is mandated. */}
+      {/* Deletion request - honoured where lawful, honest where retention is mandated. */}
       <Dialog
         open={eraseOpen}
         onClose={() => setEraseOpen(false)}
         title="Handle a deletion request"
-        description="Identifiers are removed and the record is closed. Where HPCSA retention still applies, the clinical record is kept under its clock and destroyed when it lapses — the reason is shown so you can pass it to the requester."
+        description="Identifiers are removed and the record is closed. Where HPCSA retention still applies, the clinical record is kept under its clock and destroyed when it lapses - the reason is shown so you can pass it to the requester."
         footer={
           outcome ? (
             <div className="flex justify-end"><Button variant="ghost" onClick={() => setEraseOpen(false)}>Close</Button></div>
@@ -127,7 +127,7 @@ export function DataPrivacyCard({
         open={holdOpen}
         onClose={() => setHoldOpen(false)}
         title={legalHold ? "Lift the legal hold" : "Place a legal hold"}
-        description={legalHold ? "Retention rules and deletion requests apply again once lifted." : "While a hold stands, this record cannot be erased or pruned — for litigation, an inquiry, or a regulator request."}
+        description={legalHold ? "Retention rules and deletion requests apply again once lifted." : "While a hold stands, this record cannot be erased or pruned - for litigation, an inquiry, or a regulator request."}
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setHoldOpen(false)} disabled={pending}>Cancel</Button>
@@ -138,7 +138,7 @@ export function DataPrivacyCard({
         {!legalHold && (
           <div className="space-y-2">
             <Label htmlFor="hold-reason">Reason (kept on the record)</Label>
-            <Textarea id="hold-reason" value={holdReason} onChange={(e) => setHoldReason(e.target.value)} rows={2} placeholder="e.g. Subpoena ref 12/2026 — hold until resolved" />
+            <Textarea id="hold-reason" value={holdReason} onChange={(e) => setHoldReason(e.target.value)} rows={2} placeholder="e.g. Subpoena ref 12/2026 - hold until resolved" />
           </div>
         )}
       </Dialog>

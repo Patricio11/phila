@@ -4,13 +4,13 @@ import { join } from "node:path";
 import { neon } from "@neondatabase/serverless";
 
 /**
- * Phase 31.6 — the broadened compliance sweep. Locks the confidentiality
+ * Phase 31.6 - the broadened compliance sweep. Locks the confidentiality
  * invariants in CI so a future change can't silently regress them:
  *   1. The FUNDER payload never carries client PII (payload layer, beyond RLS).
  *   2. Every AI-draft surface carries the "AI-generated" label.
  *   3. Safeguarding never auto-actions: the messaging rail has no risk-flag path.
  *   4. k-anon + retention/erasure invariants live in their own suites
- *      (reporting.test.ts, retention-rules/dsar/retention-pruner) — asserted
+ *      (reporting.test.ts, retention-rules/dsar/retention-pruner) - asserted
  *      present here so deleting one of those suites fails the sweep.
  */
 const envFile = readFileSync(".env.local", "utf8");

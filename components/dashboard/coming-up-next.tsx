@@ -5,7 +5,7 @@ import { CalendarHeart, Video } from "lucide-react";
 import type { UpcomingRow } from "@/db/queries/hub-dashboard";
 
 /**
- * Feedback #3 — "Coming up next": the practice's next five sessions, worded
+ * Feedback #3 - "Coming up next": the practice's next five sessions, worded
  * our way. Date badge · service with client · price · counsellor · time.
  */
 const DAY_NUM = new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric" });
@@ -18,7 +18,7 @@ export function ComingUpNext({ upcoming }: { upcoming: UpcomingRow[] }) {
       <div className="px-[17px] pb-[17px]">
         <div className="flex flex-col items-center gap-2 py-8 text-center">
           <CalendarHeart className="size-5 text-text-3" strokeWidth={1.8} aria-hidden />
-          <p className="text-[12.5px] text-text-3">Nothing scheduled yet — new bookings appear here.</p>
+          <p className="text-[12.5px] text-text-3">Nothing scheduled yet - new bookings appear here.</p>
         </div>
       </div>
     );

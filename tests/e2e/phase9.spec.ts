@@ -64,7 +64,7 @@ test("consent change persists across a reload (DB-backed)", async ({ page }) => 
 
 test("sign-up creates a real practice and asks the founder to verify their email", async ({ page }) => {
   // Signup is verification-first (W1.8: SIGNUP → VERIFY → ONBOARDING → APPROVAL). After
-  // submitting, the founder lands on a "check your email" step — a real verification link
+  // submitting, the founder lands on a "check your email" step - a real verification link
   // must be clicked before onboarding, so the test asserts that gate rather than /onboarding.
   const stamp = Date.now();
   const email = `founder-${stamp}@example.co.za`;

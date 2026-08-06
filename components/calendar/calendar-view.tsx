@@ -37,7 +37,7 @@ function addMonths(date: string, n: number): string { const d = parse(date); d.s
 function startOfWeek(date: string): string { return addDays(date, -(isoWeekday(date) - 1)); }
 function startOfMonth(date: string): string { return `${date.slice(0, 7)}-01`; }
 /**
- * SAST wall-clock for an instant. `startsAt` arrives as a UTC ISO string — slicing
+ * SAST wall-clock for an instant. `startsAt` arrives as a UTC ISO string - slicing
  * it directly showed events two hours early (11:00 SAST rendered at 09:00) and could
  * even file an early-morning session under the previous day. One formatter, cached.
  */
@@ -110,7 +110,7 @@ export function CalendarView({
   const [createInit, setCreateInit] = useState<CreateInitial | null>(null);
   const [createKey, setCreateKey] = useState(0);
   const [confirm, setConfirm] = useState<{ appt: AppointmentView; newStart: string } | null>(null);
-  // Feedback #2 — calendar filters: one counsellor, and/or a session type.
+  // Feedback #2 - calendar filters: one counsellor, and/or a session type.
   const [filterCounsellor, setFilterCounsellor] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<"all" | "in_person" | "online" | "hybrid">("all");
   const [detail, setDetail] = useState<AppointmentView | null>(null);
@@ -155,7 +155,7 @@ export function CalendarView({
 
   return (
     <div className="overflow-hidden rounded-card border border-border bg-surface shadow-sm">
-      {/* Header — two calm rows: filters/actions on top, navigation below. */}
+      {/* Header - two calm rows: filters/actions on top, navigation below. */}
       <div className="space-y-2 border-b border-border px-3 py-2.5 sm:px-4">
         <div className="flex flex-wrap items-center gap-2">
           {scheduling.counsellors.length > 1 && (

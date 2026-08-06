@@ -14,7 +14,7 @@ export default async function HubTeamPage() {
   const provider = await getDataProvider();
   const members = await provider.listTeam(membership.orgId);
 
-  // Feedback #9 — the export table (matches the roster on screen).
+  // Feedback #9 - the export table (matches the roster on screen).
   const now = clockNow();
   const day = (iso: string) => new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "2-digit", month: "short", year: "numeric" }).format(new Date(iso));
   const exportTable = {

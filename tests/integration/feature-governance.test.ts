@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * W3 — the entitlement resolver precedence: platform kill-switch → per-org override →
+ * W3 - the entitlement resolver precedence: platform kill-switch → per-org override →
  * plan → the org's own toggle. Exercised against a dedicated probe org on the Community
  * plan (which includes AI), so a parallel test moving a shared tenant's plan can't flip
  * the entitlement mid-run.

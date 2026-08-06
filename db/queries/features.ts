@@ -83,9 +83,9 @@ export async function resolveAllFeaturesDb(orgId: string): Promise<Record<OrgFea
     } else if (override === "force_on") {
       out[feature] = { ...base, enabled: true, source: "override", reason: overrideReason || "Enabled for your practice by Phila.", orgControllable: false };
     } else if (!planIncludesFeature(plan, feature)) {
-      out[feature] = { ...base, enabled: false, source: "plan", reason: `Not included in the ${planName} plan — upgrade to enable.`, orgControllable: false };
+      out[feature] = { ...base, enabled: false, source: "plan", reason: `Not included in the ${planName} plan - upgrade to enable.`, orgControllable: false };
     } else {
-      out[feature] = { ...base, enabled: selfEnabled, source: "self", reason: selfEnabled ? "On" : "Off — turn it on in Settings.", orgControllable: true };
+      out[feature] = { ...base, enabled: selfEnabled, source: "self", reason: selfEnabled ? "On" : "Off - turn it on in Settings.", orgControllable: true };
     }
   }
   return out;
@@ -96,7 +96,7 @@ export async function resolveFeatureDb(orgId: string, feature: OrgFeature): Prom
   return (await resolveAllFeaturesDb(orgId))[feature];
 }
 
-/** Just the effective on/off map — for nav gating + `requireOrgFeature`. */
+/** Just the effective on/off map - for nav gating + `requireOrgFeature`. */
 export async function effectiveFeaturesDb(orgId: string): Promise<Record<OrgFeature, boolean>> {
   const all = await resolveAllFeaturesDb(orgId);
   return Object.fromEntries(ORG_FEATURES.map((f) => [f, all[f].enabled])) as Record<OrgFeature, boolean>;

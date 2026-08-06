@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * W2 — invited-member activation. Inviting provisions a user + credential account +
+ * W2 - invited-member activation. Inviting provisions a user + credential account +
  * an `invited` membership; the set-password link (Better Auth reset token) lets them
  * choose a password; the first sign-in flips them `invited → active`.
  */
@@ -60,7 +60,7 @@ describe("invited-member activation", () => {
     expect(token).toBeTruthy();
     await auth.api.resetPassword({ body: { newPassword: NEW, token: token! }, headers: new Headers() });
 
-    // Now sign-in works — and activation flips them to active.
+    // Now sign-in works - and activation flips them to active.
     const ok = await auth.api.signInEmail({ body: { email: EMAIL, password: NEW }, headers: new Headers() }).catch(() => null);
     expect(ok).toBeTruthy();
     await activateMembershipsDb(userId);

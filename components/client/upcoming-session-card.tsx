@@ -121,7 +121,7 @@ export function UpcomingSessionCard({
 
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
           {isRemote(appt.type) && joinUrl && (
-            // Early clicks are welcome — the room page seats you in the waiting
+            // Early clicks are welcome - the room page seats you in the waiting
             // room with a countdown and lets you in when the doors open.
             <Button asChild className="w-full">
               <a href={joinUrl} target="_blank" rel="noopener noreferrer">
@@ -134,7 +134,7 @@ export function UpcomingSessionCard({
           </Button>
         </div>
 
-        {/* Request a change — the client never edits the booking; they ask the practice. */}
+        {/* Request a change - the client never edits the booking; they ask the practice. */}
         <div className="mt-4 border-t border-border pt-4">
           <RequestChangeControl appointmentId={appt.id} pendingKind={pendingKind} />
         </div>

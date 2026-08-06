@@ -1,25 +1,25 @@
 # 🛡️ PHASE 31: COMPLIANCE & DATA-SUBJECT READINESS (POPIA × HPCSA)
 
-*Goal: ship the legal-readiness layer — data-subject rights, retention clocks, breach log, the one-click
-POPIA pack, and the broadened compliance test sweep — so Phila (and every org on it) is ready to process
+*Goal: ship the legal-readiness layer - data-subject rights, retention clocks, breach log, the one-click
+POPIA pack, and the broadened compliance test sweep - so Phila (and every org on it) is ready to process
 real client special-category data. Consolidates the open POPIA items from Phase 19 and the compliance-test
 items from Phase 20 into one deliberate phase.*
 
-> **Status:** ✅ **complete (2026-07-21)** — five green clusters; closeout in `docs/completed/PHASE_31_COMPLETE.md`.
-> **Relates to:** Phase 19 (POPIA hardening — DSAR/retention/DPIA/breach/POPIA-pack items move here),
-> Phase 20 (compliance tests — the broadening lands in 31.6). **Data residency (SA region) stays in
+> **Status:** ✅ **complete (2026-07-21)** - five green clusters; closeout in `docs/completed/PHASE_31_COMPLETE.md`.
+> **Relates to:** Phase 19 (POPIA hardening - DSAR/retention/DPIA/breach/POPIA-pack items move here),
+> Phase 20 (compliance tests - the broadening lands in 31.6). **Data residency (SA region) stays in
 > Phase 19** and is gated to first-real-client onboarding, *not* this phase.
 
-> ### ⚖️ Governing principle — this phase must not complicate an org's life
+> ### ⚖️ Governing principle - this phase must not complicate an org's life
 > **Non-negotiable for every task here:**
 > 1. **Zero new steps in the daily loop.** Booking, session, note, calendar, caseload are untouched.
 > 2. **Correct by default, no config.** Every clock, gate, and policy ships with sane SA defaults; an
 >    org never has to *set up* compliance for it to be correct.
-> 3. **Admin surfaces are optional + view-first.** A single quiet "Data & privacy" area — used only when
->    someone asks to see/export/erase — never a mandatory new workflow.
+> 3. **Admin surfaces are optional + view-first.** A single quiet "Data & privacy" area - used only when
+>    someone asks to see/export/erase - never a mandatory new workflow.
 > 4. **Phila carries the platform's own duties centrally** (Information Officer, sub-processor/DPA
 >    register, DPIA, breach process) so orgs *inherit* them rather than each redoing the paperwork.
-> 5. **On-demand, one-click.** DSAR export + the POPIA pack are a single click when needed — nothing ongoing.
+> 5. **On-demand, one-click.** DSAR export + the POPIA pack are a single click when needed - nothing ongoing.
 
 > **Legal framing (drives the design):** Phila is an **operator** (processor); each org is the
 > **responsible party** for its clients' data. So this phase is partly tooling Phila *gives orgs* to meet
@@ -30,8 +30,8 @@ items from Phase 20 into one deliberate phase.*
 
 ---
 
-## Task 31.1: Data-subject request (DSAR) tooling — export & erasure
-*POPIA rights of access, correction, deletion. Assembly over new capture — the data already exists.*
+## Task 31.1: Data-subject request (DSAR) tooling - export & erasure
+*POPIA rights of access, correction, deletion. Assembly over new capture - the data already exists.*
 - [x] **Export ("everything we hold on this person").** One action (`exportDataSubject(orgId, clientId)` /
   the staff equivalent) assembles across the existing tables (profile, appointments, notes-metadata, care
   plans, documents list, consents, outcomes, demographics, audit of accesses) into a portable, **audited**
@@ -39,25 +39,25 @@ items from Phase 20 into one deliberate phase.*
 - [x] **Erasure / de-identification (lawful-where-possible).** Reuse the merge/de-identify path: for a
   "delete me" request, **de-identify the non-clinical PII** (name → pseudonym, contact/ID cleared) and
   **soft-delete + restrict-process** the record. Where HPCSA retention applies (31.2), the clinical record
-  is **not** hard-deleted — it's de-identified-where-possible and held under its clock, with an honest,
+  is **not** hard-deleted - it's de-identified-where-possible and held under its clock, with an honest,
   audited reason returned to the requester.
 - [x] **One quiet surface, no daily friction.** A "Data & privacy" panel on the client detail (org side)
-  and member detail: **Export data** / **Handle deletion request** — used on request only. Optional
+  and member detail: **Export data** / **Handle deletion request** - used on request only. Optional
   **client self-service** in `/me` ("request my data" / "request deletion") that simply *routes the request
   to the org* (the responsible party) + notifies them; the org still runs the one-click action. No new
   mandatory step for anyone.
-- [x] Every export/erase writes a **fail-strict** `audit_log` entry (`dsar.export` / `dsar.erase`) — like
+- [x] Every export/erase writes a **fail-strict** `audit_log` entry (`dsar.export` / `dsar.erase`) - like
   the clinical-access audits, a DSAR can't proceed unlogged.
 
-**Done when:** an org can, in one click, export everything held on a client and action a deletion request —
-honoured where lawful, restricted-with-reason where HPCSA mandates retention — all audited, with an
+**Done when:** an org can, in one click, export everything held on a client and action a deletion request -
+honoured where lawful, restricted-with-reason where HPCSA mandates retention - all audited, with an
 optional client-initiated request that adds no work to the daily loop.
 
 ## Task 31.2: Retention clocks × HPCSA (the subtle one)
-*POPIA "don't keep longer than needed — unless another law requires it" × HPCSA minimum retention.*
+*POPIA "don't keep longer than needed - unless another law requires it" × HPCSA minimum retention.*
 - [x] **Per-record retention clock.** A computed `retain_until` per record type, from sane SA defaults:
   clinical records **≥6y from last entry**; **minors → until age 21**; **incapacity → indefinite**.
-  Derived automatically from record type + client DOB/status — **the org never sets this.** *(Confirm the
+  Derived automatically from record type + client DOB/status - **the org never sets this.** *(Confirm the
   current HPCSA booklet numbers with an advisor before launch; encode them in one `lib/compliance/retention.ts`
   table so a change is one edit.)*
 - [x] **Pruner cron (fails closed, dry-run first).** A scheduled job destroys/de-identifies only records
@@ -71,40 +71,40 @@ optional client-initiated request that adds no work to the daily loop.
   inherited by every org.
 
 **Done when:** every record carries an automatic HPCSA-aware retention clock, a dry-run-first pruner respects
-it, erasure reconciles with it — and no org admin ever had to think about any of it.
+it, erasure reconciles with it - and no org admin ever had to think about any of it.
 
 ## Task 31.3: Breach log + notification workflow (POPIA s22)
-*Rare, platform-first, admin-initiated — not a daily tool.*
+*Rare, platform-first, admin-initiated - not a daily tool.*
 - [x] **`breach_log`** table + a simple **super-admin** surface (`/admin/compliance/breaches`): record an
   incident (what, when, scope, severity, containment, status). Org-level view optional/read-only.
-- [x] **"Who was affected"** query — from the incident scope, identify affected data subjects to support the
+- [x] **"Who was affected"** query - from the incident scope, identify affected data subjects to support the
   s22 notification to the Regulator + affected people (reuses `audit_log` + the data map).
-- [x] **Templated notification** via the Phase-12 `deliver` chokepoint (consent/opt-out honoured) — an
+- [x] **Templated notification** via the Phase-12 `deliver` chokepoint (consent/opt-out honoured) - an
   assisted, admin-initiated action, never automated.
 
-**Done when:** an incident can be logged, its affected subjects identified, and a notification drafted —
+**Done when:** an incident can be logged, its affected subjects identified, and a notification drafted -
 centrally, without adding anything to an org's normal use.
 
 ## Task 31.4: The one-click POPIA pack (a duty that doubles as a feature)
 *The selling point: "compliance you can show the Information Regulator," assembled from data you already hold.*
 - [x] **Per-org, one action** (`generatePopiaPack(orgId)`): assembles consent records + lawful-basis
   evidence + the access audit trail + retention status + any breach entries into an exportable, audited
-  PDF/ZIP. **Assembly, not new capture** — the raw material is in `consents` + `audit_log` + 31.2.
-- [x] **Sub-processor / DPA register** — a platform-maintained list (Neon, Supabase, Resend, BulkSMS,
+  PDF/ZIP. **Assembly, not new capture** - the raw material is in `consents` + `audit_log` + 31.2.
+- [x] **Sub-processor / DPA register** - a platform-maintained list (Neon, Supabase, Resend, BulkSMS,
   Meta/WhatsApp, the AI provider, Paystack) with each one's cross-border **s72 basis**, surfaced to orgs
   **read-only** and included in the pack. Phila fills it once; every org inherits it. *(The AI cross-border
-  s72 basis is the existing consent-gate — document it here.)*
+  s72 basis is the existing consent-gate - document it here.)*
 - [x] Surface as a single **"Download compliance pack"** button in the Data & privacy area. Zero ongoing burden.
 
 **Done when:** an org admin clicks once and gets an auditor-ready POPIA pack (their consents, audit, retention,
-and Phila's sub-processor chain) — a genuine differentiator that costs them nothing to maintain.
+and Phila's sub-processor chain) - a genuine differentiator that costs them nothing to maintain.
 
 ## Task 31.5: DPIA + Information Officer + operator agreements (paperwork, tracked lightly)
-*Mostly docs + a gentle, optional onboarding nudge — never blocking.*
+*Mostly docs + a gentle, optional onboarding nudge - never blocking.*
 - [x] **`docs/compliance/`** set: the **DPIA** (template + Phila's completed high-risk-processing assessment),
   the **operator/DPA register** (31.4), and an **IO-registration checklist**.
 - [x] **Optional onboarding nudge:** a dismissible "Register your Information Officer with the Regulator"
-  step with a link + a "done" checkbox — **never mandatory, never blocks** using the product.
+  step with a link + a "done" checkbox - **never mandatory, never blocks** using the product.
 - [x] Phila-the-company registers its **own** IO + completes its **own** DPIA centrally, so the platform
   duties are met once.
 
@@ -127,7 +127,7 @@ and the DPA register/DPIA exist as living docs.
 - [x] Runs in CI beside the existing `rls.test.ts` / `rls-scoped.test.ts` proof.
 
 **Done when:** CI proves no cross-role PII leak, k-anon+consent on every export, AI labelling, no safeguarding
-auto-action, and the retention/erasure invariants — the confidentiality guarantees are regression-locked.
+auto-action, and the retention/erasure invariants - the confidentiality guarantees are regression-locked.
 
 ---
 
@@ -135,17 +135,17 @@ auto-action, and the retention/erasure invariants — the confidentiality guaran
 - **This phase ships tooling, not legal sign-off.** The operator-vs-responsible-party split, the HPCSA
   retention numbers, and the erasure-vs-retention policy should be **confirmed by a POPIA-literate advisor
   before launch.** The build encodes them in one place (`lib/compliance/*`) so a correction is a one-line change.
-- **Retention destruction is irreversible** — the pruner ships **dry-run/report-only**, requires an explicit
+- **Retention destruction is irreversible** - the pruner ships **dry-run/report-only**, requires an explicit
   platform enable, is fully audited, and is reversible until committed. Never auto-on.
 - **Orgs stay uncomplicated.** If any task starts to demand org configuration or a new daily step, it's
-  wrong — fold it into a sane default or a one-click on-demand action instead (the governing principle).
+  wrong - fold it into a sane default or a one-click on-demand action instead (the governing principle).
 - **Residency is separate.** SA-region data-at-rest (Postgres + storage) is Phase 19, tied to first-real-client
-  onboarding — not a blocker for building this phase against the current DB.
+  onboarding - not a blocker for building this phase against the current DB.
 
 ### Closeout ritual (your convention)
 - [x] `docs/completed/PHASE_31_COMPLETE.md` (what shipped + verification).
 - [x] Tick Phase 31 ✅ + date in `ROADMAP.md`; note the Phase 19/20 items it closed.
 - [x] Update **Current State** in `TO_START_EVERY_SESSION.md`.
-- [x] Commit `Phase 31 complete — POPIA/HPCSA readiness`.
+- [x] Commit `Phase 31 complete - POPIA/HPCSA readiness`.
 
 *Phila · philasa.com · Phase 31 plan · Compliance & data-subject readiness · Completed 2026-07-21*

@@ -16,14 +16,14 @@ const KINDS: { kind: FeeKind; label: string; hint: string }[] = [
   { kind: "standard", label: "Standard", hint: "Pays the full list price" },
   { kind: "percentage", label: "Sliding scale", hint: "Pays a share of the list price" },
   { kind: "fixed", label: "Fixed fee", hint: "A flat amount per session" },
-  { kind: "waived", label: "Waived", hint: "Funded — pays nothing" },
+  { kind: "waived", label: "Waived", hint: "Funded - pays nothing" },
 ];
 
 const PCT_PRESETS = [25, 50, 75];
 
 /**
  * Sliding-scale / subsidised fee for a client (W7). What they pay flows straight into
- * the invoice raised when a session is booked — so funded/subsidised clients are billed
+ * the invoice raised when a session is booked - so funded/subsidised clients are billed
  * correctly, automatically. The preview shows exactly what they'll pay per service.
  */
 export function ClientFeeControl({
@@ -141,7 +141,7 @@ export function ClientFeeControl({
   );
 }
 
-/** What the client pays per service under the (draft) policy — the useful bit. */
+/** What the client pays per service under the (draft) policy - the useful bit. */
 function FeeTable({ services, policy }: { services: { name: string; priceCents: number }[]; policy: FeePolicy | null }) {
   return (
     <ul className="space-y-1 rounded-control border border-border bg-surface-2/40 p-2.5">

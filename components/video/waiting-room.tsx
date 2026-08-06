@@ -5,7 +5,7 @@ import { Clock, Video } from "lucide-react";
 
 /**
  * The waiting room (feedback #10). A genuine join link clicked before the room
- * opens lands here — session details, a live countdown, and an automatic entry
+ * opens lands here - session details, a live countdown, and an automatic entry
  * the moment the window opens (the page reloads; the server then renders the
  * pre-join). Calm by design: arriving early should feel right, not like an error.
  */
@@ -61,7 +61,7 @@ export function WaitingRoom({ orgName, serviceName, hostName, startsAtISO, start
         </div>
 
         <p className="text-[12.5px] leading-relaxed text-text-3">
-          You can keep this page open — you&apos;ll be let in automatically. Or come back closer to the
+          You can keep this page open - you&apos;ll be let in automatically. Or come back closer to the
           time using the same link.
         </p>
       </div>

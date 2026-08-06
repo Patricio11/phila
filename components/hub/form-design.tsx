@@ -170,7 +170,7 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
     <div className="space-y-1">
       <Label>{label}</Label>
       <div className="flex items-center gap-2">
-        {/* Custom swatch — the (invisible) native input on top only summons the OS colour dialog. */}
+        {/* Custom swatch - the (invisible) native input on top only summons the OS colour dialog. */}
         <span className="relative inline-flex size-9 shrink-0 items-center justify-center rounded-control border border-border bg-surface transition-shadow hover:shadow-sm">
           <span className="size-6 rounded-[6px] shadow-inner ring-1 ring-black/5" style={{ backgroundColor: value }} aria-hidden />
           <Pipette className="absolute -bottom-1 -right-1 size-3.5 rounded-full bg-surface p-0.5 text-text-3 shadow-sm ring-1 ring-border" strokeWidth={2} aria-hidden />

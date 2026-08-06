@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 31.2 — the pruner never destroys inside the clock or under hold, and in
+ * Phase 31.2 - the pruner never destroys inside the clock or under hold, and in
  * destroy mode wipes only the lapsed, unheld record's clinical children. The
  * route handler is exercised directly (report mode first, then destroy).
  */

@@ -14,12 +14,12 @@ All sign in at **`/login`** with the password below.
 | Practice admin (Hub) | `thandeka@masizakhe.org.za` | `/hub` | Thandeka Mbeki · runs the practice |
 | Front desk | `frontdesk@masizakhe.org.za` | `/hub` | Lindiwe Khoza · reception / scheduling |
 | Finance | `finance@masizakhe.org.za` | `/hub` | Riaan Steyn · invoicing & billing |
-| Programme manager | `programmes@masizakhe.org.za` | `/hub` | Bongani Nkosi · M&E / funders *(archived member — reactivate to sign in)* |
+| Programme manager | `programmes@masizakhe.org.za` | `/hub` | Bongani Nkosi · M&E / funders *(archived member - reactivate to sign in)* |
 | Client | `lerato.m@example.co.za` | `/me` | Lerato Mahlangu · client portal |
 | Funder | `palesa.mokoena@dsd.example.gov.za` | `/funder` | Palesa Mokoena · DSD · read-only, scoped |
 | Super admin | `ops@philasa.com` | `/admin` | Sizwe Ndlovu · platform console |
 
-## Second org — Thrive EAP (`org_thrive`)
+## Second org - Thrive EAP (`org_thrive`)
 
 A separate, fully-seeded tenant (own counsellor, clients, sessions, a paid invoice) so
 **tenant isolation / RLS** is demonstrable: sign in as Thrive and you see only Thrive's

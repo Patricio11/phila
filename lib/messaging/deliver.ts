@@ -72,7 +72,7 @@ export async function deliver(input: DeliverInput): Promise<DeliverOutcome> {
   const body = renderTemplate(await getTemplateBody(orgId, channel, trigger), vars);
 
   // WhatsApp is window-aware: inside the client's free 24h window we send a free-form
-  // message (free); outside it we can only use a Meta-approved template — and if none is
+  // message (free); outside it we can only use a Meta-approved template - and if none is
   // configured we skip honestly rather than have Meta bounce a free-form message.
   let result: TransportResult;
   let waNote: string | undefined;
@@ -85,7 +85,7 @@ export async function deliver(input: DeliverInput): Promise<DeliverOutcome> {
       return { channel, status: "window_closed" };
     }
     const creds = { phoneNumberId: wa.phoneNumberId, accessTokenEnc: wa.accessTokenEnc };
-    // An online session's join link travels with the message (free-form only —
+    // An online session's join link travels with the message (free-form only -
     // an approved template's params are fixed by Meta).
     const waBody = vars.joinLink ? `${body}\n\nJoin online: ${vars.joinLink}` : body;
     if (mode === "free_form") {

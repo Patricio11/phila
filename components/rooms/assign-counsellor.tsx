@@ -19,7 +19,7 @@ const DAYS: { n: number; label: string }[] = [
 ];
 
 /**
- * Feedback #8 — the assignment flow is real: it persists, warns honestly (the
+ * Feedback #8 - the assignment flow is real: it persists, warns honestly (the
  * counsellor's availability, their other rooms, this room's other claims), and
  * a second confirm saves anyway when the org knows better.
  */
@@ -151,7 +151,7 @@ export function AssignCounsellorButton({ roomId, roomName, counsellors }: { room
   );
 }
 
-/** One assigned row with its quiet remove — history stays on the appointment record. */
+/** One assigned row with its quiet remove - history stays on the appointment record. */
 export function AssignmentRow({ assignment, roomId }: {
   assignment: { id: string; counsellorName: string; days: number[]; start: string; end: string };
   roomId: string;

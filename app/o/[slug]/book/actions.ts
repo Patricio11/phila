@@ -88,7 +88,7 @@ export async function getAvailableSlots(
   if (date < today || date > latest) return { ok: true, slots: [] };
 
   // Compute each candidate's free slots (respecting their ORG-managed working
-  // windows — no windows = the org's full hours), then union by start time. A
+  // windows - no windows = the org's full hours), then union by start time. A
   // slot is offered while ANY counsellor is free, and each start is assigned to
   // the LEAST-LOADED free counsellor that day, so work spreads fairly (#5).
   const availability = process.env.DATA_PROVIDER === "db" ? await getOrgAvailabilityMapDb(org.id) : new Map();
@@ -223,7 +223,7 @@ export async function submitBooking(
         new Promise((resolve) => setTimeout(resolve, 4_000)),
       ]);
       // Auto-raise an invoice for the session (priced services only; org-toggleable) so
-      // the client can pay online. Best-effort — never break a booking over billing.
+      // the client can pay online. Best-effort - never break a booking over billing.
       try { await createInvoiceForBookingDb({ orgId: config.org.id, appointmentId: res.appointmentId, clientId: res.clientId, serviceName: service.name, amountCents: service.priceCents ?? 0, issuedAt: new Date(clockNow()) }); } catch { /* never break booking */ }
       void recordPageEvent(config.org.id, "booked"); // PII-free conversion (Phase 17)
       // Mirror the intake into the active intake form's Responses (best-effort).

@@ -4,7 +4,7 @@ import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Phila's own checkbox (never the OS control — DESIGN §6). A real (hidden)
+ * Phila's own checkbox (never the OS control - DESIGN §6). A real (hidden)
  * <input type="checkbox"> keeps label association, keyboard toggling, and a11y;
  * the visible box is fully ours: accent fill + white check, soft focus ring.
  * `fillClassName` lets branded surfaces (the public booking page) fill with the

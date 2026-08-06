@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * W3.4/3.5 — moving an org between plans changes its quotas; a per-org storage
+ * W3.4/3.5 - moving an org between plans changes its quotas; a per-org storage
  * override wins over the plan; the resource meters read the real pools.
  */
 const envFile = readFileSync(".env.local", "utf8");

@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "POPIA compliance pack", robots: { index: false } };
 
 /**
- * Phase 31.4 — the one-click POPIA pack: a standalone printable page (same
+ * Phase 31.4 - the one-click POPIA pack: a standalone printable page (same
  * pattern as the grant report) assembling the org's live compliance evidence.
  * Generation is a PII export → fail-strict audited before anything renders.
  */

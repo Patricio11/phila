@@ -69,7 +69,7 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
   const attended = sessions.filter((s) => s.state === "completed" || s.state === "discharged").length;
   const noShow = sessions.filter((s) => s.state === "no_show").length;
   const attendanceRate = attended + noShow > 0 ? Math.round((attended / (attended + noShow)) * 100) : null;
-  // The most recent measure across tools — for the "at a glance" latest-score stat.
+  // The most recent measure across tools - for the "at a glance" latest-score stat.
   const latestOutcome = [...outcomes].sort((a, b) => b.takenAt.localeCompare(a.takenAt))[0];
   const counsellorOpts = counsellors.map((c) => ({ id: c.id, name: c.name }));
 

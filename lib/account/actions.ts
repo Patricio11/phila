@@ -10,7 +10,7 @@ import { logAccess } from "@/lib/audit";
 const isDb = () => process.env.DATA_PROVIDER === "db";
 
 /**
- * Personal account actions — usable by any org member (counsellor or admin) on
+ * Personal account actions - usable by any org member (counsellor or admin) on
  * their **own** account. Real: the password change routes through Better Auth
  * (verifies the current password, re-hashes, revokes other sessions) and the
  * profile persists to `team_profiles`. Never logs the password.
@@ -51,7 +51,7 @@ export async function changePassword(
 
 /**
  * 2FA: turning it ON is a real enrolment flow (TOTP QR + verify + backup codes)
- * via the Better Auth twoFactor plugin — a boolean toggle can't honestly
+ * via the Better Auth twoFactor plugin - a boolean toggle can't honestly
  * represent that, so this records the intent (audited) rather than pretend 2FA
  * is active. The enrolment UI is the W2 2FA work item.
  */
@@ -76,7 +76,7 @@ const profileInput = z.object({
   bio: z.string().max(800).optional().or(z.literal("")),
 });
 
-/** Update your own profile — persists to `team_profiles` (+ your display name). */
+/** Update your own profile - persists to `team_profiles` (+ your display name). */
 export async function saveMyProfile(
   raw: z.infer<typeof profileInput>,
 ): Promise<{ ok: true } | { ok: false; error: string }> {

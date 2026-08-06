@@ -40,7 +40,7 @@ export default async function RoomPage({ params, searchParams }: { params: Promi
   const allowed = Boolean(row && remote && !cancelled && (isHost || (genuine && window === "open")));
 
   if (!allowed || !row) {
-    // A GENUINE link clicked early isn't an error — it's a client arriving early
+    // A GENUINE link clicked early isn't an error - it's a client arriving early
     // (feedback #10). Seat them in the waiting room; it lets them in at T-15.
     if (row && remote && !cancelled && genuine && window === "early") {
       return (

@@ -20,7 +20,7 @@ export default async function CounsellorSettingsPage() {
   const detail = await provider.getTeamMemberDetail(membership.orgId, principal.userId, now);
   if (!detail) notFound();
 
-  // Feedback #5 — read-only: only the practice can change availability.
+  // Feedback #5 - read-only: only the practice can change availability.
   const availability = detail.counsellorId && process.env.DATA_PROVIDER === "db"
     ? await (await import("@/db/queries/availability")).getCounsellorAvailabilityDb(membership.orgId, detail.counsellorId)
     : [];
@@ -64,7 +64,7 @@ export default async function CounsellorSettingsPage() {
               <p className="text-[13px] text-text-2">You follow the practice working hours.</p>
             )}
             <p className="mt-3 text-[11.5px] leading-relaxed text-text-3">
-              Availability is managed by your practice — ask an admin if this needs to change.
+              Availability is managed by your practice - ask an admin if this needs to change.
             </p>
           </div>
         </Card>

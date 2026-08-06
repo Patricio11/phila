@@ -14,7 +14,7 @@ function startsLabel(d: Date): string {
 }
 
 /**
- * The classroom's live room (batch 2b) — staff only, authorised by org
+ * The classroom's live room (batch 2b) - staff only, authorised by org
  * membership (supervisor, class member, or org admin). Same doors-open logic
  * as client sessions: early arrivals wait, the room opens 15 minutes before.
  */
@@ -29,7 +29,7 @@ export default async function ClassRoomPage({ params }: { params: Promise<{ sess
 
   if (!found || !allowed || found.session.mode !== "online") {
     const msg = !found ? "This class session link isn't valid."
-      : !allowed ? "Sign in with your practice account — this room is for the class."
+      : !allowed ? "Sign in with your practice account - this room is for the class."
       : "This class session is in person.";
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-bg px-4">
@@ -63,7 +63,7 @@ export default async function ClassRoomPage({ params }: { params: Promise<{ sess
         <div className="max-w-sm space-y-3 text-center">
           <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-surface-2 text-text-3"><VideoOff className="size-6" strokeWidth={2} aria-hidden /></div>
           <h1 className="text-[18px] font-[680] text-text">Video isn&apos;t switched on yet</h1>
-          <p className="text-[14px] text-text-2">The practice hasn&apos;t configured video — your supervisor will share another way to meet.</p>
+          <p className="text-[14px] text-text-2">The practice hasn&apos;t configured video - your supervisor will share another way to meet.</p>
         </div>
       </div>
     );

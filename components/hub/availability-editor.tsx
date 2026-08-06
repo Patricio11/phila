@@ -26,7 +26,7 @@ function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
 }
 
 /**
- * Feedback #5 — a counsellor's weekly availability, edited by the ORG only.
+ * Feedback #5 - a counsellor's weekly availability, edited by the ORG only.
  * No custom pattern = the counsellor follows the practice working hours; a
  * saved pattern narrows when they can be booked (hub modal + public page).
  */
@@ -120,7 +120,7 @@ export function AvailabilityEditor({ counsellorId, firstName, initial, orgHours 
         <Button size="sm" onClick={saveCustom} loading={pending} disabled={invalid}>Save availability</Button>
         <Button size="sm" variant="ghost" onClick={() => save([])} disabled={pending}>Use practice hours</Button>
       </div>
-      <p className="mt-2 text-[11.5px] leading-relaxed text-text-3">Only practice admins can change availability — changes appear on the activity feed.</p>
+      <p className="mt-2 text-[11.5px] leading-relaxed text-text-3">Only practice admins can change availability - changes appear on the activity feed.</p>
     </div>
   );
 }

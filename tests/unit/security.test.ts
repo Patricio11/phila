@@ -5,7 +5,7 @@ import { paystackSignatureValid } from "@/lib/payments/paystack";
 import { signJoin, verifyJoin, verifyJoinSignature, joinWindow } from "@/lib/video/livekit";
 
 /**
- * W2 hardening — the pure security primitives: upload type/extension validation,
+ * W2 hardening - the pure security primitives: upload type/extension validation,
  * constant-time Paystack webhook signature check, and video join-token verification.
  */
 describe("validateUpload", () => {

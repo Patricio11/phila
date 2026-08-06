@@ -19,7 +19,7 @@ const requestInput = z.object({
 });
 
 /**
- * A client REQUESTS a reschedule or cancellation (W6.2) — they never change the booking
+ * A client REQUESTS a reschedule or cancellation (W6.2) - they never change the booking
  * themselves. We verify the session is theirs and still upcoming, enforce the org's notice
  * window (closer than that, they're asked to phone), record the request, and notify the
  * practice. The practice actions or declines it.
@@ -37,7 +37,7 @@ export async function requestAppointmentChange(
     counsellorId: appointments.counsellorId, startsAt: appointments.startsAt, state: appointments.state,
   }).from(appointments).where(eq(appointments.id, parsed.data.appointmentId)).limit(1);
 
-  // Ownership + validity — never reveal another client's session.
+  // Ownership + validity - never reveal another client's session.
   if (!appt || appt.clientId !== clientId) return { ok: false, error: "That session couldn't be found." };
   if (appt.state === "cancelled") return { ok: false, error: "That session is already cancelled." };
 

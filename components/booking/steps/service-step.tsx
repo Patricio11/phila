@@ -28,7 +28,7 @@ export function ServiceStep({
     <div>
       <StepHeader
         title="What would you like to book?"
-        subtitle="Choose a service — we’ll match you with an available counsellor."
+        subtitle="Choose a service - we’ll match you with an available counsellor."
       />
 
       <fieldset>

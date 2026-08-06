@@ -16,7 +16,7 @@ export default async function SetupSecurityPage({ searchParams }: { searchParams
 
   const { next } = await searchParams;
   const home = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
-  // Already protected — don't nag; go where they were headed.
+  // Already protected - don't nag; go where they were headed.
   if (principal.twoFactorEnabled) redirect(home);
 
   const first = principal.name.trim().split(/\s+/)[0] || "there";

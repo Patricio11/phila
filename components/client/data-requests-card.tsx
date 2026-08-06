@@ -8,7 +8,7 @@ import { useToast } from "@/components/ui/toast";
 import { requestMyData } from "@/app/me/profile/actions";
 
 /**
- * Phase 31.1 — the client's own data rights, stated plainly. Requests route to
+ * Phase 31.1 - the client's own data rights, stated plainly. Requests route to
  * the practice (the responsible party under POPIA); nothing changes until they
  * action it. Calm, no legalese, no extra steps for anyone.
  */
@@ -32,7 +32,7 @@ export function DataRequestsCard() {
         <ShieldQuestion className="size-4 text-accent" strokeWidth={2} aria-hidden /> Your data, your rights
       </div>
       <p className="mt-1.5 text-[12.5px] leading-relaxed text-text-2">
-        You can ask for a copy of everything your practice holds about you, or ask for your information to be deleted. Your practice handles the request — some clinical records must be kept for a legally set time, and they&apos;ll tell you honestly if that applies.
+        You can ask for a copy of everything your practice holds about you, or ask for your information to be deleted. Your practice handles the request - some clinical records must be kept for a legally set time, and they&apos;ll tell you honestly if that applies.
       </p>
       {sent ? (
         <div className="mt-3 flex items-start gap-2 rounded-control border border-border bg-surface-2/50 px-3 py-2.5 text-[12.5px] text-text-2">
@@ -54,7 +54,7 @@ export function DataRequestsCard() {
         open={confirmDeletion}
         onClose={() => setConfirmDeletion(false)}
         title="Request deletion of your data"
-        description="Your practice will remove your personal details wherever the law allows. Clinical records sometimes have to be kept for a set period — they'll let you know exactly what applies to you."
+        description="Your practice will remove your personal details wherever the law allows. Clinical records sometimes have to be kept for a set period - they'll let you know exactly what applies to you."
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setConfirmDeletion(false)} disabled={pending}>Not now</Button>
@@ -62,7 +62,7 @@ export function DataRequestsCard() {
           </div>
         }
       >
-        <p className="text-[13px] text-text-2">This sends the request to your practice — nothing is deleted until they process it and confirm with you.</p>
+        <p className="text-[13px] text-text-2">This sends the request to your practice - nothing is deleted until they process it and confirm with you.</p>
       </Dialog>
     </div>
   );

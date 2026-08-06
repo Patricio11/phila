@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Feedback #5 — counsellor availability. ORG-managed weekly windows narrow when
+ * Feedback #5 - counsellor availability. ORG-managed weekly windows narrow when
  * a counsellor can be booked; no windows = they follow the practice hours; and
  * several counsellors can hold the same hour. Auto-assign picks the least-loaded.
  */
@@ -19,7 +19,7 @@ const { availableSlots } = await import("@/lib/domain/helpers");
 const ORG = "org_avail_probe";
 const HOURS: import("@/lib/domain/types").BusinessHours = { 1: { start: "08:00", end: "17:00" }, 2: { start: "08:00", end: "17:00" }, 3: { start: "08:00", end: "17:00" }, 4: { start: "08:00", end: "17:00" }, 5: { start: "08:00", end: "17:00" }, 6: null, 7: null };
 
-/** Next Monday at least a week out — far from seeded data, always a working day. */
+/** Next Monday at least a week out - far from seeded data, always a working day. */
 function nextMonday(): string {
   const d = new Date();
   d.setDate(d.getDate() + 7 + ((8 - d.getDay()) % 7));
@@ -59,11 +59,11 @@ describe("counsellor availability", () => {
     expect(at10.available.sort()).toEqual(["couns_av_a", "couns_av_b"]);
     const at14 = await availableCounsellorsAtDb(ORG, `${MONDAY}T14:00:00+02:00`, 60, HOURS);
     expect(at14.available).toEqual(["couns_av_b"]);
-    // 12:30 start would spill past A's 13:00 end — only B.
+    // 12:30 start would spill past A's 13:00 end - only B.
     const at1230 = await availableCounsellorsAtDb(ORG, `${MONDAY}T12:30:00+02:00`, 60, HOURS);
     expect(at1230.available).toEqual(["couns_av_b"]);
 
-    // 3) Same-hour sharing: book B at 10:00 — the hour stays open via A.
+    // 3) Same-hour sharing: book B at 10:00 - the hour stays open via A.
     await sql`INSERT INTO appointments (id, org_id, client_id, counsellor_id, service_id, type, starts_at, duration_min, state)
       VALUES ('appt_av_b10', ${ORG}, 'cl_av_1', 'couns_av_b', 'svc_av', 'online', ${`${MONDAY}T10:00:00+02:00`}, 60, 'scheduled') ON CONFLICT (id) DO NOTHING`;
     const at10b = await availableCounsellorsAtDb(ORG, `${MONDAY}T10:00:00+02:00`, 60, HOURS);

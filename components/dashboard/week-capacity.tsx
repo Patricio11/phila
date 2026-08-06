@@ -2,7 +2,7 @@ import { WEEK_CAPACITY } from "@/lib/domain/helpers";
 import { cn } from "@/lib/utils";
 
 /**
- * The counsellor's own week-capacity bar (W6.2) — the same load model the Hub shows
+ * The counsellor's own week-capacity bar (W6.2) - the same load model the Hub shows
  * for the whole team (`WEEK_CAPACITY` sessions/week), now surfaced to the counsellor
  * on their own dashboard so they can see at a glance whether they have room.
  */

@@ -14,7 +14,7 @@ function rands(cents: number): string {
   return `R${za(Math.round(cents / 100))}`;
 }
 
-/** Move an org between plans (W3.4c) — entitlements + quotas follow immediately. */
+/** Move an org between plans (W3.4c) - entitlements + quotas follow immediately. */
 export function OrgPlanControl({ orgId, planId, plans }: { orgId: string; planId: string; plans: Plan[] }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -44,7 +44,7 @@ export function OrgPlanControl({ orgId, planId, plans }: { orgId: string; planId
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="flex-1 space-y-1.5">
           <label className="text-[12px] font-medium text-text-2">Plan</label>
-          <Select value={selected} onChange={setSelected} options={plans.map((p) => ({ value: p.id, label: `${p.name} — ${rands(p.priceCents)}/mo` }))} />
+          <Select value={selected} onChange={setSelected} options={plans.map((p) => ({ value: p.id, label: `${p.name} - ${rands(p.priceCents)}/mo` }))} />
         </div>
         <Button onClick={save} loading={pending} disabled={!changed}>Change plan</Button>
       </div>

@@ -210,7 +210,7 @@ export async function getTeamMemberDetailDb(orgId: string, userId: string, now: 
   });
 }
 
-/* ---- Counsellor offboarding (feedback #4) — archive-only, records kept ---- */
+/* ---- Counsellor offboarding (feedback #4) - archive-only, records kept ---- */
 
 /**
  * The live workload behind a member: are they a counsellor, and what would
@@ -231,7 +231,7 @@ export async function memberWorkloadDb(orgId: string, userId: string): Promise<{
 
 /**
  * Cancel a counsellor's upcoming sessions (the offboard "cancel" path). The
- * rows are marked cancelled with an honest reason — NEVER deleted; the full
+ * rows are marked cancelled with an honest reason - NEVER deleted; the full
  * history stays on record. Returns the ids so the caller can notify clients.
  */
 export async function cancelUpcomingForCounsellorDb(orgId: string, counsellorId: string, reason: string): Promise<string[]> {

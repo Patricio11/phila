@@ -4,7 +4,7 @@ import { getDb } from "@/db/client";
 import { breachLog, auditLog, clients, orgs } from "@/db/schema";
 
 /**
- * Phase 31.3 — the POPIA s22 breach log. Platform-first: the super-admin records
+ * Phase 31.3 - the POPIA s22 breach log. Platform-first: the super-admin records
  * and manages incidents; "who was affected" is derived from the audit trail in
  * the incident window (assembly over new capture).
  */
@@ -54,7 +54,7 @@ export async function setBreachStatusDb(id: string, status: string, containment?
 }
 
 /**
- * "Who was affected" — data subjects whose records were touched inside the
+ * "Who was affected" - data subjects whose records were touched inside the
  * incident window (from the audit trail), for the s22 notification list.
  * Scoped to the incident's org when set.
  */
@@ -75,7 +75,7 @@ export async function affectedSubjectsDb(breachId: string): Promise<{ clientId: 
   return found.filter((c) => ids.includes(c.id)).map((c) => ({ clientId: c.id, name: c.name, phone: c.phone, email: c.email }));
 }
 
-/** Org-scoped view for the POPIA pack — an org honestly sees its own incidents. */
+/** Org-scoped view for the POPIA pack - an org honestly sees its own incidents. */
 export async function orgBreachesDb(orgId: string): Promise<BreachView[]> {
   const rows = await getDb().select().from(breachLog).where(eq(breachLog.orgId, orgId)).orderBy(desc(breachLog.createdAt));
   return rows.map((b) => ({

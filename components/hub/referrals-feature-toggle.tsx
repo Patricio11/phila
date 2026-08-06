@@ -8,7 +8,7 @@ import { saveOrgFeature } from "@/app/hub/settings/actions";
 import { cn } from "@/lib/utils";
 
 /**
- * Referral tracking (W7) — off by default. When on, staff can record how each client
+ * Referral tracking (W7) - off by default. When on, staff can record how each client
  * found the practice (Add/Edit client) and a "Where clients come from" breakdown shows
  * in Insights. Some orgs don't want it, so it's a clean per-org switch (Dormant-by-Default).
  */

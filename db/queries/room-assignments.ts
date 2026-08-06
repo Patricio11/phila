@@ -6,7 +6,7 @@ import { roomAssignments, rooms, sites, counsellors, appointments, clients } fro
 import { getOrgAvailabilityMapDb } from "@/db/queries/availability";
 
 /**
- * Feedback #8 — rooms fully functional. Assignments are REAL rows now (the old
+ * Feedback #8 - rooms fully functional. Assignments are REAL rows now (the old
  * action was a Part-A mock): many counsellors per room, each on their own
  * day/time pattern, so rotation ("Room 1 Monday, Room 2 Tuesday") is just rows.
  * Saving is availability-aware: warnings are computed here and surfaced before
@@ -20,8 +20,8 @@ const hm = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
 const overlaps = (aS: string, aE: string, bS: string, bE: string) => hm(aS) < hm(bE) && hm(aE) > hm(bS);
 
 /**
- * Honest pre-save checks. All are WARNINGS (the org may know better — a
- * capacity-2 room, a planned change) — the dialog shows them and asks again.
+ * Honest pre-save checks. All are WARNINGS (the org may know better - a
+ * capacity-2 room, a planned change) - the dialog shows them and asks again.
  */
 export async function assignmentWarningsDb(orgId: string, input: AssignmentInput): Promise<string[]> {
   return runForOrg(orgId, async () => {
@@ -82,7 +82,7 @@ export async function saveRoomAssignmentDb(orgId: string, input: AssignmentInput
   });
 }
 
-/** Remove one assignment. The room's HISTORY is untouched — it lives in appointments. */
+/** Remove one assignment. The room's HISTORY is untouched - it lives in appointments. */
 export async function removeRoomAssignmentDb(orgId: string, assignmentId: string): Promise<boolean> {
   return runForOrg(orgId, async () => {
     const res = await activeDb().delete(roomAssignments)
@@ -100,7 +100,7 @@ export interface RoomHistoryDay {
 }
 
 /**
- * Who was in this room on a given SAST date — the truthful, permanent record,
+ * Who was in this room on a given SAST date - the truthful, permanent record,
  * derived from booked sessions (incl. hybrid). Cancelled sessions are excluded.
  */
 export async function getRoomHistoryDb(orgId: string, roomId: string, date: string): Promise<RoomHistoryDay> {
@@ -155,7 +155,7 @@ export interface RoomNow {
   next: { startsAt: string; counsellorName: string; clientName: string } | null;
 }
 
-/** The live picture — which rooms are occupied at this moment, and what's next. */
+/** The live picture - which rooms are occupied at this moment, and what's next. */
 export async function roomsRightNowDb(orgId: string, nowISO: string): Promise<RoomNow[]> {
   return runForOrg(orgId, async () => {
     const db = activeDb();

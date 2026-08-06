@@ -61,7 +61,7 @@ export async function notifyAppointment(appointmentId: string, trigger: MessageT
 /**
  * Waitlist offer (W7): tell a waiting client that a slot has opened. Fires the
  * `waitlist_slot` message over their preferred channel (dormant-safe) AND an always-on
- * in-app notification. Never throws — a failed offer must not break the cancellation.
+ * in-app notification. Never throws - a failed offer must not break the cancellation.
  */
 export async function notifyWaitlistOffer(clientId: string, orgId: string, slot: { counsellorName: string; startsAt: Date; serviceName: string }): Promise<void> {
   try {
@@ -83,7 +83,7 @@ export async function notifyWaitlistOffer(clientId: string, orgId: string, slot:
     await notifyClientUser(clientId, orgId, {
       kind: "waitlist_offer",
       title: "A slot has opened",
-      body: `${slot.counsellorName.split(" ")[0]} has a slot on ${fmtLong(slot.startsAt)} at ${fmtTime(slot.startsAt)} — contact us to take it.`,
+      body: `${slot.counsellorName.split(" ")[0]} has a slot on ${fmtLong(slot.startsAt)} at ${fmtTime(slot.startsAt)} - contact us to take it.`,
       href: "/me",
     });
   } catch {
@@ -95,7 +95,7 @@ export async function notifyWaitlistOffer(clientId: string, orgId: string, slot:
  * When a session is cancelled and the slot frees up, offer it to the waitlist (W7):
  * matching waiting clients (same counsellor, or counsellor-agnostic) are messaged the
  * freed slot, and the counsellor is told how many were offered it. Returns the count.
- * Best-effort — never throws (the cancellation has already happened).
+ * Best-effort - never throws (the cancellation has already happened).
  */
 export async function offerFreedSlot(orgId: string, appointmentId: string): Promise<number> {
   try {
@@ -125,8 +125,8 @@ export async function offerFreedSlot(orgId: string, appointmentId: string): Prom
 
 /**
  * Full fan-out when an appointment is booked (Phase 17.2, upgraded W-feedback).
- * The CLIENT is reached on their preferred channel — WhatsApp first when the org
- * has its number live (free in-window), else SMS/email — with a guaranteed email
+ * The CLIENT is reached on their preferred channel - WhatsApp first when the org
+ * has its number live (free in-window), else SMS/email - with a guaranteed email
  * fallback if the text leg couldn't send, plus an in-app notice. The COUNSELLOR
  * gets a branded email AND an in-app notice. Online sessions carry the secure
  * join link everywhere. One lookup, never throws.
@@ -156,7 +156,7 @@ export async function notifyAppointmentBooked(appointmentId: string): Promise<vo
       joinLink,
     };
 
-    // 1) Client — their preferred channel through the rail. No stated preference →
+    // 1) Client - their preferred channel through the rail. No stated preference →
     // the rail's fallback order (WhatsApp when the org's number is live → SMS → email).
     const preferred = (row.clientProfile as Record<string, string> | null)?.preferredContact ?? null;
     const outcome = await deliver({
@@ -179,7 +179,7 @@ export async function notifyAppointmentBooked(appointmentId: string): Promise<vo
       });
     }
 
-    // 2) Counsellor — always-on in-app.
+    // 2) Counsellor - always-on in-app.
     await notifyCounsellor(row.a.counsellorId, {
       kind: "appointment_booked",
       title: `New session with ${row.clientName ?? "a client"}`,
@@ -187,7 +187,7 @@ export async function notifyAppointmentBooked(appointmentId: string): Promise<vo
       href: `/app/sessions/${appointmentId}`,
     });
 
-    // 2b) Counsellor — a branded email too (with the join link when online), so a
+    // 2b) Counsellor - a branded email too (with the join link when online), so a
     // new session isn't missed when they're away from the app. Best-effort.
     if (row.counsellorEmail) {
       try {
@@ -202,7 +202,7 @@ export async function notifyAppointmentBooked(appointmentId: string): Promise<vo
       } catch { /* email is best-effort; the in-app notice already landed */ }
     }
 
-    // 3) Client — in-app too, if they have a portal account.
+    // 3) Client - in-app too, if they have a portal account.
     await notifyClientUser(row.a.clientId, row.a.orgId, {
       kind: "appointment_booked",
       title: `Your session is booked`,

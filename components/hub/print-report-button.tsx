@@ -4,7 +4,7 @@ import { Printer, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-/** A slim print bar for the standalone report pack — hidden when printing. */
+/** A slim print bar for the standalone report pack - hidden when printing. */
 export function PrintReportBar({ backHref, backLabel = "Back to grant" }: { backHref: string; backLabel?: string }) {
   return (
     <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-surface/90 px-4 py-2.5 backdrop-blur print:hidden">

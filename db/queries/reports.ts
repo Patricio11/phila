@@ -4,7 +4,7 @@ import { activeDb, runForOrg } from "@/lib/db/scoped";
 import { appointments, clients, counsellors, services, rooms, invoices } from "@/db/schema";
 
 /**
- * Operational reports (batch 2c) — Picktime-style: pick a report type + period,
+ * Operational reports (batch 2c) - Picktime-style: pick a report type + period,
  * get the honest table, export it. Everything derives from the permanent
  * appointment + invoice records; no clinical content ever appears here.
  */
@@ -28,7 +28,7 @@ export interface OperationalReport {
   type: ReportType;
   headers: string[];
   rows: string[][];
-  /** One honest line under the table — counts + rand totals. */
+  /** One honest line under the table - counts + rand totals. */
   summary: string;
 }
 

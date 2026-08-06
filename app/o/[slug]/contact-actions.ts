@@ -13,7 +13,7 @@ import { contactMessageEmail } from "@/lib/email/templates";
 const APP_URL = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
 
 /**
- * Public contact form (builder upgrade). No session — the org is resolved by slug
+ * Public contact form (builder upgrade). No session - the org is resolved by slug
  * and the form only works when the org has switched it on. Defences: a honeypot
  * field (bots fill it → pretend success), a per-IP/org rate limit, and tight Zod
  * caps. The message is STORED first (source of truth), then best-effort fan-out:
@@ -26,7 +26,7 @@ const input = z.object({
   email: z.string().trim().email("That email doesn't look right.").max(120).or(z.literal("")),
   phone: z.string().trim().max(40),
   message: z.string().trim().min(10, "Tell us a little more so we can help.").max(2000),
-  /** Honeypot — humans never see it; anything here means a bot. */
+  /** Honeypot - humans never see it; anything here means a bot. */
   website: z.string().max(200),
 });
 
@@ -50,7 +50,7 @@ export async function submitContactMessage(
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the form." };
   const d = parsed.data;
 
-  // Bots fill the invisible field — swallow silently so they learn nothing.
+  // Bots fill the invisible field - swallow silently so they learn nothing.
   if (d.website) return { ok: true };
   if (!d.email && !d.phone.trim()) return { ok: false, error: "Leave an email or phone number so we can reach you." };
 
@@ -63,12 +63,12 @@ export async function submitContactMessage(
 
   const hdrs = await headers();
   const ip = (hdrs.get("x-forwarded-for") ?? "local").split(",")[0]!.trim();
-  if (limited(`${ip}:${org.id}`)) return { ok: false, error: "That's a few messages in a row — please give it an hour, or phone the practice." };
+  if (limited(`${ip}:${org.id}`)) return { ok: false, error: "That's a few messages in a row - please give it an hour, or phone the practice." };
 
   const email = d.email || null;
   const phone = d.phone.trim() || null;
 
-  // 1) Store — the record the org can always find, even if email is dormant.
+  // 1) Store - the record the org can always find, even if email is dormant.
   await createContactMessage(org.id, { name: d.name, email, phone, message: d.message });
 
   // 2) In-app notice to the people who handle the front door (admins + front desk).
@@ -85,7 +85,7 @@ export async function submitContactMessage(
     });
   }
 
-  // 3) Branded email to the org's chosen inbox — reply-to goes straight to the visitor.
+  // 3) Branded email to the org's chosen inbox - reply-to goes straight to the visitor.
   const inbox = page.formEmail || page.contactEmail || (org.profile as Record<string, string> | null)?.email || null;
   if (inbox) {
     try {
@@ -94,7 +94,7 @@ export async function submitContactMessage(
         replyTo: email ?? undefined,
         ...contactMessageEmail({ practiceName: org.name, name: d.name, email, phone, message: d.message, inboxUrl: `${APP_URL}/hub` }),
       });
-    } catch { /* stored + in-app already — email is best-effort */ }
+    } catch { /* stored + in-app already - email is best-effort */ }
   }
 
   return { ok: true };

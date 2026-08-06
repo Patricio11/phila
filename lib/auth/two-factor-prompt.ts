@@ -9,7 +9,7 @@ export const TWO_FA_SKIP_COOKIE = "phila_2fa_skip";
 /**
  * Whether to show the skippable 2FA nudge on the dashboard (W2). True only for a
  * privileged user (super-admin / org-admin / supervising counsellor) who hasn't
- * enabled 2FA and hasn't recently dismissed the prompt. Never blocks access — it's
+ * enabled 2FA and hasn't recently dismissed the prompt. Never blocks access - it's
  * just a banner.
  */
 export async function shouldPromptTwoFactor(principal: Principal): Promise<boolean> {

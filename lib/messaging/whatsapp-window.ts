@@ -2,11 +2,11 @@
  * WhatsApp's 24-hour customer-service window (WhatsApp-first comms).
  *
  * Meta lets a business send FREE-FORM messages only within 24h of the client's
- * last inbound message — and that window is FREE (no per-message fee). Outside it,
+ * last inbound message - and that window is FREE (no per-message fee). Outside it,
  * only a pre-approved *template* message may be sent (a small Meta utility fee).
  * We track each client's last inbound message and route accordingly, so reminders
  * always land: free-form when the window is open, an approved template when it's
- * closed — and honestly nothing (never a Meta-rejected free-form) when neither is
+ * closed - and honestly nothing (never a Meta-rejected free-form) when neither is
  * possible. Pure + unit-tested; no I/O.
  */
 import { phoneKey } from "@/lib/import/validate";
@@ -22,7 +22,7 @@ export function whatsappWindowOpen(lastInboundAt: Date | string | null | undefin
   return ms(now) - ms(lastInboundAt) < WHATSAPP_WINDOW_MS;
 }
 
-/** Whole hours left in the free window (0 when closed) — for the settings/composer UI. */
+/** Whole hours left in the free window (0 when closed) - for the settings/composer UI. */
 export function whatsappWindowHoursLeft(lastInboundAt: Date | string | null | undefined, now: Date | string): number {
   if (!lastInboundAt) return 0;
   const left = WHATSAPP_WINDOW_MS - (ms(now) - ms(lastInboundAt));
@@ -53,7 +53,7 @@ export function orderedTemplateParams(vars: RenderVars): string[] {
   return WHATSAPP_TEMPLATE_PARAM_KEYS.map((k) => String(vars[k] ?? ""));
 }
 
-/** Canonical window key for a phone (last-9 SA digits — matches inbound wa_id to a stored client phone). */
+/** Canonical window key for a phone (last-9 SA digits - matches inbound wa_id to a stored client phone). */
 export function windowKey(phone: string | null | undefined): string | null {
   return phoneKey(phone);
 }

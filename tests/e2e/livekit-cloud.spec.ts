@@ -31,12 +31,12 @@ test("switch LiveKit to Cloud, enter creds, switch on  persisted", async ({ page
     await page.getByRole("button", { name: /LiveKit Cloud/ }).first().click();
     await page.getByPlaceholder(/your-project\.livekit\.cloud/).fill("wss://phila-e2e.livekit.cloud");
     await page.getByPlaceholder("API…").fill("APIe2etestkey");
-    // Target the secret by its input type, not placeholder — when a secret is already
+    // Target the secret by its input type, not placeholder - when a secret is already
     // stored the placeholder is masked ("•••••• leave blank to keep"), not "Cloud API secret".
     await page.locator('input[type="password"]').first().fill("e2e-cloud-secret-value");
 
     // Turn it on. When LiveKit is already enabled the card shows "Save" (+ "Switch off")
-    // instead of "Switch on", so accept either — the goal is a persisted, enabled Cloud config.
+    // instead of "Switch on", so accept either - the goal is a persisted, enabled Cloud config.
     const switchOn = page.getByRole("button", { name: /^Switch on/ });
     if (await switchOn.count()) await switchOn.click();
     else await page.getByRole("button", { name: "Save", exact: true }).click();

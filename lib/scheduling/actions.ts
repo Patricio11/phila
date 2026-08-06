@@ -17,7 +17,7 @@ import { needsRoom, type Province } from "@/lib/domain/enums";
 const BOOKERS = ["counsellor", "org_admin", "front_desk"] as const;
 
 /**
- * Feedback #5 — who can take a session at this date + time? Backs the booking
+ * Feedback #5 - who can take a session at this date + time? Backs the booking
  * modal's live counsellor filter. `available: null` means "no filtering" (mock
  * mode), so the modal degrades gracefully.
  */
@@ -127,7 +127,7 @@ export async function createAppointment(
     }
     // In-app (always) + email (rail); the first session of a series carries the notice.
     if (data.sendConfirmation) {
-      // The booking must answer promptly even if a provider is slow — give the
+      // The booking must answer promptly even if a provider is slow - give the
       // notification chain a bounded head start, then let it finish in the
       // background (every transport also carries its own 10s fetch timeout).
       await Promise.race([
@@ -135,7 +135,7 @@ export async function createAppointment(
         new Promise((resolve) => setTimeout(resolve, 4_000)),
       ]);
     }
-    // Auto-raise an invoice for the (first) session — priced services only, org-toggleable.
+    // Auto-raise an invoice for the (first) session - priced services only, org-toggleable.
     try {
       const [svc] = await getDb().select({ name: servicesTable.name, priceCents: servicesTable.priceCents }).from(servicesTable).where(eq(servicesTable.id, data.serviceId)).limit(1);
       if (svc) await createInvoiceForBookingDb({ orgId: data.orgId, appointmentId: firstId, clientId: data.clientId, serviceName: svc.name, amountCents: svc.priceCents ?? 0, issuedAt: new Date(clockNow()) });

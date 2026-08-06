@@ -38,7 +38,7 @@ function monthKey(iso: string): string {
 }
 
 /**
- * Unified client timeline (W7) — one calm, chronological scroll over everything that
+ * Unified client timeline (W7) - one calm, chronological scroll over everything that
  * happened: sessions, outcome measures (with the trend), documents, and care-plan
  * shares. The integrated record no SA point-tool gives you, in one place.
  */
@@ -100,7 +100,7 @@ export function ClientTimeline({
   events.sort((a, b) => b.at.localeCompare(a.at));
 
   if (events.length === 0) {
-    return <p className="py-6 text-center text-[12.5px] text-text-3">Nothing recorded yet — it builds up as you work together.</p>;
+    return <p className="py-6 text-center text-[12.5px] text-text-3">Nothing recorded yet - it builds up as you work together.</p>;
   }
 
   // Group by month for calm scanning.

@@ -44,7 +44,7 @@ function openMinutes(date: string, bh: BusinessHours): number {
   return Math.max(0, toMin(h.end) - toMin(h.start) - breaks);
 }
 
-/** Live occupancy from the week's bookings — who is in the room right now, and what's next. */
+/** Live occupancy from the week's bookings - who is in the room right now, and what's next. */
 function liveOf(bookings: AppointmentView[], nowMs: number): {
   busy: { counsellorName: string; clientName: string; untilMs: number } | null;
   next: AppointmentView | null;
@@ -65,7 +65,7 @@ function hhmmOf(ms: number): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", hour: "2-digit", minute: "2-digit" }).format(new Date(ms));
 }
 
-/** "in 40 min" / "in 2h 15m" / "Tomorrow 09:00" — the human next-up label. */
+/** "in 40 min" / "in 2h 15m" / "Tomorrow 09:00" - the human next-up label. */
 function relativeLabel(iso: string, nowMs: number, today: string): string {
   const t = new Date(iso).getTime();
   const mins = Math.round((t - nowMs) / 60_000);
@@ -131,7 +131,7 @@ export default async function HubRoomsPage() {
   const avgUtil = active.length === 0 ? 0 : Math.round(active.reduce((s, r) => s + r.utilisation.utilisationPct, 0) / active.length);
   const inMaintenance = rooms.filter((r) => r.room.status === "maintenance").length;
 
-  // Live occupancy — the "right now" truth per room (feedback #8).
+  // Live occupancy - the "right now" truth per room (feedback #8).
   const nowMs = new Date(now).getTime();
   const liveByRoom = new Map(rooms.map((rv) => [rv.room.id, liveOf(rv.bookings, nowMs)]));
   const busyCount = active.filter((rv) => liveByRoom.get(rv.room.id)?.busy).length;
@@ -161,7 +161,7 @@ export default async function HubRoomsPage() {
         <Summary icon={Wrench} value={String(inMaintenance)} label="In maintenance" tone={inMaintenance > 0 ? "warn" : "default"} />
       </div>
 
-      {/* Right now — live pulse across every active room (feedback #8) */}
+      {/* Right now - live pulse across every active room (feedback #8) */}
       <section className="rounded-card border border-border bg-surface p-4 shadow-sm">
         <div className="mb-2.5 flex items-center justify-between">
           <h2 className="text-[13px] font-semibold text-text">Right now</h2>
@@ -312,7 +312,7 @@ function RoomCard({ rv, days, live, nowMs, today }: {
           )}
         </div>
 
-        {/* Next up — relative and human (feedback #8) */}
+        {/* Next up - relative and human (feedback #8) */}
         <div>
           <h3 className="mb-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-text-3">Next up</h3>
           {upcoming.length === 0 ? (

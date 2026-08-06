@@ -13,7 +13,7 @@ import { logBreach, updateBreachStatus, breachAffected } from "@/app/admin/compl
 import { cn } from "@/lib/utils";
 
 /**
- * Phase 31.3 — the breach register (super-admin). Rare + admin-initiated:
+ * Phase 31.3 - the breach register (super-admin). Rare + admin-initiated:
  * log an incident, walk its status forward, and pull the affected-subjects
  * list + a drafted s22 notice when notification is needed.
  */
@@ -53,7 +53,7 @@ export function BreachBoard({ breaches, orgs }: { breaches: BreachView[]; orgs: 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-[12.5px] text-text-3">POPIA s22 register — log an incident, contain it, identify who was affected, notify. Rare by design.</p>
+        <p className="text-[12.5px] text-text-3">POPIA s22 register - log an incident, contain it, identify who was affected, notify. Rare by design.</p>
         <Button size="sm" onClick={() => setLogOpen(true)}><Plus className="size-4" strokeWidth={2} aria-hidden /> Log an incident</Button>
       </div>
 
@@ -94,7 +94,7 @@ export function BreachBoard({ breaches, orgs }: { breaches: BreachView[]; orgs: 
         open={logOpen}
         onClose={() => setLogOpen(false)}
         title="Log a breach incident"
-        description="Record it first — containment and notification follow from here."
+        description="Record it first - containment and notification follow from here."
         footer={<div className="flex justify-end gap-2"><Button variant="ghost" onClick={() => setLogOpen(false)} disabled={pending}>Cancel</Button><Button onClick={submit} loading={pending}>Log incident</Button></div>}
       >
         <div className="space-y-3">

@@ -185,7 +185,7 @@ async function main() {
   const durationOf = new Map(servicesFx.map((s) => [s.id, s.durationMin]));
   const today = sastDate(now);
   // Clear the org's "live week" first (templates + supervision land here). This drops any
-  // stale rows — old templated sessions AND residue left by test runs sharing a room — so
+  // stale rows - old templated sessions AND residue left by test runs sharing a room - so
   // the rebuild never trips the room/counsellor overlap constraint. Cohort history (older,
   // and online) and other tenants are untouched; a fresh prod DB has nothing to clear.
   await db.delete(schema.appointments).where(and(
@@ -512,7 +512,7 @@ async function main() {
   // The extra orgs above are lightweight (ghost staff/appointments for the counts).
   // Thrive gets a proper admin + counsellor login, real clients, and real sessions so
   // tenant-isolation / RLS is demonstrable end-to-end and the console has a second
-  // fully-explorable tenant. (Its own gateway/consent stay minimal — a real trial org.)
+  // fully-explorable tenant. (Its own gateway/consent stay minimal - a real trial org.)
   const THRIVE = "org_thrive";
   const thriveUsers = [
     { id: "user_thrive_admin", name: "Adri Louw", email: "admin@thrive-eap.co.za", teamRole: "org_admin" as const },
@@ -601,7 +601,7 @@ async function main() {
     }).onConflictDoNothing();
   }
 
-  // Waitlist (W7) — a couple of clients waiting, so the waitlist + auto-offer is demonstrable.
+  // Waitlist (W7) - a couple of clients waiting, so the waitlist + auto-offer is demonstrable.
   await db.insert(schema.waitlistEntries).values([
     { id: "wl_seed_1", orgId: ORG, clientId: "cl_naledi", counsellorId: "couns_nomsa", serviceId: "svc_individual", note: "Prefers mornings", status: "waiting", createdAt: new Date(now.getTime() - 6 * 86_400_000) },
     { id: "wl_seed_2", orgId: ORG, clientId: "cl_megan", counsellorId: null, serviceId: null, note: "Flexible on counsellor", status: "waiting", createdAt: new Date(now.getTime() - 2 * 86_400_000) },
@@ -615,12 +615,12 @@ async function main() {
     status: "pending", createdAt: new Date(now.getTime() - 3 * 3_600_000),
   }).onConflictDoNothing();
 
-  // Sliding-scale / subsidised fees (W7) — realistic NGO variety on the demo caseload.
+  // Sliding-scale / subsidised fees (W7) - realistic NGO variety on the demo caseload.
   await db.update(schema.clients).set({ feePolicy: { kind: "percentage", value: 50 } }).where(eq(schema.clients.id, "cl_johan"));
   await db.update(schema.clients).set({ feePolicy: { kind: "waived" } }).where(eq(schema.clients.id, "cl_demo_002"));
   await db.update(schema.clients).set({ feePolicy: { kind: "fixed", value: 15000 } }).where(eq(schema.clients.id, "cl_zanele"));
 
-  // GAD-7 (anxiety) series alongside PHQ-9 for a few clients (W7) — so the client
+  // GAD-7 (anxiety) series alongside PHQ-9 for a few clients (W7) - so the client
   // outcome trends show both tools, not just depression. Improving, weeks 8 → 4 → now.
   const gad7 = [{ id: "cl_lerato", scores: [14, 9, 5] }, { id: "cl_johan", scores: [12, 8, 6] }, { id: "cl_demo_001", scores: [16, 11, 7] }];
   const gadWeeks = [8, 4, 0];
@@ -630,7 +630,7 @@ async function main() {
     }
   }
 
-  // Referral tracking (W7) — a realistic spread of how the cohort found the practice, so
+  // Referral tracking (W7) - a realistic spread of how the cohort found the practice, so
   // the "Where clients come from" Insights breakdown is meaningful. (masizakhe has it on.)
   const REFERRAL_MIX = ["word_of_mouth", "whatsapp", "sadag", "medical", "search", "funder_programme", "social", "school_employer", "returning", "word_of_mouth"];
   const namedSources: [string, string][] = [["cl_lerato", "sadag"], ["cl_johan", "medical"], ["cl_sipho", "word_of_mouth"], ["cl_fatima", "whatsapp"], ["cl_zanele", "search"], ["cl_kabelo", "school_employer"], ["cl_naledi", "funder_programme"], ["cl_megan", "returning"]];

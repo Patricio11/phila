@@ -34,7 +34,7 @@ export async function sendWhatsApp(creds: { phoneNumberId: string | null; access
 }
 
 /**
- * Send a Meta-approved WhatsApp TEMPLATE message — the only kind allowed OUTSIDE the
+ * Send a Meta-approved WhatsApp TEMPLATE message - the only kind allowed OUTSIDE the
  * 24h service window. `params` fill the template's positional {{1}}, {{2}}, … in the
  * order documented to the org (see WHATSAPP_TEMPLATE_PARAM_KEYS). Utility templates
  * (reminders/confirmations) re-open the free window when the client replies.
@@ -66,7 +66,7 @@ export async function sendWhatsAppTemplate(
 
 /**
  * Verify an org's WhatsApp connection by pinging the Graph API for the number's
- * display name + quality rating. Honest — returns the live number info or an error.
+ * display name + quality rating. Honest - returns the live number info or an error.
  */
 export async function verifyWhatsApp(
   creds: { phoneNumberId: string | null; accessTokenEnc: string | null },
@@ -78,7 +78,7 @@ export async function verifyWhatsApp(
       signal: AbortSignal.timeout(10_000),
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) return { ok: false, detail: `Meta HTTP ${res.status} — check the Phone Number ID and token.` };
+    if (!res.ok) return { ok: false, detail: `Meta HTTP ${res.status} - check the Phone Number ID and token.` };
     const json = (await res.json()) as { display_phone_number?: string; verified_name?: string; quality_rating?: string };
     return { ok: true, displayPhone: json.display_phone_number, name: json.verified_name, quality: json.quality_rating };
   } catch (e) {

@@ -199,7 +199,7 @@ export async function transferCaseload(
   return { ok: true, clients: result.clients, movedSessions: result.moved, skippedSessions: result.skipped };
 }
 
-/* ---- Counsellor offboarding (feedback #4) — archive-only, records kept ---- */
+/* ---- Counsellor offboarding (feedback #4) - archive-only, records kept ---- */
 
 /** The dialog's honest summary: is this member a counsellor, and what would archiving orphan? */
 export async function getMemberWorkload(
@@ -221,7 +221,7 @@ const offboardInput = z.object({
 
 /**
  * Archive a counsellor PROPERLY: their caseload + upcoming sessions are either
- * migrated to a successor or cancelled (clients notified, dormant-safe) — then
+ * migrated to a successor or cancelled (clients notified, dormant-safe) - then
  * sign-in is revoked. NOTHING is deleted: every note, session, outcome, and
  * audit line stays on the record permanently (HPCSA + Outcome-Honesty).
  */
@@ -280,7 +280,7 @@ export async function offboardMember(
   return { ok: true, summary };
 }
 
-/* ---- Counsellor availability (feedback #5) — ORG-managed, counsellors read-only ---- */
+/* ---- Counsellor availability (feedback #5) - ORG-managed, counsellors read-only ---- */
 
 const windowSchema = z.object({
   weekday: z.number().int().min(1).max(7),
@@ -294,7 +294,7 @@ const availabilityInput = z.object({
 
 /**
  * Replace a counsellor's weekly working windows. Only the org (requireHub =
- * org_admin) may edit — counsellors see their pattern read-only. Every save is
+ * org_admin) may edit - counsellors see their pattern read-only. Every save is
  * audited as `update_availability`, which surfaces on the dashboard Activity
  * feed. No windows at all = the counsellor inherits the org's business hours.
  */
@@ -325,7 +325,7 @@ export async function saveMemberAvailability(
   return { ok: true };
 }
 
-/** Feedback #9 — audit a team-list export (admin action; no clinical data involved). */
+/** Feedback #9 - audit a team-list export (admin action; no clinical data involved). */
 export async function auditTeamExport(
   raw: { format: "csv" | "excel" | "pdf"; count: number },
 ): Promise<{ ok: true }> {

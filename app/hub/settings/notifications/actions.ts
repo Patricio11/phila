@@ -88,7 +88,7 @@ export async function resetMessageTemplate(
 /**
  * Test the saved WhatsApp connection against Meta's Graph API. On success the
  * connection is promoted to "live" (verifiedAt recorded) and the number's display
- * name + quality rating are returned. Secrets never leave the server — this pings
+ * name + quality rating are returned. Secrets never leave the server - this pings
  * the STORED creds, so the org must save before testing.
  */
 export async function verifyWhatsappConnection(): Promise<

@@ -8,7 +8,7 @@ import type { Plan } from "@/lib/domain/types";
 /**
  * The subscription plan catalogue, DB-backed + super-admin-editable (W3.4). The code
  * `PLANS` stays as the seed + fallback: if the table is empty/unavailable (fresh DB,
- * mock, tests that import the constant), reads fall back to it — so nothing breaks.
+ * mock, tests that import the constant), reads fall back to it - so nothing breaks.
  */
 function toPlan(r: typeof plansTable.$inferSelect): Plan {
   return {

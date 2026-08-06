@@ -10,13 +10,13 @@ import { getPlanByIdDb } from "@/db/queries/plans";
 import { BYTES_PER_GB, DEFAULT_STORAGE_GB } from "@/lib/documents/quota";
 
 /**
- * Plan assignment + metered resources (W3.4/3.5). Reuses what's already real —
+ * Plan assignment + metered resources (W3.4/3.5). Reuses what's already real -
  * credits (`credit_balances`), storage (`org_storage_usage`), and AI usage/cap
- * (`ai_usage` + `org_ai_settings`) — and adds the super-admin's plan move and a
+ * (`ai_usage` + `org_ai_settings`) - and adds the super-admin's plan move and a
  * per-org storage-limit override (`orgs.resource_limits`).
  */
 
-/** Move an org between plans — the resolver + quotas reflect it immediately. */
+/** Move an org between plans - the resolver + quotas reflect it immediately. */
 export async function setOrgPlanDb(orgId: string, planId: string): Promise<{ ok: boolean }> {
   const existing = await getSubscriptionRow(orgId);
   if (existing) {

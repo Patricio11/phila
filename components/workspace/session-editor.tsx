@@ -89,7 +89,7 @@ export function SessionEditor({
   const [careSummary, setCareSummary] = useState(data.carePlan?.summary ?? "");
   const [extraction, setExtraction] = useState<AiExtraction | null>(null);
 
-  // Feedback #6 — the honest "how the session really happened" record.
+  // Feedback #6 - the honest "how the session really happened" record.
   const [phone, setPhone] = useState<{ held: boolean; duration: number | null; note: string }>({
     held: appt.heldByPhone ?? false,
     duration: appt.callDurationMin ?? null,
@@ -112,7 +112,7 @@ export function SessionEditor({
 
   // Real upload via the documents pipeline: request a presigned URL → PUT the bytes
   // straight to storage → confirm (scan + accounting). The file is stored clinical,
-  // linked to this session — the same lane as the rest of the documents system.
+  // linked to this session - the same lane as the rest of the documents system.
   const onAttach: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -204,7 +204,7 @@ export function SessionEditor({
       if (!res.ok) return toast({ tone: "error", title: res.error });
       setPhone({ held: true, duration, note: phoneDraft.note.trim() });
       setPhoneEditing(false);
-      toast({ tone: "success", title: "Recorded as a phone call", description: `${duration} min on the record — your note works as normal.` });
+      toast({ tone: "success", title: "Recorded as a phone call", description: `${duration} min on the record - your note works as normal.` });
     });
   };
 
@@ -415,7 +415,7 @@ export function SessionEditor({
             </Card>
           )}
 
-          {/* Held by phone — the after-the-fact honest record (feedback #6) */}
+          {/* Held by phone - the after-the-fact honest record (feedback #6) */}
           <Card className="p-4">
             <div className="flex items-center gap-1.5 text-[13px] font-[600] text-text">
               <Phone className="size-4 text-text-3" strokeWidth={2} aria-hidden /> Held by phone
@@ -445,7 +445,7 @@ export function SessionEditor({
                 <Input
                   value={phoneDraft.note}
                   onChange={(e) => setPhoneDraft((v) => ({ ...v, note: e.target.value }))}
-                  placeholder="Optional — e.g. client had no data"
+                  placeholder="Optional - e.g. client had no data"
                   aria-label="Phone call context (optional)"
                 />
                 <div className="flex items-center gap-2">

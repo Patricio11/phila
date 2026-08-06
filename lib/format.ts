@@ -3,7 +3,7 @@
  *
  * `toLocaleString("en-ZA")` renders DIFFERENTLY on the server (Node ICU:
  * "1,800") and in the browser (Chrome ICU: "1 800" with a non-breaking
- * space) — a hydration text mismatch that makes React throw the subtree away
+ * space) - a hydration text mismatch that makes React throw the subtree away
  * and silently drop its event handlers. This helper produces the same string
  * everywhere: space-grouped thousands, the SA convention.
  */

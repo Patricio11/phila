@@ -11,7 +11,7 @@ import { useToast } from "@/components/ui/toast";
 
 const ANY = "__any";
 
-/** Put a client on the waitlist (W7) — optionally for a specific counsellor, with a note. */
+/** Put a client on the waitlist (W7) - optionally for a specific counsellor, with a note. */
 export function AddToWaitlistButton({ clientId, clientName, counsellors }: { clientId: string; clientName: string; counsellors: { id: string; name: string }[] }) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);

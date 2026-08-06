@@ -258,7 +258,7 @@ export function computeInsights(input: InsightsInput, now: string, filters: Insi
     byGender: countBy(demos, (d) => GENDER_LABELS[d.gender as keyof typeof GENDER_LABELS] ?? d.gender) as InsightsMix[],
     byAgeBand: countBy(demos, (d) => AGE_BAND_LABELS[d.ageBand as keyof typeof AGE_BAND_LABELS] ?? d.ageBand) as InsightsMix[],
     byProvince: countBy(demos, (d) => d.province) as InsightsMix[],
-    // Where clients come from (W7) — operational, not demographic, so no consent gate.
+    // Where clients come from (W7) - operational, not demographic, so no consent gate.
     byReferralSource: countBy(input.clients.filter((c) => c.referralSource), (c) => REFERRAL_SOURCE_LABELS[c.referralSource as keyof typeof REFERRAL_SOURCE_LABELS] ?? c.referralSource!) as InsightsMix[],
     previous: { completed: prev.completed, attendanceRate: prev.attendanceRate, newClients: prev.newClients, revenueActualCents: prev.revenueActualCents, noShows: prev.noShows },
   };

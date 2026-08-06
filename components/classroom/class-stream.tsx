@@ -18,7 +18,7 @@ function when(iso: string): string {
 }
 
 /**
- * The classroom stream (batch 2) — announcements + replies for a supervision
+ * The classroom stream (batch 2) - announcements + replies for a supervision
  * class, Classroom-style. No clinical content here; notes stay in sign-off.
  */
 export function ClassStream({ cls, sessions = [], canManage = false, nowISO, showCode = false, meUserId }: { cls: ClassView; sessions?: ClassSessionView[]; canManage?: boolean; nowISO?: string; showCode?: boolean; meUserId?: string }) {
@@ -26,7 +26,7 @@ export function ClassStream({ cls, sessions = [], canManage = false, nowISO, sho
   const router = useRouter();
   const [body, setBody] = useState("");
   const [pending, start] = useTransition();
-  // Fix what you wrote (batch 2d) — edit/delete your OWN posts.
+  // Fix what you wrote (batch 2d) - edit/delete your OWN posts.
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editBody, setEditBody] = useState("");
 
@@ -57,7 +57,7 @@ export function ClassStream({ cls, sessions = [], canManage = false, nowISO, sho
 
   return (
     <Card className="overflow-hidden">
-      {/* Banner — the class identity */}
+      {/* Banner - the class identity */}
       <div className="flex items-start justify-between gap-3 bg-accent px-5 py-4 text-white">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-[15.5px] font-[680] tracking-[-0.01em]">
@@ -102,7 +102,7 @@ export function ClassStream({ cls, sessions = [], canManage = false, nowISO, sho
           <Textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            placeholder="Share something with your class — an announcement, reading, or question…"
+            placeholder="Share something with your class - an announcement, reading, or question…"
             className="min-h-[64px] border-0 p-1 focus-visible:ring-0"
             aria-label={`Post to ${cls.name}`}
           />
@@ -115,7 +115,7 @@ export function ClassStream({ cls, sessions = [], canManage = false, nowISO, sho
 
         {/* Stream */}
         {cls.posts.length === 0 ? (
-          <p className="py-2 text-center text-[12.5px] text-text-3">This is where you talk to your class — the first post starts the stream.</p>
+          <p className="py-2 text-center text-[12.5px] text-text-3">This is where you talk to your class - the first post starts the stream.</p>
         ) : (
           <ul className="space-y-3">
             {cls.posts.map((p) => (

@@ -1,5 +1,5 @@
 /**
- * Phase 31.2 — HPCSA-aware retention clocks (POPIA "no longer than needed,
+ * Phase 31.2 - HPCSA-aware retention clocks (POPIA "no longer than needed,
  * unless another law requires it" × HPCSA minimum record retention).
  *
  * EVERY number lives here so an advisor correction is a one-line change:
@@ -12,7 +12,7 @@
  * advisor before launch (plan §31.2 / honest constraints).
  *
  * Pure + injectable-now (lib/clock convention): no I/O, fully unit-tested.
- * The clock is COMPUTED on read from facts we already hold (last entry, DOB) —
+ * The clock is COMPUTED on read from facts we already hold (last entry, DOB) -
  * never a stored column an org could mis-set. Orgs never configure retention.
  */
 
@@ -24,7 +24,7 @@ export type RetentionRule = "standard" | "minor" | "incapacity";
 export interface RetentionInput {
   /** ISO date of the LAST entry in the record (e.g. most recent session/note). */
   lastEntryAt: string;
-  /** Client date of birth (yyyy-mm-dd) if known — drives the minor rule. */
+  /** Client date of birth (yyyy-mm-dd) if known - drives the minor rule. */
   dateOfBirth?: string | null;
   /** Recorded mental incapacity → indefinite retention. (No capture surface yet; callers pass false.) */
   incapacitated?: boolean;
@@ -54,7 +54,7 @@ export function retentionClock(input: RetentionInput): RetentionClock {
       new Date(input.lastEntryAt).getTime() < addYears(input.dateOfBirth, 18).getTime();
     if (wasMinorAtLastEntry) {
       const age21 = addYears(input.dateOfBirth, MINOR_RETAIN_UNTIL_AGE);
-      // HPCSA: a minor's record is held until age 21 — but never SHORTER than the standard clock.
+      // HPCSA: a minor's record is held until age 21 - but never SHORTER than the standard clock.
       const later = age21.getTime() > standardEnd.getTime() ? age21 : standardEnd;
       return { retainUntil: later.toISOString(), rule: "minor" };
     }
@@ -83,7 +83,7 @@ export function erasureDecision(
     return { allowed: false, reason: "This record is under a legal hold and cannot be destroyed until the hold is lifted." };
   }
   if (retentionExpired(clock, nowISO)) {
-    return { allowed: true, reason: "Retention period has lapsed — destruction is lawful." };
+    return { allowed: true, reason: "Retention period has lapsed - destruction is lawful." };
   }
   if (clock.retainUntil === null) {
     return { allowed: false, reason: "HPCSA requires indefinite retention of this clinical record (recorded incapacity). Personal identifiers are removed where possible; the clinical record is retained and restricted." };
@@ -94,9 +94,9 @@ export function erasureDecision(
 
 /** A calm, human status line for the Data & privacy panel. */
 export function retentionLabel(clock: RetentionClock, nowISO: string): string {
-  if (clock.retainUntil === null) return "Retained indefinitely (HPCSA — recorded incapacity)";
+  if (clock.retainUntil === null) return "Retained indefinitely (HPCSA - recorded incapacity)";
   const until = new Date(clock.retainUntil).toISOString().slice(0, 10);
-  if (retentionExpired(clock, nowISO)) return `Retention lapsed on ${until} — destruction is lawful`;
-  const why = clock.rule === "minor" ? `minor — kept until age ${MINOR_RETAIN_UNTIL_AGE}` : `${CLINICAL_RETENTION_YEARS} years from last entry`;
+  if (retentionExpired(clock, nowISO)) return `Retention lapsed on ${until} - destruction is lawful`;
+  const why = clock.rule === "minor" ? `minor - kept until age ${MINOR_RETAIN_UNTIL_AGE}` : `${CLINICAL_RETENTION_YEARS} years from last entry`;
   return `Retained until ${until} (${why})`;
 }

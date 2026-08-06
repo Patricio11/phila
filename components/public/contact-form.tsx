@@ -7,7 +7,7 @@ import { submitContactMessage } from "@/app/o/[slug]/contact-actions";
 /**
  * The public page's contact form (builder upgrade). Calm, minimal, branded with
  * the org's --brand accent. Deliberately asks only name + a way to reply + the
- * message, with a gentle "nothing sensitive" note — this is a front door, never
+ * message, with a gentle "nothing sensitive" note - this is a front door, never
  * an intake. A hidden honeypot field quietly absorbs bots.
  */
 export function ContactForm({ slug, practiceName }: { slug: string; practiceName: string }) {
@@ -32,7 +32,7 @@ export function ContactForm({ slug, practiceName }: { slug: string; practiceName
         <span className="grid size-12 place-items-center rounded-full" style={{ background: "color-mix(in srgb, var(--brand) 14%, transparent)" }}>
           <CheckCircle2 className="size-6" style={{ color: "var(--brand)" }} strokeWidth={2} aria-hidden />
         </span>
-        <div className="text-[16px] font-[660] text-text">Thank you — your message is on its way</div>
+        <div className="text-[16px] font-[660] text-text">Thank you - your message is on its way</div>
         <p className="max-w-sm text-[13.5px] leading-relaxed text-text-2">{practiceName} will get back to you as soon as they can, usually within a working day.</p>
       </div>
     );
@@ -55,13 +55,13 @@ export function ContactForm({ slug, practiceName }: { slug: string; practiceName
         <textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} required minLength={10} maxLength={2000} rows={4} className={`${inputCls} min-h-[110px] resize-y py-2.5`} placeholder="How can we help?" />
       </PublicField>
 
-      {/* Honeypot — invisible to people, irresistible to bots. */}
+      {/* Honeypot - invisible to people, irresistible to bots. */}
       <input type="text" name="website" tabIndex={-1} autoComplete="off" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} className="absolute -left-[9999px] h-0 w-0 opacity-0" aria-hidden />
 
       {error && <p className="text-[12.5px] font-medium text-danger">{error}</p>}
 
       <div className="flex flex-col gap-2.5 pt-1 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-[11.5px] leading-snug text-text-3">Please don&apos;t include anything sensitive here — save that for your session. If you need to talk right now, SADAG is free, any time: 0800 567 567.</p>
+        <p className="text-[11.5px] leading-snug text-text-3">Please don&apos;t include anything sensitive here - save that for your session. If you need to talk right now, SADAG is free, any time: 0800 567 567.</p>
         <button
           type="submit"
           disabled={pending}

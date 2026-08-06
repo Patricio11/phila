@@ -35,7 +35,7 @@ export default async function HubClientsPage() {
 
   const counsellorOpts = counsellors.map((c) => ({ id: c.id, name: c.name }));
 
-  // Feedback #9 — the export table (built here so the file matches the live list).
+  // Feedback #9 - the export table (built here so the file matches the live list).
   const day = (iso: string | null | undefined) => iso ? new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "2-digit", month: "short", year: "numeric" }).format(new Date(iso)) : "";
   const exportTable = {
     filenameBase: `clients-${membership.orgName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${now.slice(0, 10)}`,

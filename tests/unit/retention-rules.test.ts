@@ -5,7 +5,7 @@ import {
 } from "@/lib/compliance/retention";
 
 /**
- * Phase 31.2 — the HPCSA-aware retention clock. Pure and deterministic:
+ * Phase 31.2 - the HPCSA-aware retention clock. Pure and deterministic:
  * standard ≥6y from last entry; minors until age 21 (later clock wins);
  * incapacity indefinite; legal hold blocks everything.
  */

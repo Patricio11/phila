@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { whatsappWindowOpen } from "@/lib/messaging/whatsapp-window";
 
 /**
- * WhatsApp 24h window — the webhook records every inbound message; deliver reads it
+ * WhatsApp 24h window - the webhook records every inbound message; deliver reads it
  * back to choose free-form (in-window) vs template (out-of-window). Proves the
  * canonical phone key matches an inbound wa_id to the stored (spaced) client phone,
  * and that the upsert keeps the latest inbound time.
@@ -38,7 +38,7 @@ describe("whatsapp window record/read", () => {
     // A later inbound refreshes the same key (upsert wins).
     await recordWhatsappInbound(ORG, "+27825551234", fresh);
 
-    // deliver reads by the stored (spaced) client phone — same canonical key.
+    // deliver reads by the stored (spaced) client phone - same canonical key.
     const at = await getWhatsappLastInbound(ORG, "+27 82 555 1234");
     expect(at).not.toBeNull();
     expect(at!.getTime()).toBe(fresh.getTime());

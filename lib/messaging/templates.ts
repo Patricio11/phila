@@ -29,7 +29,7 @@ export interface RenderVars {
   documentName?: string;
   formName?: string;
   formLink?: string;
-  /** Absolute join URL for an ONLINE session — emails render it as a button, texts as a link line. */
+  /** Absolute join URL for an ONLINE session - emails render it as a button, texts as a link line. */
   joinLink?: string;
 }
 
@@ -78,7 +78,7 @@ export const EMAIL_SUBJECTS: Record<MessageTrigger, string> = {
   document_shared: "A document was shared with you",
   client_uploaded_document: "A client uploaded a document",
   form_sent: "A form to fill in",
-  waitlist_slot: "A slot has opened — it's yours if you'd like it",
+  waitlist_slot: "A slot has opened - it's yours if you'd like it",
 };
 
 /** Substitute `{token}` placeholders; unknown tokens render empty. */

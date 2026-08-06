@@ -71,7 +71,7 @@ export default async function SupervisionPage() {
     reason: "view_supervision_queue",
   });
 
-  // The supervisor's classrooms (batch 2) — stream + sessions under the queue.
+  // The supervisor's classrooms (batch 2) - stream + sessions under the queue.
   const classes = process.env.DATA_PROVIDER === "db"
     ? await (await import("@/db/queries/classrooms")).classesForCounsellorDb(membership.orgId, me.id)
     : [];

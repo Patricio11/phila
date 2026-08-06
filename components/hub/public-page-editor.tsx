@@ -93,7 +93,7 @@ export function PublicPageEditor({ slug, initial, stats }: { slug: string; initi
       </SectionCard>
 
       <SectionCard title="Social links" on={c.showSocials} onToggle={(v) => set("showSocials", v)}>
-        <p className="text-[12.5px] text-text-3">Paste the links you have — only the ones you fill in appear on your page, as neat brand icons.</p>
+        <p className="text-[12.5px] text-text-3">Paste the links you have - only the ones you fill in appear on your page, as neat brand icons.</p>
         <div className="grid gap-2 sm:grid-cols-2">
           {SOCIAL_PLATFORMS.map((p: SocialPlatform) => {
             const filled = Boolean(c.socials[p]);
@@ -119,11 +119,11 @@ export function PublicPageEditor({ slug, initial, stats }: { slug: string; initi
       </SectionCard>
 
       <SectionCard title="Contact form" on={c.showContactForm} onToggle={(v) => set("showContactForm", v)}>
-        <p className="text-[12.5px] text-text-3">Visitors can send you a message straight from your page — name, a way to reach them, and their message (they&apos;re asked not to share anything sensitive). Every message is kept safely and lands in the inbox below.</p>
+        <p className="text-[12.5px] text-text-3">Visitors can send you a message straight from your page - name, a way to reach them, and their message (they&apos;re asked not to share anything sensitive). Every message is kept safely and lands in the inbox below.</p>
         <Field label="Send messages to">
           <Input type="email" value={c.contactFormEmail ?? ""} onChange={(e) => set("contactFormEmail", e.target.value || null)} placeholder={c.contactEmail ?? "reception@practice.co.za"} />
         </Field>
-        <p className="text-[12px] text-text-3">Leave blank to use your contact email{c.contactEmail ? ` (${c.contactEmail})` : ""}. Replies go straight to the visitor — their address is the reply-to.</p>
+        <p className="text-[12px] text-text-3">Leave blank to use your contact email{c.contactEmail ? ` (${c.contactEmail})` : ""}. Replies go straight to the visitor - their address is the reply-to.</p>
         <Field label="Layout">
           <div className="flex gap-2">
             <LayoutChoice

@@ -5,7 +5,7 @@ import type { MessagingSettings, WhatsappConnectionView } from "@/db/queries/mes
 import { cn } from "@/lib/utils";
 
 /**
- * Messaging summary (W6.1) — promotes the once-buried notifications link-out to a
+ * Messaging summary (W6.1) - promotes the once-buried notifications link-out to a
  * top-level Settings tab. WhatsApp leads as the primary channel (with its connection
  * status + the free 24h window); SMS/email are the metered backups. Links into the
  * full manager (channels, credits, templates, quiet hours).
@@ -20,7 +20,7 @@ export function MessagingSummary({ settings, whatsapp, credits, quietHours }: { 
 
   return (
     <div className="space-y-4">
-      <p className="text-[12.5px] text-text-2">Booking, reminder, and follow-up messages — WhatsApp-first, routed to each client&apos;s preferred channel. Reminders inside a client&apos;s 24-hour window are free; SMS/email are metered backups.</p>
+      <p className="text-[12.5px] text-text-2">Booking, reminder, and follow-up messages - WhatsApp-first, routed to each client&apos;s preferred channel. Reminders inside a client&apos;s 24-hour window are free; SMS/email are metered backups.</p>
 
       {/* WhatsApp headline */}
       <div className="flex items-center gap-3 rounded-control border border-accent/25 bg-accent-soft/30 px-3.5 py-3">

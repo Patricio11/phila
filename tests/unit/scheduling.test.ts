@@ -99,7 +99,7 @@ describe("availableSlots", () => {
     expect(slots[0]!.label).toBe("08:00");
     expect(slots[1]!.label).toBe("08:30");
     expect(slots.at(-1)!.label).toBe("16:00");
-    // The session must still fit — no 16:30 start (would end at 17:30, past close).
+    // The session must still fit - no 16:30 start (would end at 17:30, past close).
     expect(slots.some((s) => s.label === "16:30")).toBe(false);
   });
 

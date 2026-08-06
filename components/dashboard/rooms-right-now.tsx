@@ -9,7 +9,7 @@ function hhmm(iso: string): string {
 }
 
 /**
- * Feedback #8 — room pressure at a glance, on the dashboard. Green pulse =
+ * Feedback #8 - room pressure at a glance, on the dashboard. Green pulse =
  * a session is happening in that room right now.
  */
 export function RoomsRightNow({ rooms }: { rooms: RoomNow[] }) {

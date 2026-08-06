@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * W2 — password reset is real (Better Auth). Request a reset, exchange the single-use
+ * W2 - password reset is real (Better Auth). Request a reset, exchange the single-use
  * token for a new password, and prove the new password signs in while the old one
  * doesn't. Runs the actual auth instance against the DB.
  */
@@ -42,7 +42,7 @@ describe("password reset", () => {
     const before = await auth.api.signInEmail({ body: { email: EMAIL, password: OLD }, headers: new Headers() }).catch(() => null);
     expect(before).toBeTruthy();
 
-    // Request the reset — Better Auth writes a reset token to `verification`.
+    // Request the reset - Better Auth writes a reset token to `verification`.
     await auth.api.requestPasswordReset({ body: { email: EMAIL, redirectTo: "/reset-password" }, headers: new Headers() });
     const [uRow] = await sql`SELECT id FROM "user" WHERE email=${EMAIL}`;
     const userId = uRow!.id as string;

@@ -54,7 +54,7 @@ export function HubInsightsView({ initial }: { initial: HubInsights }) {
         <StatCard icon={CalendarClock} label="This month" value={data.sessionsMonth} />
       </div>
 
-      {/* Period switch + the shared export (aggregate figures only — no client rows) */}
+      {/* Period switch + the shared export (aggregate figures only - no client rows) */}
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-[15px] font-semibold text-text">How it&apos;s going</h2>
         <div className="flex items-center gap-2">
@@ -143,7 +143,7 @@ export function HubInsightsView({ initial }: { initial: HubInsights }) {
         </div>
       </Card>
 
-      {/* Where clients come from (W7 referral tracking) — only when the org captures it. */}
+      {/* Where clients come from (W7 referral tracking) - only when the org captures it. */}
       {data.byReferralSource && data.byReferralSource.length > 0 && (
         <Card>
           <CardHead

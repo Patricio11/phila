@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Platform user management — the super-admin can invite another operator, who
+ * Platform user management - the super-admin can invite another operator, who
  * activates via the set-password link and can then sign in; access is revocable.
  */
 const envFile = readFileSync(".env.local", "utf8");

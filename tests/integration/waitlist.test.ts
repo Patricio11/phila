@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * W7 waitlist — when a slot frees up, matching waiting entries (same counsellor or
+ * W7 waitlist - when a slot frees up, matching waiting entries (same counsellor or
  * counsellor-agnostic) are offered it and marked; a mismatched counsellor is skipped.
  */
 const envFile = readFileSync(".env.local", "utf8");

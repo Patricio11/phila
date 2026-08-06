@@ -1046,7 +1046,7 @@ over in one smooth step  and any reschedule can carry a reason kept on the recor
 ---
 
 ## 🛡️ PHASE 31: COMPLIANCE & DATA-SUBJECT READINESS ✅ (2026-07-21)
-*POPIA × HPCSA legal-readiness, built to the "never complicate an org's life" principle — computed
+*POPIA × HPCSA legal-readiness, built to the "never complicate an org's life" principle - computed
 retention clocks (6y / minors→21 / incapacity; one advisor-editable file), one-click DSAR export +
 honoured-where-lawful erasure + legal holds (fail-strict audited), a report-only pruner cron gated on an
 explicit platform enable, the s22 breach register with audit-derived affected-subjects + a drafted notice,
@@ -1059,57 +1059,57 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
 ---
 
 ## 📣 PILOT FEEDBACK  BATCH 1 (~10 items, delivered one at a time)
-*Real usage feedback worked through item by item — each one built, **proven live with screenshots**
+*Real usage feedback worked through item by item - each one built, **proven live with screenshots**
 (kept in `screenshots/`), tested, and committed before the next begins. Started 2026-08-04.*
 
 - [x] **#1  Calendar truth + liveness** *(2026-08-04 · `9ba231b`)*: a new appointment appears on the
   calendar **without a refresh** (`router.refresh()` on create + render-time state re-sync), and events
-  render at the correct **SAST** wall-clock time (an 11:00 booking showed 09:00 — UTC slicing replaced
+  render at the correct **SAST** wall-clock time (an 11:00 booking showed 09:00 - UTC slicing replaced
   with `Africa/Johannesburg` Intl formatters). Also: every outbound transport fetch got a 10s
   `AbortSignal.timeout` and booking actions cap the notify wait at 4s, so a slow provider can never
   hang a booking.
 - [x] **#2  Calendar filters** *(2026-08-04 · `2bbef07`)*: filter the calendar by **counsellor**
-  (searchable avatar dropdown, defaults to "All counsellors") and by **type** (All / In person / Online —
+  (searchable avatar dropdown, defaults to "All counsellors") and by **type** (All / In person / Online -
   hybrid arrives with a later feedback item). Two-row header (filters + New on top; ‹ Today › + date
   range + Day/Week/Month/Agenda below). The avatar+role-subtitle dropdown style is now the shared
   `SearchSelect avatars` mode, used consistently (messaging picker, booking modal, calendar).
-- [x] **#3  Dashboard rework** *(2026-08-04 · `809fe69`+`6c2aacc`)*: Picktime-inspired `/hub` overview —
+- [x] **#3  Dashboard rework** *(2026-08-04 · `809fe69`+`6c2aacc`)*: Picktime-inspired `/hub` overview -
   **period filter** (Today / This week / This month / Last month), tiles for bookings + **income received /
   projected** (projected = unpaid invoices *issued* in the period), a **Paid online vs Cash / Card / EFT**
   payment split (gateway orgs), the bookings **area chart** (house SVG style), **Coming up next**, and the
   **Activity feed** (the org's own audit trail, humanised; read-noise excluded). Outcomes-captured /
   credential-checks / open-intakes tiles retired.
-- [x] **#4  Counsellor offboarding — archive-only** *(2026-08-05 · `283aa7f`)*: "delete counsellor" done
-  the Phila way — **nothing is ever deleted** (HPCSA record-keeping). The offboard dialog shows the
+- [x] **#4  Counsellor offboarding - archive-only** *(2026-08-05 · `283aa7f`)*: "delete counsellor" done
+  the Phila way - **nothing is ever deleted** (HPCSA record-keeping). The offboard dialog shows the
   member's honest workload, then either **migrates** the caseload + future sessions to a successor
   (history stays put) or **cancels** upcoming sessions with clients notified; sign-in is revoked,
   every note/session/outcome stays on the record permanently, and the member can be restored. Audited
   (`archive_member_migrated` / `_cancelled`); integration-tested (nothing-deleted proven).
 - [x] **#5  Counsellor availability** *(2026-08-05 · `b5b5bca`)*: **org-managed** weekly working windows
-  per counsellor (`counsellor_availability`, migration 0056 + RLS) — no pattern = follows the practice
+  per counsellor (`counsellor_availability`, migration 0056 + RLS) - no pattern = follows the practice
   hours; counsellors see theirs **read-only** (only the org edits; every save audited as
   `update_availability` → Activity feed). The **hub modal** live-filters the counsellor list once a
   date + time are picked ("3 of 6 counsellors available at 10:00"). The **public booking page** drops
-  the counsellor-selection step entirely (new clients don't know the team) — a time is offered while
+  the counsellor-selection step entirely (new clients don't know the team) - a time is offered while
   *any* counsellor is free, several counsellors can hold the same hour, and each booking auto-assigns
   to the **least-loaded** free counsellor that day. Proven by `tests/integration/availability.test.ts`.
 - [x] **#6  Held by phone** *(2026-08-05)*: sessions that actually happened over a **phone call**
-  (client had no data) are recorded honestly — **not** a booking type, an after-the-fact record. The
+  (client had no data) are recorded honestly - **not** a booking type, an after-the-fact record. The
   session page gets a "Held by phone" card: one tap records the **real call duration** (prefilled with
   the booked length) + optional context; undoable. The marker shows on the session header, the sessions
   list, the calendar appointment detail, the hub read-only session view, and the client timeline; the
   clinical note is untouched. Stored as `held_by_phone` + `call_duration_min` + `phone_note`
   (migration 0057); audited as `session_held_by_phone` → Activity feed.
-- [x] **#7  Hybrid session type** *(2026-08-05)*: a third type — **online for the client, in-person
+- [x] **#7  Hybrid session type** *(2026-08-05)*: a third type - **online for the client, in-person
   for the room**. The counsellor holds a practice room (required, conflict-checked, counts toward room
   utilisation) while the client joins by the normal secure video link; the client experience is
   identical to online. Booking modal gains the Hybrid "Where" card; the calendar type filter becomes
   All / In person / Online / Hybrid; detail + session views show "Hybrid · room · client joins online".
   Implemented via `isRemote()` / `needsRoom()` predicates in `lib/domain/enums.ts` replacing scattered
-  `=== "online"` checks (no migration — the type column is text). Public booking untouched (an internal
+  `=== "online"` checks (no migration - the type column is text). Public booking untouched (an internal
   operational choice).
-- [x] **#8  Rooms fully functional** *(2026-08-05)*: the Assign-counsellor flow — a Part-A mock until
-  now — **persists for real** (`db/queries/room-assignments.ts`): many counsellors per room, each on
+- [x] **#8  Rooms fully functional** *(2026-08-05)*: the Assign-counsellor flow - a Part-A mock until
+  now - **persists for real** (`db/queries/room-assignments.ts`): many counsellors per room, each on
   their own day/time pattern, so rotation ("Room 1 Mon, Room 2 Fri") is just rows; removable; audited →
   Activity feed. Saves are **availability-aware** with honest warnings (the counsellor's working
   windows, their other rooms, this room's other claims) + "Assign anyway". **"Who was in this room"**
@@ -1128,71 +1128,71 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   interface methods (conversations, counsellor invoices, intake) superseded by messaging/invoicing/forms.
   2FA toggle stays an honest audited placeholder until the W2 TOTP enrolment UI.
 - [x] **#9  Export on Clients & Team** *(2026-08-06)*: an **Export** dropdown (CSV · Excel · PDF) on
-  `/hub/clients` and `/hub/team`. Zero dependencies: CSV (UTF-8 BOM), Excel (SpreadsheetML — opens
+  `/hub/clients` and `/hub/team`. Zero dependencies: CSV (UTF-8 BOM), Excel (SpreadsheetML - opens
   natively in Excel), PDF (print-styled window → Save as PDF, org name + date + count header). Files
   match the live list; client exports are audited **`pii.export`** (fail-strict class), team exports
-  as admin actions — both carrying format + row count. Shared `ExportMenu` (portaled, reusable for
+  as admin actions - both carrying format + row count. Shared `ExportMenu` (portaled, reusable for
   any future list).
 - [x] **#10  The waiting room** *(2026-08-06)*: a genuine join link clicked before the session no
-  longer dead-ends on "Session unavailable" — it seats the client in a calm **waiting room** (session
+  longer dead-ends on "Session unavailable" - it seats the client in a calm **waiting room** (session
   details, live countdown, "doors open 15 minutes before") that lets them in automatically when the
   window opens. The fix splits signature verification from the time window (`verifyJoinSignature` +
   `joinWindow` in `lib/video/livekit.ts`; media tokens still only mint in-window). Honest endings too:
   a link after T+3h says "this session has already taken place", a cancelled session says so. The
-  portal card's Join button is never dead — early it reads **"Open waiting room"**. Unit-tested
+  portal card's Join button is never dead - early it reads **"Open waiting room"**. Unit-tested
   (early/open/closed + tamper) and proven live.
 
-**Batch 1 complete — all 10 items delivered, each proven live before commit.**
+**Batch 1 complete - all 10 items delivered, each proven live before commit.**
 
 ## 📣 PILOT FEEDBACK  BATCH 2
 - [x] **Invoicing fully functional** *(2026-08-06)*: booking-time invoicing already worked for single
   bookings, but recurring-series members and completed sessions never billed (190 completed sessions ·
-  ~R85 550 unbilled in the demo org). Now: **completion is the billing moment** — marking a session
+  ~R85 550 unbilled in the demo org). Now: **completion is the billing moment** - marking a session
   Completed auto-raises its invoice (`ensureInvoiceForAppointmentDb`, sliding-scale fees + the org's
   auto-invoice toggle honoured); the **appointment detail shows its invoice inline** (number · amount ·
   Paid/Unpaid chip · Open invoicing) with a **Generate invoice** button when missing; the **Invoicing
   page banner** surfaces every completed-but-uninvoiced session ("190 sessions · R85 550 unbilled")
   with one-click set-based backfill (185 invoices in seconds, sequential numbering); **Bill to** in the
   invoice builder is the searchable avatar client picker. All audited; proven live.
-- [x] **Supervision — both sides + classrooms** *(2026-08-06)*: supervision was supervisor-only; now
-  the SUPERVISED counsellor's `/app/supervision` shows **"Your supervision"** — their supervisor
+- [x] **Supervision - both sides + classrooms** *(2026-08-06)*: supervision was supervisor-only; now
+  the SUPERVISED counsellor's `/app/supervision` shows **"Your supervision"** - their supervisor
   (card + Message link), notes **awaiting review**, **changes requested with the supervisor's
   feedback** (deep link to revise), and recent sign-offs; every sign-off decision now fires an
   **in-app notification** to the author. Plus **supervision classrooms** (Google-Classroom style,
   native): `supervision_classes/_members/_posts` (migration 0059 + RLS), a **`/hub/supervision`**
-  page (nav item) where the org creates a class per supervisor — **supervisees auto-rostered**, join
-  code on the card, org-managed roster — and a shared **stream** in `/app/supervision` for the
+  page (nav item) where the org creates a class per supervisor - **supervisees auto-rostered**, join
+  code on the card, org-managed roster - and a shared **stream** in `/app/supervision` for the
   supervisor (posts tagged "Supervisor") and members (replies + in-app notifications to the class).
   Foundation for classwork/assignments later. Proven live end-to-end.
-- [x] **Class sessions + attendance** *(2026-08-06)*: classrooms hold real **live sessions** —
+- [x] **Class sessions + attendance** *(2026-08-06)*: classrooms hold real **live sessions** -
   the supervisor schedules one (title · date/time · duration · **online or in person**); everyone is
   notified in-app and the session auto-posts to the stream; **online sessions carry a Join button**
-  into a staff-only video room (`/class-room/[id]`, authorised by org membership — supervisor, class
+  into a staff-only video room (`/class-room/[id]`, authorised by org membership - supervisor, class
   member, or org admin; same waiting-room/doors-open logic as client sessions). After a session the
-  supervisor marks the **attendance register** (Present/Absent per member) — kept permanently as
+  supervisor marks the **attendance register** (Present/Absent per member) - kept permanently as
   supervision/CPD evidence, "N present · M absent" on the session row, audited. Also fixed: the video
   token API rejected **hybrid** appointments. Tables `supervision_class_sessions` + `_attendance`
   (migration 0060 + RLS).
 - [x] **Operational reports** *(2026-08-06)*: a **Reports** tab in Insights (Picktime-style, fully
-  live): seven report types over the permanent records — Bookings summary · Cancelled (with reasons) ·
+  live): seven report types over the permanent records - Bookings summary · Cancelled (with reasons) ·
   No-shows · By counsellor (booked/completed/no-shows/hours/billed/collected) · By service · Fully
-  paid · Payment pending (overdue flag) — across six periods (Today → YTD), with **search within
+  paid · Payment pending (overdue flag) - across six periods (Today → YTD), with **search within
   results**, honest totals lines, coloured status chips, and the shared **CSV / Excel / PDF export**;
   report views audited `pii.read`, every export audited **`pii.export`** with type+format+row count.
   (`db/queries/reports.ts`, `components/hub/reports-tab.tsx`.)
 - [x] **One export everywhere + a hydration bug hunt** *(2026-08-06)*: the shared **ExportMenu
-  (CSV · Excel · PDF)** is now the house standard — **Funder reporting**'s old Download-CSV button
+  (CSV · Excel · PDF)** is now the house standard - **Funder reporting**'s old Download-CSV button
   replaced (k-anon suppression written through as "suppressed (<k)"; audited `funder_export_k_anon`
   for every format), the **Practice tab** gained the export (period metrics vs previous period), and
   the **platform audit ledger** export moved to it (and exporting the ledger is now genuinely
-  audited — the old button only *claimed* to be). En route, found & fixed a real bug: money rendered
+  audited - the old button only *claimed* to be). En route, found & fixed a real bug: money rendered
   with `toLocaleString("en-ZA")` differs between Node ("1,800") and Chrome ("1 800"), causing React
   hydration failures that silently killed click handlers (the funder Export was dead). New
   deterministic `za()` formatter (`lib/format.ts`) swept across all 20 client components.
 - [x] **Classroom editing** *(2026-08-06)*: **Edit** on every classroom card (name · description ·
-  hand the class to another supervisor — the roster stays; audited `update_classroom`), and in the
+  hand the class to another supervisor - the roster stays; audited `update_classroom`), and in the
   stream everyone can **edit or delete their OWN posts** (hover controls, inline editor;
-  author-only enforced server-side — proven: another member's posts show no controls and the
+  author-only enforced server-side - proven: another member's posts show no controls and the
   server rejects edits to others' posts).
 
 ---
@@ -1201,9 +1201,9 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
 *Goal: be allowed in the room with the most sensitive data there is.*
 - [ ] **Data residency:** migrate Postgres to an SA region (AWS `af-south-1` / Azure SA North) on the `db/client.ts` swap; confirm storage + AI inference residency posture; document cross-border flows.
 - [~] Field-level encryption **live** (Phase 10); **security headers done** + **per-IP auth rate limiting done** (W2); a **shared-store (Upstash) rate limiter** for the public non-auth surfaces + an observability skeleton remain.
-- [x] **DPIA**; data-subject tools (export / erasure) wired to real soft-delete + pruner cron; retention policy + breach log. ✅ *(delivered by Phase 31 — DSAR export/erasure, HPCSA retention clocks + report-only pruner, s22 breach register, DPIA in `docs/compliance/`)*
+- [x] **DPIA**; data-subject tools (export / erasure) wired to real soft-delete + pruner cron; retention policy + breach log. ✅ *(delivered by Phase 31 - DSAR export/erasure, HPCSA retention clocks + report-only pruner, s22 breach register, DPIA in `docs/compliance/`)*
 - [ ] **Opt-out / DMA registry** screen before any marketing send (per the SA direct-marketing registry; manual suppression-list import until the API is published); block + audit if registered.
-- [x] One-click **POPIA pack** per org  ✅ *(Phase 31 — `/reports/popia`, assembled from live consent/audit/retention/breach records + the s72 sub-processor chain, fail-strict audited on generation)*
+- [x] One-click **POPIA pack** per org  ✅ *(Phase 31 - `/reports/popia`, assembled from live consent/audit/retention/breach records + the s72 sub-processor chain, fail-strict audited on generation)*
 
 ---
 

@@ -250,7 +250,7 @@ export async function requestLogoUpload(
 
   const storage = await getStorageProvider();
   if (storage.status !== "live") return { ok: false, error: "Phila Storage isn't switched on yet." };
-  // The logo counts against org storage — net of the logo it replaces.
+  // The logo counts against org storage - net of the logo it replaces.
   const [used, current, limit] = await Promise.all([currentStorageBytes(membership.orgId), getOrgLogoDb(membership.orgId), orgStorageLimitBytes(membership.orgId)]);
   if (used - current.bytes + parsed.data.bytes > limit) return { ok: false, error: "You've reached your plan's storage. Remove files or upgrade for more." };
 
@@ -397,7 +397,7 @@ export async function connectChannel(
 }
 
 /**
- * Phase 31.5 — the optional Information-Officer nudge. One checkbox, stored on
+ * Phase 31.5 - the optional Information-Officer nudge. One checkbox, stored on
  * the org profile; never mandatory, never blocks anything.
  */
 export async function markIoRegistered(): Promise<{ ok: true } | { ok: false; error: string }> {

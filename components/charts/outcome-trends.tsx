@@ -13,7 +13,7 @@ function label(iso: string): string {
 }
 
 /**
- * Per-tool outcome trends (W7) — a separate sparkline for each measure a client has
+ * Per-tool outcome trends (W7) - a separate sparkline for each measure a client has
  * (PHQ-9, GAD-7…), so different scales are never mixed onto one line. Completes the
  * outcomes story: both tools were captured; now both are shown.
  */
@@ -27,7 +27,7 @@ export function OutcomeTrends({ outcomes }: { outcomes: OutcomeMeasure[] }) {
     .filter((t) => t.list.length >= 2);
 
   if (trends.length === 0) {
-    return <p className="px-1 py-6 text-center text-[12.5px] text-text-3">Not yet measured — trends appear once two or more scores are captured.</p>;
+    return <p className="px-1 py-6 text-center text-[12.5px] text-text-3">Not yet measured - trends appear once two or more scores are captured.</p>;
   }
 
   return (

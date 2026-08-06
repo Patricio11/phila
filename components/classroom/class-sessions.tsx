@@ -24,7 +24,7 @@ function localToday(): string {
 
 /**
  * Live class meetings (batch 2b): the supervisor schedules them, everyone gets
- * the link for online ones, and the register (present/absent) is marked after —
+ * the link for online ones, and the register (present/absent) is marked after -
  * kept permanently as CPD/supervision evidence.
  */
 export function ClassSessions({ classId, className, members, sessions, canManage, nowISO }: {
@@ -61,7 +61,7 @@ export function ClassSessions({ classId, className, members, sessions, canManage
     start(async () => {
       const res = await scheduleClassSession({ classId, title: title.trim(), date, time, durationMin, mode, location: location.trim() || undefined });
       if (!res.ok) return toast({ tone: "error", title: res.error });
-      toast({ tone: "success", title: "Session scheduled", description: "The class was notified — online sessions carry the join link here." });
+      toast({ tone: "success", title: "Session scheduled", description: "The class was notified - online sessions carry the join link here." });
       setOpen(false); setTitle(""); setDate(""); setAttempted(false);
       router.refresh();
     });
@@ -80,7 +80,7 @@ export function ClassSessions({ classId, className, members, sessions, canManage
       const res = await markClassAttendance({ sessionId: registerFor.id, marks: members.map((m) => ({ counsellorId: m.counsellorId, status: marks[m.counsellorId] ?? "present" })) });
       if (!res.ok) return toast({ tone: "error", title: res.error });
       const present = members.filter((m) => (marks[m.counsellorId] ?? "present") === "present").length;
-      toast({ tone: "success", title: "Register saved", description: `${present} present · ${members.length - present} absent — kept on record.` });
+      toast({ tone: "success", title: "Register saved", description: `${present} present · ${members.length - present} absent - kept on record.` });
       setRegisterFor(null);
       router.refresh();
     });
@@ -105,7 +105,7 @@ export function ClassSessions({ classId, className, members, sessions, canManage
       </div>
 
       {upcoming.length === 0 && past.length === 0 ? (
-        <p className="text-[12.5px] text-text-3">No sessions yet{canManage ? " — schedule the first one." : "."}</p>
+        <p className="text-[12.5px] text-text-3">No sessions yet{canManage ? " - schedule the first one." : "."}</p>
       ) : (
         <ul className="space-y-2">
           {upcoming.map((s) => (
@@ -147,7 +147,7 @@ export function ClassSessions({ classId, className, members, sessions, canManage
         open={open}
         onClose={() => setOpen(false)}
         title="Schedule a class session"
-        description={`Everyone in ${className} is notified — online sessions get a join link right on the class page.`}
+        description={`Everyone in ${className} is notified - online sessions get a join link right on the class page.`}
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>Cancel</Button>
@@ -178,7 +178,7 @@ export function ClassSessions({ classId, className, members, sessions, canManage
             </div>
             <div className="space-y-1.5">
               <Label>Where</Label>
-              <Select value={mode} onChange={(v) => setMode(v as "online" | "in_person")} options={[{ value: "online", label: "Online — secure video room" }, { value: "in_person", label: "In person" }]} />
+              <Select value={mode} onChange={(v) => setMode(v as "online" | "in_person")} options={[{ value: "online", label: "Online - secure video room" }, { value: "in_person", label: "In person" }]} />
             </div>
           </div>
           {mode === "in_person" && (
@@ -195,7 +195,7 @@ export function ClassSessions({ classId, className, members, sessions, canManage
         open={Boolean(registerFor)}
         onClose={() => setRegisterFor(null)}
         title={registerFor ? `Register · ${registerFor.title}` : "Register"}
-        description="Mark who attended — the register stays on record (supervision/CPD evidence)."
+        description="Mark who attended - the register stays on record (supervision/CPD evidence)."
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setRegisterFor(null)} disabled={pending}>Cancel</Button>

@@ -5,7 +5,7 @@ import { runForOrg, activeDb } from "@/lib/db/scoped";
 import { appointmentChangeRequests, appointments, clients } from "@/db/schema";
 
 /**
- * Client appointment-change requests (W6.2). A client never edits a booking directly —
+ * Client appointment-change requests (W6.2). A client never edits a booking directly -
  * they submit a reason and the practice actions or declines it. The client path uses
  * the owner connection (no org session, like booking/pay), with ownership verified
  * explicitly; the org path is RLS-scoped through `phila_app`.

@@ -36,7 +36,7 @@ export function NotificationsSettings({
 
   return (
     <div className="space-y-3">
-      {/* WhatsApp — the headline channel (BYO number, free 24h window) */}
+      {/* WhatsApp - the headline channel (BYO number, free 24h window) */}
       <WhatsappHeadline whatsapp={whatsapp} enabled={s.whatsappEnabled} onToggle={(v) => set("whatsappEnabled", v)} />
 
       <div className="pt-1 text-[11px] font-medium uppercase tracking-wide text-text-3">Backup channels</div>
@@ -97,18 +97,18 @@ function WhatsappHeadline({ whatsapp, enabled, onToggle }: { whatsapp: WhatsappC
             <span className="text-[14.5px] font-[680] text-text">WhatsApp</span>
             <span className="rounded-chip bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">Primary channel</span>
           </div>
-          <p className="mt-0.5 text-[12px] leading-snug text-text-2">The channel South Africans actually answer — booking, reminders, and follow-ups from your own Business number.</p>
+          <p className="mt-0.5 text-[12px] leading-snug text-text-2">The channel South Africans actually answer - booking, reminders, and follow-ups from your own Business number.</p>
         </div>
         <Switch checked={enabled} onChange={onToggle} label="Enable WhatsApp" />
       </div>
 
-      {/* The free-window value prop — the whole point of WhatsApp-first */}
+      {/* The free-window value prop - the whole point of WhatsApp-first */}
       <div className="mx-4 mb-4 flex flex-col gap-2 rounded-control border border-accent/20 bg-surface/70 px-3 py-2.5 sm:flex-row sm:items-center sm:gap-4">
         <div className="flex items-center gap-2 text-[12px] font-[620] text-text">
           <Zap className="size-4 text-accent" strokeWidth={2.2} aria-hidden /> Reminders in the free 24h window
         </div>
         <p className="text-[11.5px] leading-snug text-text-2">
-          When a client has messaged you in the last 24 hours, replies and reminders are <b className="text-text">free</b>. Outside that window we use your Meta-approved template (a small per-message fee) — so a reminder never silently fails.
+          When a client has messaged you in the last 24 hours, replies and reminders are <b className="text-text">free</b>. Outside that window we use your Meta-approved template (a small per-message fee) - so a reminder never silently fails.
         </p>
       </div>
 

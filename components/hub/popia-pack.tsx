@@ -3,10 +3,10 @@ import type { PopiaPack } from "@/db/queries/popia-pack";
 import { CONSENT_PURPOSE_LABELS, type ConsentPurpose } from "@/lib/domain/enums";
 
 /**
- * Phase 31.4 — the printable POPIA pack ("compliance you can show the
+ * Phase 31.4 - the printable POPIA pack ("compliance you can show the
  * Information Regulator"). Print-first styling like the grant report pack:
  * plain hex palette, A4-friendly, no app shell. Assembly of evidence the
- * platform already holds — consent records, the access audit, retention
+ * platform already holds - consent records, the access audit, retention
  * posture, breach entries, and Phila's sub-processor chain.
  */
 function longDate(iso: string): string {
@@ -32,7 +32,7 @@ export function PopiaPackReport({ pack }: { pack: PopiaPack }) {
       <p className="mt-4 text-[12px] text-[#444]">
         This pack assembles the organisation&apos;s live compliance evidence: recorded consent (purpose-bound, versioned),
         the personal-information access audit, HPCSA-aware retention posture, any breach-register entries, and the
-        operator/sub-processor chain maintained centrally by Phila. Nothing here is manually compiled — it is generated
+        operator/sub-processor chain maintained centrally by Phila. Nothing here is manually compiled - it is generated
         from the records the practice already keeps by using the platform.
       </p>
 
@@ -50,7 +50,7 @@ export function PopiaPackReport({ pack }: { pack: PopiaPack }) {
             ))}
           </tbody>
         </table>
-        <p className="mt-1.5 text-[11px] text-[#777]">{pack.consentTotal} consent records on file — each purpose-bound, versioned, and timestamped. Individual records are auditable in-app.</p>
+        <p className="mt-1.5 text-[11px] text-[#777]">{pack.consentTotal} consent records on file - each purpose-bound, versioned, and timestamped. Individual records are auditable in-app.</p>
       </Section>
 
       <Section n="2" title="Access audit (last 12 months)">
@@ -83,7 +83,7 @@ export function PopiaPackReport({ pack }: { pack: PopiaPack }) {
           <Stat label="Legal holds" value={pack.retention.legalHolds} />
           <Stat label="Erased / de-identified" value={pack.retention.erased} />
         </div>
-        <p className="mt-1.5 text-[11px] text-[#777]">Clocks are computed automatically from record facts (last entry, date of birth) — never configured by staff. Erasure requests are honoured where lawful and refused with a dated reason where HPCSA retention applies.</p>
+        <p className="mt-1.5 text-[11px] text-[#777]">Clocks are computed automatically from record facts (last entry, date of birth) - never configured by staff. Erasure requests are honoured where lawful and refused with a dated reason where HPCSA retention applies.</p>
       </Section>
 
       <Section n="4" title="Breach register (POPIA s22)">
@@ -114,7 +114,7 @@ export function PopiaPackReport({ pack }: { pack: PopiaPack }) {
             ))}
           </tbody>
         </table>
-        <p className="mt-1 text-[10.5px] text-[#777]">* dormant-by-default — processes data only once the organisation switches the integration on.</p>
+        <p className="mt-1 text-[10.5px] text-[#777]">* dormant-by-default - processes data only once the organisation switches the integration on.</p>
       </Section>
 
       <footer className="mt-8 border-t border-[#ccc] pt-3 text-[10.5px] leading-relaxed text-[#777]">

@@ -150,7 +150,7 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* No OS spinners on number fields — they render as clean Phila inputs (§6:
+  /* No OS spinners on number fields - they render as clean Phila inputs (§6:
      never a native-looking control). Typing/arrow keys still work. */
   input[type="number"]::-webkit-outer-spin-button,
   input[type="number"]::-webkit-inner-spin-button {

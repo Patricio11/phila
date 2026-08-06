@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Supervision" };
 
 /**
- * Hub — supervision classrooms (batch 2). The org creates a class per
+ * Hub - supervision classrooms (batch 2). The org creates a class per
  * supervisor; supervisees join automatically and share a stream in /app.
  */
 export default async function HubSupervisionPage() {
@@ -33,7 +33,7 @@ export default async function HubSupervisionPage() {
     <div className="rise space-y-6">
       <PageHead
         title="Supervision"
-        summary="A classroom per supervisor — announcements, discussion, and the trainee group in one place. Clinical sign-off stays in each counsellor's workspace."
+        summary="A classroom per supervisor - announcements, discussion, and the trainee group in one place. Clinical sign-off stays in each counsellor's workspace."
       />
       <ClassroomsBoard
         classes={classes}

@@ -162,7 +162,7 @@ export async function getWhatsappTemplateName(orgId: string, key: MessageTrigger
 
 /* ---- WhatsApp 24-hour service window (WhatsApp-first) ------------------- */
 
-/** Record an inbound WhatsApp message — refreshes (or opens) the client's free window. */
+/** Record an inbound WhatsApp message - refreshes (or opens) the client's free window. */
 export async function recordWhatsappInbound(orgId: string, phone: string, at: Date): Promise<void> {
   const key = windowKey(phone);
   if (!key) return;
@@ -223,7 +223,7 @@ export async function getOrgByWhatsappPhone(phoneNumberId: string): Promise<stri
   return row?.orgId ?? null;
 }
 
-/** The org's Meta app secret (decrypted) for a phone number — to verify the webhook HMAC. */
+/** The org's Meta app secret (decrypted) for a phone number - to verify the webhook HMAC. */
 export async function getWhatsappAppSecretByPhone(phoneNumberId: string): Promise<string | null> {
   const [row] = await getDb().select({ enc: whatsappConnections.appSecretEnc }).from(whatsappConnections).where(eq(whatsappConnections.phoneNumberId, phoneNumberId)).limit(1);
   if (!row?.enc) return null;

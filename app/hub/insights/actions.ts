@@ -31,7 +31,7 @@ export async function runInsights(raw: z.infer<typeof input>): Promise<HubInsigh
   return provider.getHubInsights(membership.orgId, clockNow(), filters);
 }
 
-/* ---- Operational reports (batch 2c) — Picktime-style, exportable ---- */
+/* ---- Operational reports (batch 2c) - Picktime-style, exportable ---- */
 
 /** Preset period → SAST range. */
 function reportRange(period: string, nowISO: string): { from: string; to: string } {
@@ -74,7 +74,7 @@ export async function getOperationalReport(
   return { ok: true, report };
 }
 
-/** Exports of operational reports carry client PII — always audited (fail-strict class). */
+/** Exports of operational reports carry client PII - always audited (fail-strict class). */
 export async function auditReportExport(
   raw: { type: string; format: string; count: number },
 ): Promise<{ ok: true }> {

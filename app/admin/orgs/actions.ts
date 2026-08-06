@@ -164,7 +164,7 @@ export async function setOrgFeatureOverride(raw: z.infer<typeof overrideInput>):
 
 const planInput = z.object({ orgId: z.string().min(1), planId: z.string().min(1) });
 
-/** Move an org between plans (W3.4c) — entitlements + quotas follow immediately. */
+/** Move an org between plans (W3.4c) - entitlements + quotas follow immediately. */
 export async function setOrgPlan(raw: z.infer<typeof planInput>): Promise<{ ok: true } | { ok: false; error: string }> {
   const principal = await requireSuperAdmin();
   const parsed = planInput.safeParse(raw);

@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   }
   const body = (await req.json().catch(() => ({}))) as { appointmentId?: string; classSessionId?: string; name?: string; t?: string };
 
-  // Class sessions (batch 2b): staff-only rooms — authorised by org membership
+  // Class sessions (batch 2b): staff-only rooms - authorised by org membership
   // (supervisor / member / org admin), never by link.
   const classSessionId = body.classSessionId?.trim();
   if (classSessionId) {

@@ -8,7 +8,7 @@ import { logAccess } from "@/lib/audit";
 const isDb = () => process.env.DATA_PROVIDER === "db";
 
 /**
- * Supervision classrooms (batch 2) — org-managed: create a class per supervisor
+ * Supervision classrooms (batch 2) - org-managed: create a class per supervisor
  * (supervisees auto-rostered), adjust the roster. Streams live in /app.
  */
 const createInput = z.object({
@@ -73,7 +73,7 @@ const editClassInput = z.object({
   description: z.string().trim().max(400).optional(),
 });
 
-/** Edit a classroom (batch 2d) — fix the name/description, or hand it to another supervisor. */
+/** Edit a classroom (batch 2d) - fix the name/description, or hand it to another supervisor. */
 export async function updateClassroom(
   raw: z.infer<typeof editClassInput>,
 ): Promise<{ ok: true } | { ok: false; error: string }> {

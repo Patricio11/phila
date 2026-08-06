@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 31.1 — DSAR export + erasure against the real DB. The export assembles
+ * Phase 31.1 - DSAR export + erasure against the real DB. The export assembles
  * everything held on the probe client; erasure de-identifies + soft-deletes and
  * returns the honest retention decision; a legal hold blocks it outright.
  */

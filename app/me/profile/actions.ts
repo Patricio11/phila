@@ -102,7 +102,7 @@ export async function setClientTwoFactor(raw: { enabled: boolean }): Promise<{ o
 }
 
 /**
- * Phase 31.1 — client-initiated DSAR request. The client doesn't run the export/
+ * Phase 31.1 - client-initiated DSAR request. The client doesn't run the export/
  * erasure themselves; the request is routed to the practice (the responsible
  * party), who runs the one-click action from the client's Data & privacy panel.
  */

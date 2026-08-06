@@ -142,12 +142,12 @@ export default async function AdminOrgDetailPage({ params }: { params: Promise<{
         </div>
       </Card>
 
-      {/* Feature entitlements — effective state + per-org override (W3.3) */}
+      {/* Feature entitlements - effective state + per-org override (W3.3) */}
       {featureResolutions.length > 0 && (
         <Card>
           <CardHead title="Features" action={<span className="text-[11.5px] text-text-3">{detail.planName} plan</span>} />
           <div className="px-[17px] pb-[17px]">
-            <p className="mb-1 text-[12.5px] text-text-2">Each feature&apos;s effective state and why. Force-on grants beta access above the plan; force-off suspends it — inherit follows the plan + the practice&apos;s own toggle.</p>
+            <p className="mb-1 text-[12.5px] text-text-2">Each feature&apos;s effective state and why. Force-on grants beta access above the plan; force-off suspends it - inherit follows the plan + the practice&apos;s own toggle.</p>
             <OrgFeaturePanel orgId={id} resolutions={featureResolutions} />
           </div>
         </Card>
@@ -165,7 +165,7 @@ export default async function AdminOrgDetailPage({ params }: { params: Promise<{
           <Card>
             <CardHead title="Resources & quotas" />
             <div className="px-[17px] pb-[17px]">
-              <p className="mb-3 text-[12.5px] text-text-2">Top up credits, cap AI spend, or override storage. When a meter runs out the feature no-ops honestly (Dormant-by-Default) — never a fake success.</p>
+              <p className="mb-3 text-[12.5px] text-text-2">Top up credits, cap AI spend, or override storage. When a meter runs out the feature no-ops honestly (Dormant-by-Default) - never a fake success.</p>
               <OrgResourceMetersPanel orgId={id} meters={meters} />
             </div>
           </Card>

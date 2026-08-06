@@ -22,7 +22,7 @@ export interface SchedulingOptions {
   counsellors: { id: string; name: string }[];
   rooms: { id: string; name: string }[];
   defaultCounsellorId?: string;
-  /** The org's default session length (Settings → Scheduling) — the modal's initial duration. */
+  /** The org's default session length (Settings → Scheduling) - the modal's initial duration. */
   defaultDurationMin?: number;
   /** When present, the booking is validated against the practice's working hours. */
   businessHours?: BusinessHours;
@@ -30,7 +30,7 @@ export interface SchedulingOptions {
 
 function hm(t: string): number { return Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)); }
 
-/** Local wall-clock today (yyyy-mm-dd) — the earliest bookable day. */
+/** Local wall-clock today (yyyy-mm-dd) - the earliest bookable day. */
 function localToday(): string {
   const t = new Date();
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
@@ -90,7 +90,7 @@ export function CreateAppointmentModal({
   // Hybrid (feedback #7): the counsellor holds a room, the client joins online.
   const roomNeeded = type !== "Online";
 
-  // Feedback #5 — once a date + time are picked, only counsellors actually
+  // Feedback #5 - once a date + time are picked, only counsellors actually
   // available then are offered. Keyed fetch: a stale response simply never
   // matches the current key, so no synchronous resets are needed.
   const availKey = `${date}|${time}|${durationMin}`;
@@ -106,7 +106,7 @@ export function CreateAppointmentModal({
   }, [date, time, durationMin, options.orgId]);
   const availability = date && time && avail?.key === availKey ? avail : null;
   const freeSet = useMemo(() => (availability ? new Set(availability.ids) : null), [availability]);
-  // The picked counsellor stays visible even when busy — the validation below explains why.
+  // The picked counsellor stays visible even when busy - the validation below explains why.
   const counsellorOptions = freeSet
     ? options.counsellors.filter((c) => freeSet.has(c.id) || c.id === counsellorId)
     : options.counsellors;
@@ -123,7 +123,7 @@ export function CreateAppointmentModal({
     if (!clientId) e.client = "Pick a client.";
     if (!serviceId) e.service = "Pick a service.";
     if (!counsellorId) e.counsellor = "Pick a counsellor.";
-    else if (freeSet && !freeSet.has(counsellorId)) e.counsellor = "Not available at that time — pick another counsellor or time.";
+    else if (freeSet && !freeSet.has(counsellorId)) e.counsellor = "Not available at that time - pick another counsellor or time.";
     if (!date) e.date = "Pick a date.";
     if (!time) e.time = "Pick a time.";
     if (roomNeeded && !roomId) e.room = "Pick a room.";
@@ -250,7 +250,7 @@ export function CreateAppointmentModal({
           {freeCount !== null && (
             <p className={cn("text-[11.5px]", freeCount === 0 ? "text-danger" : "text-text-3")}>
               {freeCount === 0
-                ? `No counsellors are available at ${time} — try another time.`
+                ? `No counsellors are available at ${time} - try another time.`
                 : `${freeCount} of ${options.counsellors.length} counsellors available at ${time}.`}
             </p>
           )}

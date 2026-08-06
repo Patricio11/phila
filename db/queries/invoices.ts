@@ -11,7 +11,7 @@ import { effectiveFeeCents, type FeePolicy } from "@/lib/billing/fees";
  * unpaid invoice for it (linked to the appointment) so billing never slips. The client
  * can then pay it online through the org's gateway; settling flips it to paid. This is
  * a trusted system write (orgId is known from the appointment), so it uses the owner
- * connection — the same path booking itself uses.
+ * connection - the same path booking itself uses.
  */
 export async function createInvoiceForBookingDb(input: {
   orgId: string; appointmentId: string; clientId: string; serviceName: string; amountCents: number; issuedAt: Date;
@@ -45,7 +45,7 @@ export async function createInvoiceForBookingDb(input: {
 }
 
 /**
- * Feedback batch 2 — make sure a session HAS its invoice. The natural billing
+ * Feedback batch 2 - make sure a session HAS its invoice. The natural billing
  * moment is completion (recurring members bill per occurrence; anything the
  * booking path missed gets caught here). Honest outcomes, never a silent skip.
  */
@@ -98,7 +98,7 @@ export async function invoiceForAppointmentDb(orgId: string, appointmentId: stri
 }
 
 /**
- * Set-based backfill: one pass, one bulk insert — 190 missing invoices land in
+ * Set-based backfill: one pass, one bulk insert - 190 missing invoices land in
  * seconds, numbered sequentially in the org's series. Waived fees are skipped.
  */
 export async function backfillInvoicesDb(orgId: string, issuedAt: Date): Promise<{ created: number; skipped: number }> {
@@ -142,7 +142,7 @@ export async function backfillInvoicesDb(orgId: string, issuedAt: Date): Promise
   return { created: values.length, skipped };
 }
 
-/** Completed sessions that never got an invoice — the backfill list (priced services only). */
+/** Completed sessions that never got an invoice - the backfill list (priced services only). */
 export async function listUninvoicedCompletedDb(orgId: string): Promise<{ appointmentId: string; clientName: string; serviceName: string; startsAt: string; priceCents: number }[]> {
   const db = getDb();
   const rows = await db

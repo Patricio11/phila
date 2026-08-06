@@ -18,7 +18,7 @@ function waitingSince(iso: string): string {
 }
 
 /**
- * Waitlist (W7) — clients waiting for a slot. When a session is cancelled they're
+ * Waitlist (W7) - clients waiting for a slot. When a session is cancelled they're
  * auto-offered the freed slot by message; here the practice can also **book** one in
  * one tap (a prefilled appointment) or remove them. Booking marks them placed.
  */

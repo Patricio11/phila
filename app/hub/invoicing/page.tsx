@@ -25,7 +25,7 @@ export default async function HubInvoicingPage() {
   ]);
   const nameOf = new Map(clients.map((c) => [c.client.id, c.client.name]));
 
-  // Completed sessions that never got billed — surfaced, never silent (batch 2).
+  // Completed sessions that never got billed - surfaced, never silent (batch 2).
   const uninvoiced = process.env.DATA_PROVIDER === "db"
     ? await (await import("@/db/queries/invoices")).listUninvoicedCompletedDb(membership.orgId)
     : [];

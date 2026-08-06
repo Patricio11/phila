@@ -44,7 +44,7 @@ export const orgs = pgTable("orgs", {
   brandAccent: text("brand_accent").default("#1C7D58").notNull(),
   /** Storage key of the org's uploaded logo (W6.1), shown on the public page + branding. Null = wordmark only. */
   brandLogoKey: text("brand_logo_key"),
-  /** The logo's size in bytes — tracked so it counts against (and releases from) org storage. */
+  /** The logo's size in bytes - tracked so it counts against (and releases from) org storage. */
   brandLogoBytes: integer("brand_logo_bytes").default(0).notNull(),
   timezone: text("timezone").default("Africa/Johannesburg").notNull(),
   /** Dormant-by-Default feature flags: { ai, video, whatsapp, sms, payments }. */
@@ -77,7 +77,7 @@ export const platformSettings = pgTable("platform_settings", {
   vatRatePercent: integer("vat_rate_percent").notNull(),
 });
 
-/** The subscription plan catalogue (W3.4) — super-admin-editable. Seeded from the
+/** The subscription plan catalogue (W3.4) - super-admin-editable. Seeded from the
  *  `lib/billing/plans` defaults; the entitlement resolver + quotas read from here. */
 export const plans = pgTable("plans", {
   id: text("id").primaryKey(),
@@ -249,9 +249,9 @@ export const clients = pgTable("clients", {
   /** Sliding-scale / subsidised fee (W7): { kind: 'standard'|'percentage'|'fixed'|'waived', value? }.
    *  null/absent = pays the list price. `percentage` = pays value% of list; `fixed` = value cents flat. */
   feePolicy: jsonb("fee_policy").$type<{ kind: "standard" | "percentage" | "fixed" | "waived"; value?: number }>(),
-  /** How the client found the practice (W7) — one of REFERRAL_SOURCES; null = not captured. */
+  /** How the client found the practice (W7) - one of REFERRAL_SOURCES; null = not captured. */
   referralSource: text("referral_source"),
-  /** Phase 31 — legal hold: while true, retention pruning + erasure are blocked (litigation/inquiry). */
+  /** Phase 31 - legal hold: while true, retention pruning + erasure are blocked (litigation/inquiry). */
   legalHold: boolean("legal_hold").default(false).notNull(),
   legalHoldReason: text("legal_hold_reason"),
   /** Client self-service profile: { dateOfBirth, address, emergencyName, emergencyPhone, preferredContact }. */
@@ -290,13 +290,13 @@ export const appointments = pgTable("appointments", {
   rescheduleNote: text("reschedule_note"), // optional reason when a session is moved
   reminded24h: boolean("reminded_24h").default(false).notNull(), // reminder sweep dedup
   reminded1h: boolean("reminded_1h").default(false).notNull(),
-  /** When a no-show was followed up (rebooked or dismissed) — so it stops nagging (W7). */
+  /** When a no-show was followed up (rebooked or dismissed) - so it stops nagging (W7). */
   noShowFollowUpAt: timestamp("no_show_follow_up_at", { withTimezone: true }),
-  /** Feedback #6 — the session was actually held over a PHONE CALL (recorded after
+  /** Feedback #6 - the session was actually held over a PHONE CALL (recorded after
    *  the fact, e.g. the client had no data). Honest record of how care happened. */
   heldByPhone: boolean("held_by_phone").default(false).notNull(),
   callDurationMin: integer("call_duration_min"), // actual call length, may differ from booked
-  phoneNote: text("phone_note"), // optional context ("no data, called on 082…") — NOT the clinical note
+  phoneNote: text("phone_note"), // optional context ("no data, called on 082…") - NOT the clinical note
 });
 
 /* ── Clinical cluster (Phase 10) ───────────────────────────────────────── */
@@ -459,7 +459,7 @@ export const orgPublicPages = pgTable("org_public_pages", {
   /** Social profile URLs keyed by platform (facebook, instagram, whatsapp, x, linkedin, youtube, tiktok). */
   socials: jsonb("socials").$type<Partial<Record<string, string>>>().default({}).notNull(),
   showSocials: boolean("show_socials").default(false).notNull(),
-  /** Public contact form — messages land by email (below) + in-app; stored in public_contact_messages. */
+  /** Public contact form - messages land by email (below) + in-app; stored in public_contact_messages. */
   showContactForm: boolean("show_contact_form").default(false).notNull(),
   contactFormEmail: text("contact_form_email"),
   /** Contact section layout: form stacked under the cards, or side-by-side (cards left · form right). */
@@ -471,7 +471,7 @@ export const orgPublicPages = pgTable("org_public_pages", {
 });
 
 /**
- * Phase 31.3 — the POPIA s22 breach log. Platform-first (super-admin logs and
+ * Phase 31.3 - the POPIA s22 breach log. Platform-first (super-admin logs and
  * manages incidents; an org-scoped incident carries its orgId so the org's POPIA
  * pack can honestly include it). RLS: super-only, like the other platform tables.
  */
@@ -492,7 +492,7 @@ export const breachLog = pgTable("breach_log", {
 
 /**
  * Messages from the public contact form (Phase 17 / builder upgrade). Deliberately
- * minimal — name + a way to reply + the message; the public form never invites
+ * minimal - name + a way to reply + the message; the public form never invites
  * clinical detail. Org-scoped (RLS); the write comes from the public action (owner).
  */
 export const publicContactMessages = pgTable("public_contact_messages", {
@@ -554,11 +554,11 @@ export const whatsappWindows = pgTable("whatsapp_windows", {
 }, (t) => [uniqueIndex("whatsapp_window_uq").on(t.orgId, t.phoneKey)]);
 
 /**
- * Feedback #5 — per-counsellor working windows, ORG-managed (counsellors view,
+ * Feedback #5 - per-counsellor working windows, ORG-managed (counsellors view,
  * never edit). Multiple windows per weekday ("Mon 08:00-13:00" + "Mon 15:00-18:00").
  * No rows for a counsellor = inherits the org's business hours (sane default).
  */
-/* ── Supervision classrooms (batch 2) — a class per supervisor, Google-Classroom style ── */
+/* ── Supervision classrooms (batch 2) - a class per supervisor, Google-Classroom style ── */
 export const supervisionClasses = pgTable("supervision_classes", {
   id: uuid("id").defaultRandom().primaryKey(),
   orgId: text("org_id").notNull().references(() => orgs.id),
@@ -589,7 +589,7 @@ export const supervisionClassPosts = pgTable("supervision_class_posts", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-/** Live class meetings — scheduled per classroom; online ones ride our video rooms. */
+/** Live class meetings - scheduled per classroom; online ones ride our video rooms. */
 export const supervisionClassSessions = pgTable("supervision_class_sessions", {
   id: uuid("id").defaultRandom().primaryKey(),
   orgId: text("org_id").notNull().references(() => orgs.id),
@@ -603,7 +603,7 @@ export const supervisionClassSessions = pgTable("supervision_class_sessions", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-/** The attendance register — marked by the supervisor; the org sees the counts. */
+/** The attendance register - marked by the supervisor; the org sees the counts. */
 export const supervisionClassAttendance = pgTable("supervision_class_attendance", {
   id: uuid("id").defaultRandom().primaryKey(),
   orgId: text("org_id").notNull().references(() => orgs.id),
@@ -613,7 +613,7 @@ export const supervisionClassAttendance = pgTable("supervision_class_attendance"
   markedAt: timestamp("marked_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-/** A staff member's own profile (feedback sweep — was mock-only, profile: null in DB mode). */
+/** A staff member's own profile (feedback sweep - was mock-only, profile: null in DB mode). */
 export const teamProfiles = pgTable("team_profiles", {
   id: uuid("id").defaultRandom().primaryKey(),
   orgId: text("org_id").notNull().references(() => orgs.id),
@@ -960,7 +960,7 @@ export const waitlistEntries = pgTable("waitlist_entries", {
 }, (t) => [index("waitlist_org_status_idx").on(t.orgId, t.status)]);
 
 /** A client's REQUEST to reschedule or cancel a session (W6.2). The client never edits
- *  the booking directly — they submit a reason; the practice actions or declines it. */
+ *  the booking directly - they submit a reason; the practice actions or declines it. */
 export const appointmentChangeRequests = pgTable("appointment_change_requests", {
   id: text("id").primaryKey(),
   orgId: text("org_id").notNull().references(() => orgs.id),

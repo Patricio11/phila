@@ -102,7 +102,7 @@ export async function signOffNoteDb(
   });
 }
 
-/* ---- Batch 2 — the SUPERVISEE side: your supervisor + their feedback ---- */
+/* ---- Batch 2 - the SUPERVISEE side: your supervisor + their feedback ---- */
 
 export interface SuperviseeNoteRow {
   noteId: string;

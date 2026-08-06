@@ -328,7 +328,7 @@ export const dbProvider: DataProvider = {
   // The public booking config keeps its mock-sourced service/counsellor visibility +
   // intake form, but swaps in the REAL org AND the org's SAVED booking policy (Hub →
   // Booking): the horizon, minimum notice, slot interval, deposit, and master switch
-  // the practice actually configured — not the mock seed. So changing the booking
+  // the practice actually configured - not the mock seed. So changing the booking
   // period on the settings page now takes effect on the public calendar.
   getBookingConfig: async (slug: string) => {
     const base = await mockProvider.getBookingConfig(slug);
@@ -449,7 +449,7 @@ export const dbProvider: DataProvider = {
     };
   }),
 
-  // The counsellor's own "Your week in rooms" — REAL assignments + bookings
+  // The counsellor's own "Your week in rooms" - REAL assignments + bookings
   // (feedback #8: this fell back to the mock, so a saved assignment never
   // reached the counsellor's view).
   getCounsellorRooms: async (counsellorId: string, now: string) => {

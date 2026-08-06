@@ -10,7 +10,7 @@ import { exportCsv, exportExcel, exportPdf, type ExportTable } from "@/lib/expor
 export type ExportFormat = "csv" | "excel" | "pdf";
 
 /**
- * Feedback #9 — the Export dropdown (CSV / Excel / PDF). The file is built
+ * Feedback #9 - the Export dropdown (CSV / Excel / PDF). The file is built
  * client-side from the rows already on screen; `onExported` runs the server
  * audit (client PII exports are pii.export, fail-strict).
  */

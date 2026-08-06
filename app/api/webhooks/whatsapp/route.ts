@@ -37,7 +37,7 @@ export async function GET(req: Request) {
 const OPT_OUT_WORDS = new Set(["stop", "stopp", "unsubscribe", "cancel", "opt out", "optout"]);
 
 export async function POST(req: Request) {
-  // Read the RAW body first — the HMAC is over the exact bytes Meta sent.
+  // Read the RAW body first - the HMAC is over the exact bytes Meta sent.
   const rawBody = await req.text();
   let payload: WhatsAppWebhook;
   try {

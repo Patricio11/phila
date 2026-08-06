@@ -94,7 +94,7 @@ export async function createFolderDb(
   return id;
 }
 
-/** Find (or create) a folder by name under a parent — the building block for the
+/** Find (or create) a folder by name under a parent - the building block for the
  *  session-attachment tree. Idempotent per (org, parent, name). */
 async function findOrCreateFolder(
   db: ReturnType<typeof activeDb>, orgId: string, name: string, parentId: string | null, scope: FolderScope, clientId: string | null,

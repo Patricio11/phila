@@ -46,7 +46,7 @@ export function TeamBoard({ members }: { members: TeamMemberView[] }) {
     [members],
   );
 
-  // Every ACTIVE counsellor — the successor list for offboarding.
+  // Every ACTIVE counsellor - the successor list for offboarding.
   const counsellorOptions = useMemo(
     () => members.filter((m) => m.teamRole === "counsellor" && m.status === "active" && m.counsellorId)
       .map((m) => ({ id: m.counsellorId as string, name: m.name })),
@@ -71,7 +71,7 @@ export function TeamBoard({ members }: { members: TeamMemberView[] }) {
     <div className="space-y-4">
       <RoleGuide />
 
-      {/* No overflow-hidden here — it would clip the row ⋯ menus at the card edge. */}
+      {/* No overflow-hidden here - it would clip the row ⋯ menus at the card edge. */}
       <div className="rounded-card border border-border bg-surface">
         {/* Toolbar: tabs + search + invite */}
         <div className="flex flex-col gap-3 border-b border-border p-3 sm:flex-row sm:items-center">
@@ -220,7 +220,7 @@ function RowMenu({ member: m, onManage, counsellorOptions }: { member: TeamMembe
   const [offboard, setOffboard] = useState<{ counsellorId: string | null; upcoming: number; clients: number } | null>(null);
 
   // Active members go through the proper offboarding dialog (workload → choice).
-  // Revoking a pending invite stays a one-tap action — there is nothing to hand over.
+  // Revoking a pending invite stays a one-tap action - there is nothing to hand over.
   const archive = () => start(async () => {
     if (m.status === "invited") {
       const res = await setMemberStatus({ userId: m.userId, status: "archived" });

@@ -220,6 +220,9 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
 - **Language:** **English only.** South Africa, one language, kept plain and consistent. No i18n
   framework, no locale routing, no translation catalogs  copy lives close to its component so a button's
   label always matches the toast it produces.
+- **No em-dash (U+2014), ever.** Anywhere in the project: UI copy, comments, docs, commit messages,
+  seed data. It reads as machine-written. Use a plain hyphen, a comma, or a full stop instead.
+  Enforced by `tests/unit/no-em-dash.test.ts` in CI, so a single one fails the build.
 - **Charts:** Recharts (mount-gated client island).
 - **Rate limiting:** Upstash Redis (auth, booking, AI, messaging). Part B.
 - **Fonts:** **Inter** (self-hosted via `next/font`, weights 400–700, tabular numerals on data). One family, no serif, no monospace  a clean, modern tool voice. See `DESIGN.md` §3.

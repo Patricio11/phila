@@ -124,7 +124,7 @@ export interface PublicPageContent {
   /** Social profile URLs by platform; only filled ones render. */
   socials: Partial<Record<SocialPlatform, string>>;
   showSocials: boolean;
-  /** Public contact form — submissions store org-side + email the address below. */
+  /** Public contact form - submissions store org-side + email the address below. */
   showContactForm: boolean;
   contactFormEmail: string | null;
   /** Contact section layout: form under the cards, or beside them (cards left · form right). */
@@ -633,7 +633,7 @@ export interface HubInsights {
   byGender: InsightsMix[];
   byAgeBand: InsightsMix[];
   byProvince: InsightsMix[];
-  /** Where clients come from (W7 referral tracking) — present when the org captures it. */
+  /** Where clients come from (W7 referral tracking) - present when the org captures it. */
   byReferralSource?: InsightsMix[];
   /** Phase 16  same metrics for the previous comparable window (for trend deltas). */
   previous?: { completed: number; attendanceRate: number; newClients: number; revenueActualCents: number; noShows: number };

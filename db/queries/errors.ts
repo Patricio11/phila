@@ -8,7 +8,7 @@ import "server-only";
  */
 export function isSlotTakenError(e: unknown): boolean {
   // The constraints are DEFERRABLE INITIALLY DEFERRED, so inside a transaction the
-  // violation surfaces at COMMIT wrapped in a driver error — walk the cause chain.
+  // violation surfaces at COMMIT wrapped in a driver error - walk the cause chain.
   for (let cur = e, depth = 0; cur && depth < 5; cur = (cur as { cause?: unknown }).cause, depth++) {
     const code = (cur as { code?: string })?.code;
     const msg = (cur as { message?: string })?.message ?? "";

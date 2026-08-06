@@ -8,7 +8,7 @@ import { now as clockNow } from "@/lib/clock";
 import { exportDataSubjectDb, eraseDataSubjectDb, setLegalHoldDb, type DsarExport } from "@/db/queries/dsar";
 
 /**
- * Phase 31.1 — DSAR actions (staff side). Used on request only — never part of
+ * Phase 31.1 - DSAR actions (staff side). Used on request only - never part of
  * the daily loop. Both are FAIL-STRICT audited: if the audit line can't be
  * written, the export/erasure does not happen (same guarantee as clinical reads).
  */
@@ -22,7 +22,7 @@ export async function exportDataSubject(
   const parsed = exportInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid request" };
 
-  // Audit BEFORE the data leaves — a failed audit refuses the export (fail-strict).
+  // Audit BEFORE the data leaves - a failed audit refuses the export (fail-strict).
   await logAccess({
     action: "dsar.export",
     actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
@@ -38,7 +38,7 @@ export async function exportDataSubject(
 
 const eraseInput = z.object({
   clientId: z.string().min(1),
-  /** Typed confirmation — must match the client's current name exactly. */
+  /** Typed confirmation - must match the client's current name exactly. */
   confirmName: z.string().min(1),
   expectedName: z.string().min(1),
 });
@@ -50,7 +50,7 @@ export async function eraseDataSubject(
   const parsed = eraseInput.safeParse(raw);
   if (!parsed.success) return { ok: false, message: "Invalid request" };
   if (parsed.data.confirmName.trim() !== parsed.data.expectedName.trim()) {
-    return { ok: false, message: "The name you typed doesn't match — nothing was changed." };
+    return { ok: false, message: "The name you typed doesn't match - nothing was changed." };
   }
 
   // Fail-strict: no unlogged erasure, ever.

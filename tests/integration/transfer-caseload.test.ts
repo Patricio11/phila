@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Phase 18.8 — caseload transfer + reschedule note.
+ * Phase 18.8 - caseload transfer + reschedule note.
  * Proves the transfer moves the clients + FUTURE sessions, skips diary clashes,
  * and leaves the past (history) completely intact; and that a reschedule can
  * carry an optional reason kept on the record.
@@ -69,7 +69,7 @@ describe("caseload transfer", () => {
     const [client] = await sql`SELECT primary_counsellor_id FROM clients WHERE id = ${CL}`;
     expect(client!.primary_counsellor_id).toBe(TO);
 
-    // History untouched — the past session stays with the original counsellor.
+    // History untouched - the past session stays with the original counsellor.
     const [past] = await sql`SELECT counsellor_id, state FROM appointments WHERE id = ${APPT.past}`;
     expect(past!.counsellor_id).toBe(FROM);
     expect(past!.state).toBe("completed");
@@ -92,9 +92,9 @@ describe("caseload transfer", () => {
 
 describe("reschedule with a reason", () => {
   it("stores the optional note on the moved session", { timeout: 30_000 }, async () => {
-    const moved = await rescheduleAppointment(ORG, APPT.future1, at(9, 8), "this", "Client asked to move — exam week");
+    const moved = await rescheduleAppointment(ORG, APPT.future1, at(9, 8), "this", "Client asked to move - exam week");
     expect(moved).toBe(1);
     const [row] = await sql`SELECT reschedule_note, starts_at FROM appointments WHERE id = ${APPT.future1}`;
-    expect(row!.reschedule_note).toBe("Client asked to move — exam week");
+    expect(row!.reschedule_note).toBe("Client asked to move - exam week");
   });
 });

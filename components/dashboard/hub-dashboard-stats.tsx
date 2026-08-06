@@ -10,7 +10,7 @@ import { BookingsChart } from "@/components/dashboard/bookings-chart";
 import { cn } from "@/lib/utils";
 
 /**
- * Feedback #3 — the period-driven dashboard block. One filter (Today · This
+ * Feedback #3 - the period-driven dashboard block. One filter (Today · This
  * week · This month · Last month) drives the booking/revenue tiles, the
  * payment split, the compact client row, and the bookings chart. All periods
  * arrive precomputed, so switching is instant.

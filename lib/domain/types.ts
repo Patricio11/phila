@@ -195,11 +195,11 @@ export interface Appointment {
   seriesId?: string | null;
   /** Optional reason recorded when the session was rescheduled. */
   rescheduleNote?: string | null;
-  /** Feedback #6 — the session was actually held over a phone call (recorded after the fact). */
+  /** Feedback #6 - the session was actually held over a phone call (recorded after the fact). */
   heldByPhone?: boolean;
-  /** Actual call length in minutes — may differ from the booked duration. */
+  /** Actual call length in minutes - may differ from the booked duration. */
   callDurationMin?: number | null;
-  /** Optional context for the phone call — never part of the clinical note. */
+  /** Optional context for the phone call - never part of the clinical note. */
   phoneNote?: string | null;
 }
 
@@ -524,7 +524,7 @@ export interface Plan {
   videoMinutes: number;
   messaging: boolean; // WhatsApp + SMS
   rooms: number | null;
-  /** Included document storage in GB (metered — the org's storage ceiling). */
+  /** Included document storage in GB (metered - the org's storage ceiling). */
   storageGb: number;
   popular?: boolean;
   ngo?: boolean;

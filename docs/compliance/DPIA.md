@@ -1,7 +1,7 @@
-# Phila — Data Protection Impact Assessment (DPIA)
+# Phila - Data Protection Impact Assessment (DPIA)
 
 *POPIA-oriented high-risk-processing assessment for Phila (the operator/processor).
-Living document — review at every material processing change and before first real-client onboarding.
+Living document - review at every material processing change and before first real-client onboarding.
 Confirm with a POPIA-literate advisor before launch (Phase 31 honest constraint).*
 
 ## 1. Processing overview
@@ -19,7 +19,7 @@ Confirm with a POPIA-literate advisor before launch (Phase 31 honest constraint)
 | Cross-tenant leakage | Postgres RLS (`phila_app` non-owner role, deny-by-default) + isolation tests (`rls.test.ts`, `rls-scoped.test.ts`) |
 | Clinical-note exposure | Author+supervisor-only access; hub override is fail-strict audited; notes never in cross-role payloads (31.6 sweep) |
 | Funder re-identification | k-anonymity floor (5) + small-cell suppression on every aggregate; payload-level PII sweep in CI |
-| Unlogged access/export | Fail-strict audit class: `note.read`, `demographics.read`, `pii.export`, `dsar.export`, `dsar.erase` — access refused if the audit write fails |
+| Unlogged access/export | Fail-strict audit class: `note.read`, `demographics.read`, `pii.export`, `dsar.export`, `dsar.erase` - access refused if the audit write fails |
 | Cross-border transfer | Sub-processor register (`lib/compliance/subprocessors.ts`) with per-provider s72 basis; AI is de-identified + consent-gated + ZDR; WhatsApp is client-chosen channel |
 | Over-retention / premature destruction | Computed HPCSA clocks (`lib/compliance/retention.ts`); report-only pruner requiring explicit platform enable; legal holds |
 | Breach response | s22 breach register (`/admin/compliance`) + affected-subject derivation + drafted notice |

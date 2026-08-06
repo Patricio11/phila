@@ -14,7 +14,7 @@ function whenLabel(iso: string): string {
 }
 
 /**
- * No-show follow-up (W7) — a missed session should never fall through the cracks.
+ * No-show follow-up (W7) - a missed session should never fall through the cracks.
  * Each unhandled no-show can be **rebooked** in one tap (a prefilled new appointment),
  * nudged (a "we missed you" message), or marked done. Booking or dismissing clears it.
  */
@@ -82,7 +82,7 @@ export function NoShowFollowUps({ initial, options }: { initial: NoShowRow[]; op
         ))}
       </div>
 
-      {/* Keyed so the modal remounts per no-show — its initial client/service/counsellor apply. */}
+      {/* Keyed so the modal remounts per no-show - its initial client/service/counsellor apply. */}
       <CreateAppointmentModal
         key={rebooking?.appointmentId ?? "none"}
         open={rebooking !== null}

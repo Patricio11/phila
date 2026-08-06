@@ -12,10 +12,10 @@ import { offboardMember } from "@/app/hub/team/actions";
 import { cn } from "@/lib/utils";
 
 /**
- * Feedback #4 — archiving a counsellor, done properly. The dialog shows the
+ * Feedback #4 - archiving a counsellor, done properly. The dialog shows the
  * honest workload, forces ONE choice (migrate everything to a successor, or
  * cancel the upcoming sessions), and states our record-keeping truth plainly:
- * sign-in is revoked but NOTHING is deleted — notes, sessions, outcomes and
+ * sign-in is revoked but NOTHING is deleted - notes, sessions, outcomes and
  * the audit trail stay on record permanently (HPCSA).
  */
 export function OffboardMemberDialog({
@@ -61,7 +61,7 @@ export function OffboardMemberDialog({
       onClose={onClose}
       title={`Archive ${member.name}`}
       description={hasWork
-        ? `${first} has ${workload.upcoming} upcoming session${workload.upcoming === 1 ? "" : "s"} and ${workload.clients} client${workload.clients === 1 ? "" : "s"} in their care — decide what happens to them first.`
+        ? `${first} has ${workload.upcoming} upcoming session${workload.upcoming === 1 ? "" : "s"} and ${workload.clients} client${workload.clients === 1 ? "" : "s"} in their care - decide what happens to them first.`
         : `${first} has no upcoming sessions or assigned clients.`}
       footer={
         <div className="flex justify-end gap-2">
@@ -111,12 +111,12 @@ export function OffboardMemberDialog({
         <label className="flex cursor-pointer items-start gap-3 rounded-control border border-border bg-surface-2/40 p-3">
           <Checkbox checked={acknowledged} onChange={setAcknowledged} ariaLabel="Acknowledge record keeping" className="mt-0.5" />
           <span className="text-[12.5px] leading-relaxed text-text-2">
-            I understand {first}&apos;s <b className="text-text">sign-in is revoked</b> but <b className="text-text">nothing is deleted</b> — their signed notes, sessions, outcomes and audit history stay on the practice record permanently, as the law requires. They can be restored at any time.
+            I understand {first}&apos;s <b className="text-text">sign-in is revoked</b> but <b className="text-text">nothing is deleted</b> - their signed notes, sessions, outcomes and audit history stay on the practice record permanently, as the law requires. They can be restored at any time.
           </span>
         </label>
 
         <p className="flex items-center gap-1.5 text-[11.5px] text-text-3">
-          <ShieldCheck className="size-3.5 shrink-0" strokeWidth={2} aria-hidden /> Records are kept under HPCSA retention rules — archiving never destroys history.
+          <ShieldCheck className="size-3.5 shrink-0" strokeWidth={2} aria-hidden /> Records are kept under HPCSA retention rules - archiving never destroys history.
         </p>
       </div>
     </Dialog>

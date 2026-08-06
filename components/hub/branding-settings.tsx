@@ -15,7 +15,7 @@ const PRESETS = ["#1C7D58", "#0F5132", "#1D4ED8", "#6D28D9", "#0E7490", "#B45309
 const WHITE = { r: 255, g: 255, b: 255 };
 
 /**
- * Brand accent (W6.1) — the colour used across the hub, the client portal, and the
+ * Brand accent (W6.1) - the colour used across the hub, the client portal, and the
  * public micro-site. Previously only set at signup; this makes it editable. We show
  * a live preview and, when a colour is too light to read on white, note that Phila
  * darkens it for legibility (the same `contrastSafeAccent` the app applies at render).
@@ -45,7 +45,7 @@ export function BrandingSettings({ initial }: { initial: string }) {
         <div className="space-y-1.5">
           <Label htmlFor="brand-hex">Accent colour</Label>
           <div className="flex items-center gap-2">
-            {/* Custom swatch — the (invisible) native input on top only summons the OS colour dialog. */}
+            {/* Custom swatch - the (invisible) native input on top only summons the OS colour dialog. */}
             <span className="relative inline-flex size-9 shrink-0 items-center justify-center rounded-control border border-border bg-surface transition-shadow hover:shadow-sm">
               <span className="size-6 rounded-[6px] shadow-inner ring-1 ring-black/5" style={{ backgroundColor: valid ? hex : "#1C7D58" }} aria-hidden />
               <Pipette className="absolute -bottom-1 -right-1 size-3.5 rounded-full bg-surface p-0.5 text-text-3 shadow-sm ring-1 ring-border" strokeWidth={2} aria-hidden />

@@ -52,7 +52,7 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
   ]);
   if (!detail) notFound();
 
-  // Feedback #5 — the counsellor's ORG-managed working windows (empty = follows
+  // Feedback #5 - the counsellor's ORG-managed working windows (empty = follows
   // practice hours). Editing is hub-only; the counsellor sees it read-only.
   const availability = detail.counsellorId && process.env.DATA_PROVIDER === "db"
     ? await (await import("@/db/queries/availability")).getCounsellorAvailabilityDb(membership.orgId, detail.counsellorId)

@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /**
- * W2 — the skippable 2FA nudge. A privileged user without 2FA sees a dismissible
+ * W2 - the skippable 2FA nudge. A privileged user without 2FA sees a dismissible
  * banner on their dashboard (never a redirect/block). Dismissing hides it.
  */
 async function signIn(page: Page, email: string, password = "phila1234") {

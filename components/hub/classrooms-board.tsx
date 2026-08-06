@@ -22,7 +22,7 @@ function ago(iso: string | null): string {
   return `active ${Math.round(mins / 1_440)}d ago`;
 }
 
-/** Hub — create + manage supervision classrooms (batch 2). */
+/** Hub - create + manage supervision classrooms (batch 2). */
 export function ClassroomsBoard({ classes, supervisors, counsellors }: {
   classes: ClassSummary[];
   supervisors: { id: string; name: string }[];
@@ -38,7 +38,7 @@ export function ClassroomsBoard({ classes, supervisors, counsellors }: {
   const [description, setDescription] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
   const [manageId, setManageId] = useState<string | null>(null);
-  // Edit (batch 2d) — fix a typo, rewrite the description, or hand the class over.
+  // Edit (batch 2d) - fix a typo, rewrite the description, or hand the class over.
   const [editing, setEditing] = useState<ClassSummary | null>(null);
   const [eName, setEName] = useState("");
   const [eSupervisorId, setESupervisorId] = useState<string | null>(null);
@@ -101,7 +101,7 @@ export function ClassroomsBoard({ classes, supervisors, counsellors }: {
 
       {classes.length === 0 ? (
         <Card className="p-2">
-          <EmptyState icon={GraduationCap} title="No classrooms yet" body="Create one per supervisor — their supervisees join automatically and share a stream." />
+          <EmptyState icon={GraduationCap} title="No classrooms yet" body="Create one per supervisor - their supervisees join automatically and share a stream." />
         </Card>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
@@ -129,7 +129,7 @@ export function ClassroomsBoard({ classes, supervisors, counsellors }: {
                         <Avatar name={m.name} size="sm" /> {m.name.split(" ")[0]}
                       </span>
                     ))}
-                    {c.members.length === 0 && <span className="text-[12px] text-text-3">Nobody yet — add members below.</span>}
+                    {c.members.length === 0 && <span className="text-[12px] text-text-3">Nobody yet - add members below.</span>}
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -151,7 +151,7 @@ export function ClassroomsBoard({ classes, supervisors, counsellors }: {
         open={open}
         onClose={() => setOpen(false)}
         title="Create a classroom"
-        description="One class per supervisor — their supervisees join automatically and can be adjusted after."
+        description="One class per supervisor - their supervisees join automatically and can be adjusted after."
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>Cancel</Button>
@@ -162,7 +162,7 @@ export function ClassroomsBoard({ classes, supervisors, counsellors }: {
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label>Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Trainee supervision — Nomsa's group" invalid={Boolean(attempted && errors.name)} />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Trainee supervision - Nomsa's group" invalid={Boolean(attempted && errors.name)} />
             {attempted && errors.name ? <FieldError>{errors.name}</FieldError> : null}
           </div>
           <div className="space-y-1.5">
@@ -181,7 +181,7 @@ export function ClassroomsBoard({ classes, supervisors, counsellors }: {
           </div>
           <div className="space-y-1.5">
             <Label>Description (optional)</Label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What this class covers — case discussions, readings, HPCSA CPD…" className="min-h-[64px]" />
+            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What this class covers - case discussions, readings, HPCSA CPD…" className="min-h-[64px]" />
           </div>
         </div>
       </Dialog>
@@ -191,7 +191,7 @@ export function ClassroomsBoard({ classes, supervisors, counsellors }: {
         open={Boolean(editing)}
         onClose={() => setEditing(null)}
         title="Edit classroom"
-        description="Fix the name or description, or hand the class to another supervisor — the roster stays."
+        description="Fix the name or description, or hand the class to another supervisor - the roster stays."
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setEditing(null)} disabled={pending}>Cancel</Button>

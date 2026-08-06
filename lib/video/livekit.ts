@@ -65,7 +65,7 @@ export function roomNameForAppointment(appointmentId: string): string {
 // never invalidates a client's booking link).
 const joinSecret = () => process.env.BETTER_AUTH_SECRET ?? "phila-dev";
 
-// The link is only live in a window around the session — openable a little early and
+// The link is only live in a window around the session - openable a little early and
 // for a while after, never before or long after.
 const JOIN_OPEN_EARLY_MS = 15 * 60_000; // 15 minutes before start
 const JOIN_OPEN_LATE_MS = 3 * 60 * 60_000; // up to 3 hours after start
@@ -93,7 +93,7 @@ export function verifyJoinSignature(appointmentId: string, startsAtISO: string, 
 
 /**
  * Where "now" sits relative to the session's join window. A genuine link clicked
- * early is NOT an error — the room page shows a waiting room until it opens.
+ * early is NOT an error - the room page shows a waiting room until it opens.
  */
 export function joinWindow(startsAtISO: string, nowMs: number = Date.now()): "early" | "open" | "closed" {
   const start = new Date(startsAtISO).getTime();
@@ -103,7 +103,7 @@ export function joinWindow(startsAtISO: string, nowMs: number = Date.now()): "ea
   return "open";
 }
 
-/** Genuine signature AND inside the window — the gate for actually minting media tokens. */
+/** Genuine signature AND inside the window - the gate for actually minting media tokens. */
 export function verifyJoin(appointmentId: string, startsAtISO: string, sig: string | null | undefined, nowMs: number = Date.now()): boolean {
   return verifyJoinSignature(appointmentId, startsAtISO, sig) && joinWindow(startsAtISO, nowMs) === "open";
 }

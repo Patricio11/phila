@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * W6.2 — an invoice is auto-raised when a priced session is booked, once, and only
+ * W6.2 - an invoice is auto-raised when a priced session is booked, once, and only
  * when the org has auto-invoicing on. Exercised against a dedicated probe org.
  */
 const envFile = readFileSync(".env.local", "utf8");
@@ -38,7 +38,7 @@ describe("auto-invoice on booking", () => {
     expect(inv!.appointment_id).toBe("appt_ip_1");
     expect(inv!.number).toBe("IP-2026-0001");
 
-    // Idempotent — booking the same session again doesn't double-bill.
+    // Idempotent - booking the same session again doesn't double-bill.
     const r2 = await createInvoiceForBookingDb({ orgId: ORG, appointmentId: "appt_ip_1", clientId: "cl_ip_1", serviceName: "Individual counselling", amountCents: 45000, issuedAt: new Date("2026-07-01T09:00:00Z") });
     expect(r2?.id).toBe(r1!.id);
     const countRows = await sql`SELECT count(*)::int n FROM invoices WHERE org_id=${ORG}`;

@@ -3,9 +3,9 @@ import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
 /**
- * Feedback #4 — counsellor offboarding is archive-only: migrate moves the
+ * Feedback #4 - counsellor offboarding is archive-only: migrate moves the
  * caseload + future sessions to the successor; cancel marks upcoming sessions
- * cancelled with a reason. NOTHING is deleted — history rows all survive.
+ * cancelled with a reason. NOTHING is deleted - history rows all survive.
  */
 const envFile = readFileSync(".env.local", "utf8");
 process.env.DATABASE_URL = (envFile.match(/^DATABASE_URL=(.+)$/m)?.[1] ?? "").trim();
@@ -60,7 +60,7 @@ describe("counsellor offboarding", () => {
     const moved = await sql`SELECT count(*)::int AS n FROM appointments WHERE org_id=${ORG} AND counsellor_id='couns_off_b' AND state='scheduled'`;
     expect(moved[0]!.n).toBe(2);
 
-    // 3) Cancel path (on the successor now): rows marked cancelled with reason — still present.
+    // 3) Cancel path (on the successor now): rows marked cancelled with reason - still present.
     const ids = await cancelUpcomingForCounsellorDb(ORG, "couns_off_b", "Counsellor left the practice");
     expect(ids.length).toBe(2);
     const after = await sql`SELECT state, cancel_reason FROM appointments WHERE id = ANY(${ids})`;

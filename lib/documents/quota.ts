@@ -52,7 +52,7 @@ const EXT_FOR_TYPE: Record<string, string[]> = {
  * Validate an upload's declared type + size (and, when the name is known, that the
  * filename extension matches the declared type) before minting a presigned URL. The
  * declared content-type is still client-supplied, so a post-upload magic-byte/AV scan
- * (`scanObject`) remains the real gate — this closes the trivial mislabel. Pure.
+ * (`scanObject`) remains the real gate - this closes the trivial mislabel. Pure.
  */
 export function validateUpload(input: { contentType: string; bytes: number; name?: string }): { ok: true } | { ok: false; error: string } {
   if (!ALLOWED_CONTENT_TYPES.has(input.contentType)) return { ok: false, error: "That file type isn't supported." };

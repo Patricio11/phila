@@ -20,7 +20,7 @@ const resolveInput = z.object({
 /**
  * Approve or decline a client's change request (W6.2). Approving a *cancellation*
  * actually cancels the session (with the client's reason) and tells them; approving a
- * *reschedule* acknowledges it — the practice then moves the session in the calendar —
+ * *reschedule* acknowledges it - the practice then moves the session in the calendar -
  * and tells the client to expect a new time. Declining notifies them to get in touch.
  */
 export async function resolveChangeRequest(

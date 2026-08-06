@@ -216,9 +216,9 @@ export async function markProgress(
 }
 
 /**
- * Feedback #6 — record that a session was actually HELD BY PHONE (e.g. the client
+ * Feedback #6 - record that a session was actually HELD BY PHONE (e.g. the client
  * had no data for the video room). Set after the fact by the counsellor or hub;
- * captures the real call duration + optional context. Honest record — the session
+ * captures the real call duration + optional context. Honest record - the session
  * type/booking never changes, only how it truly happened. Audited → Activity feed.
  */
 const phoneInput = z.object({

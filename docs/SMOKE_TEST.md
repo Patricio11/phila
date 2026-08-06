@@ -80,14 +80,14 @@ Cross-tenant / cross-role checks (signed in):
 - ☐ **Messages** → the seeded team threads render; sending a message persists (live if the Supabase anon key is set, else on refresh)
 - ☐ **Rooms** shows the room schedule
 
-**Supervision — both sides + classrooms** (batch 2)
+**Supervision - both sides + classrooms** (batch 2)
 - ☐ As a **supervised** counsellor (e.g. Aisha), `/app/supervision` shows **Your supervision**: your supervisor's card (+ Message link), notes awaiting review, changes-requested feedback with a link to revise, recent sign-offs; a sign-off decision pops an in-app notification
-- ☐ As the **org**, `/hub/supervision` creates a **classroom** per supervisor — supervisees auto-join, the card shows the class **code** (copyable) + members, roster is editable
+- ☐ As the **org**, `/hub/supervision` creates a **classroom** per supervisor - supervisees auto-join, the card shows the class **code** (copyable) + members, roster is editable
 - ☐ The **stream**: the supervisor posts (tagged "Supervisor"), members see it in `/app/supervision`, get an in-app notification, and can reply
-- ☐ **Class sessions**: the supervisor schedules one (online or in person) — members are notified, it auto-posts to the stream, and online sessions show a **Join** button (early clicks land in the waiting room; the room is staff-only); on a past session, **Mark register** records Present/Absent per member ("2 present · 1 absent" stays on the row)
+- ☐ **Class sessions**: the supervisor schedules one (online or in person) - members are notified, it auto-posts to the stream, and online sessions show a **Join** button (early clicks land in the waiting room; the room is staff-only); on a past session, **Mark register** records Present/Absent per member ("2 present · 1 absent" stays on the row)
 
 **Held by phone** (feedback #6)
-- ☐ On a session page, the **Held by phone** card records that the session happened over a phone call — real call length (prefilled with the booked duration) + optional context; the header, sessions list (Recent tab), calendar detail, hub session view, and client timeline all show the **Phone · N min** marker; **Undo** clears it; the hub Activity feed logs "Session held by phone call"
+- ☐ On a session page, the **Held by phone** card records that the session happened over a phone call - real call length (prefilled with the booked duration) + optional context; the header, sessions list (Recent tab), calendar detail, hub session view, and client timeline all show the **Phone · N min** marker; **Undo** clears it; the hub Activity feed logs "Session held by phone call"
 
 **AI scribe** (only if a provider is switched on in `/admin/ai` **and** the org consent is on):
 - ☐ In a session note, type a few clinical cues (≥ ~8 chars) → **AI draft** returns a professional, non-diagnostic note + the funder fields (presenting issue / risk / outcome / referral)
@@ -100,9 +100,9 @@ Cross-tenant / cross-role checks (signed in):
 
 Sign in as **Thandeka**.
 
-**Overview + credits** (dashboard reworked — feedback #3)
+**Overview + credits** (dashboard reworked - feedback #3)
 - ☐ `/hub` overview renders with real KPIs; the **period filter** (Today / This week / This month / Last month) recomputes tiles, the payment split (**Paid online** vs **Cash / Card / EFT**), and the bookings **chart** instantly
-- ☐ **Coming up next** lists the next sessions; the **Activity feed** shows humanised org events ("New session booked", "Counsellor availability updated") with who + when — no read-noise ("who looked") entries
+- ☐ **Coming up next** lists the next sessions; the **Activity feed** shows humanised org events ("New session booked", "Counsellor availability updated") with who + when - no read-noise ("who looked") entries
 - ☐ (If credits are low) a **"top up"** nudge banner appears linking to Billing & usage *(to force it: lower a balance in the DB, e.g. `update credit_balances set balance=12 where org_id='org_masizakhe' and channel='sms'`)*
 
 **Calendar** (`/hub/appointments`) (feedback #1/#2)
@@ -111,10 +111,10 @@ Sign in as **Thandeka**.
 - ☐ In the **New appointment** modal, picking a date + time shows "**N of M counsellors available at HH:MM**" and the counsellor dropdown only offers free counsellors
 - ☐ **Hybrid** (feedback #7): the Where picker offers **In person / Online / Hybrid**; Hybrid requires a room AND generates the video link; the calendar filter gains a **Hybrid** button; the event detail reads "**room · client joins online**" with Join/Copy link; the counsellor's session page shows "Hybrid session · room" + Open video room; the client sees it exactly like an online session
 
-**Team — availability & offboarding** (`/hub/team` → a counsellor) (feedback #4/#5)
-- ☐ The member page has an **Availability** card — "follows the practice working hours" by default; **Set availability** opens the weekly editor (seeded from practice hours); saving lands on the dashboard **Activity feed**
-- ☐ Signed in as that **counsellor**, `/app/settings` shows **Your availability** read-only ("managed by your practice") — no edit controls
-- ☐ **Archive** on an active counsellor opens the offboard dialog: honest workload counts, then **migrate to a successor** or **cancel upcoming (clients notified)** — afterwards their sessions/notes/history are all still on the record (nothing deleted), and the member can be restored
+**Team - availability & offboarding** (`/hub/team` → a counsellor) (feedback #4/#5)
+- ☐ The member page has an **Availability** card - "follows the practice working hours" by default; **Set availability** opens the weekly editor (seeded from practice hours); saving lands on the dashboard **Activity feed**
+- ☐ Signed in as that **counsellor**, `/app/settings` shows **Your availability** read-only ("managed by your practice") - no edit controls
+- ☐ **Archive** on an active counsellor opens the offboard dialog: honest workload counts, then **migrate to a successor** or **cancel upcoming (clients notified)** - afterwards their sessions/notes/history are all still on the record (nothing deleted), and the member can be restored
 
 **Waiting room** (feedback #10)
 - ☐ Open an online session's join link **early** (from the email or the portal) → the **waiting room** renders: session details + a ticking countdown + "doors open 15 minutes before"; at T-15 it lets you into the pre-join automatically
@@ -122,9 +122,9 @@ Sign in as **Thandeka**.
 - ☐ On `/me`, an early online session shows **"Open waiting room"** (never a dead button)
 
 **Exports** (feedback #9)
-- ☐ `/hub/clients` and `/hub/team` both have an **Export** dropdown — CSV downloads and opens anywhere, **Excel** (.xls) opens in Excel with a bold header row, **PDF** opens a print-ready document (org · date · count) for Save-as-PDF; the file matches the on-screen list; each client export lands in the audit log as **pii.export** with format + row count
+- ☐ `/hub/clients` and `/hub/team` both have an **Export** dropdown - CSV downloads and opens anywhere, **Excel** (.xls) opens in Excel with a bold header row, **PDF** opens a print-ready document (org · date · count) for Save-as-PDF; the file matches the on-screen list; each client export lands in the audit log as **pii.export** with format + row count
 
-**Rooms — live & recorded** (`/hub/rooms`) (feedback #8)
+**Rooms - live & recorded** (`/hub/rooms`) (feedback #8)
 - ☐ The **Right now** band shows "N of M rooms in use" with pulsing chips; a room with a session running shows **"In use · who · until when"** on its card; **Next up** shows relative times ("in 40 min")
 - ☐ On a room page, **Assign** really persists (check `room_assignments`): assigning over a counsellor's availability, their other room, or another counsellor's slot first shows **honest warnings** with "Assign anyway"; assignments are removable (hover the row); both actions land on the Activity feed
 - ☐ **Who was in this room**: pick any date → counsellors · sessions · hours from the permanent record
@@ -183,7 +183,7 @@ Sign in as **Thandeka**.
 
 **Booking** (`/o/masizakhe/book`)
 - ☐ Pick a service (deep-link `?service=` preselects) → time → intake → consent → confirm
-- ☐ **No counsellor step** (feedback #5) — the page says "we'll match you with an available counsellor"; a time is offered while *any* counsellor is free and the booking auto-assigns the **least-loaded** free counsellor (the confirm step shows who)
+- ☐ **No counsellor step** (feedback #5) - the page says "we'll match you with an available counsellor"; a time is offered while *any* counsellor is free and the booking auto-assigns the **least-loaded** free counsellor (the confirm step shows who)
 - ☐ Online booking returns a **room link**; in-person assigns a room
 - ☐ Booking the appointment increments the **booked** count on the editor stats (PII-free funnel)
 

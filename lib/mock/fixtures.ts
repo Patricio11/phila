@@ -294,7 +294,7 @@ export const counsellorDayTemplates: Record<string, DayTemplateEntry[]> = {
     { dayOffset: -2, time: "11:30", clientId: "cl_zanele", serviceId: "svc_individual", type: "online", roomId: null, state: "no_show" },
     { dayOffset: 1, time: "09:00", clientId: "cl_fatima", serviceId: "svc_individual", type: "online", roomId: null, state: "scheduled" },
   ],
-  // Thabo (supervisee) — an exam-stress caseload; Naledi is his primary client.
+  // Thabo (supervisee) - an exam-stress caseload; Naledi is his primary client.
   couns_thabo: [
     { dayOffset: 0, time: "08:00", clientId: "cl_naledi", serviceId: "svc_individual", type: "in_person", roomId: "room_s2", state: "completed" },
     { dayOffset: 0, time: "09:30", clientId: "cl_demo_001", serviceId: "svc_individual", type: "online", roomId: null, state: "scheduled" },
@@ -304,7 +304,7 @@ export const counsellorDayTemplates: Record<string, DayTemplateEntry[]> = {
     { dayOffset: -2, time: "09:00", clientId: "cl_demo_001", serviceId: "svc_individual", type: "online", roomId: null, state: "completed" },
     { dayOffset: 1, time: "09:00", clientId: "cl_demo_003", serviceId: "svc_individual", type: "online", roomId: null, state: "scheduled" },
   ],
-  // Aisha (supervisee) — Kabelo is her primary client (a live safeguarding case).
+  // Aisha (supervisee) - Kabelo is her primary client (a live safeguarding case).
   couns_aisha: [
     { dayOffset: 0, time: "08:30", clientId: "cl_kabelo", serviceId: "svc_individual", type: "in_person", roomId: "room_j1", state: "risk_flagged", tags: ["Safeguarding"] },
     { dayOffset: 0, time: "10:00", clientId: "cl_4d7321914e7b4cbda305", serviceId: "svc_individual", type: "online", roomId: null, state: "scheduled" },
@@ -313,7 +313,7 @@ export const counsellorDayTemplates: Record<string, DayTemplateEntry[]> = {
     { dayOffset: -1, time: "15:00", clientId: "cl_4d7321914e7b4cbda305", serviceId: "svc_individual", type: "online", roomId: null, state: "no_show" },
     { dayOffset: 1, time: "10:30", clientId: "cl_kabelo", serviceId: "svc_individual", type: "in_person", roomId: "room_j1", state: "scheduled" },
   ],
-  // Pieter — trauma work; Megan is his primary client.
+  // Pieter - trauma work; Megan is his primary client.
   couns_pieter: [
     { dayOffset: 0, time: "09:00", clientId: "cl_megan", serviceId: "svc_trauma", type: "in_person", roomId: "room_j2", state: "completed" },
     { dayOffset: 0, time: "11:30", clientId: "cl_demo_005", serviceId: "svc_individual", type: "online", roomId: null, state: "scheduled" },

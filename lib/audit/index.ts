@@ -70,7 +70,7 @@ class MemoryAuditSink implements AuditSink {
 /**
  * Actions where an unrecorded access is worse than a failed one (Protected & Audited
  * Rule): reading a clinical note or special-category demographics, and any PII export.
- * For these the audit write is **fail-strict** — if we can't record it, the caller's
+ * For these the audit write is **fail-strict** - if we can't record it, the caller's
  * read is refused. Call these AFTER authorization but BEFORE returning the data so a
  * throw fails closed. Operational actions stay best-effort (logged, never blocking).
  */
@@ -79,7 +79,7 @@ const FAIL_STRICT: ReadonlySet<AuditAction> = new Set<AuditAction>([
   "note.read_hub_override",
   "demographics.read",
   "pii.export",
-  // Phase 31 — a DSAR export/erasure can never proceed unlogged.
+  // Phase 31 - a DSAR export/erasure can never proceed unlogged.
   "dsar.export",
   "dsar.erase",
 ]);
@@ -104,7 +104,7 @@ class DbAuditSink implements AuditSink {
       });
     } catch (err) {
       console.error("[audit] failed to persist event", event.action, event.target, err);
-      // Fail closed for protected clinical access — never reveal what we can't record.
+      // Fail closed for protected clinical access - never reveal what we can't record.
       if (FAIL_STRICT.has(event.action)) {
         throw new Error(`Audit write failed for protected action ${event.action}; access refused.`);
       }

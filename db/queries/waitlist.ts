@@ -67,7 +67,7 @@ export async function isClientWaitingDb(orgId: string, clientId: string): Promis
 }
 
 /** Matching waiting entries for a freed slot (same counsellor, or counsellor-agnostic).
- *  Owner connection — the cancellation hook already trusts orgId. Marks them offered. */
+ *  Owner connection - the cancellation hook already trusts orgId. Marks them offered. */
 export async function offerFreedSlotDb(orgId: string, counsellorId: string): Promise<{ id: string; clientId: string }[]> {
   const db = getDb();
   const rows = await db.select({ id: waitlistEntries.id, clientId: waitlistEntries.clientId })

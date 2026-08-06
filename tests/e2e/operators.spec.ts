@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /**
- * Platform user management — the super-admin console lists operators and opens the
+ * Platform user management - the super-admin console lists operators and opens the
  * invite dialog. Screenshots the Users page + the invite modal.
  */
 async function signIn(page: Page, email: string, password = "phila1234") {
@@ -17,7 +17,7 @@ test("super-admin sees the Users page and can open the invite dialog", async ({ 
 
   await page.goto("/admin/users");
   await expect(page.getByText("Platform users")).toBeVisible({ timeout: 15_000 });
-  // The seeded operator row shows (anchor on the unique email — the name also appears
+  // The seeded operator row shows (anchor on the unique email - the name also appears
   // in the top-right account menu).
   await expect(page.getByText("ops@philasa.com")).toBeVisible();
   await page.screenshot({ path: "screenshots/admin-users.png", fullPage: true });

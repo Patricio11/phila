@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Compliance" };
 
 /**
- * Phase 31.3/31.4 — the platform compliance console: the s22 breach register and
+ * Phase 31.3/31.4 - the platform compliance console: the s22 breach register and
  * the sub-processor/DPA register every org inherits (read-only, in their pack).
  */
 export default async function AdminCompliancePage() {
@@ -23,7 +23,7 @@ export default async function AdminCompliancePage() {
 
   return (
     <div className="rise space-y-6">
-      <PageHead title="Compliance" summary="The POPIA house — breach register + the sub-processor chain orgs inherit." />
+      <PageHead title="Compliance" summary="The POPIA house - breach register + the sub-processor chain orgs inherit." />
 
       <Card>
         <CardHead title="Breach register (POPIA s22)" count={breaches.length} />

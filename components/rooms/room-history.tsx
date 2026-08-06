@@ -16,7 +16,7 @@ function hours(mins: number): string {
 }
 
 /**
- * Feedback #8 — "who was in this room?" Pick any date and see the permanent
+ * Feedback #8 - "who was in this room?" Pick any date and see the permanent
  * record: which counsellors held sessions here, how many, for how long. Derived
  * from the appointments record, so it's complete retroactively and forever.
  */

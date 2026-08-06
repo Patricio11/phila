@@ -14,7 +14,7 @@ function whenLabel(iso: string): string {
 }
 
 /**
- * Pending client change requests (W6.2) — the practice's queue. Approving a cancellation
+ * Pending client change requests (W6.2) - the practice's queue. Approving a cancellation
  * cancels the session; approving a reschedule acknowledges it (staff then move it in the
  * calendar). Declining tells the client to get in touch.
  */

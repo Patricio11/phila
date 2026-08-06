@@ -5,8 +5,8 @@ import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Phila's own time picker (never the native minute-wheel — DESIGN §6). Two calm
- * columns — hour and minute — in 5-minute steps, with the working span leading
+ * Phila's own time picker (never the native minute-wheel - DESIGN §6). Two calm
+ * columns - hour and minute - in 5-minute steps, with the working span leading
  * (early-morning hours sit at the end, so 08:00 is one glance away). Picking an
  * hour keeps the popover open; picking a minute completes the time and closes.
  */

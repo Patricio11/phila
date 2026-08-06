@@ -204,6 +204,7 @@ function toClient(r: typeof clientsTable.$inferSelect): Client {
     phone: r.phone ?? undefined,
     email: r.email ?? undefined,
     province: r.province as Province,
+    homeLanguage: r.homeLanguage, interpretationNeeded: r.interpretationNeeded, languageGapHandling: r.languageGapHandling,
     primaryCounsellorId: r.primaryCounsellorId,
     riskFlag: r.riskFlag,
     createdAt: r.createdAt.toISOString(),

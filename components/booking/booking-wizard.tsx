@@ -11,6 +11,7 @@ import { BookingShell, type BookingStepMeta } from "@/components/booking/booking
 import { EMPTY_BOOKING, TERMS_CONSENTS, type BookingState } from "@/components/booking/types";
 import { isIntakeValid, CONTACT_PAIR } from "@/components/booking/validation";
 import { ServiceStep } from "@/components/booking/steps/service-step";
+import { LanguageStep } from "@/components/booking/steps/language-step";
 import { TimeStep } from "@/components/booking/steps/time-step";
 import { IntakeStep } from "@/components/booking/steps/intake-step";
 import { ConfirmStep } from "@/components/booking/steps/confirm-step";
@@ -19,6 +20,7 @@ import { cn } from "@/lib/utils";
 
 const STEPS: BookingStepMeta[] = [
   { key: "service", label: "Service" },
+  { key: "language", label: "Language" },
   { key: "time", label: "Time" },
   { key: "intake", label: "About you" },
   { key: "confirm", label: "Confirm" },
@@ -104,8 +106,10 @@ export function BookingWizard({
       case 0:
         return Boolean(state.serviceId) && Boolean(state.modality);
       case 1:
-        return Boolean(state.slotStart);
+        return Boolean(state.language);
       case 2:
+        return Boolean(state.slotStart);
+      case 3:
         return isIntakeValid(config.intakeForm.fields, state.intake, { contactPair: CONTACT_PAIR });
       default:
         return true;
@@ -136,6 +140,7 @@ export function BookingWizard({
     const payload = {
       slug,
       serviceId: state.serviceId!,
+      language: state.language,
       counsellorId: state.slotCounsellorId!,
       startsAt: state.slotStart!,
       modality: state.modality ?? ("in_person" as const),
@@ -214,6 +219,12 @@ export function BookingWizard({
         />
       )}
       {step === 1 && (
+        <LanguageStep
+          language={state.language}
+          onLanguage={(code) => patch({ language: code, slotStart: null, slotCounsellorId: null })}
+        />
+      )}
+      {step === 2 && (
         <TimeStep
           slug={slug}
           businessHours={org.scheduling.businessHours}
@@ -221,13 +232,14 @@ export function BookingWizard({
           maxDaysAhead={config.maxDaysAhead}
           minNoticeHours={config.minNoticeHours}
           counsellorId={null}
+          language={state.language}
           date={state.date}
           slotStart={state.slotStart}
           onPickDate={(date) => patch({ date, slotStart: null, slotCounsellorId: null })}
           onPickSlot={(start, counsellorId) => patch({ slotStart: start, slotCounsellorId: counsellorId })}
         />
       )}
-      {step === 2 && (
+      {step === 3 && (
         <IntakeStep
           form={config.intakeForm}
           values={state.intake}
@@ -235,7 +247,7 @@ export function BookingWizard({
           showErrors={showErrors}
         />
       )}
-      {step === 3 && (
+      {step === 4 && (
         <ConfirmStep
           config={config}
           state={state}
@@ -260,9 +272,9 @@ export function BookingWizard({
         )}
 
         <div className="ml-auto flex items-center gap-3">
-          {showErrors && !canAdvance && (step === 0 || step === 1) && (
+          {showErrors && !canAdvance && step <= 2 && (
             <span className="text-[12.5px] text-danger">
-              {step === 0 ? "Choose a service to continue." : "Pick a time to continue."}
+              {step === 0 ? "Choose a service to continue." : step === 1 ? "Choose a language to continue." : "Pick a time to continue."}
             </span>
           )}
           {isConfirm ? (

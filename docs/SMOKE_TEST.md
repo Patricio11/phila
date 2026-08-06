@@ -168,6 +168,12 @@ Sign in as **Thandeka**.
 - ☐ Grant dashboard shows the **At a glance** status line + indicators **actual vs target** with a paced "expected" marker + on-track/at-risk/behind
 - ☐ Post a **narrative update** → it saves and appears in the list (and later on the funder portal)
 
+**Language of record (Phase 32.0)**
+- ☐ Team → open a counsellor (e.g. Aisha Patel) → a **Languages** card shows native-name chips; **Edit languages** offers toggle chips grouped by tier ("Live translation ready" etc.); saving persists and is audited
+- ☐ A client dossier shows **Record language** (or the recorded language + a "needs interpretation" chip); recording a home language + "how is the gap handled today" saves to the client row
+- ☐ Clients hub: a **language filter** appears beside the counsellor filter; the clients **Export** includes a Language column
+- ☐ New appointment modal: after picking a client with a recorded language + a time, the availability caption counts speakers ("1 speaks isiZulu") and speaker counsellors are hinted **"Speaks isiZulu"** in the dropdown
+
 ---
 
 ## 5 · Public micro-site + section editor + booking + SEO
@@ -183,7 +189,8 @@ Sign in as **Thandeka**.
 - ☐ Light/dark toggle works; mobile (360 px) has no horizontal scroll
 
 **Booking** (`/o/masizakhe/book`)
-- ☐ Pick a service (deep-link `?service=` preselects) → time → intake → consent → confirm
+- ☐ Pick a service (deep-link `?service=` preselects) → **language** (native names; "Another language" reveals Tier 3) → time → intake → consent → confirm
+- ☐ Booking in a non-English language **prefers a counsellor who speaks it** (e.g. isiXhosa → Aisha) and records `home_language` + an honest `interpretation_needed` on the new client
 - ☐ **No counsellor step** (feedback #5) - the page says "we'll match you with an available counsellor"; a time is offered while *any* counsellor is free and the booking auto-assigns the **least-loaded** free counsellor (the confirm step shows who)
 - ☐ Online booking returns a **room link**; in-person assigns a room
 - ☐ Booking the appointment increments the **booked** count on the editor stats (PII-free funnel)

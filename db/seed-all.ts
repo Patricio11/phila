@@ -155,6 +155,19 @@ async function main() {
     if (!orgId) continue;
     await db.insert(schema.roomAssignments).values({ id: ra.id, orgId, counsellorId: ra.counsellorId, roomId: ra.roomId, days: ra.days, start: ra.start, end: ra.end }).onConflictDoNothing();
   }
+  // Phase 32.0 - the language reference set + demo language-of-record.
+  const { LANGUAGES } = await import("../lib/domain/languages");
+  for (const l of LANGUAGES) {
+    await db.insert(schema.languages).values({ code: l.code, nameEn: l.nameEn, nameNative: l.nameNative, tier: l.tier, railCapable: l.railCapable }).onConflictDoNothing();
+  }
+  await db.update(schema.clients).set({ homeLanguage: "xh-ZA", interpretationNeeded: true, languageRecordedAt: now, languageGapHandling: "staff_interpreted" }).where(eq(schema.clients.id, "cl_lerato"));
+  await db.update(schema.clients).set({ homeLanguage: "zu-ZA", languageRecordedAt: now, languageGapHandling: "none" }).where(eq(schema.clients.id, "cl_sipho"));
+  await db.update(schema.clients).set({ homeLanguage: "af-ZA", languageRecordedAt: now, languageGapHandling: "none" }).where(eq(schema.clients.id, "cl_johan"));
+  await db.update(schema.counsellors).set({ spokenLanguages: ["en-ZA", "af-ZA"] }).where(eq(schema.counsellors.id, "couns_nomsa"));
+  await db.update(schema.counsellors).set({ spokenLanguages: ["en-ZA", "zu-ZA", "st-ZA"] }).where(eq(schema.counsellors.id, "couns_thabo"));
+  await db.update(schema.counsellors).set({ spokenLanguages: ["en-ZA", "xh-ZA"] }).where(eq(schema.counsellors.id, "couns_aisha"));
+  await db.update(schema.counsellors).set({ spokenLanguages: ["en-ZA", "af-ZA"] }).where(eq(schema.counsellors.id, "couns_pieter"));
+
   for (const tp of Object.values(teamProfilesFx)) {
     const [existingTp] = await db.select({ id: schema.teamProfiles.id }).from(schema.teamProfiles)
       .where(and(eq(schema.teamProfiles.orgId, ORG), eq(schema.teamProfiles.userId, tp.userId))).limit(1);

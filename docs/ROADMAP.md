@@ -1198,6 +1198,19 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   stream everyone can **edit or delete their OWN posts** (hover controls, inline editor;
   author-only enforced server-side - proven: another member's posts show no controls and the
   server rejects edits to others' posts).
+- [x] **Phase 32.0 - language of record** *(2026-08-06)*: the counsellor/client language mismatch
+  becomes visible, honest data (full plan: `docs/PHASE_32_LANGUAGE_PLAN.md`). A global `languages`
+  reference table (BCP-47, 3 honest capability tiers) + `org_language_settings` (RLS'd);
+  counsellors carry **spoken languages** edited as native-name toggle chips on the team member
+  page (grouped "Live translation ready / Content in language / Recorded only", audited);
+  clients carry **home language + interpretation_needed + how the gap is handled today**
+  (family / staff interpreted, struggled through, rebooked), recorded from the dossier and
+  filterable + exportable in the clients hub. The public booking wizard gained a **Language step**
+  (native names, Tier 3 behind "Another language"); auto-assign **prefers a counsellor who speaks
+  the client's language** before least-loaded (proven: an isiXhosa booking assigned the isiXhosa
+  speaker), and `interpretation_needed` is computed honestly at intake. The hub appointment modal
+  hints **"Speaks isiZulu"** per counsellor and counts free speakers in the availability caption.
+  Migrations 0061/0062; home_language is SPECIAL PI (demographics-gated, k-anon on export).
 
 ---
 

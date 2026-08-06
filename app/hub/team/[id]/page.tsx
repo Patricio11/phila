@@ -16,6 +16,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { TeamRoleChip, ROLE_REACH } from "@/components/hub/team-role-chip";
 import { TransferCaseloadButton } from "@/components/hub/transfer-caseload-button";
 import { AvailabilityEditor } from "@/components/hub/availability-editor";
+import { SpokenLanguagesEditor } from "@/components/hub/spoken-languages-editor";
 import type { BusinessHours } from "@/lib/domain/types";
 import { ManageMemberButton } from "@/components/hub/manage-member-modal";
 import { SendSetupLinkButton } from "@/components/hub/send-setup-link-button";
@@ -57,6 +58,15 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
   const availability = detail.counsellorId && process.env.DATA_PROVIDER === "db"
     ? await (await import("@/db/queries/availability")).getCounsellorAvailabilityDb(membership.orgId, detail.counsellorId)
     : [];
+  // Phase 32.0 - the counsellor's normalised spoken languages (matching truth).
+  let spokenLanguages: string[] = [];
+  if (detail.counsellorId && process.env.DATA_PROVIDER === "db") {
+    const { getDb } = await import("@/db/client");
+    const { counsellors: counsellorsTable } = await import("@/db/schema");
+    const { eq } = await import("drizzle-orm");
+    const [row] = await getDb().select({ s: counsellorsTable.spokenLanguages }).from(counsellorsTable).where(eq(counsellorsTable.id, detail.counsellorId)).limit(1);
+    spokenLanguages = row?.s ?? [];
+  }
   const org = await provider.getOrg(membership.orgId);
   const orgHours = (org?.scheduling.businessHours ?? {}) as BusinessHours;
 
@@ -191,6 +201,13 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
             <p className="mt-2 text-[11.5px] text-text-3">Role on file: {TEAM_ROLE_LABELS[member.teamRole]}{member.isSupervisor ? " · supervisor" : ""}.</p>
             {detail.supervisorName && <p className="mt-1 text-[11.5px] text-text-3">Supervised by {detail.supervisorName}.</p>}
           </Card>
+
+          {detail.counsellorId && (
+            <Card>
+              <CardHead title="Languages" />
+              <SpokenLanguagesEditor counsellorId={detail.counsellorId} firstName={member.name.split(" ")[0] ?? member.name} initial={spokenLanguages} />
+            </Card>
+          )}
 
           {detail.counsellorId && (
             <Card>

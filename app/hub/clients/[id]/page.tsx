@@ -25,6 +25,7 @@ import { clientRetentionDb } from "@/db/queries/dsar";
 import { DataPrivacyCard } from "@/components/hub/data-privacy-card";
 import { REFERRAL_SOURCE_LABELS, type ReferralSource } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
+import { ClientLanguageControl } from "@/components/hub/client-language-control";
 
 export const dynamic = "force-dynamic";
 
@@ -108,6 +109,13 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
         {client.phone && <span className="inline-flex items-center gap-1"><Phone className="size-3.5 text-text-3" strokeWidth={2} aria-hidden /> {client.phone}</span>}
         {client.email && <span className="inline-flex items-center gap-1"><Mail className="size-3.5 text-text-3" strokeWidth={2} aria-hidden /> {client.email}</span>}
         {client.riskFlag && <span className="inline-flex items-center gap-1.5 text-danger"><StatusDot tone="rose" /> Safeguarding flag</span>}
+        <ClientLanguageControl
+          clientId={client.id}
+          firstName={client.name.split(" ")[0] ?? client.name}
+          homeLanguage={client.homeLanguage ?? null}
+          gapHandling={client.languageGapHandling ?? null}
+          interpretationNeeded={Boolean(client.interpretationNeeded)}
+        />
         {referralSource && <span className="inline-flex items-center gap-1"><Share2 className="size-3.5 text-text-3" strokeWidth={2} aria-hidden /> Found you via {REFERRAL_SOURCE_LABELS[referralSource as ReferralSource] ?? referralSource}</span>}
       </div>
 

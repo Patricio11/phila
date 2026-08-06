@@ -3,6 +3,8 @@ import type { ConsentPurpose } from "@/lib/domain/enums";
 /** The wizard's working state  resumable, persisted to localStorage per org. */
 export interface BookingState {
   serviceId: string | null;
+  /** Phase 32.0 - the client's chosen session language (BCP-47), null until picked. */
+  language: string | null;
   /** How the session is attended; null until chosen (or auto-set when only one). */
   modality: "in_person" | "online" | null;
   /** null = "any available" counsellor. */
@@ -19,6 +21,7 @@ export interface BookingState {
 
 export const EMPTY_BOOKING: BookingState = {
   serviceId: null,
+  language: null,
   modality: null,
   counsellorId: null,
   date: null,

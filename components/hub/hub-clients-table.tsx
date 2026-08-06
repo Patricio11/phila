@@ -16,6 +16,7 @@ import { StatusDot, type DotTone } from "@/components/ui/status-dot";
 import { useToast } from "@/components/ui/toast";
 import { reassignClient, removeClient, restoreClient } from "@/app/hub/clients/actions";
 import { cn } from "@/lib/utils";
+import { languageName } from "@/lib/domain/languages";
 
 const STATUS: Record<CaseloadStatus, { label: string; tone: DotTone }> = {
   new: { label: "New", tone: "blue" },
@@ -35,6 +36,7 @@ const TABS: { key: Tab; label: string }[] = [
 ];
 
 const ALL_COUNSELLORS = "__all";
+const ALL_LANGUAGES = "__all";
 
 function shortDate(iso: string | null | undefined): string {
   if (!iso) return "";
@@ -46,6 +48,7 @@ export function HubClientsTable({ rows, removedRows, counsellors }: { rows: OrgC
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("all");
   const [counsellorFilter, setCounsellorFilter] = useState<string>(ALL_COUNSELLORS);
+  const [languageFilter, setLanguageFilter] = useState<string>(ALL_LANGUAGES);
   const [pending, start] = useTransition();
 
   // Reassign dialog state
@@ -72,7 +75,9 @@ export function HubClientsTable({ rows, removedRows, counsellors }: { rows: OrgC
   }, [liveRows, removedRows.length]);
 
   const base = tab === "removed" ? removedRows : tab === "all" ? liveRows : liveRows.filter((r) => r.status === tab);
-  const shown = counsellorFilter === ALL_COUNSELLORS ? base : base.filter((r) => r.counsellorName === counsellorFilter);
+  const afterCouns = counsellorFilter === ALL_COUNSELLORS ? base : base.filter((r) => r.counsellorName === counsellorFilter);
+  const shown = languageFilter === ALL_LANGUAGES ? afterCouns : afterCouns.filter((r) => (r.client.homeLanguage ?? "") === languageFilter);
+  const presentLanguages = [...new Set(base.map((r) => r.client.homeLanguage).filter((c): c is string => Boolean(c)))];
 
   // ── Reassign ───────────────────────────────────────────────────────────
   const currentCounsellorId = reassigning ? counsellors.find((c) => c.name === reassigning.counsellorName)?.id ?? null : null;
@@ -255,15 +260,26 @@ export function HubClientsTable({ rows, removedRows, counsellors }: { rows: OrgC
           rowKey={(r) => r.client.id}
           search={{ placeholder: "Search clients…", getText: (r) => `${r.client.name} ${r.counsellorName} ${r.client.province}` }}
           toolbar={
-            counsellors.length > 1 ? (
-              <div className="w-48">
-                <Select
-                  value={counsellorFilter}
-                  onChange={setCounsellorFilter}
-                  options={[{ value: ALL_COUNSELLORS, label: "All counsellors" }, ...counsellors.map((c) => ({ value: c.name, label: c.name }))]}
-                />
-              </div>
-            ) : undefined
+            <div className="flex items-center gap-2">
+              {presentLanguages.length > 0 && (
+                <div className="w-40">
+                  <Select
+                    value={languageFilter}
+                    onChange={setLanguageFilter}
+                    options={[{ value: ALL_LANGUAGES, label: "All languages" }, ...presentLanguages.map((c) => ({ value: c, label: languageName(c) }))]}
+                  />
+                </div>
+              )}
+              {counsellors.length > 1 && (
+                <div className="w-48">
+                  <Select
+                    value={counsellorFilter}
+                    onChange={setCounsellorFilter}
+                    options={[{ value: ALL_COUNSELLORS, label: "All counsellors" }, ...counsellors.map((c) => ({ value: c.name, label: c.name }))]}
+                  />
+                </div>
+              )}
+            </div>
           }
         />
       )}

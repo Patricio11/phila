@@ -161,6 +161,10 @@ export interface Client {
   phone?: string;
   email?: string;
   province: Province;
+  /** Phase 32.0 - language of record (BCP-47 code; SPECIAL PI, demographics-gated on export). */
+  homeLanguage?: string | null;
+  interpretationNeeded?: boolean;
+  languageGapHandling?: string | null;
   primaryCounsellorId: string | null;
   /** First-class but never auto-actioned (Safeguarding Rule). */
   riskFlag: boolean;

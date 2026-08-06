@@ -340,3 +340,33 @@ export async function auditTeamExport(
   });
   return { ok: true };
 }
+
+/** Phase 32.0 - the counsellor's spoken languages (normalised codes; org-managed). */
+export async function saveSpokenLanguages(
+  raw: { counsellorId: string; codes: string[] },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  if (!raw?.counsellorId || !Array.isArray(raw?.codes)) return { ok: false, error: "Invalid request." };
+  const { LANGUAGE_BY_CODE } = await import("@/lib/domain/languages");
+  const codes = [...new Set(raw.codes)].filter((c) => LANGUAGE_BY_CODE.has(c));
+
+  if (isDb()) {
+    const { getDb } = await import("@/db/client");
+    const { counsellors } = await import("@/db/schema");
+    const { and, eq } = await import("drizzle-orm");
+    const res = await getDb().update(counsellors).set({ spokenLanguages: codes })
+      .where(and(eq(counsellors.id, raw.counsellorId), eq(counsellors.orgId, membership.orgId)))
+      .returning({ id: counsellors.id });
+    if (!res.length) return { ok: false, error: "That counsellor couldn't be found." };
+  }
+
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `counsellor:${raw.counsellorId}/languages`,
+    reason: "update_spoken_languages",
+  });
+  revalidatePath("/hub/team");
+  return { ok: true };
+}

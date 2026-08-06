@@ -26,11 +26,13 @@ const availInput = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   time: z.string().regex(/^\d{2}:\d{2}$/),
   durationMin: z.number().int().positive().max(600),
+  /** Phase 32.0 - when a client is picked, matching surfaces who speaks their language. */
+  clientId: z.string().nullable().optional(),
 });
 
 export async function getAvailableCounsellors(
   raw: z.infer<typeof availInput>,
-): Promise<{ ok: true; available: string[] | null } | { ok: false; error: string }> {
+): Promise<{ ok: true; available: string[] | null; speakers?: string[]; clientLanguage?: string | null } | { ok: false; error: string }> {
   const { membership } = await requireOrg([...BOOKERS]);
   const parsed = availInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid request" };
@@ -43,7 +45,24 @@ export async function getAvailableCounsellors(
   const startISO = new Date(`${d.date}T${d.time}:00+02:00`).toISOString(); // SAST wall clock, no DST
   const { availableCounsellorsAtDb } = await import("@/db/queries/availability");
   const res = await availableCounsellorsAtDb(d.orgId, startISO, d.durationMin, businessHours);
-  return { ok: true, available: res.available };
+
+  // Phase 32.0 - prefer a language match over translation, visibly.
+  let speakers: string[] = [];
+  let clientLanguage: string | null = null;
+  if (d.clientId) {
+    const { clients, counsellors } = await import("@/db/schema");
+    const { and, eq } = await import("drizzle-orm");
+    const [c] = await getDb().select({ lang: clients.homeLanguage }).from(clients)
+      .where(and(eq(clients.id, d.clientId), eq(clients.orgId, d.orgId))).limit(1);
+    clientLanguage = c?.lang ?? null;
+    if (clientLanguage && clientLanguage !== "en-ZA") {
+      const rows = await getDb().select({ id: counsellors.id, s: counsellors.spokenLanguages }).from(counsellors).where(eq(counsellors.orgId, d.orgId));
+      speakers = rows.filter((r) => (r.s ?? []).includes(clientLanguage!)).map((r) => r.id);
+    } else {
+      clientLanguage = null;
+    }
+  }
+  return { ok: true, available: res.available, speakers, clientLanguage };
 }
 
 /**

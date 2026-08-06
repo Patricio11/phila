@@ -197,6 +197,8 @@ export const counsellors = pgTable("counsellors", {
   credentialStatus: text("credential_status").notNull(),
   isSupervisor: boolean("is_supervisor").default(false).notNull(),
   supervisorId: text("supervisor_id"),
+  /** Phase 32.0 - normalised language codes; the single source of truth for matching. */
+  spokenLanguages: jsonb("spoken_languages").$type<string[]>().default([]).notNull(),
 });
 
 export const services = pgTable("services", {
@@ -257,6 +259,13 @@ export const clients = pgTable("clients", {
   /** Client self-service profile: { dateOfBirth, address, emergencyName, emergencyPhone, preferredContact }. */
   profile: jsonb("profile").$type<Record<string, string>>().default({}).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  /** Phase 32.0 - language of record. home_language is SPECIAL personal information
+   *  (correlates with ethnic origin): demographics-consent gated, k-anon on export. */
+  homeLanguage: text("home_language"),
+  interpretationNeeded: boolean("interpretation_needed").default(false).notNull(),
+  languageRecordedAt: timestamp("language_recorded_at", { withTimezone: true }),
+  /** How language-discordant sessions are handled TODAY (safeguarding + funding datum). */
+  languageGapHandling: text("language_gap_handling"),
   /** Soft-delete  never distorts compiled stats (Outcome-Honesty). */
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 });
@@ -558,6 +567,27 @@ export const whatsappWindows = pgTable("whatsapp_windows", {
  * never edit). Multiple windows per weekday ("Mon 08:00-13:00" + "Mon 15:00-18:00").
  * No rows for a counsellor = inherits the org's business hours (sane default).
  */
+/* ── Phase 32.0: language of record ── */
+/** Reference list of languages (global, seeded; not tenant-scoped, like `plans`). */
+export const languages = pgTable("languages", {
+  code: text("code").primaryKey(), // BCP-47: en-ZA, xh-ZA, zu-ZA, af-ZA, st-ZA, ...
+  nameEn: text("name_en").notNull(),
+  nameNative: text("name_native").notNull(),
+  tier: integer("tier").notNull(), // 1 full rail | 2 content only | 3 recorded, not served
+  railCapable: boolean("rail_capable").default(false).notNull(),
+  rtl: boolean("rtl").default(false).notNull(),
+});
+
+/** Org-level language settings (dormant by default, like org_video_settings). */
+export const orgLanguageSettings = pgTable("org_language_settings", {
+  orgId: text("org_id").primaryKey().references(() => orgs.id),
+  enabled: boolean("enabled").default(false).notNull(),
+  defaultLanguage: text("default_language").default("en-ZA").notNull(),
+  railEnabled: boolean("rail_enabled").default(false).notNull(),
+  retentionEnabled: boolean("retention_enabled").default(false).notNull(),
+  monthlyMinuteCap: integer("monthly_minute_cap"),
+});
+
 /* ── Supervision classrooms (batch 2) - a class per supervisor, Google-Classroom style ── */
 export const supervisionClasses = pgTable("supervision_classes", {
   id: uuid("id").defaultRandom().primaryKey(),

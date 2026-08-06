@@ -94,7 +94,7 @@ proven. This phase is mostly **composition**, not new infrastructure.
 | Forms with frozen snapshots | Phase 18.6 | A language column on the snapshot |
 | Message templates, system default plus org override | Phase 12 | A language column, same resolver |
 | Consent-gated, k-anon demographic reporting | Phase 16 | One new demographic field |
-| Mock-first seam with a conformance suite | Part A, `lib/adapters/` | One new provider interface |
+| Mock-first seam with a conformance suite | Part A, provider seams under `lib/` | One new provider interface in `lib/language/` |
 | Storage with presigned upload and scan gate | Phase 18 | Reused for lexicon imports only |
 
 **What genuinely does not exist yet and must be built:** the streaming ASR/MT provider seam, the
@@ -214,7 +214,7 @@ available for this language yet" as a calm blocked state naming the reason, per 
 
 Migrations `0061` through `0063`, following the house convention: `IF NOT EXISTS` / `ON CONFLICT DO
 NOTHING` / `DO $$ ... duplicate_object` guards, `meta/_journal.json` in the same commit, RLS policies
-and seed reflected in `db/seed.ts`.
+and seed reflected in `db/seed-all.ts`.
 
 ### 4.1 Migration 0061 - language of record (ships with 32.0)
 
@@ -231,10 +231,19 @@ clients
   + home_language        text references languages(code)
   + interpretation_needed boolean default false   -- set by intake or the Hub, not inferred
   + language_recorded_at  timestamptz
+  + language_gap_handling text                    -- 'none' | 'family_interpreted' | 'staff_interpreted'
+                                                  --   | 'struggled_through' | 'rebooked'
+  -- How language-discordant sessions are handled TODAY, recorded at intake or by
+  -- the Hub. Family members interpreting in GBV work is a safeguarding finding
+  -- and the strongest funding argument in this phase; capture it from day one.
 
 counsellors
-  -- languages already exist as free text on the profile. Normalise:
+  -- Free-text languages already exist on team_profiles.languages (batch 2 staff
+  -- profiles). That field stays display-only; the NORMALISED truth lives here:
   + spoken_languages     text[]                   -- language codes, org-managed
+  -- The profile editor and the Hub member page read and write THIS field via a
+  -- code multi-select; team_profiles.languages is derived for display. One
+  -- source of truth, never two fields that can disagree.
 
 org_language_settings
   org_id pk, enabled boolean default false,
@@ -431,6 +440,13 @@ ever, consistent with the LiveKit 17.1 decision.
 
 Design notes that matter:
 
+**The agent is real infrastructure and needs a home before 32.3.** The Interpretation Agent is a
+long-running server process, not a Next.js route: it joins rooms, holds provider streams open, and
+must survive restarts and reconnect mid-session. It runs as a small container **beside the
+self-hosted LiveKit deployment in `af-south-1`**, deployed and health-checked with it. This is the
+one genuinely new piece of infrastructure in the phase; the deployment answer is settled during
+32.2 (while the rail is still on mock), not discovered during 32.3.
+
 **Track-level separation gives speaker attribution for free.** Each participant publishes their own
 audio track, so there is no diarisation problem. Do not mix the streams.
 
@@ -502,6 +518,11 @@ The Batch 1 #5 availability work already filters counsellors by working window. 
 filter with language: "3 of 6 counsellors available at 10:00 · 1 speaks isiXhosa". Prefer a
 **language match over translation** every single time, and make that preference visible in the UI.
 The best interpretation is the one you did not need.
+
+This applies to **public booking auto-assignment too**, not only the hub modal. The public flow
+(Batch 1 #5) assigns the least-loaded free counsellor per slot; the order becomes: **speaks the
+client's chosen language first, then least-loaded**. It is a small change in the per-slot candidate
+sort and it is where the preference actually bites for new clients.
 
 ### 7.4 The pre-session banner
 
@@ -630,8 +651,13 @@ Migration 0061. Language step in booking. `home_language` on the client record a
 gated. Hub filter, column, export. `spoken_languages` on counsellors. Language-aware counsellor
 matching. Language of service in `/hub/insights` and, consent-gated and k-anon, in funder reporting.
 
-**Done when:** an org can see how many of its clients it is serving in their own language, and how
-many it is not. **That number is the business case, and it exists before any AI.**
+**Done when:** an org can see how many of its clients it is serving in their own language, how many
+it is not, and **how the gap is being handled today** (`language_gap_handling`). That number is the
+business case, and it exists before any AI.
+
+**In parallel, not after:** start the vendor due diligence now - SA-resident endpoint confirmed,
+DPA drafted, the Postgres region move scheduled. These are the long poles of 32.3; if they start
+after 32.2 the mock finishes into a waiting room of its own.
 
 ### 32.1 - Content in language (target: 2 weeks)
 
@@ -768,7 +794,8 @@ completed session, and an org lexicon with a handful of reviewed idiom entries.
   per-org override, then plan entitlement, then org self-toggle.
 - New credit channel `interpretation_minutes` on the existing `credit_balances` and `credit_ledger`.
   Same append-only idempotent ledger, same packs in `/hub/billing`, same low-balance nudge on the
-  Hub overview.
+  Hub overview. **Meter whole started minutes** (integer), so the ledger, packs and nudges work
+  unchanged; `interpretation_usage.minutes` keeps the precise numeric for reporting.
 - Per-org monthly minute cap in `org_language_settings`, surfaced as a progress bar beside the
   existing AI spend bar.
 - `interpretation_usage` mirrors `ai_usage` row for row so the two report identically.

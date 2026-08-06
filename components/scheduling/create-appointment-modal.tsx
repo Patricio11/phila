@@ -14,6 +14,7 @@ import { createAppointment, createClientForBooking, getAvailableCounsellors } fr
 import { isoWeekday } from "@/lib/domain/helpers";
 import type { BusinessHours } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
+import { languageName } from "@/lib/domain/languages";
 
 export interface SchedulingOptions {
   orgId: string;
@@ -93,24 +94,27 @@ export function CreateAppointmentModal({
   // Feedback #5 - once a date + time are picked, only counsellors actually
   // available then are offered. Keyed fetch: a stale response simply never
   // matches the current key, so no synchronous resets are needed.
-  const availKey = `${date}|${time}|${durationMin}`;
-  const [avail, setAvail] = useState<{ key: string; ids: string[] } | null>(null);
+  const availKey = `${date}|${time}|${durationMin}|${clientId ?? ""}`;
+  const [avail, setAvail] = useState<{ key: string; ids: string[]; speakers: string[]; clientLanguage: string | null } | null>(null);
   useEffect(() => {
     if (!date || !time) return;
-    const key = `${date}|${time}|${durationMin}`;
+    const key = `${date}|${time}|${durationMin}|${clientId ?? ""}`;
     let alive = true;
-    getAvailableCounsellors({ orgId: options.orgId, date, time, durationMin }).then((res) => {
-      if (alive && res.ok && res.available) setAvail({ key, ids: res.available });
+    getAvailableCounsellors({ orgId: options.orgId, date, time, durationMin, clientId }).then((res) => {
+      if (alive && res.ok && res.available) setAvail({ key, ids: res.available, speakers: res.speakers ?? [], clientLanguage: res.clientLanguage ?? null });
     }).catch(() => {});
     return () => { alive = false; };
-  }, [date, time, durationMin, options.orgId]);
+  }, [date, time, durationMin, options.orgId, clientId]);
   const availability = date && time && avail?.key === availKey ? avail : null;
   const freeSet = useMemo(() => (availability ? new Set(availability.ids) : null), [availability]);
   // The picked counsellor stays visible even when busy - the validation below explains why.
+  const speakerSet = useMemo(() => new Set(availability?.speakers ?? []), [availability]);
+  const clientLanguageName = availability?.clientLanguage ? languageName(availability.clientLanguage) : null;
   const counsellorOptions = freeSet
     ? options.counsellors.filter((c) => freeSet.has(c.id) || c.id === counsellorId)
     : options.counsellors;
   const freeCount = freeSet ? options.counsellors.filter((c) => freeSet.has(c.id)).length : null;
+  const freeSpeakerCount = freeSet && clientLanguageName ? options.counsellors.filter((c) => freeSet.has(c.id) && speakerSet.has(c.id)).length : 0;
 
   const onService = (id: string) => {
     setServiceId(id);
@@ -246,12 +250,12 @@ export function CreateAppointmentModal({
           <Select value={serviceId} onChange={onService} invalid={Boolean(attempted && errors.service)} placeholder="Choose a service" options={options.services.map((s) => ({ value: s.id, label: s.name, hint: `${s.durationMin} min` }))} />
         </Row>
         <Row label="Counsellor" error={attempted ? errors.counsellor : undefined}>
-          <SearchSelect avatars value={counsellorId} onChange={setCounsellorId} invalid={Boolean(attempted && errors.counsellor)} placeholder="Choose a counsellor" searchPlaceholder="Search counsellors…" ariaLabel="Counsellor" options={counsellorOptions.map((c) => ({ value: c.id, label: c.name }))} />
+          <SearchSelect avatars value={counsellorId} onChange={setCounsellorId} invalid={Boolean(attempted && errors.counsellor)} placeholder="Choose a counsellor" searchPlaceholder="Search counsellors…" ariaLabel="Counsellor" options={counsellorOptions.map((c) => ({ value: c.id, label: c.name, hint: speakerSet.has(c.id) && clientLanguageName ? `Speaks ${clientLanguageName}` : undefined }))} />
           {freeCount !== null && (
             <p className={cn("text-[11.5px]", freeCount === 0 ? "text-danger" : "text-text-3")}>
               {freeCount === 0
                 ? `No counsellors are available at ${time} - try another time.`
-                : `${freeCount} of ${options.counsellors.length} counsellors available at ${time}.`}
+                : `${freeCount} of ${options.counsellors.length} counsellors available at ${time}.${clientLanguageName ? ` ${freeSpeakerCount} speak${freeSpeakerCount === 1 ? "s" : ""} ${clientLanguageName}.` : ""}`}
             </p>
           )}
         </Row>

@@ -428,6 +428,20 @@
       "when": 1786001624454,
       "tag": "0060_careless_toxin",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1786025753062,
+      "tag": "0061_clever_inhumans",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1786025918386,
+      "tag": "0062_minor_tigra",
+      "breakpoints": true
     }
   ]
 }

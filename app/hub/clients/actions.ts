@@ -342,3 +342,45 @@ export async function auditClientsExport(
   });
   return { ok: true };
 }
+
+/** Phase 32.0 - record a client's language of record (SPECIAL PI; audited). */
+export async function recordClientLanguage(
+  raw: { clientId: string; homeLanguage: string | null; gapHandling: string | null },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  if (!raw?.clientId) return { ok: false, error: "Invalid client." };
+  const { LANGUAGE_BY_CODE, GAP_HANDLING_LABELS } = await import("@/lib/domain/languages");
+  const lang = raw.homeLanguage && LANGUAGE_BY_CODE.has(raw.homeLanguage) ? raw.homeLanguage : null;
+  const gap = raw.gapHandling && GAP_HANDLING_LABELS[raw.gapHandling] ? raw.gapHandling : null;
+
+  if (process.env.DATA_PROVIDER === "db") {
+    const { getDb } = await import("@/db/client");
+    const { clients, counsellors } = await import("@/db/schema");
+    const { and, eq } = await import("drizzle-orm");
+    const db = getDb();
+    const [row] = await db.select({ id: clients.id, counsellorId: clients.primaryCounsellorId }).from(clients)
+      .where(and(eq(clients.id, raw.clientId), eq(clients.orgId, membership.orgId))).limit(1);
+    if (!row) return { ok: false, error: "That client couldn't be found." };
+    // interpretation_needed is honest: a non-English language their counsellor doesn't speak.
+    let needed = false;
+    if (lang && lang !== "en-ZA" && row.counsellorId) {
+      const [c] = await db.select({ s: counsellors.spokenLanguages }).from(counsellors).where(eq(counsellors.id, row.counsellorId)).limit(1);
+      needed = !(c?.s ?? []).includes(lang);
+    }
+    await db.update(clients).set({
+      homeLanguage: lang, languageGapHandling: gap,
+      interpretationNeeded: needed, languageRecordedAt: lang ? new Date() : null,
+    }).where(eq(clients.id, raw.clientId));
+  }
+
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `client:${raw.clientId}/language`,
+    reason: "record_client_language",
+  });
+  revalidatePath(`/hub/clients/${raw.clientId}`);
+  revalidatePath("/hub/clients");
+  return { ok: true };
+}

@@ -2,7 +2,7 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { appointments, clients, consents } from "@/db/schema";
-import { rooms as roomsTable, roomAssignments as roomAssignmentsTable } from "@/db/schema";
+import { rooms as roomsTable, roomAssignments as roomAssignmentsTable, counsellors as counsellorsTable } from "@/db/schema";
 import { CONSENT_PURPOSES, type ConsentPurpose } from "@/lib/domain/enums";
 import { isoWeekday } from "@/lib/domain/helpers";
 import { now as clockNow } from "@/lib/clock";
@@ -20,6 +20,8 @@ export interface PersistBookingInput {
   startsAt: string;
   durationMin: number;
   modality: "in_person" | "online";
+  /** Phase 32.0 - chosen session language; becomes the client's language of record. */
+  language?: string | null;
   intake: Record<string, string>;
   consents: Partial<Record<ConsentPurpose, boolean>>;
 }
@@ -35,6 +37,13 @@ export async function persistBooking(input: PersistBookingInput): Promise<{ clie
   const now = new Date(clockNow());
 
   const clientId = rid("cl");
+  // Language of record from the booking step. interpretation_needed is honest:
+  // a non-English choice the assigned counsellor does not speak.
+  let interpretationNeeded = false;
+  if (input.language && input.language !== "en-ZA") {
+    const [c] = await db.select({ s: counsellorsTable.spokenLanguages }).from(counsellorsTable).where(eq(counsellorsTable.id, input.counsellorId)).limit(1);
+    interpretationNeeded = !(c?.s ?? []).includes(input.language);
+  }
   await db.insert(clients).values({
     id: clientId,
     orgId: input.orgId,
@@ -45,6 +54,9 @@ export async function persistBooking(input: PersistBookingInput): Promise<{ clie
     primaryCounsellorId: input.counsellorId,
     riskFlag: false,
     createdAt: now,
+    homeLanguage: input.language ?? null,
+    languageRecordedAt: input.language ? now : null,
+    interpretationNeeded,
   });
 
   // Room allocation for in-person  first active room free at the slot.

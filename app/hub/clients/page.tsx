@@ -9,6 +9,7 @@ import { DedupeBanner } from "@/components/hub/dedupe-clients";
 import { ClientsExport } from "@/components/hub/clients-export";
 import { phoneKey, emailKey } from "@/lib/import/validate";
 import { now as clockNow } from "@/lib/clock";
+import { languageName } from "@/lib/domain/languages";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Clients" };
@@ -41,9 +42,10 @@ export default async function HubClientsPage() {
     filenameBase: `clients-${membership.orgName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${now.slice(0, 10)}`,
     title: "Clients",
     subtitle: `${membership.orgName} · ${day(now)} · ${rows.length} client${rows.length === 1 ? "" : "s"}`,
-    headers: ["Name", "Phone", "Email", "Province", "Counsellor", "Status", "Safeguarding", "Next session", "Last session", "Client since"],
+    headers: ["Name", "Phone", "Email", "Province", "Language", "Counsellor", "Status", "Safeguarding", "Next session", "Last session", "Client since"],
     rows: rows.map((r) => [
       r.client.name, r.client.phone ?? "", r.client.email ?? "", r.client.province,
+      languageName(r.client.homeLanguage),
       r.counsellorName, r.status, r.client.riskFlag ? "Flagged" : "",
       day(r.nextSession?.startsAt), day(r.lastSession?.startsAt), day(r.client.createdAt),
     ]),

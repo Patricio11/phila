@@ -59,6 +59,8 @@ export interface SlotOption {
 const slotsInput = z.object({
   slug: z.string().min(1),
   counsellorId: z.string().nullable(),
+  /** Phase 32.0 - the chosen session language; matching prefers a speaker. */
+  language: z.string().nullable().optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   durationMin: z.number().int().positive().max(600),
 });
@@ -68,7 +70,7 @@ export async function getAvailableSlots(
 ): Promise<{ ok: true; slots: SlotOption[] } | { ok: false; error: string }> {
   const parsed = slotsInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid request" };
-  const { slug, counsellorId, date, durationMin } = parsed.data;
+  const { slug, counsellorId, language, date, durationMin } = parsed.data;
 
   const provider = await getDataProvider();
   const config = await provider.getBookingConfig(slug);
@@ -92,6 +94,15 @@ export async function getAvailableSlots(
   // slot is offered while ANY counsellor is free, and each start is assigned to
   // the LEAST-LOADED free counsellor that day, so work spreads fairly (#5).
   const availability = process.env.DATA_PROVIDER === "db" ? await getOrgAvailabilityMapDb(org.id) : new Map();
+  // Phase 32.0 - who speaks the chosen language (prefer a match over translation).
+  let speakers = new Set<string>();
+  if (language && process.env.DATA_PROVIDER === "db") {
+    const { getDb } = await import("@/db/client");
+    const { counsellors: counsellorsTable } = await import("@/db/schema");
+    const { eq } = await import("drizzle-orm");
+    const rows = await getDb().select({ id: counsellorsTable.id, s: counsellorsTable.spokenLanguages }).from(counsellorsTable).where(eq(counsellorsTable.orgId, org.id));
+    speakers = new Set(rows.filter((r) => (r.s ?? []).includes(language)).map((r) => r.id));
+  }
   const wd = isoWeekday(date);
   const byStart = new Map<string, { start: string; label: string; options: { id: string; load: number }[] }>();
   for (const c of candidates) {
@@ -108,7 +119,13 @@ export async function getAvailableSlots(
   }
 
   const slots = [...byStart.values()]
-    .map((e) => ({ start: e.start, label: e.label, counsellorId: e.options.sort((a, b) => a.load - b.load || a.id.localeCompare(b.id))[0]!.id }))
+    .map((e) => ({
+      start: e.start,
+      label: e.label,
+      // Speaks the client's language first, then least-loaded, then stable id.
+      counsellorId: e.options.sort((a, b) =>
+        Number(speakers.has(b.id)) - Number(speakers.has(a.id)) || a.load - b.load || a.id.localeCompare(b.id))[0]!.id,
+    }))
     .sort((a, b) => a.start.localeCompare(b.start));
   return { ok: true, slots };
 }
@@ -116,6 +133,7 @@ export async function getAvailableSlots(
 const submitInput = z.object({
   slug: z.string().min(1),
   serviceId: z.string().min(1),
+  language: z.string().nullable().optional(),
   counsellorId: z.string().min(1),
   startsAt: z.string().min(1),
   modality: z.enum(["in_person", "online"]),
@@ -210,6 +228,7 @@ export async function submitBooking(
         counsellorId: counsellor.id,
         startsAt: input.startsAt,
         durationMin: service.durationMin,
+        language: input.language ?? null,
         modality: input.modality,
         intake: input.intake,
         consents: input.consents,

@@ -3,9 +3,10 @@ import { VideoOff, Video, ExternalLink } from "lucide-react";
 import { getDb } from "@/db/client";
 import { appointments, clients, counsellors, services, orgs } from "@/db/schema";
 import { getCurrentPrincipal } from "@/lib/auth/session";
-import { livekitConfigured, verifyJoin } from "@/lib/video/livekit";
+import { livekitConfigured, verifyJoinSignature, joinWindow, JOIN_OPEN_EARLY_MIN } from "@/lib/video/livekit";
 import { getVideoSettings } from "@/db/queries/video";
 import { VideoSession } from "@/components/video/video-session";
+import { WaitingRoom } from "@/components/video/waiting-room";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Video session" };
@@ -33,10 +34,28 @@ export default async function RoomPage({ params, searchParams }: { params: Promi
   // programme roles, who have no business in a therapy room). Guests join via the link.
   const isHost = Boolean(row && principal && principal.memberships.some((m) => m.orgId === row.a.orgId && (m.teamRole === "org_admin" || m.teamRole === "counsellor")));
   const remote = Boolean(row && (row.a.type === "online" || row.a.type === "hybrid"));
-  const allowed = Boolean(row && remote && (isHost || verifyJoin(appointmentId, row.a.startsAt.toISOString(), t)));
+  const genuine = Boolean(row && verifyJoinSignature(appointmentId, row.a.startsAt.toISOString(), t));
+  const window = row ? joinWindow(row.a.startsAt.toISOString()) : "closed";
+  const cancelled = row?.a.state === "cancelled";
+  const allowed = Boolean(row && remote && !cancelled && (isHost || (genuine && window === "open")));
 
   if (!allowed || !row) {
-    return <Unavailable configured={await livekitConfigured()} reason={!row ? "not_found" : !remote ? "not_online" : "bad_link"} />;
+    // A GENUINE link clicked early isn't an error — it's a client arriving early
+    // (feedback #10). Seat them in the waiting room; it lets them in at T-15.
+    if (row && remote && !cancelled && genuine && window === "early") {
+      return (
+        <WaitingRoom
+          orgName={row.orgName ?? "Your practice"}
+          serviceName={row.serviceName ?? "session"}
+          hostName={(row.counsellorName ?? "your counsellor").split(" ")[0] ?? "your counsellor"}
+          startsAtISO={row.a.startsAt.toISOString()}
+          startsAtLabel={startsLabel(row.a.startsAt)}
+          opensEarlyMin={JOIN_OPEN_EARLY_MIN}
+        />
+      );
+    }
+    const reason = !row ? "not_found" : !remote ? "not_online" : cancelled ? "cancelled" : genuine && window === "closed" ? "ended" : "bad_link";
+    return <Unavailable configured={await livekitConfigured()} reason={reason} />;
   }
 
   // Paste-link fallback: the org runs video on its own meeting link.
@@ -80,14 +99,18 @@ function ExternalRoom({ orgName, url }: { orgName: string; url: string | null })
   );
 }
 
-function Unavailable({ reason, configured }: { reason: "not_found" | "not_online" | "bad_link"; configured: boolean }) {
+function Unavailable({ reason, configured }: { reason: "not_found" | "not_online" | "bad_link" | "ended" | "cancelled"; configured: boolean }) {
   const msg = !configured
     ? "Video isn't switched on yet. The practice will share another way to meet."
     : reason === "not_found"
       ? "This session link isn't valid."
       : reason === "not_online"
         ? "This appointment isn't an online session."
-        : "This link has expired or is incorrect. Please use the latest link from your booking.";
+        : reason === "ended"
+          ? "This session has already taken place. If you still need to meet, please contact the practice to rebook."
+          : reason === "cancelled"
+            ? "This session was cancelled. If that's unexpected, please contact the practice."
+            : "This link has expired or is incorrect. Please use the latest link from your booking.";
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-bg px-4">
       <div className="max-w-sm space-y-3 text-center">

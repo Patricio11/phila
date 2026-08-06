@@ -110,6 +110,11 @@ Sign in as **Thandeka**.
 - ☐ Signed in as that **counsellor**, `/app/settings` shows **Your availability** read-only ("managed by your practice") — no edit controls
 - ☐ **Archive** on an active counsellor opens the offboard dialog: honest workload counts, then **migrate to a successor** or **cancel upcoming (clients notified)** — afterwards their sessions/notes/history are all still on the record (nothing deleted), and the member can be restored
 
+**Waiting room** (feedback #10)
+- ☐ Open an online session's join link **early** (from the email or the portal) → the **waiting room** renders: session details + a ticking countdown + "doors open 15 minutes before"; at T-15 it lets you into the pre-join automatically
+- ☐ A tampered link still says expired/incorrect; a link for a session **more than 3h past** says "already taken place"; a cancelled session says it was cancelled
+- ☐ On `/me`, an early online session shows **"Open waiting room"** (never a dead button)
+
 **Exports** (feedback #9)
 - ☐ `/hub/clients` and `/hub/team` both have an **Export** dropdown — CSV downloads and opens anywhere, **Excel** (.xls) opens in Excel with a bold header row, **PDF** opens a print-ready document (org · date · count) for Save-as-PDF; the file matches the on-screen list; each client export lands in the audit log as **pii.export** with format + row count
 

@@ -1133,7 +1133,16 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   match the live list; client exports are audited **`pii.export`** (fail-strict class), team exports
   as admin actions — both carrying format + row count. Shared `ExportMenu` (portaled, reusable for
   any future list).
-- [ ] **#10** — the last item arrives when the user brings it.
+- [x] **#10  The waiting room** *(2026-08-06)*: a genuine join link clicked before the session no
+  longer dead-ends on "Session unavailable" — it seats the client in a calm **waiting room** (session
+  details, live countdown, "doors open 15 minutes before") that lets them in automatically when the
+  window opens. The fix splits signature verification from the time window (`verifyJoinSignature` +
+  `joinWindow` in `lib/video/livekit.ts`; media tokens still only mint in-window). Honest endings too:
+  a link after T+3h says "this session has already taken place", a cancelled session says so. The
+  portal card's Join button is never dead — early it reads **"Open waiting room"**. Unit-tested
+  (early/open/closed + tamper) and proven live.
+
+**Batch 1 complete — all 10 items delivered, each proven live before commit.**
 
 ---
 

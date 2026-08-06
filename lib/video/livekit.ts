@@ -79,23 +79,37 @@ export function signJoin(appointmentId: string, startsAtISO: string): string {
   return createHmac("sha256", joinSecret()).update(`join:${appointmentId}:${startsAtISO}`).digest("base64url").slice(0, 24);
 }
 
-export function verifyJoin(appointmentId: string, startsAtISO: string, sig: string | null | undefined, nowMs: number = Date.now()): boolean {
+/** Is the signature itself genuine (regardless of time)? Constant-time compare. */
+export function verifyJoinSignature(appointmentId: string, startsAtISO: string, sig: string | null | undefined): boolean {
   if (!sig) return false;
   const want = signJoin(appointmentId, startsAtISO);
-  // Constant-time compare so the join token can't be brute-forced by timing.
   if (sig.length !== want.length) return false;
-  let match = false;
   try {
-    match = timingSafeEqual(Buffer.from(sig), Buffer.from(want));
+    return timingSafeEqual(Buffer.from(sig), Buffer.from(want));
   } catch {
     return false;
   }
-  if (!match) return false;
-  // Expiry: only valid in the window around the session.
-  const start = new Date(startsAtISO).getTime();
-  if (Number.isNaN(start)) return false;
-  return nowMs >= start - JOIN_OPEN_EARLY_MS && nowMs <= start + JOIN_OPEN_LATE_MS;
 }
+
+/**
+ * Where "now" sits relative to the session's join window. A genuine link clicked
+ * early is NOT an error — the room page shows a waiting room until it opens.
+ */
+export function joinWindow(startsAtISO: string, nowMs: number = Date.now()): "early" | "open" | "closed" {
+  const start = new Date(startsAtISO).getTime();
+  if (Number.isNaN(start)) return "closed";
+  if (nowMs < start - JOIN_OPEN_EARLY_MS) return "early";
+  if (nowMs > start + JOIN_OPEN_LATE_MS) return "closed";
+  return "open";
+}
+
+/** Genuine signature AND inside the window — the gate for actually minting media tokens. */
+export function verifyJoin(appointmentId: string, startsAtISO: string, sig: string | null | undefined, nowMs: number = Date.now()): boolean {
+  return verifyJoinSignature(appointmentId, startsAtISO, sig) && joinWindow(startsAtISO, nowMs) === "open";
+}
+
+/** How long before start the room opens (the waiting room counts down to this). */
+export const JOIN_OPEN_EARLY_MIN = JOIN_OPEN_EARLY_MS / 60_000;
 
 /** The Phila room page for an appointment (the "link"  carries a time-bound signed token). */
 export function videoJoinPath(appointmentId: string, startsAtISO: string): string {

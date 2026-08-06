@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { createHmac } from "node:crypto";
 import { validateUpload } from "@/lib/documents/quota";
 import { paystackSignatureValid } from "@/lib/payments/paystack";
-import { signJoin, verifyJoin } from "@/lib/video/livekit";
+import { signJoin, verifyJoin, verifyJoinSignature, joinWindow } from "@/lib/video/livekit";
 
 /**
  * W2 hardening — the pure security primitives: upload type/extension validation,
@@ -65,5 +65,17 @@ describe("verifyJoin", () => {
     // A link signed for the OLD time doesn't verify against a rescheduled time.
     const moved = new Date(atStart + 86_400_000).toISOString();
     expect(verifyJoin(id, moved, sig, new Date(moved).getTime())).toBe(false);
+  });
+
+  it("splits genuine-signature from window: early = waiting room, not an error (feedback #10)", () => {
+    const sig = signJoin(id, start);
+    // The signature is genuine no matter the clock…
+    expect(verifyJoinSignature(id, start, sig)).toBe(true);
+    expect(verifyJoinSignature(id, start, "short")).toBe(false);
+    // …and the window says where the clock sits.
+    expect(joinWindow(start, atStart - 24 * 60 * 60_000)).toBe("early");
+    expect(joinWindow(start, atStart - 14 * 60_000)).toBe("open");
+    expect(joinWindow(start, atStart + 60_000)).toBe("open");
+    expect(joinWindow(start, atStart + 4 * 60 * 60_000)).toBe("closed");
   });
 });

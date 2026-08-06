@@ -68,12 +68,14 @@ Cross-tenant / cross-role checks (signed in):
 ## 3 · Counsellor workspace (`/app`) + AI scribe
 
 1. Sign in as **Nomsa**. Land on `/app` (today's sessions).
-2. Open **Appointments** → a day with sessions → open one.
+2. Open **Calendar** → a day with sessions → open one.
 3. Open **Clients** → a client → confirm the profile, care plan, and documents render (real DB reads, audited).
 4. Open **Sessions** → open a session note editor.
 
 ✅ Boxes:
 - ☐ Today dashboard shows real appointments (every counsellor now has a live day  Nomsa, Thabo, Aisha, Pieter)
+- ☐ **No fresh bookings from the workspace**: the dashboard has no New-appointment button (no Ctrl-K), and **Calendar** (renamed from Appointments) has no "New" button, no click-a-slot booking, no team filter - the counsellor's own sessions only. New bookings live with the Hub / public page.
+- ☐ **Sessions running out** (dashboard): a recurring series with <= 2 sessions left shows a nudge card; **Add sessions** (2/4/6/12 weeks) extends the same series - same day, time and room - the toast confirms the new end date, the client is notified, and the calendar shows the new weeks. A counsellor can only extend their OWN series (server-enforced).
 - ☐ Client profile + care plan render
 - ☐ **Supervision** loads (Nomsa is a supervisor)  the sign-off queue shows a supervisee note awaiting review
 - ☐ **Documents** → **Shared with me** is not empty (the admin shared the Reports folder with counsellors)

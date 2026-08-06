@@ -68,7 +68,7 @@ export const counsellorNav: NavSection[] = [
     label: "Workspace",
     items: [
       { label: "Dashboard", href: "/app", icon: LayoutDashboard, ready: true },
-      { label: "Appointments", href: "/app/appointments", icon: CalendarDays, ready: true },
+      { label: "Calendar", href: "/app/appointments", icon: CalendarDays, ready: true },
       { label: "Clients", href: "/app/clients", icon: Users, ready: true },
       { label: "Sessions", href: "/app/sessions", icon: NotebookPen, ready: true },
       { label: "Documents", href: "/app/documents", icon: FolderClosed, ready: true },

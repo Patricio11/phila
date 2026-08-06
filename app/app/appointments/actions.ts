@@ -146,3 +146,65 @@ export async function sendNoShowFollowUp(
   });
   return { ok: true };
 }
+
+/**
+ * "We need more sessions" - add N weekly sessions to the end of an existing
+ * recurring series. This is the ONLY way a counsellor adds sessions from the
+ * workspace: continuation of care on an existing client's series, never a fresh
+ * booking (those live with the practice). A counsellor can extend only their own
+ * series - enforced here, not just hidden in the UI. Conflicts are rejected
+ * atomically by the DB exclusion constraints. Audited; the client is notified.
+ */
+const extendInput = z.object({
+  seriesId: z.string().min(1),
+  addCount: z.number().int().min(1).max(12),
+});
+
+export async function extendSeries(
+  raw: z.infer<typeof extendInput>,
+): Promise<{ ok: true; added: number; lastDate: string } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg([...SCHEDULERS]);
+  const parsed = extendInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid request" };
+  if (process.env.DATA_PROVIDER !== "db") return { ok: false, error: "Not available in demo mode." };
+
+  // A counsellor may extend only their own series; hub roles may extend any.
+  let ownCounsellorId: string | undefined;
+  if (membership.teamRole === "counsellor") {
+    const { counsellors } = await import("@/db/schema");
+    const { and } = await import("drizzle-orm");
+    const [mine] = await getDb().select({ id: counsellors.id }).from(counsellors)
+      .where(and(eq(counsellors.orgId, membership.orgId), eq(counsellors.userId, principal.userId))).limit(1);
+    if (!mine) return { ok: false, error: "No counsellor profile found for your account." };
+    ownCounsellorId = mine.id;
+  }
+
+  const { extendAppointmentSeries } = await import("@/db/queries/appointments");
+  let res: Awaited<ReturnType<typeof extendAppointmentSeries>>;
+  try {
+    res = await extendAppointmentSeries(membership.orgId, parsed.data.seriesId, parsed.data.addCount, { counsellorId: ownCounsellorId });
+  } catch (e) {
+    if (isSlotTakenError(e)) return { ok: false, error: "One of the new weeks clashes with another booking - ask your practice admin to fit it in." };
+    throw e;
+  }
+  if ("error" in res) {
+    return { ok: false, error: res.error === "not_yours" ? "That series belongs to another counsellor." : "That series couldn't be found." };
+  }
+
+  // The client hears about it - in-app always, email when the rail is on. Bounded
+  // so a slow provider never makes the button feel broken.
+  const { notifyAppointmentBooked } = await import("@/lib/messaging/notify");
+  await Promise.race([
+    notifyAppointmentBooked(res.firstNewId),
+    new Promise((resolve) => setTimeout(resolve, 4_000)),
+  ]);
+
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
+    orgId: membership.orgId,
+    target: `series:${parsed.data.seriesId}`,
+    reason: `extend_series:${res.added}`,
+  });
+  return { ok: true, added: res.added, lastDate: res.lastStartsAt.toISOString() };
+}

@@ -5,14 +5,15 @@ import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
 import { coverageNote } from "@/lib/domain/helpers";
 import { PageHead } from "@/components/shell/page-head";
-import { CreateAppointmentButton } from "@/components/scheduling/create-appointment-button";
 import { Card, CardBody, CardHead } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
 import { ScheduleList } from "@/components/schedule/schedule-list";
 import { AttentionList } from "@/components/dashboard/attention-list";
 import { WeekCapacity } from "@/components/dashboard/week-capacity";
 import { NoShowFollowUps } from "@/components/dashboard/no-show-follow-ups";
+import { SeriesEndingSoon } from "@/components/dashboard/series-ending";
 import { listUnhandledNoShowsDb } from "@/db/queries/no-shows";
+import { listCounsellorSeriesDb } from "@/db/queries/appointments";
 import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";
 import { now as clockNow } from "@/lib/clock";
 
@@ -40,12 +41,14 @@ export default async function DashboardPage() {
     provider.listRooms(membership.orgId),
     provider.getOrg(membership.orgId),
   ]);
+  // Continuation-of-care only: the no-show rebook modal offers the counsellor's
+  // OWN clients and themselves - fresh bookings live with the practice (Hub).
   const scheduling = {
     orgId: membership.orgId,
     defaultCounsellorId: me.id,
-    clients: allClients.map((c) => ({ id: c.id, name: c.name })),
+    clients: allClients.filter((c) => c.primaryCounsellorId === me.id).map((c) => ({ id: c.id, name: c.name })),
     services: services.map((s) => ({ id: s.id, name: s.name, durationMin: s.durationMin })),
-    counsellors: counsellors.map((c) => ({ id: c.id, name: c.name })),
+    counsellors: [{ id: me.id, name: me.name }],
     rooms: rooms.map((r) => ({ id: r.id, name: r.name })),
     defaultDurationMin: org?.scheduling.defaultDurationMin,
     businessHours: org?.scheduling.businessHours,
@@ -61,6 +64,19 @@ export default async function DashboardPage() {
   });
 
   const noShows = process.env.DATA_PROVIDER === "db" ? await listUnhandledNoShowsDb(membership.orgId, me.id) : [];
+
+  // "We need more time" - recurring series with 2 or fewer sessions left (incl.
+  // a series that just finished). The one place a counsellor ADDS sessions.
+  const seriesEnding = process.env.DATA_PROVIDER === "db"
+    ? (await listCounsellorSeriesDb(membership.orgId, me.id, now))
+        .filter((s) => s.remaining <= 2)
+        .map((s) => ({
+          seriesId: s.seriesId,
+          clientName: allClients.find((c) => c.id === s.clientId)?.name ?? "Client",
+          remaining: s.remaining,
+          lastStartsAt: s.lastStartsAt.toISOString(),
+        }))
+    : [];
 
   const { stats } = dash;
   const nowMs = new Date(now).getTime();
@@ -79,7 +95,6 @@ export default async function DashboardPage() {
             ? "Your day is clear."
             : `You have ${dash.today.length} ${plural(dash.today.length, "session")} today · ${remaining} still to come.`
         }
-        actions={<CreateAppointmentButton options={scheduling} hotkey />}
       />
 
       {/* Stat cards  honest coverage, no vanity numbers, no fabricated trends. */}
@@ -113,6 +128,7 @@ export default async function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Today's schedule */}
         <div className="space-y-6 lg:col-span-2">
+          {seriesEnding.length > 0 && <SeriesEndingSoon items={seriesEnding} />}
           {noShows.length > 0 && <NoShowFollowUps initial={noShows} options={scheduling} />}
           <Card>
             <CardHead title="Today" count={dash.today.length} />

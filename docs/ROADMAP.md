@@ -1220,6 +1220,18 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   modal speaker caption all disappear, server actions refuse language writes, and matching
   ignores language - while anything already recorded is kept, never deleted. Proven live both
   ways: killed platform-wide → every surface gone; restored → the step returns instantly.
+- [x] **Counsellors continue care, the practice opens it** *(2026-08-06)*: a counsellor can no
+  longer create fresh bookings from the workspace - the dashboard's New-appointment button (+ its
+  Ctrl-K hotkey) and the calendar's click-to-book are gone, and `/app` Appointments is renamed
+  **Calendar** (own sessions only: no team filter, own clients only in the rebook modal). What
+  they CAN do is the clinical moment they own: a **"Sessions running out"** dashboard card
+  surfaces their recurring series with <= 2 sessions left (incl. one that just ended) and **Add
+  sessions** extends the same series - same day, time, room - by 2/4/6/12 weeks, conflict-checked
+  atomically by the DB, audited (`extend_series:N`), client notified. Server-side honesty:
+  `createAppointment` (which previously had NO auth guard - fixed) now requires a booking role
+  and lets a counsellor book only themselves for a client already in their care (a no-show
+  rebook), and `extendSeries` refuses another counsellor's series. The Hub keeps full booking
+  powers, proven unchanged.
 
 ---
 

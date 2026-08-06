@@ -127,11 +127,30 @@ const input = z.object({
 export async function createAppointment(
   raw: z.infer<typeof input>,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg([...BOOKERS]);
   const parsed = input.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Please complete the appointment details." };
   const data = parsed.data;
+  if (data.orgId !== membership.orgId) return { ok: false, error: "Wrong practice." };
   if (needsRoom(data.type) && !data.roomId)
     return { ok: false, error: "Pick a room for an in-person session." };
+
+  // A counsellor can only CONTINUE care, never open new work: the session must be
+  // their own, for a client who already has an appointment with them (a follow-up,
+  // a no-show rebook). Fresh bookings live with the practice (Hub) or the public
+  // booking page. Enforced here, not just hidden in the UI.
+  if (membership.teamRole === "counsellor" && process.env.DATA_PROVIDER === "db") {
+    const { counsellors, appointments } = await import("@/db/schema");
+    const { and } = await import("drizzle-orm");
+    const [mine] = await getDb().select({ id: counsellors.id }).from(counsellors)
+      .where(and(eq(counsellors.orgId, membership.orgId), eq(counsellors.userId, principal.userId))).limit(1);
+    if (!mine || data.counsellorId !== mine.id)
+      return { ok: false, error: "You can only book sessions for yourself. New bookings for the team live with your practice admin." };
+    const [prior] = await getDb().select({ id: appointments.id }).from(appointments)
+      .where(and(eq(appointments.orgId, membership.orgId), eq(appointments.clientId, data.clientId), eq(appointments.counsellorId, mine.id))).limit(1);
+    if (!prior)
+      return { ok: false, error: "You can only add sessions for clients already in your care. New client bookings live with your practice admin." };
+  }
 
   if (process.env.DATA_PROVIDER === "db") {
     let firstId: string;
@@ -164,7 +183,7 @@ export async function createAppointment(
 
   await logAccess({
     action: "admin.action",
-    actor: { userId: "scheduler", platformRole: null, teamRole: "counsellor" },
+    actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
     orgId: data.orgId,
     target: `appointment:new/${data.clientId}`,
     reason: data.recurring ? `create_recurring:${data.recurringCount ?? "ongoing"}` : "create_appointment",

@@ -6,7 +6,7 @@ import { CalendarView } from "@/components/calendar/calendar-view";
 import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Appointments" };
+export const metadata = { title: "Calendar" };
 
 export default async function CalendarPage() {
   const { principal, membership } = await requireOrg(["counsellor"]);
@@ -26,12 +26,14 @@ export default async function CalendarPage() {
     provider.listServices(membership.orgId),
     provider.listRooms(membership.orgId),
   ]);
+  // The counsellor's calendar is THEIRS alone: only their own sessions, only their
+  // own clients, no team filter, and no booking - new work lives with the practice.
   const scheduling = {
     orgId: membership.orgId,
     defaultCounsellorId: me.id,
-    clients: allClients.map((c) => ({ id: c.id, name: c.name })),
+    clients: allClients.filter((c) => c.primaryCounsellorId === me.id).map((c) => ({ id: c.id, name: c.name })),
     services: services.map((s) => ({ id: s.id, name: s.name, durationMin: s.durationMin })),
-    counsellors: counsellors.map((c) => ({ id: c.id, name: c.name })),
+    counsellors: [{ id: me.id, name: me.name }],
     rooms: rooms.map((r) => ({ id: r.id, name: r.name })),
     defaultDurationMin: org.scheduling.defaultDurationMin,
     businessHours: org.scheduling.businessHours,
@@ -39,8 +41,8 @@ export default async function CalendarPage() {
 
   return (
     <div className="rise space-y-5">
-      <PageHead title="Appointments" summary="Your week, day, month, or agenda  click a slot to book." />
-      <CalendarView events={events} businessHours={org.scheduling.businessHours} scheduling={scheduling} nowISO={now} />
+      <PageHead title="Calendar" summary="Your week, day, month, or agenda  your own sessions only." />
+      <CalendarView events={events} businessHours={org.scheduling.businessHours} scheduling={scheduling} nowISO={now} canCreate={false} />
     </div>
   );
 }

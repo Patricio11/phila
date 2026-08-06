@@ -79,6 +79,7 @@ export function CalendarView({
   nowISO,
   openSessions = true,
   clientBasePath = "/app/clients",
+  canCreate = true,
 }: {
   events: AppointmentView[];
   businessHours: BusinessHours;
@@ -86,6 +87,8 @@ export function CalendarView({
   nowISO: string;
   openSessions?: boolean;
   clientBasePath?: string;
+  /** Off for the counsellor workspace - new bookings live with the practice (Hub). */
+  canCreate?: boolean;
 }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -117,6 +120,7 @@ export function CalendarView({
   const [pending, setPending] = useState(false);
 
   const openCreate = (date?: string, time?: string) => {
+    if (!canCreate) return; // the counsellor workspace never books fresh sessions
     setCreateInit({ date: date ?? anchor, time, counsellorId: scheduling.defaultCounsellorId });
     setCreateKey((k) => k + 1);
     setCreateOpen(true);
@@ -190,7 +194,7 @@ export function CalendarView({
               </button>
             ))}
           </div>
-          <Button size="sm" onClick={() => openCreate()}><Plus className="size-4" strokeWidth={2.2} aria-hidden /> New</Button>
+          {canCreate && <Button size="sm" onClick={() => openCreate()}><Plus className="size-4" strokeWidth={2.2} aria-hidden /> New</Button>}
           </div>
         </div>
 
@@ -210,7 +214,7 @@ export function CalendarView({
       </div>
 
       {view === "month" ? (
-        <MonthView anchor={anchor} today={today} events={visible} businessHours={businessHours} onDay={(d) => { setAnchor(d); setView("day"); }} onCreate={(d) => openCreate(d)} onEvent={(e) => setDetail(e)} />
+        <MonthView anchor={anchor} today={today} events={visible} businessHours={businessHours} onDay={(d) => { setAnchor(d); setView("day"); }} onCreate={canCreate ? (d) => openCreate(d) : null} onEvent={(e) => setDetail(e)} />
       ) : view === "agenda" ? (
         <AgendaView anchor={anchor} today={today} events={visible} onEvent={(e) => setDetail(e)} />
       ) : (
@@ -226,7 +230,7 @@ export function CalendarView({
         />
       )}
 
-      <CreateAppointmentModal key={createKey} open={createOpen} onClose={() => setCreateOpen(false)} options={scheduling} initial={createInit ?? undefined} onCreated={() => router.refresh()} />
+      {canCreate && <CreateAppointmentModal key={createKey} open={createOpen} onClose={() => setCreateOpen(false)} options={scheduling} initial={createInit ?? undefined} onCreated={() => router.refresh()} />}
 
       <AppointmentDetail
         key={detail?.id ?? "none"}
@@ -384,7 +388,7 @@ function DropLayer({ date, events, onDrop }: { date: string; events: Appointment
 
 /* ---- Month view ------------------------------------------------------- */
 function MonthView({ anchor, today, events, businessHours, onDay, onCreate, onEvent }: {
-  anchor: string; today: string; events: AppointmentView[]; businessHours: BusinessHours; onDay: (d: string) => void; onCreate: (d: string) => void; onEvent: (e: AppointmentView) => void;
+  anchor: string; today: string; events: AppointmentView[]; businessHours: BusinessHours; onDay: (d: string) => void; onCreate: ((d: string) => void) | null; onEvent: (e: AppointmentView) => void;
 }) {
   const first = startOfMonth(anchor);
   const gridStart = startOfWeek(first);
@@ -408,9 +412,9 @@ function MonthView({ anchor, today, events, businessHours, onDay, onCreate, onEv
                 <button type="button" onClick={() => onDay(date)} className={cn("inline-flex size-6 items-center justify-center rounded-full text-[12px] font-semibold tabular-nums transition-colors hover:bg-surface-hover", isToday ? "bg-accent text-accent-ink" : inMonth && !closed ? "text-text" : "text-text-3")}>{fmt(date, { day: "numeric" })}</button>
                 {closed ? (
                   <span className="text-[9.5px] font-medium uppercase tracking-wide text-text-3">Closed</span>
-                ) : (
+                ) : onCreate ? (
                   <button type="button" onClick={() => onCreate(date)} aria-label="New appointment" className="rounded p-0.5 opacity-0 transition-opacity hover:bg-surface-hover focus:opacity-100 group-hover:opacity-100"><Plus className="size-3.5 text-text-3" /></button>
-                )}
+                ) : null}
               </div>
               <div className="mt-1 space-y-0.5">
                 {dayEvents.slice(0, 3).map((e) => (

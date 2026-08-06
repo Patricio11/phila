@@ -49,6 +49,88 @@ export async function createAppointment(input: CreateAppointmentInput): Promise<
   return { firstId: rows[0]!.id };
 }
 
+/**
+ * Add N more weekly sessions to the end of an existing series - the counsellor's
+ * "we need more time" moment. The template is the series' LAST session (same
+ * client, service, room, type, duration, wall-clock time); new rows join the same
+ * seriesId so edit-this/all and cancel-following keep working. `counsellorId`
+ * (when given) restricts the series to that counsellor's own - a counsellor can
+ * extend only their series; the Hub passes nothing and can extend any.
+ * Conflicts are caught by the exclusion constraints on insert (all-or-nothing).
+ */
+export async function extendAppointmentSeries(
+  orgId: string,
+  seriesId: string,
+  addCount: number,
+  opts?: { counsellorId?: string },
+): Promise<{ added: number; firstNewId: string; lastStartsAt: Date } | { error: "not_found" | "not_yours" }> {
+  const db = getDb();
+  const rows = await db.select().from(appointments)
+    .where(and(eq(appointments.orgId, orgId), eq(appointments.seriesId, seriesId), ne(appointments.state, "cancelled")))
+    .orderBy(appointments.startsAt);
+  const last = rows[rows.length - 1];
+  if (!last) return { error: "not_found" };
+  if (opts?.counsellorId && last.counsellorId !== opts.counsellorId) return { error: "not_yours" };
+
+  const WEEK_MS = 7 * 24 * 60 * 60 * 1000; // SAST has no DST - wall-clock time is preserved
+  const fresh = Array.from({ length: addCount }, (_, i) => ({
+    id: rid(),
+    orgId,
+    clientId: last.clientId,
+    counsellorId: last.counsellorId,
+    serviceId: last.serviceId,
+    type: last.type,
+    roomId: last.roomId,
+    startsAt: new Date(last.startsAt.getTime() + WEEK_MS * (i + 1)),
+    durationMin: last.durationMin,
+    state: "scheduled",
+    tags: [] as string[],
+    seriesId,
+  }));
+  await db.insert(appointments).values(fresh);
+  return { added: fresh.length, firstNewId: fresh[0]!.id, lastStartsAt: fresh[fresh.length - 1]!.startsAt };
+}
+
+/**
+ * The counsellor's recurring series that are running out - scheduled sessions
+ * remaining after `nowISO`, grouped per series. "Ending soon" is the caller's
+ * call; this returns every live series with its remaining count so the dashboard
+ * can nudge at <= threshold.
+ */
+export async function listCounsellorSeriesDb(
+  orgId: string,
+  counsellorId: string,
+  nowISO: string,
+): Promise<Array<{ seriesId: string; clientId: string; total: number; remaining: number; lastStartsAt: Date; durationMin: number }>> {
+  const db = getDb();
+  const now = new Date(nowISO);
+  const rows = await db.select({
+    seriesId: appointments.seriesId,
+    clientId: appointments.clientId,
+    startsAt: appointments.startsAt,
+    state: appointments.state,
+    durationMin: appointments.durationMin,
+  }).from(appointments)
+    .where(and(eq(appointments.orgId, orgId), eq(appointments.counsellorId, counsellorId), ne(appointments.state, "cancelled")))
+    .orderBy(appointments.startsAt);
+
+  const bySeries = new Map<string, { clientId: string; total: number; remaining: number; lastStartsAt: Date; durationMin: number }>();
+  for (const r of rows) {
+    if (!r.seriesId) continue;
+    const cur = bySeries.get(r.seriesId) ?? { clientId: r.clientId, total: 0, remaining: 0, lastStartsAt: r.startsAt, durationMin: r.durationMin };
+    cur.total += 1;
+    if (r.state === "scheduled" && r.startsAt > now) cur.remaining += 1;
+    if (r.startsAt > cur.lastStartsAt) cur.lastStartsAt = r.startsAt;
+    bySeries.set(r.seriesId, cur);
+  }
+  // A series that ended within the last week still counts - "we finished on the
+  // 5th and need more" is exactly the moment to extend. Older than that is done.
+  const graceCutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  return [...bySeries.entries()]
+    .map(([seriesId, v]) => ({ seriesId, ...v }))
+    .filter((s) => s.lastStartsAt > graceCutoff);
+}
+
 export type EditScope = "this" | "following";
 
 /**

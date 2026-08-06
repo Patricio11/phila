@@ -110,6 +110,9 @@ Sign in as **Thandeka**.
 - ☐ Signed in as that **counsellor**, `/app/settings` shows **Your availability** read-only ("managed by your practice") — no edit controls
 - ☐ **Archive** on an active counsellor opens the offboard dialog: honest workload counts, then **migrate to a successor** or **cancel upcoming (clients notified)** — afterwards their sessions/notes/history are all still on the record (nothing deleted), and the member can be restored
 
+**Exports** (feedback #9)
+- ☐ `/hub/clients` and `/hub/team` both have an **Export** dropdown — CSV downloads and opens anywhere, **Excel** (.xls) opens in Excel with a bold header row, **PDF** opens a print-ready document (org · date · count) for Save-as-PDF; the file matches the on-screen list; each client export lands in the audit log as **pii.export** with format + row count
+
 **Rooms — live & recorded** (`/hub/rooms`) (feedback #8)
 - ☐ The **Right now** band shows "N of M rooms in use" with pulsing chips; a room with a session running shows **"In use · who · until when"** on its card; **Next up** shows relative times ("in 40 min")
 - ☐ On a room page, **Assign** really persists (check `room_assignments`): assigning over a counsellor's availability, their other room, or another counsellor's slot first shows **honest warnings** with "Assign anyway"; assignments are removable (hover the row); both actions land on the Activity feed

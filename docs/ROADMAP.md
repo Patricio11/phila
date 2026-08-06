@@ -1127,7 +1127,13 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   an in-app portal notification, honest per-channel toast). Confirmed dead-but-unused: 4 legacy
   interface methods (conversations, counsellor invoices, intake) superseded by messaging/invoicing/forms.
   2FA toggle stays an honest audited placeholder until the W2 TOTP enrolment UI.
-- [ ] **#9–#10** — remaining items arrive one at a time.
+- [x] **#9  Export on Clients & Team** *(2026-08-06)*: an **Export** dropdown (CSV · Excel · PDF) on
+  `/hub/clients` and `/hub/team`. Zero dependencies: CSV (UTF-8 BOM), Excel (SpreadsheetML — opens
+  natively in Excel), PDF (print-styled window → Save as PDF, org name + date + count header). Files
+  match the live list; client exports are audited **`pii.export`** (fail-strict class), team exports
+  as admin actions — both carrying format + row count. Shared `ExportMenu` (portaled, reusable for
+  any future list).
+- [ ] **#10** — the last item arrives when the user brings it.
 
 ---
 

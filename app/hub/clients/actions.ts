@@ -322,3 +322,23 @@ export async function setClientFee(
   revalidatePath(`/hub/clients/${clientId}`);
   return { ok: true };
 }
+
+/**
+ * Feedback #9 — audit a client-list export. Client PII leaving the system is a
+ * `pii.export` (the fail-strict audit class): the file is built client-side
+ * from rows already on screen, but the export itself is always recorded.
+ */
+export async function auditClientsExport(
+  raw: { format: "csv" | "excel" | "pdf"; count: number },
+): Promise<{ ok: true }> {
+  const { principal, membership } = await requireHub();
+  const format = ["csv", "excel", "pdf"].includes(raw?.format) ? raw.format : "csv";
+  await logAccess({
+    action: "pii.export",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `org:${membership.orgId}/clients.${format}`,
+    reason: `clients_export_${format}:${Math.max(0, Math.floor(raw?.count ?? 0))}`,
+  });
+  return { ok: true };
+}

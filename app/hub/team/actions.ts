@@ -324,3 +324,19 @@ export async function saveMemberAvailability(
   revalidatePath("/hub/team");
   return { ok: true };
 }
+
+/** Feedback #9 — audit a team-list export (admin action; no clinical data involved). */
+export async function auditTeamExport(
+  raw: { format: "csv" | "excel" | "pdf"; count: number },
+): Promise<{ ok: true }> {
+  const { principal, membership } = await requireHub();
+  const format = ["csv", "excel", "pdf"].includes(raw?.format) ? raw.format : "csv";
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `org:${membership.orgId}/team.${format}`,
+    reason: `team_export_${format}:${Math.max(0, Math.floor(raw?.count ?? 0))}`,
+  });
+  return { ok: true };
+}

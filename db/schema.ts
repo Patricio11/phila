@@ -558,6 +558,37 @@ export const whatsappWindows = pgTable("whatsapp_windows", {
  * never edit). Multiple windows per weekday ("Mon 08:00-13:00" + "Mon 15:00-18:00").
  * No rows for a counsellor = inherits the org's business hours (sane default).
  */
+/* ── Supervision classrooms (batch 2) — a class per supervisor, Google-Classroom style ── */
+export const supervisionClasses = pgTable("supervision_classes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  supervisorId: text("supervisor_id").notNull(), // counsellors.id
+  name: text("name").notNull(),
+  description: text("description"),
+  /** Join code shown on the class card (Classroom-style). */
+  code: text("code").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const supervisionClassMembers = pgTable("supervision_class_members", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  classId: uuid("class_id").notNull(),
+  counsellorId: text("counsellor_id").notNull(),
+  addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const supervisionClassPosts = pgTable("supervision_class_posts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  classId: uuid("class_id").notNull(),
+  authorUserId: text("author_user_id").notNull(),
+  authorName: text("author_name").notNull(),
+  isSupervisor: boolean("is_supervisor").default(false).notNull(),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** A staff member's own profile (feedback sweep — was mock-only, profile: null in DB mode). */
 export const teamProfiles = pgTable("team_profiles", {
   id: uuid("id").defaultRandom().primaryKey(),

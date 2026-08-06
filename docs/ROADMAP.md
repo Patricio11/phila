@@ -1154,6 +1154,16 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   page banner** surfaces every completed-but-uninvoiced session ("190 sessions · R85 550 unbilled")
   with one-click set-based backfill (185 invoices in seconds, sequential numbering); **Bill to** in the
   invoice builder is the searchable avatar client picker. All audited; proven live.
+- [x] **Supervision — both sides + classrooms** *(2026-08-06)*: supervision was supervisor-only; now
+  the SUPERVISED counsellor's `/app/supervision` shows **"Your supervision"** — their supervisor
+  (card + Message link), notes **awaiting review**, **changes requested with the supervisor's
+  feedback** (deep link to revise), and recent sign-offs; every sign-off decision now fires an
+  **in-app notification** to the author. Plus **supervision classrooms** (Google-Classroom style,
+  native): `supervision_classes/_members/_posts` (migration 0059 + RLS), a **`/hub/supervision`**
+  page (nav item) where the org creates a class per supervisor — **supervisees auto-rostered**, join
+  code on the card, org-managed roster — and a shared **stream** in `/app/supervision` for the
+  supervisor (posts tagged "Supervisor") and members (replies + in-app notifications to the class).
+  Foundation for classwork/assignments later. Proven live end-to-end.
 
 ---
 

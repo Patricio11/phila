@@ -101,3 +101,77 @@ export async function signOffNoteDb(
     return { ok: res.length > 0 };
   });
 }
+
+/* ---- Batch 2 — the SUPERVISEE side: your supervisor + their feedback ---- */
+
+export interface SuperviseeNoteRow {
+  noteId: string;
+  appointmentId: string;
+  clientName: string;
+  serviceName: string;
+  sessionAt: string;
+  signedAt: string;
+  decision: "approved" | "changes_requested" | null;
+  supervisorComment: string | null;
+  supervisorSignedAt: string | null;
+}
+
+export interface MySupervisionView {
+  supervisor: { id: string; name: string; credential: { body: CredentialBody; status: CredentialStatus }; userId: string } | null;
+  awaiting: SuperviseeNoteRow[];
+  changesRequested: SuperviseeNoteRow[];
+  recentApproved: SuperviseeNoteRow[];
+}
+
+/** What the supervised counsellor sees: who supervises them + every decision on their notes. */
+export async function getMySupervisionDb(orgId: string, counsellorId: string): Promise<MySupervisionView> {
+  return runForOrg(orgId, async () => {
+    const db = activeDb();
+    const [me] = await db.select().from(counsellors).where(and(eq(counsellors.orgId, orgId), eq(counsellors.id, counsellorId))).limit(1);
+    const [sup] = me?.supervisorId
+      ? await db.select().from(counsellors).where(eq(counsellors.id, me.supervisorId)).limit(1)
+      : [];
+
+    const rows = await db
+      .select({ note: sessionNotes, appt: appointments, clientName: clients.name, serviceName: services.name })
+      .from(sessionNotes)
+      .innerJoin(appointments, eq(sessionNotes.appointmentId, appointments.id))
+      .leftJoin(clients, eq(appointments.clientId, clients.id))
+      .leftJoin(services, eq(appointments.serviceId, services.id))
+      .where(and(eq(sessionNotes.authorCounsellorId, counsellorId), isNotNull(sessionNotes.signedAt)));
+
+    const toRow = (r: (typeof rows)[number]): SuperviseeNoteRow => ({
+      noteId: r.note.id,
+      appointmentId: r.note.appointmentId,
+      clientName: r.clientName ?? "Client",
+      serviceName: r.serviceName ?? "Session",
+      sessionAt: r.appt.startsAt.toISOString(),
+      signedAt: r.note.signedAt!.toISOString(),
+      decision: (r.note.supervisorDecision as "approved" | "changes_requested" | null) ?? null,
+      supervisorComment: r.note.supervisorComment,
+      supervisorSignedAt: r.note.supervisorSignedAt ? r.note.supervisorSignedAt.toISOString() : null,
+    });
+
+    const all = rows.map(toRow).sort((a, b) => b.signedAt.localeCompare(a.signedAt));
+    return {
+      supervisor: sup ? { id: sup.id, name: sup.name, credential: { body: sup.credentialBody as CredentialBody, status: sup.credentialStatus as CredentialStatus }, userId: sup.userId } : null,
+      awaiting: all.filter((r) => !r.supervisorSignedAt),
+      changesRequested: all.filter((r) => r.decision === "changes_requested"),
+      recentApproved: all.filter((r) => r.decision === "approved").slice(0, 10),
+    };
+  });
+}
+
+/** The note's author (to notify them of a decision). */
+export async function noteAuthorDb(orgId: string, noteId: string): Promise<{ counsellorId: string; clientName: string } | null> {
+  return runForOrg(orgId, async () => {
+    const db = activeDb();
+    const [row] = await db
+      .select({ author: sessionNotes.authorCounsellorId, clientName: clients.name })
+      .from(sessionNotes)
+      .innerJoin(appointments, eq(sessionNotes.appointmentId, appointments.id))
+      .leftJoin(clients, eq(appointments.clientId, clients.id))
+      .where(eq(sessionNotes.id, noteId)).limit(1);
+    return row ? { counsellorId: row.author, clientName: row.clientName ?? "a client" } : null;
+  });
+}

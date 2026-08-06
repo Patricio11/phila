@@ -31,6 +31,7 @@ import {
   UserRound,
   Users,
   Wallet,
+  GraduationCap,
 } from "lucide-react";
 
 /**
@@ -111,6 +112,7 @@ export const hubNav: NavSection[] = [
     label: "Run the practice",
     items: [
       { label: "Team", href: "/hub/team", icon: Users, ready: true },
+      { label: "Supervision", href: "/hub/supervision", icon: GraduationCap, ready: true },
       { label: "Messages", href: "/hub/messages", icon: MessagesSquare, ready: true },
       { label: "Rooms", href: "/hub/rooms", icon: DoorOpen, ready: true },
       { label: "Services", href: "/hub/services", icon: HeartHandshake, ready: true },

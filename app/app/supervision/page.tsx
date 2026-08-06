@@ -20,6 +20,25 @@ export default async function SupervisionPage() {
   if (!me) notFound();
 
   if (!me.isSupervisor) {
+    // The SUPERVISED counsellor's own view (batch 2): who supervises you, where
+    // your notes stand, and the feedback that came back.
+    if (process.env.DATA_PROVIDER === "db") {
+      const { getMySupervisionDb } = await import("@/db/queries/supervision");
+      const { classesForCounsellorDb } = await import("@/db/queries/classrooms");
+      const [view, classes] = await Promise.all([
+        getMySupervisionDb(membership.orgId, me.id),
+        classesForCounsellorDb(membership.orgId, me.id),
+      ]);
+      const { MySupervision } = await import("@/components/workspace/my-supervision");
+      const { ClassStream } = await import("@/components/classroom/class-stream");
+      return (
+        <div className="rise space-y-6">
+          <PageHead title="Your supervision" summary="Your supervisor, where your notes stand, and their feedback." />
+          <MySupervision view={view} />
+          {classes.map((cls) => <ClassStream key={cls.id} cls={cls} />)}
+        </div>
+      );
+    }
     return (
       <div className="rise space-y-6">
         <PageHead title="Supervision" summary="Clinical oversight of the counsellors you supervise." />
@@ -48,6 +67,12 @@ export default async function SupervisionPage() {
     reason: "view_supervision_queue",
   });
 
+  // The supervisor's classrooms (batch 2) — stream + members under the queue.
+  const classes = process.env.DATA_PROVIDER === "db"
+    ? await (await import("@/db/queries/classrooms")).classesForCounsellorDb(membership.orgId, me.id)
+    : [];
+  const { ClassStream } = await import("@/components/classroom/class-stream");
+
   return (
     <div className="rise space-y-6">
       <PageHead
@@ -55,6 +80,12 @@ export default async function SupervisionPage() {
         summary={`${overview.supervisees.length} supervisee${overview.supervisees.length === 1 ? "" : "s"} · ${items.length} note${items.length === 1 ? "" : "s"} awaiting your sign-off.`}
       />
       <SupervisionView overview={overview} items={items} nowISO={now} />
+      {classes.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-[13px] font-semibold uppercase tracking-wide text-text-3">Your classrooms</h2>
+          {classes.map((cls) => <ClassStream key={cls.id} cls={cls} showCode />)}
+        </section>
+      )}
     </div>
   );
 }

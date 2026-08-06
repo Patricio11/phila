@@ -1189,6 +1189,10 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   with `toLocaleString("en-ZA")` differs between Node ("1,800") and Chrome ("1 800"), causing React
   hydration failures that silently killed click handlers (the funder Export was dead). New
   deterministic `za()` formatter (`lib/format.ts`) swept across all 20 client components.
+- [x] **House style: no em-dash** *(2026-08-06)*: the em-dash (U+2014) is banned project-wide (it
+  reads as machine-written). Swept 616 occurrences across 191 files (UI copy, comments, docs, seed
+  data) plus rows already in the database; enforced forever by `tests/unit/no-em-dash.test.ts` (CI
+  fails on a single one) and recorded as a standing rule in `TO_START_EVERY_SESSION.md`.
 - [x] **Classroom editing** *(2026-08-06)*: **Edit** on every classroom card (name · description ·
   hand the class to another supervisor - the roster stays; audited `update_classroom`), and in the
   stream everyone can **edit or delete their OWN posts** (hover controls, inline editor;
@@ -1333,4 +1337,4 @@ shared by an explicit, consented counsellor action  never the private note.
 > trends, session counts, and org-posted narrative. **Never** an individual client, note, care plan,
 > contact, demographic row, or any other grant. Read-only; every view audited.
 
-*Last updated: 2026-08-05 · Version 1.3 · Phila · philasa.com · Stack: Next.js · Neon · Better Auth · Supabase Storage · LiveKit*
+*Last updated: 2026-08-06 · Version 1.4 · Phila · philasa.com · Stack: Next.js · Neon · Better Auth · Supabase Storage · LiveKit*

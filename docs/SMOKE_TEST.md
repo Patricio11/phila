@@ -123,6 +123,7 @@ Sign in as **Thandeka**.
 
 **Exports** (feedback #9)
 - ☐ `/hub/clients` and `/hub/team` both have an **Export** dropdown - CSV downloads and opens anywhere, **Excel** (.xls) opens in Excel with a bold header row, **PDF** opens a print-ready document (org · date · count) for Save-as-PDF; the file matches the on-screen list; each client export lands in the audit log as **pii.export** with format + row count
+- ☐ The same Export dropdown is the house standard everywhere: Insights Practice tab, Reports tab, Funder reporting, and the platform audit ledger (`/admin/audit` - exporting the ledger is itself audited)
 
 **Rooms - live & recorded** (`/hub/rooms`) (feedback #8)
 - ☐ The **Right now** band shows "N of M rooms in use" with pulsing chips; a room with a session running shows **"In use · who · until when"** on its card; **Next up** shows relative times ("in 40 min")
@@ -150,7 +151,7 @@ Sign in as **Thandeka**.
 - ☐ Session volumes + **trend chips** (vs the previous period) on completed / attendance / new clients / revenue
 - ☐ Switching the period (week / month / quarter) updates the figures
 - ☐ Client-mix cuts honour consent (coverage shown)
-- ☐ The **Funder reporting** tab shows headline stats (**Clients reported**, **Improved ≥5 on PHQ-9 %**, **Provinces reached**), key-findings bullets + a paragraph from real figures, k-anon breakdowns ("too few to report" where suppressed), and **Download CSV** (k-anonymised)
+- ☐ The **Funder reporting** tab shows headline stats (**Clients reported**, **Improved ≥5 on PHQ-9 %**, **Provinces reached**), key-findings bullets + a paragraph from real figures, k-anon breakdowns ("too few to report" where suppressed), and the shared **Export** dropdown (CSV / Excel / PDF, k-anonymised - suppressed cells export as "suppressed (<k)"; every export audited)
 - ☐ The old `/hub/reporting` URL **redirects here** (bookmarks don't break)
 - ☐ **Reports tab** (batch 2): seven report types (Bookings summary → Payment pending) across six periods load live; **search** filters the rows; **Export** downloads CSV / Excel / PDF matching the table; every export lands in the audit log as `pii.export` with the row count
 

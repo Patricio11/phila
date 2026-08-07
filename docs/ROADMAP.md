@@ -1232,6 +1232,13 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   and lets a counsellor book only themselves for a client already in their care (a no-show
   rebook), and `extendSeries` refuses another counsellor's series. The Hub keeps full booking
   powers, proven unchanged.
+- [x] **Overview widgets: one height, filterable team** *(2026-08-07)*: every hub Overview widget
+  (Coming up next · Activity feed · Team this week · Needs attention · Rooms right now) now sits
+  in one calm grid at a shared 380px height with content scrolling INSIDE the card - the page
+  stays a dashboard, never a long feed. **Team this week** gained filter chips with live counts
+  (All · Near capacity · Has room · Unverified) plus a name search, so "who's stretched / who has
+  room / whose credentials still need verifying" is one click. Proven live: card heights measured
+  equal, the activity feed scrolls internally, filters and search verified.
 
 ---
 

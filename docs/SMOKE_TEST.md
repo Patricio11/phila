@@ -106,6 +106,8 @@ Sign in as **Thandeka**.
 - ☐ `/hub` overview renders with real KPIs; the **period filter** (Today / This week / This month / Last month) recomputes tiles, the payment split (**Paid online** vs **Cash / Card / EFT**), and the bookings **chart** instantly
 - ☐ **Coming up next** lists the next sessions; the **Activity feed** shows humanised org events ("New session booked", "Counsellor availability updated") with who + when - no read-noise ("who looked") entries
 - ☐ (If credits are low) a **"top up"** nudge banner appears linking to Billing & usage *(to force it: lower a balance in the DB, e.g. `update credit_balances set balance=12 where org_id='org_masizakhe' and channel='sms'`)*
+- ☐ **Uniform widgets**: every overview widget (Coming up next · Activity feed · Team this week · Needs attention · Rooms right now) is the SAME height; long content (esp. the Activity feed) scrolls inside its card - the page never becomes one long feed
+- ☐ **Team this week filters**: chips with live counts (All · Near capacity · Has room · Unverified) narrow the list; the name search finds a member; count pill updates
 
 **Calendar** (`/hub/appointments`) (feedback #1/#2)
 - ☐ Creating an appointment shows it on the calendar **immediately, no refresh**, at the correct **SAST** time

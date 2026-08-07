@@ -12,18 +12,18 @@ function hhmm(iso: string): string {
  * Feedback #8 - room pressure at a glance, on the dashboard. Green pulse =
  * a session is happening in that room right now.
  */
-export function RoomsRightNow({ rooms }: { rooms: RoomNow[] }) {
+export function RoomsRightNow({ rooms, className }: { rooms: RoomNow[]; className?: string }) {
   const active = rooms.filter((r) => r.status === "active");
   if (active.length === 0) return null;
   const busy = active.filter((r) => r.busy).length;
 
   return (
-    <Card>
+    <Card className={cn("flex flex-col", className)}>
       <CardHead
         title={<span className="flex items-center gap-2"><DoorOpen className="size-4 text-text-3" strokeWidth={2} aria-hidden /> Rooms right now</span>}
         action={<span className="text-[12px] text-text-2"><span className="font-semibold tabular-nums text-text">{busy}</span> of {active.length} in use</span>}
       />
-      <div className="space-y-2 px-[17px] pb-[17px]">
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-[17px] pb-[17px]">
         {active.map((r) => (
           <Link key={r.id} href={`/hub/rooms/${r.id}`} className="flex items-center gap-2.5 rounded-control px-1.5 py-1 transition-colors hover:bg-surface-hover">
             <span className="relative flex size-2 shrink-0" aria-hidden>

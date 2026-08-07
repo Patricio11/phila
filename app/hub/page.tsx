@@ -16,8 +16,7 @@ import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { getHubDashboardDb } from "@/db/queries/hub-dashboard";
 import { RoomsRightNow } from "@/components/dashboard/rooms-right-now";
 import { roomsRightNowDb, type RoomNow } from "@/db/queries/room-assignments";
-import { Avatar } from "@/components/ui/avatar";
-import { CredentialChip } from "@/components/ui/credential-chip";
+import { TeamThisWeek } from "@/components/dashboard/team-this-week";
 import { AttentionList } from "@/components/dashboard/attention-list";
 import { VerificationBanner } from "@/components/hub/verification-banner";
 import { getOnboardingStatusDb } from "@/db/queries/onboarding";
@@ -92,58 +91,46 @@ export default async function HubOverviewPage() {
 
       <HubDashboardStats data={dashboard} paymentsOn={Boolean(org?.features.payments)} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="space-y-6">
-          <Card>
-            <CardHead title="Coming up next" count={dashboard.upcoming.length} />
+      {/* One calm grid: every widget the same height, content scrolls inside -
+          the page stays a dashboard, never a long feed. */}
+      <div className="grid items-stretch gap-6 lg:grid-cols-2">
+        <Card className={cn("flex flex-col", WIDGET_H)}>
+          <CardHead title="Coming up next" count={dashboard.upcoming.length} />
+          <div className="min-h-0 flex-1 overflow-y-auto">
             <ComingUpNext upcoming={dashboard.upcoming} />
-          </Card>
-          <RoomsRightNow rooms={roomsNow} />
-        </div>
-        <Card>
-          <CardHead title="Activity feed" />
-          <ActivityFeed activity={dashboard.activity} />
-        </Card>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHead title="Team this week" count={teamLoad.length} />
-          <div className="space-y-3 px-[17px] pb-[17px]">
-            {teamLoad.map(({ c, total, seen, upcoming, pct }) => {
-              const stretched = pct >= 80;
-              return (
-                <div key={c.id} className="flex items-center gap-3">
-                  <Avatar name={c.name} size="sm" verified={c.credential.status === "verified"} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-[13px] font-medium text-text">{c.name}</span>
-                      <span className="shrink-0 text-[11.5px] tabular-nums text-text-3">{total} session{total === 1 ? "" : "s"}</span>
-                    </div>
-                    <div className="mt-1 flex items-center gap-2">
-                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2">
-                        <div className={cn("h-full rounded-full", stretched ? "bg-warn" : "bg-accent")} style={{ width: `${Math.max(pct, 3)}%` }} />
-                      </div>
-                      <CredentialChip body={c.credential.body} status={c.credential.status} />
-                    </div>
-                    <div className="mt-0.5 text-[11px] text-text-3">{seen} seen · {upcoming} upcoming{stretched ? " · near capacity" : ""}</div>
-                  </div>
-                </div>
-              );
-            })}
           </div>
         </Card>
 
-        <Card>
+        <Card className={cn("flex flex-col", WIDGET_H)}>
+          <CardHead title="Activity feed" />
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <ActivityFeed activity={dashboard.activity} />
+          </div>
+        </Card>
+
+        <TeamThisWeek
+          className={WIDGET_H}
+          rows={teamLoad.map(({ c, total, seen, upcoming, pct }) => ({
+            id: c.id, name: c.name, total, seen, upcoming, pct,
+            credentialBody: c.credential.body, credentialStatus: c.credential.status,
+          }))}
+        />
+
+        <Card className={cn("flex flex-col", WIDGET_H)}>
           <CardHead title="Needs attention" count={overview.attention.length} />
-          <div className="px-[17px] pb-[17px]">
+          <div className="min-h-0 flex-1 overflow-y-auto px-[17px] pb-[17px]">
             <AttentionList items={overview.attention} />
           </div>
         </Card>
+
+        <RoomsRightNow rooms={roomsNow} className={WIDGET_H} />
       </div>
     </div>
   );
 }
+
+/** Every dashboard widget shares this height; long content scrolls inside. */
+const WIDGET_H = "h-[380px]";
 
 function greeting(): string {
   const hour = Number(

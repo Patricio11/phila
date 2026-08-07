@@ -55,10 +55,11 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
   const pricedServices = services.filter((s) => (s.priceCents ?? 0) > 0).map((s) => ({ name: s.name, priceCents: s.priceCents ?? 0 }));
   const referralsOn = Boolean(dossier.org.features.referrals);
   const referralSource = referralsOn && isDbMode ? await getClientReferralDb(membership.orgId, id) : null;
-  // Phase 32.0 behind the feature switch (kill-switch → override → plan → self-toggle).
-  const languageOn = isDbMode
-    ? (await (await import("@/db/queries/features")).effectiveFeaturesDb(membership.orgId)).language
-    : Boolean(dossier.org.features.language);
+  // Feature switches (kill-switch → override → plan → self-toggle) - one resolve.
+  const eff = isDbMode ? await (await import("@/db/queries/features")).effectiveFeaturesDb(membership.orgId) : null;
+  const languageOn = eff ? eff.language : Boolean(dossier.org.features.language);
+  const waitlistOn = eff ? eff.waitlist : Boolean(dossier.org.features.waitlist);
+  const outcomesOn = eff ? eff.outcomes : Boolean(dossier.org.features.outcomes);
   const retention = isDbMode ? await clientRetentionDb(membership.orgId, id, now) : null;
 
   // Hub oversight is a recorded PII access  but private clinical notes are never on this page.
@@ -101,7 +102,7 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
             />
             <InviteClientButton clientId={client.id} clientName={client.name} phone={client.phone ?? null} email={client.email ?? null} whatsappOn={Boolean(org.features.whatsapp)} smsOn={Boolean(org.features.sms)} />
             <ReassignClientButton clientId={client.id} clientName={client.name} counsellors={counsellorOpts} currentCounsellorId={counsellor.id} />
-            <AddToWaitlistButton clientId={client.id} clientName={client.name} counsellors={counsellorOpts} />
+            {waitlistOn && <AddToWaitlistButton clientId={client.id} clientName={client.name} counsellors={counsellorOpts} />}
             <Button asChild>
               <Link href="/hub/appointments"><CalendarPlus className="size-4" strokeWidth={2} aria-hidden /> Book session</Link>
             </Button>
@@ -130,17 +131,19 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
         <Stat value={String(attended)} label={`Session${attended === 1 ? "" : "s"} attended`} />
         <Stat value={attendanceRate === null ? "" : `${attendanceRate}%`} label={noShow > 0 ? `Attendance · ${noShow} no-show${noShow === 1 ? "" : "s"}` : "Attendance"} />
         <Stat value={timeInCare(client.createdAt, now)} label="In care" />
-        <Stat value={latestOutcome ? String(latestOutcome.score) : ""} label={latestOutcome?.tool ?? "Outcome"} />
+        {outcomesOn && <Stat value={latestOutcome ? String(latestOutcome.score) : ""} label={latestOutcome?.tool ?? "Outcome"} />}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <Card>
-            <CardHead title="Outcome trends" />
-            <div className="px-[17px] pb-[17px]">
-              <OutcomeTrends outcomes={outcomes} />
-            </div>
-          </Card>
+          {outcomesOn && (
+            <Card>
+              <CardHead title="Outcome trends" />
+              <div className="px-[17px] pb-[17px]">
+                <OutcomeTrends outcomes={outcomes} />
+              </div>
+            </Card>
+          )}
 
           <Card>
             <CardHead title="Timeline" />

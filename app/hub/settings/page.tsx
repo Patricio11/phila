@@ -9,6 +9,7 @@ import { ClientPortalSettings } from "@/components/hub/client-portal-settings";
 import { FundersFeatureToggle } from "@/components/hub/funders-feature-toggle";
 import { ReferralsFeatureToggle } from "@/components/hub/referrals-feature-toggle";
 import { LanguageFeatureToggle } from "@/components/hub/language-feature-toggle";
+import { OrgFeatureToggle } from "@/components/hub/org-feature-toggle";
 import { Card, CardHead } from "@/components/ui/card";
 import { IntegrationToggles } from "@/components/hub/integration-toggles";
 import { PaymentConnectionCard } from "@/components/hub/payment-connection-card";
@@ -51,11 +52,12 @@ export default async function HubSettingsPage() {
     provider.getOrgSubscription(membership.orgId, clockNow()),
   ]);
   if (!settings || !org) notFound();
-  // Phase 32.0 - the language feature's full resolution, so the switch is honest
+  // Feature resolutions for the org-toggleable switches, so each is honest
   // about being locked by a Phila kill-switch / override / plan.
-  const langRes = process.env.DATA_PROVIDER === "db"
-    ? await (await import("@/db/queries/features")).resolveFeatureDb(membership.orgId, "language")
+  const featureRes = process.env.DATA_PROVIDER === "db"
+    ? await (await import("@/db/queries/features")).resolveAllFeaturesDb(membership.orgId)
     : null;
+  const langRes = featureRes?.language ?? null;
   const videoSettings = await getVideoSettings(membership.orgId);
   const [aiSettings, aiSpent, aiProvider, gateway] = await Promise.all([
     getAiSettings(membership.orgId),
@@ -199,6 +201,26 @@ export default async function HubSettingsPage() {
                   initial={langRes ? langRes.selfEnabled : Boolean(org.features.language)}
                   locked={langRes ? !langRes.orgControllable : false}
                   lockedReason={langRes && !langRes.orgControllable ? langRes.reason : undefined}
+                />
+                <OrgFeatureToggle
+                  feature="waitlist"
+                  label="Client waitlist"
+                  description="Hold clients waiting for a space and book them in the moment a slot opens - an Add-to-waitlist action on each client and a waitlist queue on the Appointments page."
+                  onDescription="Add to waitlist appears on client dossiers, and the queue shows on Appointments."
+                  offDescription="Hidden everywhere. Anyone already on the list is kept, never lost."
+                  initial={featureRes ? featureRes.waitlist.selfEnabled : Boolean(org.features.waitlist)}
+                  locked={featureRes ? !featureRes.waitlist.orgControllable : false}
+                  lockedReason={featureRes && !featureRes.waitlist.orgControllable ? featureRes.waitlist.reason : undefined}
+                />
+                <OrgFeatureToggle
+                  feature="outcomes"
+                  label="Outcome tracking"
+                  description="Measure client progress with PHQ-9 / GAD-7 between sessions - captured in session notes, with trend charts on client dossiers and the counsellor dashboard."
+                  onDescription="Counsellors can capture measures and everyone sees the trends."
+                  offDescription="Capture and charts are hidden. Measures already taken are kept, never deleted."
+                  initial={featureRes ? featureRes.outcomes.selfEnabled : Boolean(org.features.outcomes)}
+                  locked={featureRes ? !featureRes.outcomes.orgControllable : false}
+                  lockedReason={featureRes && !featureRes.outcomes.orgControllable ? featureRes.outcomes.reason : undefined}
                 />
               </div>
             </Card>

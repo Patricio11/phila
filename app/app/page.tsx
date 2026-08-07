@@ -65,6 +65,11 @@ export default async function DashboardPage() {
 
   const noShows = process.env.DATA_PROVIDER === "db" ? await listUnhandledNoShowsDb(membership.orgId, me.id) : [];
 
+  // Outcome tracking is feature-switched (batch 2h): off = no Outcomes card.
+  const outcomesOn = process.env.DATA_PROVIDER === "db"
+    ? (await (await import("@/db/queries/features")).effectiveFeaturesDb(membership.orgId)).outcomes
+    : Boolean(org?.features.outcomes);
+
   // "We need more time" - recurring series with 2 or fewer sessions left (incl.
   // a series that just finished). The one place a counsellor ADDS sessions.
   const seriesEnding = process.env.DATA_PROVIDER === "db"
@@ -141,20 +146,22 @@ export default async function DashboardPage() {
         {/* Outcomes + attention */}
         <div className="space-y-6">
           <WeekCapacity sessionsThisWeek={stats.sessionsThisWeek} />
-          <Card>
-            <CardHead title="Outcomes" />
-            <CardBody className="pt-0">
-              <OutcomeSparkline
-                points={dash.outcomes.points}
-                tool={dash.outcomes.tool}
-                coverage={coverageNote(
-                  dash.outcomes.coverage.captured,
-                  dash.outcomes.coverage.total,
-                  "clients measured",
-                )}
-              />
-            </CardBody>
-          </Card>
+          {outcomesOn && (
+            <Card>
+              <CardHead title="Outcomes" />
+              <CardBody className="pt-0">
+                <OutcomeSparkline
+                  points={dash.outcomes.points}
+                  tool={dash.outcomes.tool}
+                  coverage={coverageNote(
+                    dash.outcomes.coverage.captured,
+                    dash.outcomes.coverage.total,
+                    "clients measured",
+                  )}
+                />
+              </CardBody>
+            </Card>
+          )}
 
           <Card>
             <CardHead title="Needs attention" count={dash.attention.length} />

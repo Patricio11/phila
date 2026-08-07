@@ -61,6 +61,10 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
   });
 
   const { client, counsellor, consents, demographics, sessions, outcomes, documents, carePlan } = dossier;
+  // Outcome tracking is feature-switched (batch 2h).
+  const outcomesOn = process.env.DATA_PROVIDER === "db"
+    ? (await (await import("@/db/queries/features")).effectiveFeaturesDb(membership.orgId)).outcomes
+    : Boolean(dossier.org.features.outcomes);
   const nowMs = new Date(now).getTime();
   const nextScheduled = sessions
     .filter((s) => new Date(s.startsAt).getTime() > nowMs && s.state === "scheduled")
@@ -139,15 +143,17 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
         <Stat value={String(attended)} label={`Session${attended === 1 ? "" : "s"} attended`} />
         <Stat value={attendanceRate === null ? "" : `${attendanceRate}%`} label={noShow > 0 ? `Attendance · ${noShow} no-show${noShow === 1 ? "" : "s"}` : "Attendance"} />
         <Stat value={timeInCare(client.createdAt, now)} label="In care" />
-        <Stat
-          value={lastScore === null ? "" : String(lastScore)}
-          label={outcomes[0]?.tool ?? "Outcome"}
-          trend={
-            delta === null || delta === 0 ? null : delta < 0
-              ? { icon: TrendingDown, text: `${Math.abs(delta)} pts · improving`, tone: "accent" as const }
-              : { icon: TrendingUp, text: `${delta} pts · watch`, tone: "warn" as const }
-          }
-        />
+        {outcomesOn && (
+          <Stat
+            value={lastScore === null ? "" : String(lastScore)}
+            label={outcomes[0]?.tool ?? "Outcome"}
+            trend={
+              delta === null || delta === 0 ? null : delta < 0
+                ? { icon: TrendingDown, text: `${Math.abs(delta)} pts · improving`, tone: "accent" as const }
+                : { icon: TrendingUp, text: `${delta} pts · watch`, tone: "warn" as const }
+            }
+          />
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -176,18 +182,20 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
             </div>
           </Card>
 
-          <Card>
-            <CardHead title="Outcome trend" />
-            <div className="px-[17px] pb-[17px]">
-              {points.length >= 2 ? (
-                <OutcomeSparkline points={points} tool={outcomes[0]?.tool ?? "PHQ-9"} coverage={`${outcomes.length} measures captured`} />
-              ) : (
-                <p className="py-6 text-center text-[12.5px] text-text-3">
-                  Not yet measured  capture a PHQ-9 or GAD-7 in a session to start a trend.
-                </p>
-              )}
-            </div>
-          </Card>
+          {outcomesOn && (
+            <Card>
+              <CardHead title="Outcome trend" />
+              <div className="px-[17px] pb-[17px]">
+                {points.length >= 2 ? (
+                  <OutcomeSparkline points={points} tool={outcomes[0]?.tool ?? "PHQ-9"} coverage={`${outcomes.length} measures captured`} />
+                ) : (
+                  <p className="py-6 text-center text-[12.5px] text-text-3">
+                    Not yet measured  capture a PHQ-9 or GAD-7 in a session to start a trend.
+                  </p>
+                )}
+              </div>
+            </Card>
+          )}
 
           <Card>
             <CardHead title="Session history" count={sessions.length} />

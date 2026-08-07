@@ -307,6 +307,11 @@ export async function recordOutcome(
   const parsed = outcomeInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Couldn't record the measure." };
   if (isDb()) {
+    // Feature gate (batch 2h): outcome tracking must be on for the org.
+    const { effectiveFeaturesDb } = await import("@/db/queries/features");
+    if (!(await effectiveFeaturesDb(membership.orgId)).outcomes) {
+      return { ok: false, error: "Outcome tracking isn't switched on for this practice." };
+    }
     try {
       await createOutcomeMeasureDb(membership.orgId, parsed.data, clockNow());
     } catch {

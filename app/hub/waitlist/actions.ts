@@ -17,10 +17,18 @@ const addInput = z.object({
 });
 
 /** Add a client to the waitlist (W7). When a slot frees up, matching entries are offered it. */
+/** Feature gate (batch 2h): the waitlist must be switched on for the org. */
+async function assertWaitlistOn(orgId: string): Promise<string | null> {
+  if (process.env.DATA_PROVIDER !== "db") return null;
+  const { effectiveFeaturesDb } = await import("@/db/queries/features");
+  return (await effectiveFeaturesDb(orgId)).waitlist ? null : "The waitlist isn't switched on for this practice.";
+}
+
 export async function addToWaitlist(
   raw: z.infer<typeof addInput>,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { principal, membership } = await requireOrg([...SCHEDULERS]);
+  { const gateErr = await assertWaitlistOn(membership.orgId); if (gateErr) return { ok: false, error: gateErr }; }
   const parsed = addInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Check the details." };
   if (isDb()) {
@@ -37,6 +45,7 @@ const idInput = z.object({ id: z.string().min(1) });
 
 export async function removeFromWaitlist(raw: z.infer<typeof idInput>): Promise<{ ok: true } | { ok: false; error: string }> {
   const { principal, membership } = await requireOrg([...SCHEDULERS]);
+  { const gateErr = await assertWaitlistOn(membership.orgId); if (gateErr) return { ok: false, error: gateErr }; }
   const parsed = idInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid request." };
   if (isDb()) await removeWaitlistDb(membership.orgId, parsed.data.id);
@@ -48,6 +57,7 @@ export async function removeFromWaitlist(raw: z.infer<typeof idInput>): Promise<
 /** Mark a waitlist entry placed (the client was booked into a slot). */
 export async function placeWaitlist(raw: z.infer<typeof idInput>): Promise<{ ok: true } | { ok: false; error: string }> {
   const { membership } = await requireOrg([...SCHEDULERS]);
+  { const gateErr = await assertWaitlistOn(membership.orgId); if (gateErr) return { ok: false, error: gateErr }; }
   const parsed = idInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid request." };
   if (isDb()) await placeWaitlistDb(membership.orgId, parsed.data.id);

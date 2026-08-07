@@ -1269,6 +1269,16 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   the server action; existing clients on a legacy arrangement keep displaying and billing
   correctly (records never distort) until the org changes them. Retainer bills at R0
   automatically; Megan Pillay seeds the demo case. Proven live incl. a DB-asserted save.
+- [x] **Waitlist + Outcome tracking behind admin switches** *(2026-08-07, batch 2h)*: both are now
+  registered org features in the entitlement chain with honest descriptions - **Client waitlist**
+  ("hold clients waiting for a space and book them in the moment a slot opens") and **Outcome
+  tracking** ("measure client progress with PHQ-9 / GAD-7 between sessions"). The super admin gets
+  kill-switch cards in Feature control; each practice gets described switches in Settings →
+  Integrations (locked with the reason when Phila decides above them); a generic OrgFeatureToggle
+  component now serves future switches. Off = the queue card, dossier Add-to-waitlist, outcome
+  tiles/trends/capture and the counsellor dashboard Outcomes card all disappear, and the server
+  actions refuse writes - while waitlist entries and captured measures are kept, never deleted.
+  Proven live both ways on the production build.
 
 ---
 

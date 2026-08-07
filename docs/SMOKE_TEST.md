@@ -266,6 +266,7 @@ Sign in as **ops@philasa.com**.
 - ☐ **Organisations** shows a real multi-tenant list (Masizakhe + Thrive + the lightweight extra tenants) with plan, status, and onboarding stage; opening one shows its **Plan**, **Resources & quotas**, per-org **feature overrides**, and onboarding review
 - ☐ **Users** lists platform operators + org members (search/manage)
 - ☐ **Plans & billing** (W3.4): edit a plan (price / seats / AI / video / storage / messaging) inline → **Save** persists; the change applies to every org on that plan. The **landing-pricing** switch shows the tiers on `/` only when on.
+- ☐ **Waitlist + Outcomes switches** (batch 2h): Feature control shows **Client waitlist** and **Outcome tracking** cards with descriptions; killing one hides its every hub/app surface (queue card, dossier button, outcome tiles/trends/capture) while data is kept; the org's Settings switch shows locked with the reason; restore brings it all back
 - ☐ **Feature control** (W3): turn a feature **off across the whole platform** (kill-switch) → it's disabled for every org regardless of plan; turn it back on. On an org detail page, a **force-on / force-off** per-org override wins over the plan.
 - ☐ **Integrations** shows the **Phila platform gateways**: **Paystack** (key + Test connection + switch) and **Video · LiveKit** (Demo/Live mode toggle, ws URL/key/secret, **Test connection**, switch  seeded in Demo with `ws://localhost:7880`)
 - ☐ **LiveKit Test connection** → "Connected" when the Docker server is up; a clear error when it's down

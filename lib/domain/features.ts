@@ -30,6 +30,8 @@ export const FEATURE_REGISTRY: Record<OrgFeature, FeatureMeta> = {
   funders: { key: "funders", label: "Funders & grants", description: "M&E reporting and funder-portal sharing (k-anonymised).", category: "reporting", globallyDisableable: false },
   referrals: { key: "referrals", label: "Referral tracking", description: "Capture how each client found the practice and see where clients come from in Insights.", category: "reporting", globallyDisableable: false },
   language: { key: "language", label: "Language of record", description: "Home language on clients, spoken languages on counsellors, a language step in public booking, and speaker-first matching (Phase 32).", category: "clinical", globallyDisableable: true },
+  waitlist: { key: "waitlist", label: "Client waitlist", description: "Hold clients waiting for a space and book them in the moment a slot opens - an Add-to-waitlist action on each client and a waitlist queue on the Appointments page.", category: "clinical", globallyDisableable: true },
+  outcomes: { key: "outcomes", label: "Outcome tracking", description: "Measure client progress with PHQ-9 / GAD-7 between sessions - captured in session notes, trend charts on client dossiers and the counsellor dashboard.", category: "clinical", globallyDisableable: true },
 };
 
 export const FEATURE_LIST: FeatureMeta[] = ORG_FEATURES.map((f) => FEATURE_REGISTRY[f]);
@@ -49,6 +51,8 @@ export function planIncludesFeature(plan: Plan | undefined, feature: OrgFeature)
     case "payments":
     case "funders":
     case "referrals":
-    case "language": return true; // available on every plan; org-toggleable
+    case "language":
+    case "waitlist":
+    case "outcomes": return true; // available on every plan; org-toggleable
   }
 }

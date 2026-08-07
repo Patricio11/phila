@@ -31,9 +31,13 @@ export default async function HubCalendarsPage() {
   ]);
   const events = lists.flat();
   const isDb = process.env.DATA_PROVIDER === "db";
+  // The waitlist is feature-switched (batch 2h): off = no queue card, no fetch.
+  const waitlistOn = isDb
+    ? (await (await import("@/db/queries/features")).effectiveFeaturesDb(membership.orgId)).waitlist
+    : Boolean(org.features.waitlist);
   const [changeRequests, waitlist] = await Promise.all([
     isDb ? listPendingChangeRequestsDb(membership.orgId) : Promise.resolve([]),
-    isDb ? listWaitlistDb(membership.orgId) : Promise.resolve([]),
+    isDb && waitlistOn ? listWaitlistDb(membership.orgId) : Promise.resolve([]),
   ]);
   const scheduling = {
     orgId: membership.orgId,
@@ -52,7 +56,7 @@ export default async function HubCalendarsPage() {
         summary={`Every counsellor's sessions in one view  ${counsellors.length} counsellors. Click a slot to book on behalf.`}
       />
       <ChangeRequestsCard initial={changeRequests} />
-      <WaitlistCard initial={waitlist} options={scheduling} />
+      {waitlistOn && <WaitlistCard initial={waitlist} options={scheduling} />}
       <CalendarView events={events} businessHours={org.scheduling.businessHours} scheduling={scheduling} nowISO={now} openSessions={false} clientBasePath="/hub/clients" />
     </div>
   );

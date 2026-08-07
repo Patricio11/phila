@@ -46,5 +46,8 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
     ? (await listSessionAttachmentsDb(membership.orgId, id)).map((a) => ({ id: a.id, name: a.name, sizeLabel: a.sizeLabel, scanStatus: a.scanStatus }))
     : [];
 
-  return <SessionEditor data={data} counsellorName={me.name} videoEnabled={Boolean(org?.features.video)} initialAttachments={attachments} />;
+  const outcomesOn = process.env.DATA_PROVIDER === "db"
+    ? (await (await import("@/db/queries/features")).effectiveFeaturesDb(membership.orgId)).outcomes
+    : Boolean(org?.features.outcomes);
+  return <SessionEditor data={data} counsellorName={me.name} videoEnabled={Boolean(org?.features.video)} outcomesEnabled={outcomesOn} initialAttachments={attachments} />;
 }

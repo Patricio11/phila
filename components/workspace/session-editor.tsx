@@ -71,11 +71,14 @@ export function SessionEditor({
   data,
   counsellorName,
   videoEnabled,
+  outcomesEnabled = true,
   initialAttachments = [],
 }: {
   data: SessionEditorData;
   counsellorName: string;
   videoEnabled: boolean;
+  /** Outcome tracking is feature-switched (batch 2h) - off hides the capture card. */
+  outcomesEnabled?: boolean;
   initialAttachments?: Attachment[];
 }) {
   const { appointment: appt, client, continuity } = data;
@@ -490,13 +493,15 @@ export function SessionEditor({
             <p className="mt-2 text-[11px] text-text-3">AI never marks a session  only you do.</p>
           </Card>
 
-          <Card className="p-4">
-            <div className="text-[13px] font-[600] text-text">Outcome measure</div>
-            <p className="mt-1 text-[12px] text-text-2">Capture a PHQ-9 or GAD-7 to track progress over time.</p>
-            <div className="mt-3">
-              <OutcomeCaptureButton clientId={client.id} clientName={client.name} />
-            </div>
-          </Card>
+          {outcomesEnabled && (
+            <Card className="p-4">
+              <div className="text-[13px] font-[600] text-text">Outcome measure</div>
+              <p className="mt-1 text-[12px] text-text-2">Capture a PHQ-9 or GAD-7 to track progress over time.</p>
+              <div className="mt-3">
+                <OutcomeCaptureButton clientId={client.id} clientName={client.name} />
+              </div>
+            </Card>
+          )}
 
           <Card>
             <CardHead title="Share with the client" />

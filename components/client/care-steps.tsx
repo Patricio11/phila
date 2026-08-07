@@ -74,6 +74,8 @@ export function CareSteps({
               <button
                 type="button"
                 onClick={() => toggle(t.id)}
+                role="checkbox"
+                aria-checked={t.done}
                 className={cn("flex w-full items-center gap-3 rounded-card border p-3.5 text-left transition-colors", t.done ? "border-accent/30 bg-accent-soft/40" : "border-border bg-surface hover:bg-surface-hover")}
               >
                 <span className={cn("flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-all", t.done ? "border-accent bg-accent text-accent-ink" : "border-border-strong")}>

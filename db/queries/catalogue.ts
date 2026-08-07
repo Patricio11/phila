@@ -8,14 +8,14 @@ function realId(prefix: string, id: string | undefined): string {
 }
 
 /** Replace the org's service catalogue with `list` (upsert kept, delete removed). RLS-scoped. */
-export async function saveServices(orgId: string, list: { id: string; name: string; durationMin: number; priceCents: number | null }[]): Promise<void> {
+export async function saveServices(orgId: string, list: { id: string; name: string; durationMin: number; priceCents: number | null; colour?: string | null }[]): Promise<void> {
   await runForOrg(orgId, async () => {
     const db = activeDb();
-    const rows = list.map((s) => ({ id: realId("svc", s.id), orgId, name: s.name, durationMin: s.durationMin, priceCents: s.priceCents }));
+    const rows = list.map((s) => ({ id: realId("svc", s.id), orgId, name: s.name, durationMin: s.durationMin, priceCents: s.priceCents, colour: s.colour ?? null }));
     const keep = rows.map((r) => r.id);
     await db.delete(servicesTable).where(keep.length ? and(eq(servicesTable.orgId, orgId), notInArray(servicesTable.id, keep)) : eq(servicesTable.orgId, orgId));
     for (const r of rows) {
-      await db.insert(servicesTable).values(r).onConflictDoUpdate({ target: servicesTable.id, set: { name: r.name, durationMin: r.durationMin, priceCents: r.priceCents } });
+      await db.insert(servicesTable).values(r).onConflictDoUpdate({ target: servicesTable.id, set: { name: r.name, durationMin: r.durationMin, priceCents: r.priceCents, colour: r.colour } });
     }
   });
 }

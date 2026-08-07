@@ -89,27 +89,27 @@ function dayRange(col: typeof appointmentsTable.startsAt, opts?: { from?: string
 /** A counsellor's appointments with client/service/room names resolved (joined). */
 async function counsellorApptViews(counsellorId: string): Promise<AppointmentView[]> {
   const rows = await activeDb()
-    .select({ a: appointmentsTable, clientName: clientsTable.name, serviceName: servicesTable.name, counsellorName: counsellorsTable.name, roomName: roomsTable.name })
+    .select({ a: appointmentsTable, clientName: clientsTable.name, serviceName: servicesTable.name, serviceColour: servicesTable.colour, counsellorName: counsellorsTable.name, roomName: roomsTable.name })
     .from(appointmentsTable)
     .leftJoin(clientsTable, eq(appointmentsTable.clientId, clientsTable.id))
     .leftJoin(servicesTable, eq(appointmentsTable.serviceId, servicesTable.id))
     .leftJoin(counsellorsTable, eq(appointmentsTable.counsellorId, counsellorsTable.id))
     .leftJoin(roomsTable, eq(appointmentsTable.roomId, roomsTable.id))
     .where(eq(appointmentsTable.counsellorId, counsellorId));
-  return rows.map((r) => ({ ...toAppt(r.a), clientName: r.clientName ?? "Unknown client", serviceName: r.serviceName ?? "Session", counsellorName: r.counsellorName ?? "", roomName: r.roomName ?? null }));
+  return rows.map((r) => ({ ...toAppt(r.a), clientName: r.clientName ?? "Unknown client", serviceName: r.serviceName ?? "Session", serviceColour: r.serviceColour ?? null, counsellorName: r.counsellorName ?? "", roomName: r.roomName ?? null }));
 }
 
 /** All of an org's appointments as joined views (client/service/counsellor/room names). */
 async function orgApptViews(orgId: string): Promise<AppointmentView[]> {
   const rows = await activeDb()
-    .select({ a: appointmentsTable, clientName: clientsTable.name, serviceName: servicesTable.name, counsellorName: counsellorsTable.name, roomName: roomsTable.name })
+    .select({ a: appointmentsTable, clientName: clientsTable.name, serviceName: servicesTable.name, serviceColour: servicesTable.colour, counsellorName: counsellorsTable.name, roomName: roomsTable.name })
     .from(appointmentsTable)
     .leftJoin(clientsTable, eq(appointmentsTable.clientId, clientsTable.id))
     .leftJoin(servicesTable, eq(appointmentsTable.serviceId, servicesTable.id))
     .leftJoin(counsellorsTable, eq(appointmentsTable.counsellorId, counsellorsTable.id))
     .leftJoin(roomsTable, eq(appointmentsTable.roomId, roomsTable.id))
     .where(eq(appointmentsTable.orgId, orgId));
-  return rows.map((r) => ({ ...toAppt(r.a), clientName: r.clientName ?? "Unknown client", serviceName: r.serviceName ?? "Session", counsellorName: r.counsellorName ?? "", roomName: r.roomName ?? null }));
+  return rows.map((r) => ({ ...toAppt(r.a), clientName: r.clientName ?? "Unknown client", serviceName: r.serviceName ?? "Session", serviceColour: r.serviceColour ?? null, counsellorName: r.counsellorName ?? "", roomName: r.roomName ?? null }));
 }
 
 const HELD_STATES = ["completed", "no_show", "risk_flagged", "discharged"];
@@ -270,7 +270,7 @@ export const dbProvider: DataProvider = {
       about: c.aboutBody,
       sites: sites.map((s) => ({ id: s.id, orgId: s.orgId, name: s.name, province: s.province as Province })),
       offersOnline: c.showOnlineBadge,
-      services: services.map((s) => ({ id: s.id, orgId: s.orgId, name: s.name, durationMin: s.durationMin, priceCents: s.priceCents })),
+      services: services.map((s) => ({ id: s.id, orgId: s.orgId, name: s.name, durationMin: s.durationMin, priceCents: s.priceCents, colour: s.colour ?? null })),
       team: counsellors.map(toCounsellor),
       content: c,
     };
@@ -294,7 +294,7 @@ export const dbProvider: DataProvider = {
   getClientProfile: (clientId) => runForClient(clientId, null, () => getClientProfileDb(clientId)),
   listAppointmentsForClient: (clientId) => runForClient(clientId, [], async () => {
     const rows = await activeDb()
-      .select({ a: appointmentsTable, clientName: clientsTable.name, serviceName: servicesTable.name, counsellorName: counsellorsTable.name, roomName: roomsTable.name })
+      .select({ a: appointmentsTable, clientName: clientsTable.name, serviceName: servicesTable.name, serviceColour: servicesTable.colour, counsellorName: counsellorsTable.name, roomName: roomsTable.name })
       .from(appointmentsTable)
       .leftJoin(clientsTable, eq(appointmentsTable.clientId, clientsTable.id))
       .leftJoin(servicesTable, eq(appointmentsTable.serviceId, servicesTable.id))
@@ -302,7 +302,7 @@ export const dbProvider: DataProvider = {
       .leftJoin(roomsTable, eq(appointmentsTable.roomId, roomsTable.id))
       .where(eq(appointmentsTable.clientId, clientId));
     return rows
-      .map((r): AppointmentView => ({ ...toAppt(r.a), clientName: r.clientName ?? "", serviceName: r.serviceName ?? "Session", counsellorName: r.counsellorName ?? "", roomName: r.roomName ?? null }))
+      .map((r): AppointmentView => ({ ...toAppt(r.a), clientName: r.clientName ?? "", serviceName: r.serviceName ?? "Session", serviceColour: r.serviceColour ?? null, counsellorName: r.counsellorName ?? "", roomName: r.roomName ?? null }))
       .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
   }),
   listClientVisibleDocuments: (clientId) => runForClient(clientId, [], () => listClientVisibleDocumentsDb(clientId)),
@@ -370,7 +370,7 @@ export const dbProvider: DataProvider = {
   }),
   listServices: (orgId: string): Promise<Service[]> => runForOrg(orgId, async () => {
     const rows = await activeDb().select().from(servicesTable).where(eq(servicesTable.orgId, orgId));
-    return rows.map((s) => ({ id: s.id, orgId: s.orgId, name: s.name, durationMin: s.durationMin, priceCents: s.priceCents }));
+    return rows.map((s) => ({ id: s.id, orgId: s.orgId, name: s.name, durationMin: s.durationMin, priceCents: s.priceCents, colour: s.colour ?? null }));
   }),
   listSites: (orgId: string): Promise<Site[]> => runForOrg(orgId, async () => {
     const rows = await activeDb().select().from(sitesTable).where(eq(sitesTable.orgId, orgId));
@@ -771,7 +771,7 @@ export const dbProvider: DataProvider = {
       clients: clientRows.map(toClient),
       appointments: apptRows.map(toAppt),
       invoices: invoiceRows.map(toInvoice),
-      services: serviceRows.map((s) => ({ id: s.id, orgId: s.orgId, name: s.name, durationMin: s.durationMin, priceCents: s.priceCents })),
+      services: serviceRows.map((s) => ({ id: s.id, orgId: s.orgId, name: s.name, durationMin: s.durationMin, priceCents: s.priceCents, colour: s.colour ?? null })),
       measuredClientIds: new Set(outcomeRows.map((r) => r.clientId)),
       now,
     });

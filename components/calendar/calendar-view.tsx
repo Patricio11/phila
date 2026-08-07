@@ -341,12 +341,13 @@ function TimeGrid({ dates, today, nowMin, businessHours, events, onCreate, onEve
                     const top = ((minutesOf(ev.startsAt) - START_HOUR * 60) / 60) * HOUR_PX;
                     const height = Math.max(22, (ev.durationMin / 60) * HOUR_PX - 2);
                     const movable = ev.state === "scheduled";
+                    const svcStyle = serviceStyle(ev);
                     return (
                       <button key={ev.id} type="button" draggable={movable}
                         onDragStart={(e) => e.dataTransfer.setData("text/plain", ev.id)}
                         onClick={(e) => { e.stopPropagation(); onEvent(ev); }}
-                        className={cn("absolute z-10 overflow-hidden rounded-[7px] border px-1.5 py-1 text-left transition-shadow hover:z-30 hover:shadow-md", evTone(ev.state), movable && "cursor-grab active:cursor-grabbing")}
-                        style={{ top, height, left: `calc(${(col / cols) * 100}% + 2px)`, width: `calc(${100 / cols}% - 4px)` }}
+                        className={cn("absolute z-10 overflow-hidden rounded-[7px] border px-1.5 py-1 text-left transition-shadow hover:z-30 hover:shadow-md", svcStyle ? "border" : evTone(ev.state), movable && "cursor-grab active:cursor-grabbing")}
+                        style={{ top, height, left: `calc(${(col / cols) * 100}% + 2px)`, width: `calc(${100 / cols}% - 4px)`, ...svcStyle }}
                       >
                         <div className="flex items-center gap-1 text-[11px] font-semibold tabular-nums leading-tight">
                           <StatusDot tone={DOT[ev.state]} />{hhmm(ev.startsAt)}{isRemote(ev.type) && <Video className="size-2.5" strokeWidth={2.5} aria-hidden />}
@@ -417,11 +418,14 @@ function MonthView({ anchor, today, events, businessHours, onDay, onCreate, onEv
                 ) : null}
               </div>
               <div className="mt-1 space-y-0.5">
-                {dayEvents.slice(0, 3).map((e) => (
-                  <button key={e.id} type="button" onClick={() => onEvent(e)} className={cn("flex w-full items-center gap-1 rounded px-1 py-0.5 text-left text-[10.5px] transition-colors", evTone(e.state))}>
-                    <StatusDot tone={DOT[e.state]} /><span className="tabular-nums">{hhmm(e.startsAt)}</span><span className="truncate">{e.clientName}</span>
-                  </button>
-                ))}
+                {dayEvents.slice(0, 3).map((e) => {
+                  const svcStyle = serviceStyle(e);
+                  return (
+                    <button key={e.id} type="button" onClick={() => onEvent(e)} className={cn("flex w-full items-center gap-1 rounded px-1 py-0.5 text-left text-[10.5px] transition-colors", svcStyle ? "" : evTone(e.state))} style={svcStyle}>
+                      <StatusDot tone={DOT[e.state]} /><span className="tabular-nums">{hhmm(e.startsAt)}</span><span className="truncate">{e.clientName}</span>
+                    </button>
+                  );
+                })}
                 {dayEvents.length > 3 && <button type="button" onClick={() => onDay(date)} className="px-1 text-[10.5px] font-medium text-text-3 hover:text-text">+{dayEvents.length - 3} more</button>}
               </div>
             </div>
@@ -450,7 +454,7 @@ function AgendaView({ anchor, today, events, onEvent }: { anchor: string; today:
             </div>
             <div className="flex-1 space-y-1.5">
               {dayEvents.map((e) => (
-                <button key={e.id} type="button" onClick={() => onEvent(e)} className="flex w-full items-center gap-3 rounded-control border border-border p-2.5 text-left transition-colors hover:bg-surface-hover">
+                <button key={e.id} type="button" onClick={() => onEvent(e)} className="flex w-full items-center gap-3 rounded-control border border-border p-2.5 text-left transition-colors hover:bg-surface-hover" style={e.serviceColour && /^#[0-9a-fA-F]{6}$/.test(e.serviceColour) ? { borderLeft: `3px solid ${e.serviceColour}` } : undefined}>
                   <span className="w-12 shrink-0 text-[12px] font-semibold tabular-nums text-text-2">{hhmm(e.startsAt)}</span>
                   <span className="inline-flex items-center gap-1.5 text-[13px] text-text"><StatusDot tone={DOT[e.state]} />{e.clientName}</span>
                   <span className="ml-auto text-[11.5px] text-text-3">{e.serviceName} · {e.roomName ?? (e.type === "online" ? "Online" : "")}</span>
@@ -470,6 +474,18 @@ function evTone(state: AppointmentState): string {
   if (state === "completed" || state === "discharged") return "border-accent/30 bg-accent-soft text-accent";
   if (state === "no_show" || state === "postponed") return "border-warn/30 bg-warn-soft text-warn";
   return "border-border bg-surface text-text hover:border-accent/40";
+}
+
+/**
+ * The service's calendar colour (batch 2f). Warning states keep their tones -
+ * risk/no-show must still pop - but scheduled and held sessions wear the
+ * service's colour: tinted fill, soft border, full-strength text.
+ */
+function serviceStyle(ev: AppointmentView): React.CSSProperties | undefined {
+  const c = ev.serviceColour;
+  if (!c || !/^#[0-9a-fA-F]{6}$/.test(c)) return undefined;
+  if (ev.state === "risk_flagged" || ev.state === "no_show" || ev.state === "postponed" || ev.state === "cancelled") return undefined;
+  return { backgroundColor: `${c}1f`, borderColor: `${c}59`, color: c };
 }
 
 function layout(dayEvents: AppointmentView[]): { ev: AppointmentView; col: number; cols: number }[] {

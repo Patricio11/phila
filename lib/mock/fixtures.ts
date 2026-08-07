@@ -135,10 +135,10 @@ export const counsellors: Counsellor[] = [
 ];
 
 export const services: Service[] = [
-  { id: "svc_individual", orgId: ORG_ID, name: "Individual counselling", durationMin: 60, priceCents: 45000 },
-  { id: "svc_couples", orgId: ORG_ID, name: "Couples counselling", durationMin: 90, priceCents: 75000 },
-  { id: "svc_assessment", orgId: ORG_ID, name: "Initial assessment", durationMin: 60, priceCents: 50000 },
-  { id: "svc_trauma", orgId: ORG_ID, name: "Trauma debriefing", durationMin: 60, priceCents: null },
+  { id: "svc_individual", orgId: ORG_ID, name: "Individual counselling", durationMin: 60, priceCents: 45000, colour: "#1C7D58" },
+  { id: "svc_couples", orgId: ORG_ID, name: "Couples counselling", durationMin: 90, priceCents: 75000, colour: "#3C7FB0" },
+  { id: "svc_assessment", orgId: ORG_ID, name: "Initial assessment", durationMin: 60, priceCents: 50000, colour: "#6b4f8a" },
+  { id: "svc_trauma", orgId: ORG_ID, name: "Trauma debriefing", durationMin: 60, priceCents: null, colour: "#C2554D" },
 ];
 
 export const clients: Client[] = [

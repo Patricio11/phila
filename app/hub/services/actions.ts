@@ -16,6 +16,8 @@ const service = z.object({
   name: z.string().trim().min(2, "Each service needs a name.").max(80),
   durationMin: z.number().int().min(5, "Sessions are at least 5 minutes.").max(480),
   priceCents: z.number().int().min(0).max(10_000_00).nullable(),
+  /** Calendar colour (batch 2f) - a hex from the house palette. */
+  colour: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(),
 });
 
 const input = z.object({ services: z.array(service).min(1, "Keep at least one service.") });

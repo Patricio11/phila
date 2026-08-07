@@ -153,6 +153,8 @@ export interface OrgPublicPage {
 export interface AppointmentView extends Appointment {
   clientName: string;
   serviceName: string;
+  /** The service's calendar colour (hex) - events wear it (batch 2f). */
+  serviceColour?: string | null;
   counsellorName: string;
   roomName: string | null;
 }

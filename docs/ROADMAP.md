@@ -1254,6 +1254,14 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   on Schedule session (both /app and hub) books the same slot for 2/4/6/8/12 weeks in one go -
   the class is notified once, the stream announcement says "weekly for N weeks". Migration 0063
   (`is_org` on posts). Proven live end to end from both sides.
+- [x] **Service colours on the calendar** *(2026-08-07, batch 2f)*: every service picks a
+  **Calendar colour** on the Services page (the house six-colour palette, same family the rooms
+  use; a new service auto-picks an unused one) and calendar events **wear their service's
+  colour** - tinted fill, soft border, full-strength text - across the week/day grid, month
+  minis, and agenda (left stripe). Warning states keep their tones: risk stays red, no-show
+  amber - the colour never hides a problem. Migration 0064 (`services.colour`); seeded palette
+  for the demo services. Proven live: computed event colours matched the service hex, and
+  changing a colour on Services re-painted its events.
 
 ---
 

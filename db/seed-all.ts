@@ -142,7 +142,7 @@ async function main() {
     }).onConflictDoNothing();
   }
   for (const s of servicesFx) {
-    await db.insert(schema.services).values({ id: s.id, orgId: s.orgId, name: s.name, durationMin: s.durationMin, priceCents: s.priceCents }).onConflictDoNothing();
+    await db.insert(schema.services).values({ id: s.id, orgId: s.orgId, name: s.name, durationMin: s.durationMin, priceCents: s.priceCents, colour: s.colour ?? null }).onConflictDoNothing();
   }
   for (const s of sitesFx) {
     await db.insert(schema.sites).values({ id: s.id, orgId: s.orgId, name: s.name, province: s.province }).onConflictDoNothing();

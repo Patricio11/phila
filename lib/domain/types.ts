@@ -133,6 +133,8 @@ export interface Service {
   durationMin: number;
   /** Price in cents (ZAR); null means "enquire". */
   priceCents: number | null;
+  /** Hex colour - the service's identity on the calendar (null = default). */
+  colour?: string | null;
 }
 
 export interface Site {

@@ -2,15 +2,18 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { Clock, Plus, Save, Trash2 } from "lucide-react";
+import { Check, Clock, Plus, Save, Trash2 } from "lucide-react";
 import type { Service } from "@/lib/domain/types";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { saveServices } from "@/app/hub/services/actions";
+import { cn } from "@/lib/utils";
 
 const DURATIONS = [30, 45, 60, 90, 120];
+/** The house palette (same family the rooms use) - the service's calendar colour. */
+const COLOURS = ["#1C7D58", "#3C7FB0", "#9a6418", "#6b4f8a", "#C2554D", "#0E7C7B"];
 
 export function ServicesManager({ initial }: { initial: Service[] }) {
   const { toast } = useToast();
@@ -24,13 +27,15 @@ export function ServicesManager({ initial }: { initial: Service[] }) {
   const remove = (id: string) => setServices((list) => list.filter((s) => s.id !== id));
   const add = () => {
     const id = `svc_new_${counter.current++}`;
-    setServices((list) => [...list, { id, orgId: initial[0]?.orgId ?? "", name: "", durationMin: 60, priceCents: 45000 }]);
+    // A fresh service picks the first palette colour nobody is using yet.
+    const used = new Set(services.map((s) => s.colour));
+    setServices((list) => [...list, { id, orgId: initial[0]?.orgId ?? "", name: "", durationMin: 60, priceCents: 45000, colour: COLOURS.find((c) => !used.has(c)) ?? COLOURS[0] }]);
   };
 
   const save = async () => {
     setError(null);
     setSaving(true);
-    const res = await saveServices({ services: services.map((s) => ({ id: s.id, name: s.name, durationMin: s.durationMin, priceCents: s.priceCents })) });
+    const res = await saveServices({ services: services.map((s) => ({ id: s.id, name: s.name, durationMin: s.durationMin, priceCents: s.priceCents, colour: s.colour ?? null })) });
     setSaving(false);
     if (res.ok) toast({ tone: "success", title: "Services saved", description: "Your booking page and invoices use these." });
     else setError(res.error);
@@ -80,6 +85,29 @@ export function ServicesManager({ initial }: { initial: Service[] }) {
                     />
                   </div>
                   <p className="text-[10.5px] text-text-3">{s.priceCents === null ? "Shown as “Enquire”" : "ZAR per session"}</p>
+                </div>
+              </div>
+
+              {/* Calendar colour (batch 2f) - this service's identity on the calendar. */}
+              <div className="space-y-1">
+                <Label className="text-[12px]">Calendar colour</Label>
+                <div className="flex items-center gap-1.5">
+                  {COLOURS.map((c) => {
+                    const on = (s.colour ?? null) === c;
+                    return (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => patch(s.id, { colour: c })}
+                        aria-pressed={on}
+                        aria-label={`Colour ${c}`}
+                        className={cn("grid size-7 place-items-center rounded-full transition-transform", on ? "scale-110" : "hover:scale-105")}
+                        style={{ backgroundColor: c, ...(on ? { outline: `2px solid ${c}`, outlineOffset: "2px" } : {}) }}
+                      >
+                        {on && <Check className="size-3.5 text-white" strokeWidth={2.6} aria-hidden />}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>

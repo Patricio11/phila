@@ -208,6 +208,8 @@ export const services = pgTable("services", {
   durationMin: integer("duration_min").notNull(),
   /** null = "enquire". */
   priceCents: integer("price_cents"),
+  /** Hex colour - the service's identity on the calendar (null = default green). */
+  colour: text("colour"),
 });
 
 export const sites = pgTable("sites", {

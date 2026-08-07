@@ -119,6 +119,10 @@ Sign in as **Thandeka**.
 - ☐ **Hybrid** (feedback #7): the Where picker offers **In person / Online / Hybrid**; Hybrid requires a room AND generates the video link; the calendar filter gains a **Hybrid** button; the event detail reads "**room · client joins online**" with Join/Copy link; the counsellor's session page shows "Hybrid session · room" + Open video room; the client sees it exactly like an online session
 - ☐ **Service colours** (batch 2f): each service on `/hub/services` has a **Calendar colour** swatch row (house palette + a rainbow swatch that opens the native picker for any colour); calendar events wear their service's colour (week/day tint, month minis, agenda left stripe) in BOTH the hub and counsellor calendars; risk/no-show tones still win; changing a colour + Save re-paints the events
 
+**Team - full profile editing** (batch 2i)
+- ☐ On a member page, **Edit profile** edits EVERYTHING: name · phone · date of birth · address · bio · display languages · specialties · education rows (add/remove) · and for counsellors the **credential** (body + registration number)
+- ☐ Changing the credential warns, saves, and resets verification to **pending** (re-verify under Verification); the header name, Personal & contact card and Education card all show the new truth immediately
+
 **Team - availability & offboarding** (`/hub/team` → a counsellor) (feedback #4/#5)
 - ☐ The member page has an **Availability** card - "follows the practice working hours" by default; **Set availability** opens the weekly editor (seeded from practice hours); saving lands on the dashboard **Activity feed**
 - ☐ Signed in as that **counsellor**, `/app/settings` shows **Your availability** read-only ("managed by your practice") - no edit controls

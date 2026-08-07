@@ -373,3 +373,68 @@ export async function saveSpokenLanguages(
   revalidatePath("/hub/team");
   return { ok: true };
 }
+
+/* ---- Full profile editing (batch 2i) - the org edits everything ---- */
+
+const profileInput = z.object({
+  userId: z.string().min(1),
+  name: z.string().trim().min(2, "Enter the member's full name.").max(120),
+  phone: z.string().trim().max(30).optional().or(z.literal("")),
+  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("")),
+  address: z.string().trim().max(240).optional().or(z.literal("")),
+  bio: z.string().trim().max(2000).optional().or(z.literal("")),
+  languages: z.array(z.string().trim().min(1).max(40)).max(12),
+  qualifications: z.array(z.object({
+    qualification: z.string().trim().min(2, "Name each qualification.").max(120),
+    institution: z.string().trim().max(120),
+    year: z.number().int().min(1950).max(2100),
+  })).max(12),
+  specialties: z.array(z.string().trim().min(1).max(60)).max(16),
+  credential: z.object({
+    body: z.enum(["HPCSA", "ASCHP", "SACSSP"]),
+    registrationNo: z.string().trim().max(60).optional().or(z.literal("")),
+  }).nullable().optional(),
+});
+
+/**
+ * The org updates a member's whole profile - name, contact, bio, education,
+ * specialties, and (counsellors) the credential. Changing the credential body
+ * or registration number resets verification to pending, honestly. Audited.
+ */
+export async function saveMemberProfile(
+  raw: z.infer<typeof profileInput>,
+): Promise<{ ok: true; credentialReset: boolean } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = profileInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the profile details." };
+  const d = parsed.data;
+
+  let credentialReset = false;
+  if (isDb()) {
+    const { saveMemberProfileDb } = await import("@/db/queries/team");
+    const res = await saveMemberProfileDb(membership.orgId, d.userId, {
+      name: d.name,
+      phone: d.phone || null,
+      dateOfBirth: d.dateOfBirth || null,
+      address: d.address || null,
+      bio: d.bio || null,
+      languages: d.languages,
+      qualifications: d.qualifications,
+      specialties: d.specialties,
+      credential: d.credential ? { body: d.credential.body, registrationNo: d.credential.registrationNo || null } : null,
+    });
+    if (!res.ok) return { ok: false, error: "That member couldn't be found." };
+    credentialReset = res.credentialReset;
+  }
+
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `member:${d.userId}/profile`,
+    reason: credentialReset ? "update_member_profile_credential_reset" : "update_member_profile",
+  });
+  revalidatePath(`/hub/team/${d.userId}`);
+  revalidatePath("/hub/team");
+  return { ok: true, credentialReset };
+}

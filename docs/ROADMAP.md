@@ -1279,6 +1279,15 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   tiles/trends/capture and the counsellor dashboard Outcomes card all disappear, and the server
   actions refuse writes - while waitlist entries and captured measures are kept, never deleted.
   Proven live both ways on the production build.
+- [x] **The org fully edits counsellor profiles** *(2026-08-07, batch 2i)*: an **Edit profile**
+  dialog on every team member page - name, phone, date of birth, address, bio, display languages,
+  specialties, and repeatable education/qualification rows, plus (counsellors) the professional
+  **credential** (body + registration number). Changing the credential honestly resets its
+  verification to **pending** - the dialog warns before saving and the toast points at the
+  Verification flow; an unchanged credential keeps its verified status. The name updates the auth
+  user AND the counsellor row together. Audited (`update_member_profile[_credential_reset]`).
+  Proven live: full edit round-trip DB-asserted on user + counsellors + team_profiles, and the
+  credential reset verified.
 
 ---
 

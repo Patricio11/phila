@@ -243,3 +243,73 @@ export async function cancelUpcomingForCounsellorDb(orgId: string, counsellorId:
     return rows.map((r) => r.id);
   });
 }
+
+/* ---- Full profile editing (batch 2i) - the org can edit everything ---- */
+
+export interface MemberProfileInput {
+  name: string;
+  phone: string | null;
+  dateOfBirth: string | null; // "yyyy-mm-dd"
+  address: string | null;
+  bio: string | null;
+  languages: string[];
+  qualifications: { qualification: string; institution: string; year: number }[];
+  specialties: string[];
+  /** Counsellors only - changing body/reg number resets verification to pending. */
+  credential?: { body: string; registrationNo: string | null } | null;
+}
+
+/**
+ * The org updates a member's whole profile: name, contact, bio, qualifications,
+ * specialties, and (for counsellors) the credential. Changing the credential
+ * body or registration number honestly resets its status to "pending" - the
+ * verification flow re-checks it; an unchanged credential keeps its status.
+ */
+export async function saveMemberProfileDb(orgId: string, userId: string, input: MemberProfileInput): Promise<{ ok: boolean; credentialReset: boolean }> {
+  let credentialReset = false;
+  const orgOk = await runForOrg(orgId, async () => {
+    const db = activeDb();
+    const [m] = await db.select({ userId: orgMembers.userId }).from(orgMembers)
+      .where(and(eq(orgMembers.orgId, orgId), eq(orgMembers.userId, userId))).limit(1);
+    if (!m) return false;
+
+    // Profile upsert (team_profiles is the org-facing profile record).
+    const values = {
+      orgId, userId,
+      phone: input.phone, dateOfBirth: input.dateOfBirth, address: input.address, bio: input.bio,
+      languages: input.languages, qualifications: input.qualifications, specialties: input.specialties,
+    };
+    const [existing] = await db.select({ id: teamProfiles.id }).from(teamProfiles)
+      .where(and(eq(teamProfiles.orgId, orgId), eq(teamProfiles.userId, userId))).limit(1);
+    if (existing) {
+      await db.update(teamProfiles).set(values).where(eq(teamProfiles.id, existing.id));
+    } else {
+      await db.insert(teamProfiles).values(values);
+    }
+
+    // Counsellor row: name always; credential body/reg resets verification when changed.
+    const [couns] = await db.select().from(counsellors)
+      .where(and(eq(counsellors.orgId, orgId), eq(counsellors.userId, userId))).limit(1);
+    if (couns) {
+      const set: Record<string, unknown> = { name: input.name };
+      if (input.credential) {
+        const changed = input.credential.body !== couns.credentialBody
+          || (input.credential.registrationNo ?? null) !== (couns.credentialRegNo ?? null);
+        set.credentialBody = input.credential.body;
+        set.credentialRegNo = input.credential.registrationNo;
+        if (changed && couns.credentialStatus === "verified") {
+          set.credentialStatus = "pending";
+          credentialReset = true;
+        }
+      }
+      await db.update(counsellors).set(set).where(eq(counsellors.id, couns.id));
+    }
+    return true;
+  });
+  if (!orgOk) return { ok: false, credentialReset: false };
+
+  // The display name lives on the auth user (global) - owner write, membership
+  // already proven above.
+  await getDb().update(user).set({ name: input.name }).where(eq(user.id, userId));
+  return { ok: true, credentialReset };
+}

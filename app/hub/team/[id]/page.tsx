@@ -17,6 +17,7 @@ import { TeamRoleChip, ROLE_REACH } from "@/components/hub/team-role-chip";
 import { TransferCaseloadButton } from "@/components/hub/transfer-caseload-button";
 import { AvailabilityEditor } from "@/components/hub/availability-editor";
 import { SpokenLanguagesEditor } from "@/components/hub/spoken-languages-editor";
+import { EditMemberProfileButton } from "@/components/hub/edit-member-profile";
 import type { BusinessHours } from "@/lib/domain/types";
 import { ManageMemberButton } from "@/components/hub/manage-member-modal";
 import { SendSetupLinkButton } from "@/components/hub/send-setup-link-button";
@@ -106,6 +107,20 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
         actions={
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-[12.5px] text-text-2"><StatusDot tone={member.active ? "green" : "grey"} /> {member.active ? "Active" : "Deactivated"}</span>
+            <EditMemberProfileButton
+              userId={member.userId}
+              initial={{
+                name: member.name,
+                phone: profile?.phone ?? "",
+                dateOfBirth: profile?.dateOfBirth ?? "",
+                address: profile?.address ?? "",
+                bio: profile?.bio ?? "",
+                languages: profile?.languages ?? [],
+                qualifications: profile?.qualifications ?? [],
+                specialties: profile?.specialties ?? [],
+                credential: member.credential ? { body: member.credential.body, registrationNo: detail.registrationNo ?? "" } : null,
+              }}
+            />
             <SendSetupLinkButton userId={member.userId} name={member.name} email={member.email} />
             <ManageMemberButton member={member} counsellorId={detail.counsellorId} currentSupervisorId={detail.supervisorId} supervisorOptions={supervisorOptions} label="Manage" />
           </div>

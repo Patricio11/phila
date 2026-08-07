@@ -117,7 +117,7 @@ Sign in as **Thandeka**.
 - ☐ The **counsellor filter** (avatar dropdown, default "All counsellors") and **type filter** (All / In person / Online) narrow the calendar live
 - ☐ In the **New appointment** modal, picking a date + time shows "**N of M counsellors available at HH:MM**" and the counsellor dropdown only offers free counsellors
 - ☐ **Hybrid** (feedback #7): the Where picker offers **In person / Online / Hybrid**; Hybrid requires a room AND generates the video link; the calendar filter gains a **Hybrid** button; the event detail reads "**room · client joins online**" with Join/Copy link; the counsellor's session page shows "Hybrid session · room" + Open video room; the client sees it exactly like an online session
-- ☐ **Service colours** (batch 2f): each service on `/hub/services` has a **Calendar colour** swatch row (house palette); calendar events wear their service's colour (week/day tint, month minis, agenda left stripe) in BOTH the hub and counsellor calendars; risk/no-show tones still win; changing a colour + Save re-paints the events
+- ☐ **Service colours** (batch 2f): each service on `/hub/services` has a **Calendar colour** swatch row (house palette + a rainbow swatch that opens the native picker for any colour); calendar events wear their service's colour (week/day tint, month minis, agenda left stripe) in BOTH the hub and counsellor calendars; risk/no-show tones still win; changing a colour + Save re-paints the events
 
 **Team - availability & offboarding** (`/hub/team` → a counsellor) (feedback #4/#5)
 - ☐ The member page has an **Availability** card - "follows the practice working hours" by default; **Set availability** opens the weekly editor (seeded from practice hours); saving lands on the dashboard **Activity feed**

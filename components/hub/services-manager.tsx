@@ -108,6 +108,28 @@ export function ServicesManager({ initial }: { initial: Service[] }) {
                       </button>
                     );
                   })}
+                  {/* Your own colour - the rainbow swatch opens the native picker. */}
+                  {(() => {
+                    const custom = Boolean(s.colour) && !COLOURS.includes(s.colour!);
+                    return (
+                      <label
+                        className={cn("relative grid size-7 cursor-pointer place-items-center rounded-full transition-transform", custom ? "scale-110" : "hover:scale-105")}
+                        style={custom
+                          ? { backgroundColor: s.colour!, outline: `2px solid ${s.colour!}`, outlineOffset: "2px" }
+                          : { background: "conic-gradient(#C2554D, #9a6418, #1C7D58, #0E7C7B, #3C7FB0, #6b4f8a, #C2554D)" }}
+                        title="Pick your own colour"
+                      >
+                        {custom ? <Check className="size-3.5 text-white" strokeWidth={2.6} aria-hidden /> : <Plus className="size-3.5 text-white drop-shadow" strokeWidth={2.6} aria-hidden />}
+                        <input
+                          type="color"
+                          value={s.colour ?? "#1C7D58"}
+                          onChange={(e) => patch(s.id, { colour: e.target.value })}
+                          aria-label="Pick your own colour"
+                          className="absolute inset-0 size-full cursor-pointer opacity-0"
+                        />
+                      </label>
+                    );
+                  })()}
                 </div>
               </div>
             </div>

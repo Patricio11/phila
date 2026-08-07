@@ -1256,8 +1256,8 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   (`is_org` on posts). Proven live end to end from both sides.
 - [x] **Service colours on the calendar** *(2026-08-07, batch 2f)*: every service picks a
   **Calendar colour** on the Services page (the house six-colour palette, same family the rooms
-  use; a new service auto-picks an unused one) and calendar events **wear their service's
-  colour** - tinted fill, soft border, full-strength text - across the week/day grid, month
+  use; a new service auto-picks an unused one, and a **rainbow swatch opens the native picker**
+  for any colour of your own) and calendar events **wear their service's colour** - tinted fill, soft border, full-strength text - across the week/day grid, month
   minis, and agenda (left stripe). Warning states keep their tones: risk stays red, no-show
   amber - the colour never hides a problem. Migration 0064 (`services.colour`); seeded palette
   for the demo services. Proven live: computed event colours matched the service hex, and

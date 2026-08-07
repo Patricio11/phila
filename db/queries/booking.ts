@@ -22,6 +22,9 @@ export interface PersistBookingInput {
   modality: "in_person" | "online";
   /** Phase 32.0 - chosen session language; becomes the client's language of record. */
   language?: string | null;
+  /** EAP (batch 2j) - the company whose booking link this came through. The client
+   *  links invisibly and their fee becomes the company retainer (they pay R0). */
+  companyId?: string | null;
   intake: Record<string, string>;
   consents: Partial<Record<ConsentPurpose, boolean>>;
 }
@@ -57,6 +60,8 @@ export async function persistBooking(input: PersistBookingInput): Promise<{ clie
     homeLanguage: input.language ?? null,
     languageRecordedAt: input.language ? now : null,
     interpretationNeeded,
+    companyId: input.companyId ?? null,
+    feePolicy: input.companyId ? { kind: "retainer" } : null,
   });
 
   // Room allocation for in-person  first active room free at the slot.

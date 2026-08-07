@@ -1288,6 +1288,18 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   user AND the counsellor row together. Audited (`update_member_profile[_credential_reset]`).
   Proven live: full edit round-trip DB-asserted on user + counsellors + team_profiles, and the
   credential reset verified.
+- [x] **EAP companies - employers fund sessions, employees stay invisible** *(2026-08-07, batch
+  2j)*: a **Companies** area in the hub. A company carries contacts, a negotiated per-session
+  rate (or list price), a **retainer ledger** (record payments), and an **employee booking
+  link**. An employee who books through the link becomes an ordinary client, invisibly linked
+  (`clients.company_id`), fee set to **company retainer** (they pay R0 - no invoice raised), and
+  the wizard tells them honestly: "your employer only ever sees anonymous usage numbers, never
+  who came." Usage = held sessions of linked clients x rate, drawn against payments - the company
+  page shows Paid / Used / Remaining / Sessions with a month-by-month table, and the **report
+  export** (house CSV/Excel/PDF) is aggregate-only with the confidentiality line printed on it.
+  Migration 0065 + RLS. Proven live end to end: company created, R10 000 recorded, an employee
+  booked through the link (banner shown, retainer + link DB-asserted, R0 billing), the session
+  drew R400 down to R9 600, and the exported CSV contained NO employee name.
 
 ---
 

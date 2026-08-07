@@ -5,7 +5,7 @@ import { BookingWizard } from "@/components/booking/booking-wizard";
 import { recordPageEvent, getOrgLogoUrlPublic } from "@/db/queries/public-page";
 
 type Params = { slug: string };
-type Search = { service?: string };
+type Search = { service?: string; c?: string };
 
 export const metadata: Metadata = { title: "Book a session", robots: { index: false } };
 
@@ -22,7 +22,7 @@ export default async function BookPage({
   searchParams: Promise<Search>;
 }) {
   const { slug } = await params;
-  const { service } = await searchParams;
+  const { service, c } = await searchParams;
 
   const provider = await getDataProvider();
   const config = await provider.getBookingConfig(slug);
@@ -54,5 +54,14 @@ export default async function BookPage({
     languageEnabled = Boolean(org?.features.language);
   }
 
-  return <BookingWizard config={config} initialServiceId={initialServiceId} logoUrl={logoUrl} languageEnabled={languageEnabled} />;
+  // EAP (batch 2j): ?c=<token> is a company's employee booking link. Resolve it
+  // server-side; the wizard shows the covered banner and passes the token back.
+  let company: { token: string; name: string } | null = null;
+  if (c && process.env.DATA_PROVIDER === "db") {
+    const { companyByTokenDb } = await import("@/db/queries/companies");
+    const comp = await companyByTokenDb(c);
+    if (comp && comp.orgId === config.org.id) company = { token: c, name: comp.name };
+  }
+
+  return <BookingWizard config={config} initialServiceId={initialServiceId} logoUrl={logoUrl} languageEnabled={languageEnabled} company={company} />;
 }

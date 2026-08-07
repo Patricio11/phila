@@ -106,6 +106,7 @@ export const hubNav: NavSection[] = [
       { label: "Clients", href: "/hub/clients", icon: Contact, ready: true },
       { label: "Insights", href: "/hub/insights", icon: TrendingUp, ready: true },
       { label: "Funders & grants", href: "/hub/funders", icon: HandCoins, ready: true, feature: "funders" },
+      { label: "Companies", href: "/hub/companies", icon: Building2, ready: true },
     ],
   },
   {

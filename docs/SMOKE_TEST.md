@@ -185,6 +185,11 @@ Sign in as **Thandeka**.
 - ☐ Setting **company retainer** previews every service as **Free**, saves (DB `{"kind":"retainer"}`), and new bookings invoice at R0; Megan Pillay is the seeded example
 - ☐ A legacy sliding-scale client (e.g. Johan, pays 50%) still shows + bills their old arrangement until changed
 
+**EAP companies (batch 2j)** - `/hub/companies`
+- ☐ **Add company** (name · contact · per-session rate) → card shows Paid / Used / Sessions + "R... left"; **Record payment** grows the retainer; the ledger lists every payment
+- ☐ **Employee booking link** (`/o/<slug>/book?c=<token>`): the wizard shows the "Covered by <company>... only ever sees anonymous usage numbers" banner; booking creates a client invisibly linked (company_id) on the **company retainer** fee (R0, no invoice)
+- ☐ A held session draws the rate down (Used up, Remaining down, monthly row appears); the **Export** (CSV/Excel/PDF) is aggregate-only - months, sessions, amounts, totals - with the confidentiality line, and NO employee name anywhere on the page or in the file
+
 **Language of record (Phase 32.0)** *(feature-switched: Settings → Integrations per org; super-admin kill-switch in `/admin` Feature control. Off = none of the below exists and booking runs pre-32.0)*
 - ☐ Team → open a counsellor (e.g. Aisha Patel) → a **Languages** card shows native-name chips; **Edit languages** offers toggle chips grouped by tier ("Live translation ready" etc.); saving persists and is audited
 - ☐ A client dossier shows **Record language** (or the recorded language + a "needs interpretation" chip); recording a home language + "how is the gap handled today" saves to the client row

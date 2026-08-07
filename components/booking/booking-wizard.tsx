@@ -51,11 +51,14 @@ export function BookingWizard({
   initialServiceId,
   logoUrl = null,
   languageEnabled = false,
+  company = null,
 }: {
   config: BookingConfig;
   initialServiceId: string | null;
   logoUrl?: string | null;
   languageEnabled?: boolean;
+  /** EAP (batch 2j) - set when arriving via a company's employee link. */
+  company?: { token: string; name: string } | null;
 }) {
   const { org } = config;
   const slug = org.slug;
@@ -151,6 +154,7 @@ export function BookingWizard({
       slug,
       serviceId: state.serviceId!,
       language: languageEnabled ? state.language : null,
+      companyToken: company?.token ?? null,
       counsellorId: state.slotCounsellorId!,
       startsAt: state.slotStart!,
       modality: state.modality ?? ("in_person" as const),
@@ -218,6 +222,12 @@ export function BookingWizard({
 
   return (
     <BookingShell orgName={org.name} orgSlug={slug} brand={brand} steps={STEPS} current={step} logoUrl={logoUrl}>
+      {company && !confirmation && (
+        <div className="mb-5 rounded-control border border-accent/25 bg-accent-soft/40 px-3.5 py-2.5 text-[12.5px] leading-relaxed text-text-2">
+          <span className="font-semibold text-text">Covered by {company.name}.</span> Your sessions cost you nothing.
+          This stays confidential - {company.name} only ever sees anonymous usage numbers, never who came.
+        </div>
+      )}
       {stepKey === "service" && (
         <ServiceStep
           services={config.services}

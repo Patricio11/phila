@@ -135,6 +135,8 @@ const submitInput = z.object({
   slug: z.string().min(1),
   serviceId: z.string().min(1),
   language: z.string().nullable().optional(),
+  /** EAP (batch 2j) - the company booking-link token; resolved server-side only. */
+  companyToken: z.string().max(40).nullable().optional(),
   counsellorId: z.string().min(1),
   startsAt: z.string().min(1),
   modality: z.enum(["in_person", "online"]),
@@ -224,6 +226,13 @@ export async function submitBooking(
     try {
       // Feature-gated (Phase 32.0): with `language` off, nothing language-shaped persists.
       const languageOn = (await (await import("@/db/queries/features")).effectiveFeaturesDb(config.org.id)).language;
+      // EAP (batch 2j): a valid company token from THIS org links the client invisibly.
+      let companyId: string | null = null;
+      if (input.companyToken) {
+        const { companyByTokenDb } = await import("@/db/queries/companies");
+        const comp = await companyByTokenDb(input.companyToken);
+        if (comp && comp.orgId === config.org.id) companyId = comp.id;
+      }
       const res = await persistBooking({
         orgId: config.org.id,
         province: config.org.province,
@@ -232,6 +241,7 @@ export async function submitBooking(
         startsAt: input.startsAt,
         durationMin: service.durationMin,
         language: languageOn ? (input.language ?? null) : null,
+        companyId,
         modality: input.modality,
         intake: input.intake,
         consents: input.consents,
@@ -246,7 +256,7 @@ export async function submitBooking(
       ]);
       // Auto-raise an invoice for the session (priced services only; org-toggleable) so
       // the client can pay online. Best-effort - never break a booking over billing.
-      try { await createInvoiceForBookingDb({ orgId: config.org.id, appointmentId: res.appointmentId, clientId: res.clientId, serviceName: service.name, amountCents: service.priceCents ?? 0, issuedAt: new Date(clockNow()) }); } catch { /* never break booking */ }
+      try { await createInvoiceForBookingDb({ orgId: config.org.id, appointmentId: res.appointmentId, clientId: res.clientId, serviceName: service.name, amountCents: companyId ? 0 : (service.priceCents ?? 0), issuedAt: new Date(clockNow()) }); } catch { /* never break booking */ }
       void recordPageEvent(config.org.id, "booked"); // PII-free conversion (Phase 17)
       // Mirror the intake into the active intake form's Responses (best-effort).
       try { await recordBookingIntakeDb(config.org.id, res.clientId, input.intake, clockNow()); } catch { /* never break booking */ }

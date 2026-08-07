@@ -256,6 +256,9 @@ export const clients = pgTable("clients", {
   feePolicy: jsonb("fee_policy").$type<{ kind: "standard" | "percentage" | "fixed" | "waived" | "retainer"; value?: number }>(),
   /** How the client found the practice (W7) - one of REFERRAL_SOURCES; null = not captured. */
   referralSource: text("referral_source"),
+  /** EAP (batch 2j) - the company whose retainer covers this client. INVISIBLE to
+   *  the company: reports to them are aggregate-only, never identities. */
+  companyId: text("company_id"),
   /** Phase 31 - legal hold: while true, retention pruning + erasure are blocked (litigation/inquiry). */
   legalHold: boolean("legal_hold").default(false).notNull(),
   legalHoldReason: text("legal_hold_reason"),
@@ -1011,3 +1014,35 @@ export const appointmentChangeRequests = pgTable("appointment_change_requests", 
   index("acr_org_status_idx").on(t.orgId, t.status),
   index("acr_appt_idx").on(t.appointmentId),
 ]);
+
+/* ---- EAP companies (batch 2j) - employers who fund sessions for staff ---- */
+
+/**
+ * A company client: pays for its employees' sessions. `sessionRateCents` is the
+ * negotiated per-session price (null = each service's list price). The booking
+ * token goes in the link the company shares with staff - booking through it
+ * links the new client to the company invisibly. The company only ever sees
+ * aggregate usage, never who came (the whole point).
+ */
+export const companies = pgTable("companies", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  name: text("name").notNull(),
+  contactName: text("contact_name"),
+  contactEmail: text("contact_email"),
+  contactPhone: text("contact_phone"),
+  sessionRateCents: integer("session_rate_cents"),
+  bookingToken: text("booking_token").notNull().unique(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** The retainer ledger - every payment the company makes to the practice. */
+export const companyPayments = pgTable("company_payments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  companyId: text("company_id").notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  note: text("note"),
+  paidAt: timestamp("paid_at", { withTimezone: true }).notNull().defaultNow(),
+});

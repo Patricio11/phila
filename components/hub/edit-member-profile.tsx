@@ -14,6 +14,10 @@ import { saveMemberProfile } from "@/app/hub/team/actions";
 
 interface Qualification { qualification: string; institution: string; year: number }
 
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <div className="border-b border-border pb-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-text-3">{children}</div>;
+}
+
 export interface MemberProfileInitial {
   name: string;
   phone: string;
@@ -95,6 +99,7 @@ export function EditMemberProfileButton({ userId, initial }: { userId: string; i
         onClose={() => setOpen(false)}
         title={`Edit ${initial.name.split(" ")[0]}'s profile`}
         description="Everything here is the org's to keep accurate - contact, education, and credentials."
+        className="sm:h-[min(92dvh,1080px)] sm:max-w-3xl"
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>Cancel</Button>
@@ -102,39 +107,42 @@ export function EditMemberProfileButton({ userId, initial }: { userId: string; i
           </div>
         }
       >
-        <div className="max-h-[60vh] space-y-4 overflow-y-auto pr-1">
-          <div className="space-y-1.5">
-            <Label>Full name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-x-8 gap-y-5 py-1 sm:grid-cols-2">
+          {/* Left page half - who they are */}
+          <div className="space-y-5">
+            <SectionTitle>Personal & contact</SectionTitle>
             <div className="space-y-1.5">
-              <Label>Phone</Label>
-              <Input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+27 ..." />
+              <Label>Full name</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Phone</Label>
+                <Input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+27 ..." />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Date of birth</Label>
+                <DatePicker value={dob} onChange={setDob} max={new Date().toLocaleDateString("en-CA")} ariaLabel="Date of birth" />
+              </div>
+            </div>
+
             <div className="space-y-1.5">
-              <Label>Date of birth</Label>
-              <DatePicker value={dob} onChange={setDob} max={new Date().toLocaleDateString("en-CA")} ariaLabel="Date of birth" />
+              <Label>Address</Label>
+              <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street, suburb, city, postal code" />
             </div>
-          </div>
 
-          <div className="space-y-1.5">
-            <Label>Address</Label>
-            <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street, suburb, city, postal code" />
-          </div>
+            <div className="space-y-1.5">
+              <Label>Bio</Label>
+              <Textarea value={bio} onChange={(e) => setBio(e.target.value)} className="min-h-[120px]" placeholder="A short professional bio - focus areas, way of working…" />
+            </div>
 
-          <div className="space-y-1.5">
-            <Label>Bio</Label>
-            <Textarea value={bio} onChange={(e) => setBio(e.target.value)} className="min-h-[72px]" placeholder="A short professional bio - focus areas, way of working…" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Languages (display)</Label>
               <Input value={languagesText} onChange={(e) => setLanguagesText(e.target.value)} placeholder="English, Afrikaans, Hindi" />
-              <p className="text-[11px] text-text-3">Comma-separated. Matching uses the Languages card below.</p>
+              <p className="text-[11px] text-text-3">Comma-separated. Matching uses the Languages card on the profile.</p>
             </div>
+
             <div className="space-y-1.5">
               <Label>Specialties</Label>
               <Input value={specialtiesText} onChange={(e) => setSpecialtiesText(e.target.value)} placeholder="Trauma, CBT, Couples" />
@@ -142,44 +150,51 @@ export function EditMemberProfileButton({ userId, initial }: { userId: string; i
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Education & qualifications</Label>
-            {quals.map((q, i) => (
-              <div key={i} className="flex items-end gap-2">
-                <div className="min-w-0 flex-[2] space-y-1">
-                  {i === 0 && <span className="text-[11px] text-text-3">Qualification</span>}
-                  <Input value={q.qualification} onChange={(e) => patchQual(i, { qualification: e.target.value })} placeholder="BPsych Honours" />
+          {/* Right page half - what qualifies them */}
+          <div className="space-y-5">
+            <SectionTitle>Education & qualifications</SectionTitle>
+            <div className="space-y-3">
+              {quals.length === 0 && <p className="text-[12.5px] text-text-3">Nothing on file yet - add their first qualification.</p>}
+              {quals.map((q, i) => (
+                <div key={i} className="space-y-2 rounded-control border border-border p-3">
+                  <div className="flex items-center gap-2">
+                    <Input value={q.qualification} onChange={(e) => patchQual(i, { qualification: e.target.value })} placeholder="Qualification - e.g. BPsych Honours" />
+                    <button type="button" onClick={() => setQuals((l) => l.filter((_, k) => k !== i))} aria-label="Remove qualification" className="shrink-0 rounded p-1.5 text-text-3 transition-colors hover:bg-surface-hover hover:text-danger">
+                      <Trash2 className="size-4" strokeWidth={2} aria-hidden />
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <Input value={q.institution} onChange={(e) => patchQual(i, { institution: e.target.value })} placeholder="Institution - e.g. Wits" className="flex-1" />
+                    <Input inputMode="numeric" value={String(q.year || "")} onChange={(e) => patchQual(i, { year: Number(e.target.value.replace(/[^\d]/g, "").slice(0, 4)) || 0 })} placeholder="Year" className="w-24" />
+                  </div>
                 </div>
-                <div className="min-w-0 flex-[2] space-y-1">
-                  {i === 0 && <span className="text-[11px] text-text-3">Institution</span>}
-                  <Input value={q.institution} onChange={(e) => patchQual(i, { institution: e.target.value })} placeholder="Wits" />
-                </div>
-                <div className="w-20 space-y-1">
-                  {i === 0 && <span className="text-[11px] text-text-3">Year</span>}
-                  <Input inputMode="numeric" value={String(q.year || "")} onChange={(e) => patchQual(i, { year: Number(e.target.value.replace(/[^\d]/g, "").slice(0, 4)) || 0 })} placeholder="2019" />
-                </div>
-                <button type="button" onClick={() => setQuals((l) => l.filter((_, k) => k !== i))} aria-label="Remove qualification" className="mb-2 shrink-0 text-text-3 hover:text-danger">
-                  <Trash2 className="size-4" strokeWidth={2} aria-hidden />
-                </button>
-              </div>
-            ))}
-            <Button variant="ghost" size="sm" onClick={() => setQuals((l) => [...l, { qualification: "", institution: "", year: new Date().getFullYear() }])}>
-              <Plus className="size-3.5" strokeWidth={2.2} aria-hidden /> Add qualification
-            </Button>
-          </div>
-
-          {initial.credential && (
-            <div className="space-y-2 rounded-control border border-border bg-surface-2/40 p-3">
-              <Label>Professional credential</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <Select value={credBody} onChange={(v) => setCredBody(v as CredentialBody)} options={CREDENTIAL_BODIES.map((b) => ({ value: b, label: b }))} />
-                <Input value={credReg} onChange={(e) => setCredReg(e.target.value)} placeholder="Registration number" />
-              </div>
-              {credChanged && (
-                <p className="text-[11.5px] text-warn">Changing the credential resets its verification to pending - you&apos;ll re-verify it under Verification.</p>
-              )}
+              ))}
+              <Button variant="ghost" size="sm" onClick={() => setQuals((l) => [...l, { qualification: "", institution: "", year: new Date().getFullYear() }])} className="w-full border border-dashed border-border">
+                <Plus className="size-3.5" strokeWidth={2.2} aria-hidden /> Add qualification
+              </Button>
             </div>
-          )}
+
+            {initial.credential && (
+              <>
+                <SectionTitle>Professional credential</SectionTitle>
+                <div className="space-y-3 rounded-control border border-border bg-surface-2/40 p-4">
+                  <div className="space-y-1.5">
+                    <Label>Registration body</Label>
+                    <Select value={credBody} onChange={(v) => setCredBody(v as CredentialBody)} options={CREDENTIAL_BODIES.map((b) => ({ value: b, label: b }))} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Registration number</Label>
+                    <Input value={credReg} onChange={(e) => setCredReg(e.target.value)} placeholder="e.g. PS 0098765" />
+                  </div>
+                  {credChanged ? (
+                    <p className="text-[11.5px] leading-relaxed text-warn">Changing the credential resets its verification to pending - you&apos;ll re-verify it under Verification.</p>
+                  ) : (
+                    <p className="text-[11.5px] leading-relaxed text-text-3">The verified badge stays as long as the credential is unchanged.</p>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </Dialog>
     </>

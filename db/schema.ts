@@ -250,9 +250,10 @@ export const clients = pgTable("clients", {
   province: text("province").notNull(),
   primaryCounsellorId: text("primary_counsellor_id"),
   riskFlag: boolean("risk_flag").default(false).notNull(),
-  /** Sliding-scale / subsidised fee (W7): { kind: 'standard'|'percentage'|'fixed'|'waived', value? }.
-   *  null/absent = pays the list price. `percentage` = pays value% of list; `fixed` = value cents flat. */
-  feePolicy: jsonb("fee_policy").$type<{ kind: "standard" | "percentage" | "fixed" | "waived"; value?: number }>(),
+  /** Fee arrangement (W7, reworked 2g): { kind: 'standard'|'waived'|'retainer', value? }.
+   *  null/absent = pays the list price. `retainer` = the employer's retainer covers it.
+   *  `percentage`/`fixed` are legacy - kept for existing rows, no longer offered. */
+  feePolicy: jsonb("fee_policy").$type<{ kind: "standard" | "percentage" | "fixed" | "waived" | "retainer"; value?: number }>(),
   /** How the client found the practice (W7) - one of REFERRAL_SOURCES; null = not captured. */
   referralSource: text("referral_source"),
   /** Phase 31 - legal hold: while true, retention pruning + erasure are blocked (litigation/inquiry). */

@@ -1262,6 +1262,13 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   amber - the colour never hides a problem. Migration 0064 (`services.colour`); seeded palette
   for the demo services. Proven live: computed event colours matched the service hex, and
   changing a colour on Services re-painted its events.
+- [x] **Fee arrangements reworked** *(2026-08-07, batch 2g)*: the client dossier's fee picker is
+  now three honest options - **Standard**, **Waived (funded)** (grant/donor), and **Waived
+  (company retainer)** (the EAP case, a distinct `retainer` kind so finance reporting can tell
+  employer-covered from grant-funded). Sliding scale + fixed fee are RETIRED from the picker and
+  the server action; existing clients on a legacy arrangement keep displaying and billing
+  correctly (records never distort) until the org changes them. Retainer bills at R0
+  automatically; Megan Pillay seeds the demo case. Proven live incl. a DB-asserted save.
 
 ---
 

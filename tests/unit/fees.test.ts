@@ -13,6 +13,12 @@ describe("sliding-scale fees", () => {
     expect(effectiveFeeCents(LIST, { kind: "waived" })).toBe(0);
   });
 
+  it("company retainer pays nothing (batch 2g)", () => {
+    expect(effectiveFeeCents(LIST, { kind: "retainer" })).toBe(0);
+    expect(feeLabel({ kind: "retainer" })).toBe("Waived (company retainer)");
+    expect(isSubsidised({ kind: "retainer" })).toBe(true);
+  });
+
   it("percentage pays that share of the list", () => {
     expect(effectiveFeeCents(LIST, { kind: "percentage", value: 50 })).toBe(22500);
     expect(effectiveFeeCents(LIST, { kind: "percentage", value: 0 })).toBe(0);

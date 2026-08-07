@@ -1,9 +1,12 @@
 /**
- * Sliding-scale / subsidised fees (W7) - an NGO reality that no SA competitor handles.
- * A client can pay the list price, a percentage of it (sliding scale), a flat fee, or
- * nothing (funded). This is pure so it's unit-testable and shared by invoicing + UI.
+ * Subsidised fees (W7, reworked batch 2g). A client pays the list price, or
+ * nothing - either grant/donor funded (`waived`) or covered by an employer's
+ * retainer (`retainer`, the EAP reality). `percentage`/`fixed` are LEGACY: no
+ * longer offered in the picker, but the engine still honours clients who
+ * already have one (records never distort). Pure - unit-testable and shared
+ * by invoicing + UI.
  */
-export type FeeKind = "standard" | "percentage" | "fixed" | "waived";
+export type FeeKind = "standard" | "percentage" | "fixed" | "waived" | "retainer";
 
 export interface FeePolicy {
   kind: FeeKind;
@@ -20,6 +23,7 @@ export function effectiveFeeCents(listPriceCents: number, policy: FeePolicy | nu
   if (!policy || policy.kind === "standard") return list;
   switch (policy.kind) {
     case "waived":
+    case "retainer":
       return 0;
     case "percentage": {
       const pct = clampPct(policy.value ?? 100);
@@ -43,6 +47,8 @@ export function feeLabel(policy: FeePolicy | null | undefined): string {
   switch (policy.kind) {
     case "waived":
       return "Waived (funded)";
+    case "retainer":
+      return "Waived (company retainer)";
     case "percentage":
       return `Subsidised · pays ${clampPct(policy.value ?? 100)}%`;
     case "fixed":

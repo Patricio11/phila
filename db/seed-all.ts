@@ -628,10 +628,13 @@ async function main() {
     status: "pending", createdAt: new Date(now.getTime() - 3 * 3_600_000),
   }).onConflictDoNothing();
 
-  // Sliding-scale / subsidised fees (W7) - realistic NGO variety on the demo caseload.
+  // Subsidised fees (W7) - realistic variety on the demo caseload. Johan/Zanele
+  // carry LEGACY arrangements (no longer offered, still honoured); Megan is the
+  // EAP case - her employer's retainer covers her sessions (batch 2g).
   await db.update(schema.clients).set({ feePolicy: { kind: "percentage", value: 50 } }).where(eq(schema.clients.id, "cl_johan"));
   await db.update(schema.clients).set({ feePolicy: { kind: "waived" } }).where(eq(schema.clients.id, "cl_demo_002"));
   await db.update(schema.clients).set({ feePolicy: { kind: "fixed", value: 15000 } }).where(eq(schema.clients.id, "cl_zanele"));
+  await db.update(schema.clients).set({ feePolicy: { kind: "retainer" } }).where(eq(schema.clients.id, "cl_megan"));
 
   // GAD-7 (anxiety) series alongside PHQ-9 for a few clients (W7) - so the client
   // outcome trends show both tools, not just depression. Improving, weeks 8 → 4 → now.

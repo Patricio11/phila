@@ -295,22 +295,20 @@ export async function reassignClient(
 
 const feeInput = z.object({
   clientId: z.string().min(1),
-  kind: z.enum(["standard", "percentage", "fixed", "waived"]),
-  value: z.number().int().min(0).max(100_000_00).optional(),
+  // percentage/fixed are legacy - existing clients keep them, new ones can't pick them.
+  kind: z.enum(["standard", "waived", "retainer"]),
 });
 
-/** Set a client's sliding-scale / subsidised fee (W7). Audited; the auto-invoice uses it. */
+/** Set a client's fee arrangement (W7, reworked 2g). Audited; the auto-invoice uses it. */
 export async function setClientFee(
   raw: z.infer<typeof feeInput>,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { principal, membership } = await requireHub();
   const parsed = feeInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Check the fee details." };
-  const { clientId, kind, value } = parsed.data;
-  if (kind === "percentage" && (value == null || value < 0 || value > 100)) return { ok: false, error: "Enter a percentage between 0 and 100." };
-  if (kind === "fixed" && (value == null || value < 0)) return { ok: false, error: "Enter the fixed amount." };
+  const { clientId, kind } = parsed.data;
 
-  const policy: FeePolicy | null = kind === "standard" ? null : { kind, ...(kind === "percentage" || kind === "fixed" ? { value } : {}) };
+  const policy: FeePolicy | null = kind === "standard" ? null : { kind };
   if (isDb()) await setClientFeeDb(membership.orgId, clientId, policy);
   await logAccess({
     action: "admin.action",

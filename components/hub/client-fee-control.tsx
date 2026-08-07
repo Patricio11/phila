@@ -4,27 +4,26 @@ import { useState, useTransition } from "react";
 import { za } from "@/lib/format";
 import { HandCoins, Check, Pencil, X } from "lucide-react";
 import { setClientFee } from "@/app/hub/clients/actions";
-import { effectiveFeeCents, feeLabel, isSubsidised, type FeeKind, type FeePolicy } from "@/lib/billing/fees";
+import { effectiveFeeCents, feeLabel, isSubsidised, type FeePolicy } from "@/lib/billing/fees";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 const rands = (c: number) => `R${za(Math.round(c / 100))}`;
 
-const KINDS: { kind: FeeKind; label: string; hint: string }[] = [
+type PickableKind = "standard" | "waived" | "retainer";
+
+const KINDS: { kind: PickableKind; label: string; hint: string }[] = [
   { kind: "standard", label: "Standard", hint: "Pays the full list price" },
-  { kind: "percentage", label: "Sliding scale", hint: "Pays a share of the list price" },
-  { kind: "fixed", label: "Fixed fee", hint: "A flat amount per session" },
-  { kind: "waived", label: "Waived", hint: "Funded - pays nothing" },
+  { kind: "waived", label: "Waived (funded)", hint: "A grant or donor covers it - pays nothing" },
+  { kind: "retainer", label: "Waived (company retainer)", hint: "The employer's retainer covers it - pays nothing" },
 ];
 
-const PCT_PRESETS = [25, 50, 75];
-
 /**
- * Sliding-scale / subsidised fee for a client (W7). What they pay flows straight into
- * the invoice raised when a session is booked - so funded/subsidised clients are billed
- * correctly, automatically. The preview shows exactly what they'll pay per service.
+ * Fee arrangement for a client (W7, reworked 2g): standard, waived (funded), or
+ * waived (company retainer - the EAP case). What they pay flows straight into the
+ * invoice raised when a session is booked. Legacy sliding-scale/fixed arrangements
+ * still display on existing clients; they're just no longer offered here.
  */
 export function ClientFeeControl({
   clientId,
@@ -40,27 +39,22 @@ export function ClientFeeControl({
   const { toast } = useToast();
   const [policy, setPolicy] = useState<FeePolicy | null>(initial);
   const [editing, setEditing] = useState(false);
-  const [draftKind, setDraftKind] = useState<FeeKind>(initial?.kind ?? "standard");
-  const [pct, setPct] = useState(initial?.kind === "percentage" ? String(initial.value ?? 50) : "50");
-  const [fixedR, setFixedR] = useState(initial?.kind === "fixed" ? String(Math.round((initial.value ?? 0) / 100)) : "");
+  const [draftKind, setDraftKind] = useState<PickableKind>(
+    initial?.kind === "waived" || initial?.kind === "retainer" ? initial.kind : "standard",
+  );
   const [pending, start] = useTransition();
 
   const first = clientName.split(" ")[0];
-  const draftPolicy: FeePolicy | null =
-    draftKind === "standard" ? null :
-    draftKind === "waived" ? { kind: "waived" } :
-    draftKind === "percentage" ? { kind: "percentage", value: Number(pct || 0) } :
-    { kind: "fixed", value: Number(fixedR || 0) * 100 };
+  const draftPolicy: FeePolicy | null = draftKind === "standard" ? null : { kind: draftKind };
 
   const open = () => {
-    setDraftKind(policy?.kind ?? "standard");
-    setPct(policy?.kind === "percentage" ? String(policy.value ?? 50) : "50");
-    setFixedR(policy?.kind === "fixed" ? String(Math.round((policy.value ?? 0) / 100)) : "");
+    // A legacy sliding-scale/fixed arrangement opens on Standard - saving replaces it.
+    setDraftKind(policy?.kind === "waived" || policy?.kind === "retainer" ? policy.kind : "standard");
     setEditing(true);
   };
 
   const save = () => start(async () => {
-    const res = await setClientFee({ clientId, kind: draftKind, value: draftPolicy && "value" in draftPolicy ? draftPolicy.value : undefined });
+    const res = await setClientFee({ clientId, kind: draftKind });
     if (!res.ok) return toast({ tone: "error", title: res.error });
     setPolicy(draftPolicy);
     setEditing(false);
@@ -90,7 +84,7 @@ export function ClientFeeControl({
         </div>
       ) : (
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid gap-1.5">
             {KINDS.map((k) => (
               <button
                 key={k.kind}
@@ -103,27 +97,6 @@ export function ClientFeeControl({
               </button>
             ))}
           </div>
-
-          {draftKind === "percentage" && (
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5">
-                <Input inputMode="numeric" value={pct} onChange={(e) => setPct(e.target.value.replace(/[^\d]/g, "").slice(0, 3))} className="h-9 w-20" />
-                <span className="text-[12.5px] text-text-3">% of the list price</span>
-              </div>
-              <div className="flex gap-1">
-                {PCT_PRESETS.map((p) => (
-                  <button key={p} type="button" onClick={() => setPct(String(p))} className="rounded-chip border border-border px-2 py-0.5 text-[11px] text-text-3 hover:border-accent hover:text-accent">{p}%</button>
-                ))}
-              </div>
-            </div>
-          )}
-          {draftKind === "fixed" && (
-            <div className="flex items-center gap-1.5">
-              <span className="text-[13px] text-text-3">R</span>
-              <Input inputMode="numeric" value={fixedR} onChange={(e) => setFixedR(e.target.value.replace(/[^\d]/g, ""))} className="h-9 w-28" placeholder="150" />
-              <span className="text-[12.5px] text-text-3">per session</span>
-            </div>
-          )}
 
           {services.length > 0 && <FeeTable services={services} policy={draftPolicy} />}
 

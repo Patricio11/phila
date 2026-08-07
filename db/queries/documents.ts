@@ -31,6 +31,7 @@ function toDocument(r: typeof documents.$inferSelect): Document {
     counsellorId: r.counsellorId, sessionId: r.sessionId, name: r.name,
     kind: r.kind as DocumentKind, visibility: r.visibility as DocumentVisibility,
     storageProvider: r.storageProvider as StorageBackend, storageKey: r.storageKey,
+    externalUrl: r.externalUrl ?? null,
     contentType: r.contentType, bytes: r.bytes, sizeLabel: r.sizeLabel,
     scanStatus: r.scanStatus as ScanStatus, uploadedBy: r.uploadedBy,
     sharedBy: r.sharedBy as DocumentSharedBy, requestId: r.requestId,
@@ -41,7 +42,9 @@ function toDocument(r: typeof documents.$inferSelect): Document {
 function toFolder(r: typeof documentFolders.$inferSelect): DocumentFolder {
   return {
     id: r.id, orgId: r.orgId, parentId: r.parentId, name: r.name,
-    scope: r.scope as FolderScope, clientId: r.clientId, createdAt: r.createdAt.toISOString(),
+    scope: r.scope as FolderScope, clientId: r.clientId,
+    note: r.note ?? null, submissionsPrivate: r.submissionsPrivate,
+    createdAt: r.createdAt.toISOString(),
   };
 }
 
@@ -240,7 +243,18 @@ export async function finalizeDocument(orgId: string, documentId: string, bytes:
 
 /** A counsellor's visible documents: their own clients' files, plus anything the
  * Hub shared with them (a file share, or a folder share that cascades to its docs). */
-export async function listCounsellorDocumentsDb(counsellorId: string): Promise<{ own: Document[]; shared: Document[] }> {
+export interface SharedFolderView {
+  folder: DocumentFolder;
+  docs: Document[];
+}
+
+/**
+ * What a counsellor may see (batch 2k): their own clients' documents, files
+ * shared directly with them, and shared FOLDERS - each with the org's note. A
+ * folder marked `submissionsPrivate` shows the org's source material plus ONLY
+ * this counsellor's own submissions - never another counsellor's.
+ */
+export async function listCounsellorDocumentsDb(counsellorId: string): Promise<{ own: Document[]; shared: Document[]; sharedFolders: SharedFolderView[] }> {
   const db = getDb();
   const ownRows = await db.select({ d: documents }).from(documents)
     .innerJoin(clients, eq(documents.clientId, clients.id))
@@ -251,20 +265,82 @@ export async function listCounsellorDocumentsDb(counsellorId: string): Promise<{
   const shares = await db.select().from(documentShares).where(eq(documentShares.sharedWith, counsellorId));
   const fileIds = shares.filter((s) => s.targetType === "file").map((s) => s.targetId);
   const folderIds = shares.filter((s) => s.targetType === "folder").map((s) => s.targetId);
-  const sharedRows: (typeof documents.$inferSelect)[] = [];
-  if (fileIds.length)
-    sharedRows.push(...(await db.select().from(documents).where(and(inArray(documents.id, fileIds), isNull(documents.deletedAt)))));
-  if (folderIds.length)
-    sharedRows.push(...(await db.select().from(documents).where(and(inArray(documents.folderId, folderIds), isNull(documents.deletedAt)))));
 
+  // Direct file shares.
+  const fileRows = fileIds.length
+    ? await db.select().from(documents).where(and(inArray(documents.id, fileIds), isNull(documents.deletedAt)))
+    : [];
   const seen = new Set<string>();
   const shared: Document[] = [];
-  for (const r of sharedRows.map(toDocument)) {
+  for (const r of fileRows.map(toDocument)) {
     if (ownIds.has(r.id) || seen.has(r.id)) continue;
     seen.add(r.id);
     shared.push(r);
   }
-  return { own, shared };
+
+  // Shared folders - each with its note; private folders filter to org material
+  // + this counsellor's own submissions.
+  const sharedFolders: SharedFolderView[] = [];
+  if (folderIds.length) {
+    const folderRows = await db.select().from(documentFolders)
+      .where(and(inArray(documentFolders.id, folderIds), isNull(documentFolders.deletedAt)));
+    const docRows = await db.select().from(documents)
+      .where(and(inArray(documents.folderId, folderIds), isNull(documents.deletedAt)));
+    for (const f of folderRows) {
+      const all = docRows.filter((d) => d.folderId === f.id).map(toDocument);
+      const docs = f.submissionsPrivate
+        ? all.filter((d) => d.sharedBy === "org" || d.uploadedBy === counsellorId)
+        : all;
+      sharedFolders.push({ folder: toFolder(f), docs: docs.sort((a, b) => b.createdAt.localeCompare(a.createdAt)) });
+    }
+    sharedFolders.sort((a, b) => a.folder.name.localeCompare(b.folder.name));
+  }
+  return { own, shared, sharedFolders };
+}
+
+/* ── Link documents + folder share meta (batch 2k) ─────────────────────── */
+
+/** Add a LINK document (e.g. a Google Doc URL) - no bytes, no quota. */
+export async function addLinkDocumentDb(orgId: string, input: {
+  name: string; url: string; folderId: string | null;
+  uploadedBy: string; sharedBy: DocumentSharedBy; counsellorId?: string | null;
+}): Promise<string> {
+  const id = `doc_${randomUUID().replace(/-/g, "").slice(0, 12)}`;
+  await getDb().insert(documents).values({
+    id, orgId, folderId: input.folderId, clientId: null,
+    counsellorId: input.counsellorId ?? null, sessionId: null,
+    name: input.name, kind: "resource", visibility: "internal",
+    storageProvider: "supabase", storageKey: null, externalUrl: input.url,
+    contentType: "text/uri-list", bytes: 0, sizeLabel: "link",
+    scanStatus: "clean", uploadedBy: input.uploadedBy, sharedBy: input.sharedBy,
+    requestId: null, createdAt: new Date(),
+  });
+  return id;
+}
+
+/** The org's note + submission privacy on a shared folder. */
+export async function setFolderShareMetaDb(orgId: string, folderIds: string[], note: string | null, submissionsPrivate: boolean): Promise<void> {
+  if (!folderIds.length) return;
+  await runForOrg(orgId, async () => {
+    await activeDb().update(documentFolders)
+      .set({ note, submissionsPrivate })
+      .where(and(inArray(documentFolders.id, folderIds), eq(documentFolders.orgId, orgId)));
+  });
+}
+
+/** Does this folder exist in this org? (Guards link-adds against stale ids.) */
+export async function folderExistsDb(orgId: string, folderId: string): Promise<boolean> {
+  const [row] = await getDb().select({ id: documentFolders.id }).from(documentFolders)
+    .where(and(eq(documentFolders.id, folderId), eq(documentFolders.orgId, orgId), isNull(documentFolders.deletedAt))).limit(1);
+  return Boolean(row);
+}
+
+/** Is this folder shared with this counsellor? (Guards counsellor link-adds.) */
+export async function folderSharedWithDb(orgId: string, folderId: string, counsellorId: string): Promise<boolean> {
+  const [row] = await getDb().select({ id: documentShares.id }).from(documentShares)
+    .where(and(eq(documentShares.orgId, orgId), eq(documentShares.targetType, "folder"),
+      eq(documentShares.targetId, folderId), eq(documentShares.sharedWith, counsellorId))).limit(1);
+  return Boolean(row);
 }
 
 /* ── Client-portal reads + request-bound upload ───────────────────────── */

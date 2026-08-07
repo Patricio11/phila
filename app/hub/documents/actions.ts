@@ -130,17 +130,56 @@ const shareInput = z.object({
   targetType: z.enum(["file", "folder"]),
   targetId: z.string().min(1),
   counsellorUserIds: z.array(z.string().min(1)).min(1, "Pick at least one counsellor."),
+  /** Batch 2k - the org's instruction note (folders only) - "what to do here". */
+  note: z.string().trim().max(600).optional(),
+  /** Batch 2k - counsellors see only their OWN files in this folder. */
+  submissionsPrivate: z.boolean().optional(),
 });
 export async function shareWithCounsellors(raw: z.infer<typeof shareInput>): Promise<Result> {
   const { principal, membership } = await requireHub();
   const parsed = shareInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Could not share." };
-  if (isDb())
+  if (isDb()) {
     for (const userId of parsed.data.counsellorUserIds)
       await shareWithCounsellorDb(membership.orgId, parsed.data.targetType, parsed.data.targetId, userId, principal.userId);
+    if (parsed.data.targetType === "folder" && (parsed.data.note !== undefined || parsed.data.submissionsPrivate !== undefined)) {
+      const { setFolderShareMetaDb } = await import("@/db/queries/documents");
+      await setFolderShareMetaDb(membership.orgId, [parsed.data.targetId], parsed.data.note?.trim() || null, Boolean(parsed.data.submissionsPrivate));
+    }
+  }
   await audit(membership.orgId, principal.userId, `${parsed.data.targetType}:${parsed.data.targetId}`, "share_with_counsellor");
   revalidatePath("/hub/documents");
   return { ok: true };
+}
+
+/* ── Link documents (batch 2k) - a URL instead of bytes ────────────────── */
+
+const linkInput = z.object({
+  name: z.string().trim().min(2, "Name the link.").max(160),
+  url: z.string().trim().url("Enter a valid link (https://...)").max(2000),
+  folderId: z.string().min(1).nullable().default(null),
+});
+
+/** Add a LINK document (e.g. a Google Doc) - opens in a new tab, no storage used. */
+export async function addLinkDocument(raw: z.infer<typeof linkInput>): Promise<Result> {
+  const { principal, membership } = await requireHub();
+  const parsed = linkInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the link." };
+  if (!/^https?:\/\//i.test(parsed.data.url)) return { ok: false, error: "Links must start with http(s)://" };
+  let id: string | undefined;
+  if (isDb()) {
+    const { addLinkDocumentDb, folderExistsDb } = await import("@/db/queries/documents");
+    if (parsed.data.folderId && !(await folderExistsDb(membership.orgId, parsed.data.folderId))) {
+      return { ok: false, error: "That folder no longer exists - refresh and try again." };
+    }
+    id = await addLinkDocumentDb(membership.orgId, {
+      name: parsed.data.name, url: parsed.data.url, folderId: parsed.data.folderId,
+      uploadedBy: principal.userId, sharedBy: "org",
+    });
+  }
+  await audit(membership.orgId, principal.userId, `document:${id ?? "link"}`, "add_link_document");
+  revalidatePath("/hub/documents");
+  return { ok: true, id };
 }
 
 const requestInput = z.object({

@@ -1300,6 +1300,18 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   Migration 0065 + RLS. Proven live end to end: company created, R10 000 recorded, an employee
   booked through the link (banner shown, retainer + link DB-asserted, R0 billing), the session
   drew R400 down to R9 600, and the exported CSV contained NO employee name.
+- [x] **Documents: links, folder notes, private submissions** *(2026-08-07, batch 2k)*: a document
+  can now be a **LINK** (e.g. a Google Doc - opens in a new tab, uses no storage; migration 0066)
+  added by the org (Add link on Documents) or by a counsellor into a shared folder. Sharing a
+  folder gained a **note** ("what to do here"), a **Select all counsellors** shortcut, and a
+  **"Counsellors see only their own files"** switch: in such a folder each counsellor sees the
+  org's material plus ONLY their own submissions - never another counsellor's (server-filtered,
+  not hidden client-side). The counsellor's Documents page shows shared folders as cards with the
+  note, Add link, and **Download all**; the hub gained a **Download** selection action and View
+  for links. Also fixed: optimistic folder ids now reconcile to real ids, and link-adds validate
+  the folder server-side. Proven live: org shared a CPD folder to all counsellors with a note +
+  privacy; Aisha added her completed Google-Doc link and saw it; Thabo saw the template + note
+  but NOT Aisha's file; the org saw both.
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

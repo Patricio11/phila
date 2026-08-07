@@ -173,6 +173,8 @@ Sign in as **Thandeka**.
 - ☐ Create / duplicate / archive a form; the **builder** (Build + Design tabs) previews live
 
 **Documents** (`/hub/documents`)
+- ☐ **Add link** creates a LINK document (Google Doc etc.) that opens in a new tab; link rows show the link icon + "link" size; the selection bar gains **Download** (all files in selected folders/files)
+- ☐ **Share a folder** offers Select-all counsellors, an instruction **note**, and **"Counsellors see only their own files"**; in `/app/documents` the shared folder shows as a card with the note + badge; a counsellor's **Add link** submission is visible to them + the org but NOT to other counsellors (server-filtered)
 - ☐ The library + starter folders render; storage usage shows against the plan/override limit
 - ☐ An open **document request** to a client is listed
 

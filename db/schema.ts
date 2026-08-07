@@ -830,6 +830,10 @@ export const documentFolders = pgTable("document_folders", {
   name: text("name").notNull(),
   scope: text("scope").notNull(), // org | client | counsellor
   clientId: text("client_id"),
+  /** Batch 2k - the org's instruction note shown to counsellors the folder is shared with. */
+  note: text("note"),
+  /** Batch 2k - counsellors see ONLY their own files in this folder (submission privacy). */
+  submissionsPrivate: boolean("submissions_private").default(false).notNull(),
   createdBy: text("created_by"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -849,6 +853,8 @@ export const documents = pgTable("documents", {
   visibility: text("visibility").default("internal").notNull(), // client_visible | internal | clinical
   storageProvider: text("storage_provider").default("supabase").notNull(),
   storageKey: text("storage_key"),
+  /** Batch 2k - a LINK document (e.g. a Google Doc): no bytes stored, just the URL. */
+  externalUrl: text("external_url"),
   contentType: text("content_type"),
   bytes: bigint("bytes", { mode: "number" }).default(0).notNull(),
   sizeLabel: text("size_label").notNull(),

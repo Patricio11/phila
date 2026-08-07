@@ -20,6 +20,8 @@ import {
   UserPlus,
   Users,
   X,
+  Link2,
+  ExternalLink,
 } from "lucide-react";
 import type { Document, DocumentFolder, DocumentRequest, StorageUsage } from "@/lib/domain/types";
 import { sizeLabel } from "@/lib/documents/quota";
@@ -31,6 +33,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import {
+  addLinkDocument,
   assignToClient,
   confirmUpload,
   createFolder,
@@ -100,6 +103,12 @@ export function DocumentManager({
   const [assignClient, setAssignClient] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareWith, setShareWith] = useState<Set<string>>(new Set());
+  const [shareNote, setShareNote] = useState("");
+  const [sharePrivate, setSharePrivate] = useState(false);
+  // Batch 2k - link documents (a URL instead of bytes).
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkName, setLinkName] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
   const [requestOpen, setRequestOpen] = useState(false);
   const [reqClient, setReqClient] = useState<string | null>(null);
   const [reqTitle, setReqTitle] = useState("");
@@ -188,8 +197,19 @@ export function DocumentManager({
     const tempId = `tmp_${name}`;
     setFolders((fs) => [...fs, { id: tempId, orgId: "", parentId: cwd, name, scope: "org", clientId: null, createdAt: new Date().toISOString() }]);
     const res = await createFolder({ name, parentId: cwd });
-    if (!res.ok) toast({ tone: "error", title: "Couldn't create folder", description: res.error });
-    else toast({ tone: "success", title: "Folder created", description: name });
+    if (!res.ok) {
+      setFolders((fs) => fs.filter((f) => f.id !== tempId));
+      toast({ tone: "error", title: "Couldn't create folder", description: res.error });
+    } else {
+      // Reconcile the optimistic temp id with the real one, so anything done
+      // inside the folder immediately (add link, upload) targets the real row.
+      if (res.id) {
+        const realId = res.id;
+        setFolders((fs) => fs.map((f) => (f.id === tempId ? { ...f, id: realId } : f)));
+        setCwd((c) => (c === tempId ? realId : c));
+      }
+      toast({ tone: "success", title: "Folder created", description: name });
+    }
     router.refresh();
   }
 
@@ -224,10 +244,13 @@ export function DocumentManager({
     if (!ids.length) return;
     setShareOpen(false);
     // Share each selected item (file or folder) with each chosen counsellor.
+    // Folders also carry the org's note + submission privacy (batch 2k).
     for (const id of docIds) await shareWithCounsellors({ targetType: "file", targetId: id, counsellorUserIds: ids });
-    for (const id of folderIds) await shareWithCounsellors({ targetType: "folder", targetId: id, counsellorUserIds: ids });
+    for (const id of folderIds) await shareWithCounsellors({ targetType: "folder", targetId: id, counsellorUserIds: ids, note: shareNote.trim() || undefined, submissionsPrivate: sharePrivate });
     toast({ tone: "success", title: "Shared", description: `with ${ids.length} counsellor${ids.length > 1 ? "s" : ""}` });
     setShareWith(new Set());
+    setShareNote("");
+    setSharePrivate(false);
     clearSel();
     router.refresh();
   }
@@ -289,9 +312,32 @@ export function DocumentManager({
   }
 
   async function downloadDoc(documentId: string) {
+    const doc = docs.find((d) => d.id === documentId);
+    if (doc?.externalUrl) { window.open(doc.externalUrl, "_blank", "noopener"); return; }
     const res = await signDownload({ documentId });
     if (!res.ok) { toast({ tone: "error", title: "Can't open this file", description: res.error }); return; }
     window.open(res.url, "_blank", "noopener");
+  }
+
+  /** Batch 2k - download every FILE in the selection (incl. inside selected folders). */
+  async function downloadSelection() {
+    const docIds = new Set(selectedDocIds());
+    for (const fid of selectedFolderIds()) for (const d of docs) if (d.folderId === fid) docIds.add(d.id);
+    const files = docs.filter((d) => docIds.has(d.id) && d.storageKey && d.scanStatus === "clean");
+    if (!files.length) { toast({ tone: "default", title: "Nothing to download", description: "The selection holds links or unscanned files only." }); return; }
+    for (const d of files) {
+      const res = await signDownload({ documentId: d.id });
+      if (res.ok) window.open(res.url, "_blank", "noopener");
+    }
+    toast({ tone: "success", title: `Opened ${files.length} file${files.length === 1 ? "" : "s"}` });
+  }
+
+  async function onAddLink() {
+    const res = await addLinkDocument({ name: linkName.trim(), url: linkUrl.trim(), folderId: cwd });
+    if (!res.ok) { toast({ tone: "error", title: "Couldn't add the link", description: res.error }); return; }
+    toast({ tone: "success", title: "Link added", description: "It opens in a new tab - no storage used." });
+    setLinkOpen(false); setLinkName(""); setLinkUrl("");
+    router.refresh();
   }
 
   /* ── Derived view data ───────────────────────────────────────────────── */
@@ -385,6 +431,9 @@ export function DocumentManager({
               onChange={(e) => { if (e.target.files) void uploadFiles(e.target.files); e.target.value = ""; }}
               aria-hidden
             />
+            <Button variant="ghost" size="sm" onClick={() => setLinkOpen(true)}>
+              <Link2 className="size-4" aria-hidden /> Add link
+            </Button>
             <Button
               size="sm"
               loading={uploading > 0}
@@ -493,6 +542,7 @@ export function DocumentManager({
             <span className="px-2.5 text-[13px] font-medium text-text">{selCount} selected</span>
             <span className="mx-0.5 h-5 w-px bg-border" />
             <ActionChip icon={UserPlus} label="Assign" onClick={() => setAssignOpen(true)} disabled={selectedDocIds().length === 0} />
+            <ActionChip icon={Download} label="Download" onClick={downloadSelection} />
             <ActionChip icon={Share2} label="Share" onClick={() => setShareOpen(true)} />
             <ActionChip icon={Trash2} label="Delete" onClick={onDelete} />
             <button type="button" onClick={clearSel} className="ml-1 inline-flex size-8 items-center justify-center rounded-full text-text-3 transition-colors hover:bg-surface-hover hover:text-text" aria-label="Clear selection">
@@ -566,6 +616,51 @@ export function DocumentManager({
               );
             })
           )}
+          {counsellors.length > 1 && (
+            <div className="flex justify-end pt-1">
+              <button type="button" onClick={() => setShareWith(new Set(counsellors.map((c) => c.id)))} className="text-[12px] font-medium text-accent hover:underline">
+                Select all counsellors
+              </button>
+            </div>
+          )}
+        </div>
+        {selectedFolderIds().length > 0 && (
+          <div className="mt-4 space-y-3 border-t border-border pt-4">
+            <div className="space-y-1.5">
+              <label className="text-[12.5px] font-medium text-text-2">Note for counsellors (what to do here)</label>
+              <textarea
+                value={shareNote}
+                onChange={(e) => setShareNote(e.target.value)}
+                placeholder="e.g. Open the link, make a copy of the Google Doc, fill it in, then Add link with your completed copy - only you and the practice see yours."
+                className="min-h-[72px] w-full rounded-control border border-border bg-surface px-3 py-2 text-[13px] text-text placeholder:text-text-3 focus:outline-none focus:ring-2 focus:ring-accent/40"
+              />
+            </div>
+            <label className="flex items-start gap-2.5 rounded-control border border-border p-3">
+              <input type="checkbox" checked={sharePrivate} onChange={(e) => setSharePrivate(e.target.checked)} className="mt-0.5 size-4 accent-current" />
+              <span className="min-w-0">
+                <span className="block text-[13px] font-medium text-text">Counsellors see only their own files</span>
+                <span className="block text-[11.5px] text-text-2">Each counsellor sees the practice&apos;s material plus what THEY added - never another counsellor&apos;s submissions.</span>
+              </span>
+            </label>
+          </div>
+        )}
+      </Dialog>
+
+      <Dialog
+        open={linkOpen}
+        onClose={() => setLinkOpen(false)}
+        title="Add a link"
+        description="A document that lives elsewhere - e.g. a Google Doc. It opens in a new tab and uses no storage."
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setLinkOpen(false)}>Cancel</Button>
+            <Button size="sm" onClick={onAddLink} disabled={linkName.trim().length < 2 || !/^https?:\/\//i.test(linkUrl.trim())}>Add link</Button>
+          </div>
+        }
+      >
+        <div className="space-y-3">
+          <Input placeholder="Name - e.g. CPD declaration (template)" value={linkName} onChange={(e) => setLinkName(e.target.value)} />
+          <Input inputMode="url" placeholder="https://docs.google.com/..." value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
         </div>
       </Dialog>
 
@@ -711,7 +806,8 @@ function FolderCard({ folder, count, selected, dropping, renaming, onOpen, onSel
 function DocRow({ doc, clientName, selected, onSelect, onDragStart, onDownload }: {
   doc: Document; clientName?: string; selected: boolean; onSelect: (additive: boolean) => void; onDragStart: (e: React.DragEvent) => void; onDownload: () => void;
 }) {
-  const openable = doc.scanStatus === "clean" && Boolean(doc.storageKey);
+  const isLink = Boolean(doc.externalUrl);
+  const openable = isLink || (doc.scanStatus === "clean" && Boolean(doc.storageKey));
   return (
     <li
       draggable
@@ -724,12 +820,12 @@ function DocRow({ doc, clientName, selected, onSelect, onDragStart, onDownload }
       )}
     >
       <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-control bg-surface-2 text-text-3">
-        <FileText className="size-[18px]" strokeWidth={1.9} aria-hidden />
+        {isLink ? <Link2 className="size-[18px] text-accent" strokeWidth={1.9} aria-hidden /> : <FileText className="size-[18px]" strokeWidth={1.9} aria-hidden />}
       </span>
       <div className="min-w-0 flex-1">
         <div className="truncate text-[13.5px] font-medium text-text">{doc.name}</div>
         <div className="flex flex-wrap items-center gap-x-2 text-[11.5px] text-text-3">
-          <span>{sizeLabel(doc.bytes)}</span>
+          <span>{isLink ? "link" : sizeLabel(doc.bytes)}</span>
           <span>· {dateLabel(doc.createdAt)}</span>
           {clientName && <span>· {clientName}</span>}
         </div>
@@ -745,7 +841,7 @@ function DocRow({ doc, clientName, selected, onSelect, onDragStart, onDownload }
           className="inline-flex size-8 shrink-0 items-center justify-center rounded-control text-text-3 opacity-0 transition-opacity hover:bg-surface-hover hover:text-text group-hover:opacity-100"
           aria-label={`Open ${doc.name}`}
         >
-          <Download className="size-[17px]" strokeWidth={1.9} aria-hidden />
+          {isLink ? <ExternalLink className="size-[17px]" strokeWidth={1.9} aria-hidden /> : <Download className="size-[17px]" strokeWidth={1.9} aria-hidden />}
         </button>
       )}
     </li>

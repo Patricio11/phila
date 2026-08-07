@@ -254,6 +254,10 @@ export interface DocumentFolder {
   name: string;
   scope: FolderScope;
   clientId: string | null;
+  /** Batch 2k - the org's instruction note for counsellors this folder is shared with. */
+  note?: string | null;
+  /** Batch 2k - counsellors see only their OWN files in this folder. */
+  submissionsPrivate?: boolean;
   createdAt: ISODateTime;
 }
 
@@ -271,6 +275,8 @@ export interface Document {
   visibility: DocumentVisibility;
   storageProvider: StorageBackend;
   storageKey: string | null;
+  /** A LINK document (batch 2k) - e.g. a Google Doc URL; no bytes stored. */
+  externalUrl?: string | null;
   contentType: string | null;
   bytes: number;
   sizeLabel: string;

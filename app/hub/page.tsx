@@ -94,12 +94,7 @@ export default async function HubOverviewPage() {
       {/* One calm grid: every widget the same height, content scrolls inside -
           the page stays a dashboard, never a long feed. */}
       <div className="grid items-stretch gap-6 lg:grid-cols-2">
-        <Card className={cn("flex flex-col", WIDGET_H)}>
-          <CardHead title="Coming up next" count={dashboard.upcoming.length} />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <ComingUpNext upcoming={dashboard.upcoming} />
-          </div>
-        </Card>
+        <ComingUpNext upcoming={dashboard.upcoming} className={WIDGET_H} />
 
         <Card className={cn("flex flex-col", WIDGET_H)}>
           <CardHead title="Activity feed" />

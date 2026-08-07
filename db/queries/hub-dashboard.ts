@@ -142,7 +142,8 @@ export async function getHubDashboardDb(orgId: string, nowISO: string): Promise<
     };
   };
 
-  // Coming up next - the practice's next five sessions.
+  // Coming up next - the practice's next sessions. 20 so the widget's type
+  // filter (All / In person / Online / Hybrid) has substance; the card scrolls.
   const upcomingRows = await db
     .select({ a: appointments, clientName: clients.name, serviceName: services.name, priceCents: services.priceCents, counsellorName: counsellors.name })
     .from(appointments)
@@ -151,7 +152,7 @@ export async function getHubDashboardDb(orgId: string, nowISO: string): Promise<
     .leftJoin(counsellors, eq(appointments.counsellorId, counsellors.id))
     .where(and(eq(appointments.orgId, orgId), eq(appointments.state, "scheduled"), gte(appointments.startsAt, now)))
     .orderBy(appointments.startsAt)
-    .limit(5);
+    .limit(20);
 
   // Activity feed - the org's own audit trail, minus read-noise.
   const activityRows = await db

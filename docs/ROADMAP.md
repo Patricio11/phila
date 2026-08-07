@@ -1239,6 +1239,11 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   (All · Near capacity · Has room · Unverified) plus a name search, so "who's stretched / who has
   room / whose credentials still need verifying" is one click. Proven live: card heights measured
   equal, the activity feed scrolls internally, filters and search verified.
+- [x] **Coming up next: type filter** *(2026-08-07)*: the widget now fetches the next 20 sessions
+  (was 5) and filters them by how they happen - chips with live counts (All · In person · Online
+  · Hybrid), count pill tracking the filtered list, honest per-type empty state, same shared
+  widget height with the list scrolling inside. Proven live: Online shows only Online-chip rows,
+  In person shows none.
 
 ---
 

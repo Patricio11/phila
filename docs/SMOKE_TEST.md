@@ -108,6 +108,7 @@ Sign in as **Thandeka**.
 - ☐ (If credits are low) a **"top up"** nudge banner appears linking to Billing & usage *(to force it: lower a balance in the DB, e.g. `update credit_balances set balance=12 where org_id='org_masizakhe' and channel='sms'`)*
 - ☐ **Uniform widgets**: every overview widget (Coming up next · Activity feed · Team this week · Needs attention · Rooms right now) is the SAME height; long content (esp. the Activity feed) scrolls inside its card - the page never becomes one long feed
 - ☐ **Team this week filters**: chips with live counts (All · Near capacity · Has room · Unverified) narrow the list; the name search finds a member; count pill updates
+- ☐ **Coming up next filters**: chips with live counts (All · In person · Online · Hybrid) narrow the next 20 sessions by how they happen; the count pill updates; honest empty state per type
 
 **Calendar** (`/hub/appointments`) (feedback #1/#2)
 - ☐ Creating an appointment shows it on the calendar **immediately, no refresh**, at the correct **SAST** time

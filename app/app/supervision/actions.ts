@@ -74,19 +74,30 @@ export async function signOffNote(
 
 const postInput = z.object({ classId: z.string().min(1), body: z.string().trim().min(1, "Write something first.").max(3000) });
 
-/** Post to a classroom stream (supervisor or member). Members are notified in-app. */
+/**
+ * Post to a classroom stream (supervisor or member) - or as the PRACTICE
+ * (batch 2e): an org admin can always post, badged "Practice", so the class
+ * still hears from someone when the supervisor is away.
+ */
 export async function postClassMessage(
   raw: z.infer<typeof postInput>,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { principal, membership } = await requireOrg(["counsellor"]);
+  const { principal, membership } = await requireOrg(["counsellor", "org_admin"]);
   const parsed = postInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Write something first." };
 
   if (isDb()) {
     const meId = await counsellorIdForUser(membership.orgId, principal.userId);
-    if (!meId) return { ok: false, error: "Only counsellors can post here." };
+    const isOrgAdmin = membership.teamRole === "org_admin";
+    if (!meId && !isOrgAdmin) return { ok: false, error: "Only counsellors can post here." };
     const { postToClassDb } = await import("@/db/queries/classrooms");
-    const res = await postToClassDb(membership.orgId, parsed.data.classId, { userId: principal.userId, counsellorId: meId, name: principal.name }, parsed.data.body);
+    // Counsellor identity first; an org admin who isn't in the class posts as the practice.
+    let res = meId
+      ? await postToClassDb(membership.orgId, parsed.data.classId, { userId: principal.userId, counsellorId: meId, name: principal.name }, parsed.data.body)
+      : { ok: false as const };
+    if (!res.ok && isOrgAdmin) {
+      res = await postToClassDb(membership.orgId, parsed.data.classId, { userId: principal.userId, counsellorId: null, name: principal.name, isOrg: true }, parsed.data.body);
+    }
     if (!res.ok) return { ok: false, error: "You're not in this classroom." };
 
     // Everyone else in the class hears about it (bounded, best-effort).
@@ -104,6 +115,7 @@ export async function postClassMessage(
   }
 
   revalidatePath("/app/supervision");
+  revalidatePath("/hub/supervision");
   return { ok: true };
 }
 
@@ -117,32 +129,44 @@ const sessionInput = z.object({
   durationMin: z.number().int().min(15).max(480),
   mode: z.enum(["online", "in_person"]),
   location: z.string().trim().max(160).optional(),
+  /** Batch 2e - repeat weekly for N weeks (1 = just this one). */
+  repeatWeeks: z.number().int().min(1).max(12).optional(),
 });
 
-/** Schedule a class meeting. Everyone gets the link (in-app) + it lands on the stream. */
+/**
+ * Schedule a class meeting - one, or a weekly run of them (repeatWeeks), so the
+ * supervisor or the practice never re-creates the same session every week.
+ * Everyone gets the link (in-app) + it lands on the stream once.
+ */
 export async function scheduleClassSession(
   raw: z.infer<typeof sessionInput>,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
   const { principal, membership } = await requireOrg(["counsellor", "org_admin"]);
   const parsed = sessionInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the session details." };
   const d = parsed.data;
+  const repeat = d.repeatWeeks ?? 1;
 
   if (isDb()) {
     const { scheduleClassSessionDb, postToClassDb } = await import("@/db/queries/classrooms");
     const startsAt = new Date(`${d.date}T${d.time}:00+02:00`); // SAST wall clock
     const res = await scheduleClassSessionDb(membership.orgId, {
       classId: d.classId, title: d.title, startsAt, durationMin: d.durationMin,
-      mode: d.mode, location: d.location || null, createdByUserId: principal.userId,
+      mode: d.mode, location: d.location || null, createdByUserId: principal.userId, repeat,
     });
     if (!res.ok) return { ok: false, error: "That classroom couldn't be found." };
 
     const whenLabel = new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }).format(startsAt);
+    const runLabel = repeat > 1 ? ` · weekly for ${repeat} weeks` : "";
     // The stream carries the announcement; online sessions carry the join line.
+    // The practice (org admin) announces as "Practice" when not a class member.
     const meId = await counsellorIdForUser(membership.orgId, principal.userId);
-    if (meId) {
-      await postToClassDb(membership.orgId, d.classId, { userId: principal.userId, counsellorId: meId, name: principal.name },
-        `📅 ${d.title} - ${whenLabel} · ${d.durationMin} min · ${d.mode === "online" ? "online (join from this page when it's time)" : (d.location || "in person")}`);
+    const announcement = `📅 ${d.title} - ${whenLabel}${runLabel} · ${d.durationMin} min · ${d.mode === "online" ? "online (join from this page when it's time)" : (d.location || "in person")}`;
+    let posted = meId
+      ? await postToClassDb(membership.orgId, d.classId, { userId: principal.userId, counsellorId: meId, name: principal.name }, announcement)
+      : { ok: false as const };
+    if (!posted.ok && membership.teamRole === "org_admin") {
+      posted = await postToClassDb(membership.orgId, d.classId, { userId: principal.userId, counsellorId: null, name: principal.name, isOrg: true }, announcement);
     }
     try {
       const { notifyCounsellor } = await import("@/db/queries/notifications");
@@ -150,7 +174,7 @@ export async function scheduleClassSession(
         notifyCounsellor(cid, {
           kind: "class_session",
           title: `Class session: ${d.title}`,
-          body: `${res.className} · ${whenLabel} · ${d.mode === "online" ? "online - the join link is on your Supervision page" : (d.location || "in person")}`,
+          body: `${res.className} · ${whenLabel}${runLabel} · ${d.mode === "online" ? "online - the join link is on your Supervision page" : (d.location || "in person")}`,
           href: "/app/supervision",
         }),
       ));
@@ -162,10 +186,11 @@ export async function scheduleClassSession(
     actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
     orgId: membership.orgId,
     target: `classroom:${d.classId}/session`,
-    reason: "schedule_class_session",
+    reason: repeat > 1 ? `schedule_class_session_weekly:${repeat}` : "schedule_class_session",
   });
   revalidatePath("/app/supervision");
-  return { ok: true };
+  revalidatePath("/hub/supervision");
+  return { ok: true, count: repeat };
 }
 
 const attendanceInput = z.object({
@@ -195,6 +220,7 @@ export async function markClassAttendance(
     reason: `mark_attendance:${parsed.data.marks.filter((m) => m.status === "present").length}p_${parsed.data.marks.filter((m) => m.status === "absent").length}a`,
   });
   revalidatePath("/app/supervision");
+  revalidatePath("/hub/supervision");
   return { ok: true };
 }
 
@@ -205,7 +231,7 @@ const editPostInput = z.object({ postId: z.string().min(1), body: z.string().tri
 export async function editClassPost(
   raw: z.infer<typeof editPostInput>,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { principal, membership } = await requireOrg(["counsellor"]);
+  const { principal, membership } = await requireOrg(["counsellor", "org_admin"]);
   const parsed = editPostInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Write something first." };
   if (isDb()) {
@@ -214,13 +240,14 @@ export async function editClassPost(
     if (!ok) return { ok: false, error: "You can only edit your own posts." };
   }
   revalidatePath("/app/supervision");
+  revalidatePath("/hub/supervision");
   return { ok: true };
 }
 
 export async function deleteClassPost(
   raw: { postId: string },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { principal, membership } = await requireOrg(["counsellor"]);
+  const { principal, membership } = await requireOrg(["counsellor", "org_admin"]);
   if (!raw?.postId) return { ok: false, error: "Invalid post." };
   if (isDb()) {
     const { deleteClassPostDb } = await import("@/db/queries/classrooms");
@@ -228,5 +255,6 @@ export async function deleteClassPost(
     if (!ok) return { ok: false, error: "You can only delete your own posts." };
   }
   revalidatePath("/app/supervision");
+  revalidatePath("/hub/supervision");
   return { ok: true };
 }

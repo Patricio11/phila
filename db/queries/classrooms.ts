@@ -28,6 +28,8 @@ export interface ClassPost {
   authorUserId: string;
   authorName: string;
   isSupervisor: boolean;
+  /** Posted by the practice (org admin) - badged "Practice" in the stream. */
+  isOrg: boolean;
   body: string;
   createdAt: string;
 }
@@ -102,16 +104,43 @@ export async function classesForCounsellorDb(orgId: string, counsellorId: string
     return sums.map((s) => ({
       ...s,
       posts: postRows.filter((p) => p.classId === s.id).slice(0, 30)
-        .map((p) => ({ id: p.id, authorUserId: p.authorUserId, authorName: p.authorName, isSupervisor: p.isSupervisor, body: p.body, createdAt: p.createdAt.toISOString() })),
+        .map((p) => ({ id: p.id, authorUserId: p.authorUserId, authorName: p.authorName, isSupervisor: p.isSupervisor, isOrg: p.isOrg, body: p.body, createdAt: p.createdAt.toISOString() })),
     }));
   });
 }
 
-/** Post to a class stream. Author must be the supervisor or a member. Returns who to notify. */
+/**
+ * Every classroom WITH its stream - the org's full view (batch 2e). The
+ * practice sees everything: every post, every session, every class.
+ */
+export async function listClassStreamsForOrgDb(orgId: string): Promise<ClassView[]> {
+  return runForOrg(orgId, async () => {
+    const db = activeDb();
+    const classes = await db.select().from(supervisionClasses).where(eq(supervisionClasses.orgId, orgId));
+    const sums = await summarise(orgId, classes);
+    if (classes.length === 0) return [];
+    const postRows = await db.select().from(supervisionClassPosts)
+      .where(inArray(supervisionClassPosts.classId, classes.map((c) => c.id)))
+      .orderBy(desc(supervisionClassPosts.createdAt));
+    return sums
+      .map((s) => ({
+        ...s,
+        posts: postRows.filter((p) => p.classId === s.id).slice(0, 30)
+          .map((p) => ({ id: p.id, authorUserId: p.authorUserId, authorName: p.authorName, isSupervisor: p.isSupervisor, isOrg: p.isOrg, body: p.body, createdAt: p.createdAt.toISOString() })),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  });
+}
+
+/**
+ * Post to a class stream. Author must be the supervisor or a member - or the
+ * PRACTICE itself (`isOrg`, batch 2e): the org admin can always post (a stand-in
+ * when the supervisor is away), badged "Practice". Returns who to notify.
+ */
 export async function postToClassDb(
   orgId: string,
   classId: string,
-  author: { userId: string; counsellorId: string; name: string },
+  author: { userId: string; counsellorId: string | null; name: string; isOrg?: boolean },
   body: string,
 ): Promise<{ ok: boolean; className?: string; notifyCounsellorIds?: string[] }> {
   return runForOrg(orgId, async () => {
@@ -119,12 +148,12 @@ export async function postToClassDb(
     const [cls] = await db.select().from(supervisionClasses).where(and(eq(supervisionClasses.id, classId), eq(supervisionClasses.orgId, orgId))).limit(1);
     if (!cls) return { ok: false };
     const members = await db.select().from(supervisionClassMembers).where(eq(supervisionClassMembers.classId, classId));
-    const isSupervisor = cls.supervisorId === author.counsellorId;
-    const isMember = members.some((m) => m.counsellorId === author.counsellorId);
-    if (!isSupervisor && !isMember) return { ok: false };
+    const isSupervisor = !author.isOrg && cls.supervisorId === author.counsellorId;
+    const isMember = !author.isOrg && members.some((m) => m.counsellorId === author.counsellorId);
+    if (!author.isOrg && !isSupervisor && !isMember) return { ok: false };
 
     await db.insert(supervisionClassPosts).values({
-      orgId, classId, authorUserId: author.userId, authorName: author.name, isSupervisor, body,
+      orgId, classId, authorUserId: author.userId, authorName: author.name, isSupervisor, isOrg: Boolean(author.isOrg), body,
     });
     const notify = [...new Set([cls.supervisorId, ...members.map((m) => m.counsellorId)])].filter((id) => id !== author.counsellorId);
     return { ok: true, className: cls.name, notifyCounsellorIds: notify };
@@ -164,23 +193,31 @@ export interface ClassSessionView {
   attendance: Record<string, "present" | "absent">;
 }
 
-/** Schedule a session. Returns the class + roster so the caller can notify. */
+/**
+ * Schedule a session - or a weekly RUN of them (`repeat`, batch 2e): one call
+ * books the same slot for N weeks, so nobody re-creates the session every time.
+ * Returns the class + roster so the caller can notify (once, not N times).
+ */
 export async function scheduleClassSessionDb(
   orgId: string,
-  input: { classId: string; title: string; startsAt: Date; durationMin: number; mode: "online" | "in_person"; location?: string | null; createdByUserId: string },
-): Promise<{ ok: boolean; id?: string; className?: string; notifyCounsellorIds?: string[] }> {
+  input: { classId: string; title: string; startsAt: Date; durationMin: number; mode: "online" | "in_person"; location?: string | null; createdByUserId: string; repeat?: number },
+): Promise<{ ok: boolean; id?: string; count?: number; lastStartsAt?: Date; className?: string; notifyCounsellorIds?: string[] }> {
   return runForOrg(orgId, async () => {
     const db = activeDb();
     const [cls] = await db.select().from(supervisionClasses).where(and(eq(supervisionClasses.id, input.classId), eq(supervisionClasses.orgId, orgId))).limit(1);
     if (!cls) return { ok: false };
-    const [row] = await db.insert(supervisionClassSessions).values({
-      orgId, classId: input.classId, title: input.title, startsAt: input.startsAt,
+    const count = Math.max(1, Math.min(12, input.repeat ?? 1));
+    const WEEK_MS = 7 * 24 * 60 * 60 * 1000; // SAST has no DST - wall-clock time holds
+    const rows = Array.from({ length: count }, (_, i) => ({
+      orgId, classId: input.classId, title: input.title,
+      startsAt: new Date(input.startsAt.getTime() + WEEK_MS * i),
       durationMin: input.durationMin, mode: input.mode, location: input.location ?? null,
       createdByUserId: input.createdByUserId,
-    }).returning({ id: supervisionClassSessions.id });
+    }));
+    const inserted = await db.insert(supervisionClassSessions).values(rows).returning({ id: supervisionClassSessions.id });
     const members = await db.select().from(supervisionClassMembers).where(eq(supervisionClassMembers.classId, input.classId));
     return {
-      ok: true, id: row!.id, className: cls.name,
+      ok: true, id: inserted[0]!.id, count, lastStartsAt: rows[rows.length - 1]!.startsAt, className: cls.name,
       notifyCounsellorIds: [...new Set([cls.supervisorId, ...members.map((m) => m.counsellorId)])],
     };
   });

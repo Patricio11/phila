@@ -1,0 +1,1 @@
+ALTER TABLE "supervision_class_posts" ADD COLUMN "is_org" boolean DEFAULT false NOT NULL;

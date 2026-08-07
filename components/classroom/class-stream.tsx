@@ -121,10 +121,11 @@ export function ClassStream({ cls, sessions = [], canManage = false, nowISO, sho
             {cls.posts.map((p) => (
               <li key={p.id} className="group flex gap-2.5">
                 <Avatar name={p.authorName} size="sm" />
-                <div className={cn("min-w-0 flex-1 rounded-card border p-3", p.isSupervisor ? "border-accent/25 bg-accent-soft/25" : "border-border bg-surface")}>
+                <div className={cn("min-w-0 flex-1 rounded-card border p-3", p.isSupervisor ? "border-accent/25 bg-accent-soft/25" : p.isOrg ? "border-info/25 bg-info-soft/20" : "border-border bg-surface")}>
                   <div className="flex flex-wrap items-center gap-2 text-[12px]">
                     <span className="font-semibold text-text">{p.authorName}</span>
                     {p.isSupervisor && <span className="rounded-chip bg-accent-soft px-1.5 py-0.5 text-[10.5px] font-semibold text-accent">Supervisor</span>}
+                    {p.isOrg && <span className="rounded-chip bg-info-soft px-1.5 py-0.5 text-[10.5px] font-semibold text-info">Practice</span>}
                     <span className="ml-auto text-text-3">{when(p.createdAt)}</span>
                     {meUserId === p.authorUserId && editingId !== p.id && (
                       <span className="flex gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">

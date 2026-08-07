@@ -615,6 +615,8 @@ export const supervisionClassPosts = pgTable("supervision_class_posts", {
   authorUserId: text("author_user_id").notNull(),
   authorName: text("author_name").notNull(),
   isSupervisor: boolean("is_supervisor").default(false).notNull(),
+  /** Posted by the practice (org admin), not a class member - badged "Practice". */
+  isOrg: boolean("is_org").default(false).notNull(),
   body: text("body").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

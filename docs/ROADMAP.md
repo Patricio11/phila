@@ -1244,6 +1244,16 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   · Hybrid), count pill tracking the filtered list, honest per-type empty state, same shared
   widget height with the list scrolling inside. Proven live: Online shows only Online-chip rows,
   In person shows none.
+- [x] **The org inside its classrooms + recurring class sessions** *(2026-08-07, batch 2e)*: the
+  practice is never locked out of its own rooms. **Open classroom** on every hub card drops the
+  org into the SAME stream the class sees - every post, every session, the join link. The org can
+  **post as the practice** (badged "Practice", stand-in when the supervisor is away - server
+  falls back to the org identity only when the author isn't a class member), **schedule
+  sessions**, **mark registers**, and **join online class sessions** (the room + token API admit
+  org admins; early clicks get the waiting room, never a bounce). And a **Repeat weekly** toggle
+  on Schedule session (both /app and hub) books the same slot for 2/4/6/8/12 weeks in one go -
+  the class is notified once, the stream announcement says "weekly for N weeks". Migration 0063
+  (`is_org` on posts). Proven live end to end from both sides.
 
 ---
 

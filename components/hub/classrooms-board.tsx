@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Copy, GraduationCap, Pencil, Plus, UserMinus, UserPlus } from "lucide-react";
-import type { ClassSummary } from "@/db/queries/classrooms";
+import { ArrowLeft, Check, Copy, DoorOpen, GraduationCap, Pencil, Plus, UserMinus, UserPlus } from "lucide-react";
+import type { ClassSessionView, ClassSummary, ClassView } from "@/db/queries/classrooms";
+import { ClassStream } from "@/components/classroom/class-stream";
 import { Dialog } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { SearchSelect } from "@/components/ui/search-select";
@@ -22,11 +23,20 @@ function ago(iso: string | null): string {
   return `active ${Math.round(mins / 1_440)}d ago`;
 }
 
-/** Hub - create + manage supervision classrooms (batch 2). */
-export function ClassroomsBoard({ classes, supervisors, counsellors }: {
+/**
+ * Hub - create + manage supervision classrooms (batch 2), and OPEN them
+ * (batch 2e): the org steps into the same stream the class sees - every post,
+ * every session, the join link - can post as the practice, schedule (incl. a
+ * weekly run) and mark registers. The org is never locked out of its rooms.
+ */
+export function ClassroomsBoard({ classes, streams = [], sessions = [], supervisors, counsellors, nowISO, meUserId }: {
   classes: ClassSummary[];
+  streams?: ClassView[];
+  sessions?: ClassSessionView[];
   supervisors: { id: string; name: string }[];
   counsellors: { id: string; name: string }[];
+  nowISO?: string;
+  meUserId?: string;
 }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -91,6 +101,30 @@ export function ClassroomsBoard({ classes, supervisors, counsellors }: {
 
   const managed = classes.find((c) => c.id === manageId) ?? null;
 
+  // Open classroom (batch 2e) - the org inside the class, same view the class has.
+  const [openClassId, setOpenClassId] = useState<string | null>(null);
+  const openedStream = streams.find((s) => s.id === openClassId) ?? null;
+
+  if (openedStream) {
+    return (
+      <div className="space-y-4">
+        <div>
+          <Button variant="ghost" size="sm" onClick={() => setOpenClassId(null)}>
+            <ArrowLeft className="size-3.5" strokeWidth={2} aria-hidden /> All classrooms
+          </Button>
+        </div>
+        <ClassStream
+          cls={openedStream}
+          sessions={sessions.filter((s) => s.classId === openedStream.id)}
+          canManage
+          nowISO={nowISO}
+          showCode
+          meUserId={meUserId}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex justify-end">
@@ -133,6 +167,9 @@ export function ClassroomsBoard({ classes, supervisors, counsellors }: {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <Button size="sm" onClick={() => setOpenClassId(c.id)}>
+                    <DoorOpen className="size-3.5" strokeWidth={2} aria-hidden /> Open classroom
+                  </Button>
                   <Button variant="ghost" size="sm" onClick={() => setManageId(c.id)}>
                     <UserPlus className="size-3.5" strokeWidth={2} aria-hidden /> Manage members
                   </Button>

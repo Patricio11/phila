@@ -46,6 +46,9 @@ export function ClassSessions({ classId, className, members, sessions, canManage
   const [durationMin, setDurationMin] = useState(60);
   const [mode, setMode] = useState<"online" | "in_person">("online");
   const [location, setLocation] = useState("");
+  // Batch 2e - repeat weekly so nobody re-creates the same session every week.
+  const [repeatOn, setRepeatOn] = useState(false);
+  const [repeatWeeks, setRepeatWeeks] = useState(4);
   const [registerFor, setRegisterFor] = useState<ClassSessionView | null>(null);
   const [marks, setMarks] = useState<Record<string, "present" | "absent">>({});
 
@@ -59,10 +62,16 @@ export function ClassSessions({ classId, className, members, sessions, canManage
     setAttempted(true);
     if (errors.title || errors.date || errors.time) return;
     start(async () => {
-      const res = await scheduleClassSession({ classId, title: title.trim(), date, time, durationMin, mode, location: location.trim() || undefined });
+      const res = await scheduleClassSession({ classId, title: title.trim(), date, time, durationMin, mode, location: location.trim() || undefined, repeatWeeks: repeatOn ? repeatWeeks : 1 });
       if (!res.ok) return toast({ tone: "error", title: res.error });
-      toast({ tone: "success", title: "Session scheduled", description: "The class was notified - online sessions carry the join link here." });
-      setOpen(false); setTitle(""); setDate(""); setAttempted(false);
+      toast({
+        tone: "success",
+        title: res.count > 1 ? `${res.count} weekly sessions scheduled` : "Session scheduled",
+        description: res.count > 1
+          ? `Same day and time for ${res.count} weeks - the class was notified once.`
+          : "The class was notified - online sessions carry the join link here.",
+      });
+      setOpen(false); setTitle(""); setDate(""); setAttempted(false); setRepeatOn(false); setRepeatWeeks(4);
       router.refresh();
     });
   };
@@ -187,6 +196,35 @@ export function ClassSessions({ classId, className, members, sessions, canManage
               <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. Boardroom, Soweto Vilakazi branch" />
             </div>
           )}
+
+          {/* Repeat weekly (batch 2e) - one click books the whole run. */}
+          <div className="rounded-control border border-border bg-surface p-3">
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="text-[13px] font-[600] text-text">Repeat weekly</div>
+                <p className="text-[12px] text-text-2">Book the same day and time for several weeks in one go.</p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={repeatOn}
+                aria-label="Repeat weekly"
+                onClick={() => setRepeatOn((v) => !v)}
+                className={cn("inline-flex h-6 w-10 shrink-0 items-center rounded-full p-0.5 transition-colors", repeatOn ? "bg-accent" : "bg-border-strong")}
+              >
+                <span className={cn("size-5 rounded-full bg-surface shadow-sm transition-transform", repeatOn && "translate-x-4")} />
+              </button>
+            </div>
+            {repeatOn && (
+              <div className="mt-2.5 flex items-center gap-2 border-t border-border/70 pt-2.5">
+                <Label className="mb-0">For</Label>
+                <div className="w-32">
+                  <Select value={String(repeatWeeks)} onChange={(v) => setRepeatWeeks(Number(v))} options={[2, 4, 6, 8, 12].map((w) => ({ value: String(w), label: `${w} weeks` }))} />
+                </div>
+                <span className="text-[12px] text-text-3">{repeatWeeks} sessions in total.</span>
+              </div>
+            )}
+          </div>
         </div>
       </Dialog>
 

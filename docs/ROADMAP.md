@@ -1300,6 +1300,13 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   Migration 0065 + RLS. Proven live end to end: company created, R10 000 recorded, an employee
   booked through the link (banner shown, retainer + link DB-asserted, R0 billing), the session
   drew R400 down to R9 600, and the exported CSV contained NO employee name.
+- [ ] **EAP companies - deferred next steps** *(parked until decided)*:
+  - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
+    their own aggregate dashboard - balance, usage, months - still never an identity.
+  - [ ] **Low-balance nudges** to the org when a company's remaining retainer runs low (banner +
+    in-app notification, like the credit top-up nudge).
+  - [ ] **Seed a demo company** (with a linked employee + usage) so the story shows on the demo
+    caseload out of the box.
 
 ---
 

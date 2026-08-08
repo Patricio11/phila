@@ -1312,6 +1312,13 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   the folder server-side. Proven live: org shared a CPD folder to all counsellors with a note +
   privacy; Aisha added her completed Google-Doc link and saw it; Thabo saw the template + note
   but NOT Aisha's file; the org saw both.
+- [x] **Three-dots menus on documents** *(2026-08-08)*: a reusable `KebabMenu` (portaled, Esc /
+  click-outside / scroll closes) puts per-item actions one click away instead of ctrl-click
+  selection. Hub document rows: Open or Download · Rename · Assign to client · Share with
+  counsellors · Delete. Hub folder cards: Open · Rename · Share · Delete (replacing the
+  hover-only pencil). Counsellor side: on their OWN link submissions - Open · Edit link ·
+  Remove, both server-guarded to the owning counsellor. Proven live: menu items render, rename
+  and delete round-trip to the DB.
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

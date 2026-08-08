@@ -403,3 +403,34 @@ export async function addStorageUsage(orgId: string, deltaBytes: number): Promis
     await db.insert(orgStorageUsage).values({ orgId, bytesUsed: Math.max(0, deltaBytes), updatedAt: new Date() });
   }
 }
+
+/** Rename a document (org-managed; batch 2k kebab). */
+export async function renameDocumentDb(orgId: string, documentId: string, name: string): Promise<boolean> {
+  return runForOrg(orgId, async () => {
+    const res = await activeDb().update(documents).set({ name })
+      .where(and(eq(documents.id, documentId), eq(documents.orgId, orgId)))
+      .returning({ id: documents.id });
+    return res.length > 0;
+  });
+}
+
+/** A counsellor edits their OWN link document (name + url). */
+export async function updateOwnLinkDb(orgId: string, documentId: string, counsellorId: string, input: { name: string; url: string }): Promise<boolean> {
+  const res = await getDb().update(documents)
+    .set({ name: input.name, externalUrl: input.url })
+    .where(and(
+      eq(documents.id, documentId), eq(documents.orgId, orgId),
+      eq(documents.uploadedBy, counsellorId), isNull(documents.deletedAt),
+    ))
+    .returning({ id: documents.id });
+  return res.length > 0;
+}
+
+/** A counsellor removes their OWN link document (soft delete; links only). */
+export async function deleteOwnLinkDb(orgId: string, documentId: string, counsellorId: string): Promise<boolean> {
+  const [row] = await getDb().select({ id: documents.id, externalUrl: documents.externalUrl, uploadedBy: documents.uploadedBy })
+    .from(documents).where(and(eq(documents.id, documentId), eq(documents.orgId, orgId), isNull(documents.deletedAt))).limit(1);
+  if (!row || row.uploadedBy !== counsellorId || !row.externalUrl) return false;
+  await getDb().update(documents).set({ deletedAt: new Date() }).where(eq(documents.id, documentId));
+  return true;
+}

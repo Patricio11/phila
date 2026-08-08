@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Download, ExternalLink, FileText, FolderClosed, Info, Link2, Plus, Users } from "lucide-react";
+import { Download, ExternalLink, FileText, FolderClosed, Info, Link2, Pencil, Plus, Trash2, Users } from "lucide-react";
 import type { Document, DocumentFolder } from "@/lib/domain/types";
 import { sizeLabel } from "@/lib/documents/quota";
 import { Dialog } from "@/components/ui/dialog";
@@ -10,7 +10,8 @@ import { Input, Label } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
-import { signCounsellorDownload, addSharedFolderLink } from "@/app/app/documents/actions";
+import { KebabMenu } from "@/components/ui/kebab-menu";
+import { signCounsellorDownload, addSharedFolderLink, updateMyLink, deleteMyLink } from "@/app/app/documents/actions";
 
 type Named = { id: string; name: string };
 type SharedFolder = { folder: DocumentFolder; docs: Document[] };
@@ -38,6 +39,10 @@ export function CounsellorDocuments({ own, shared, sharedFolders, clients }: {
   const [linkFor, setLinkFor] = useState<DocumentFolder | null>(null);
   const [linkName, setLinkName] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
+  // Batch 2k - edit my own link (three-dots menu).
+  const [editDoc, setEditDoc] = useState<Document | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editUrl, setEditUrl] = useState("");
   const [pending, start] = useTransition();
 
   async function openDoc(d: Document) {
@@ -68,6 +73,24 @@ export function CounsellorDocuments({ own, shared, sharedFolders, clients }: {
     setLinkFor(null); setLinkName(""); setLinkUrl("");
     router.refresh();
   });
+
+  const saveEdit = () => start(async () => {
+    if (!editDoc) return;
+    const res = await updateMyLink({ documentId: editDoc.id, name: editName.trim(), url: editUrl.trim() });
+    if (!res.ok) return toast({ tone: "error", title: res.error });
+    toast({ tone: "success", title: "Link updated" });
+    setEditDoc(null);
+    router.refresh();
+  });
+
+  const removeLink = (d: Document) => start(async () => {
+    const res = await deleteMyLink({ documentId: d.id });
+    if (!res.ok) return toast({ tone: "error", title: res.error });
+    toast({ tone: "default", title: "Link removed", description: `${d.name} is no longer in the folder.` });
+    router.refresh();
+  });
+
+  const openEdit = (d: Document) => { setEditDoc(d); setEditName(d.name); setEditUrl(d.externalUrl ?? ""); };
 
   // Group own documents by client.
   const byClient = new Map<string, Document[]>();
@@ -111,7 +134,7 @@ export function CounsellorDocuments({ own, shared, sharedFolders, clients }: {
             {docs.length === 0 ? (
               <p className="py-3 text-center text-[12.5px] text-text-3">Nothing here yet{folder.submissionsPrivate ? " - your submissions will appear here, visible only to you and the practice." : "."}</p>
             ) : (
-              <DocList docs={docs} onOpen={openDoc} />
+              <DocList docs={docs} onOpen={openDoc} onEditLink={openEdit} onDeleteLink={removeLink} />
             )}
           </div>
         </section>
@@ -136,6 +159,25 @@ export function CounsellorDocuments({ own, shared, sharedFolders, clients }: {
           <DocList docs={shared} onOpen={openDoc} showClient clientName={clientName} />
         </section>
       )}
+
+      {/* Edit my own link */}
+      <Dialog
+        open={Boolean(editDoc)}
+        onClose={() => setEditDoc(null)}
+        title="Edit your link"
+        description="Only you and the practice see this submission."
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setEditDoc(null)} disabled={pending}>Cancel</Button>
+            <Button onClick={saveEdit} loading={pending} disabled={editName.trim().length < 2 || !/^https?:\/\//i.test(editUrl.trim())}>Save</Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="space-y-1.5"><Label>Name</Label><Input value={editName} onChange={(e) => setEditName(e.target.value)} /></div>
+          <div className="space-y-1.5"><Label>Link</Label><Input inputMode="url" value={editUrl} onChange={(e) => setEditUrl(e.target.value)} /></div>
+        </div>
+      </Dialog>
 
       {/* Add a link into a shared folder */}
       <Dialog
@@ -165,7 +207,11 @@ export function CounsellorDocuments({ own, shared, sharedFolders, clients }: {
   );
 }
 
-function DocList({ docs, onOpen, showClient, clientName }: { docs: Document[]; onOpen: (d: Document) => void; showClient?: boolean; clientName?: Map<string, string> }) {
+function DocList({ docs, onOpen, showClient, clientName, onEditLink, onDeleteLink }: {
+  docs: Document[]; onOpen: (d: Document) => void; showClient?: boolean; clientName?: Map<string, string>;
+  /** Present only where the counsellor's OWN links live (a shared folder). */
+  onEditLink?: (d: Document) => void; onDeleteLink?: (d: Document) => void;
+}) {
   return (
     <ul className="space-y-2">
       {docs.map((d) => {
@@ -194,6 +240,16 @@ function DocList({ docs, onOpen, showClient, clientName }: { docs: Document[]; o
               >
                 {isLink ? <ExternalLink className="size-[18px]" strokeWidth={1.9} aria-hidden /> : <Download className="size-[18px]" strokeWidth={1.9} aria-hidden />}
               </button>
+            )}
+            {isLink && onEditLink && d.sharedBy === "counsellor" && (
+              <KebabMenu
+                label={`Options for ${d.name}`}
+                items={[
+                  { label: "Open link", icon: ExternalLink, onClick: () => onOpen(d) },
+                  { label: "Edit link", icon: Pencil, onClick: () => onEditLink(d) },
+                  ...(onDeleteLink ? [{ label: "Remove", icon: Trash2, onClick: () => onDeleteLink(d), danger: true }] : []),
+                ]}
+              />
             )}
           </li>
         );

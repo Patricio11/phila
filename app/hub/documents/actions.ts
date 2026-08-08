@@ -280,3 +280,20 @@ export async function signDownload(raw: { documentId: string }): Promise<{ ok: t
   });
   return { ok: true, url };
 }
+
+const renameDocInput = z.object({ documentId: z.string().min(1), name: z.string().trim().min(1, "Name the document.").max(160) });
+
+/** Rename a document (batch 2k kebab). */
+export async function renameDocument(raw: z.infer<typeof renameDocInput>): Promise<Result> {
+  const { principal, membership } = await requireHub();
+  const parsed = renameDocInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the name." };
+  if (isDb()) {
+    const { renameDocumentDb } = await import("@/db/queries/documents");
+    const ok = await renameDocumentDb(membership.orgId, parsed.data.documentId, parsed.data.name);
+    if (!ok) return { ok: false, error: "That document couldn't be found." };
+  }
+  await audit(membership.orgId, principal.userId, `document:${parsed.data.documentId}`, "rename_document");
+  revalidatePath("/hub/documents");
+  return { ok: true };
+}

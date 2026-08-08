@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import { KebabMenu } from "@/components/ui/kebab-menu";
 import {
   addLinkDocument,
   assignToClient,
@@ -39,6 +40,7 @@ import {
   createFolder,
   deleteItems,
   moveItems,
+  renameDocument,
   renameFolder,
   requestDocument,
   requestUpload,
@@ -109,6 +111,9 @@ export function DocumentManager({
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkName, setLinkName] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
+  // Batch 2k - kebab: rename a single document.
+  const [renameDoc, setRenameDoc] = useState<Document | null>(null);
+  const [renameDocName, setRenameDocName] = useState("");
   const [requestOpen, setRequestOpen] = useState(false);
   const [reqClient, setReqClient] = useState<string | null>(null);
   const [reqTitle, setReqTitle] = useState("");
@@ -332,6 +337,26 @@ export function DocumentManager({
     toast({ tone: "success", title: `Opened ${files.length} file${files.length === 1 ? "" : "s"}` });
   }
 
+  /* Batch 2k - the three-dots menu drives single-item actions. */
+  function kebabAssign(doc: Document) { setSelected(new Set([dk(doc.id)])); setAssignOpen(true); }
+  function kebabShare(key: string) { setSelected(new Set([key])); setShareOpen(true); }
+  async function kebabDelete(items: { documentIds: string[]; folderIds: string[] }, label: string) {
+    setDocs((ds) => ds.filter((d) => !items.documentIds.includes(d.id)));
+    setFolders((fs) => fs.filter((f) => !items.folderIds.includes(f.id)));
+    const res = await deleteItems(items);
+    if (!res.ok) toast({ tone: "error", title: "Delete failed", description: res.error });
+    else toast({ tone: "default", title: `Deleted ${label}` });
+    router.refresh();
+  }
+  async function onRenameDoc() {
+    if (!renameDoc) return;
+    const res = await renameDocument({ documentId: renameDoc.id, name: renameDocName.trim() });
+    if (!res.ok) { toast({ tone: "error", title: "Rename failed", description: res.error }); return; }
+    toast({ tone: "success", title: "Renamed" });
+    setRenameDoc(null);
+    router.refresh();
+  }
+
   async function onAddLink() {
     const res = await addLinkDocument({ name: linkName.trim(), url: linkUrl.trim(), folderId: cwd });
     if (!res.ok) { toast({ tone: "error", title: "Couldn't add the link", description: res.error }); return; }
@@ -477,6 +502,8 @@ export function DocumentManager({
                         onDragOver={(e) => { e.preventDefault(); setDropTarget(f.id); }}
                         onDragLeave={() => setDropTarget((t) => (t === f.id ? null : t))}
                         onDrop={() => onDropFolder(f.id)}
+                        onShare={() => kebabShare(fk(f.id))}
+                        onDelete={() => void kebabDelete({ documentIds: [], folderIds: [f.id] }, f.name)}
                       />
                     ))}
                   </div>
@@ -491,6 +518,10 @@ export function DocumentManager({
                       onSelect={(additive) => toggle(dk(d.id), additive)}
                       onDragStart={(e) => onDragStart(e, dk(d.id))}
                       onDownload={() => downloadDoc(d.id)}
+                      onRename={() => { setRenameDoc(d); setRenameDocName(d.name); }}
+                      onAssign={() => kebabAssign(d)}
+                      onShare={() => kebabShare(dk(d.id))}
+                      onDelete={() => void kebabDelete({ documentIds: [d.id], folderIds: [] }, d.name)}
                     />
                   ))}
                 </ul>
@@ -506,7 +537,7 @@ export function DocumentManager({
             ) : (
               <ul className="space-y-1.5">
                 {reviewDocs.map((d) => (
-                  <DocRow key={d.id} doc={d} clientName={d.clientId ? clientName.get(d.clientId) : undefined} selected={selected.has(dk(d.id))} onSelect={(additive) => toggle(dk(d.id), additive)} onDragStart={(e) => onDragStart(e, dk(d.id))} onDownload={() => downloadDoc(d.id)} />
+                  <DocRow key={d.id} doc={d} clientName={d.clientId ? clientName.get(d.clientId) : undefined} selected={selected.has(dk(d.id))} onSelect={(additive) => toggle(dk(d.id), additive)} onDragStart={(e) => onDragStart(e, dk(d.id))} onDownload={() => downloadDoc(d.id)} onRename={() => { setRenameDoc(d); setRenameDocName(d.name); }} onAssign={() => kebabAssign(d)} onShare={() => kebabShare(dk(d.id))} onDelete={() => void kebabDelete({ documentIds: [d.id], folderIds: [] }, d.name)} />
                 ))}
               </ul>
             )}
@@ -525,7 +556,7 @@ export function DocumentManager({
                     <div className="mb-1.5 px-1 text-[12.5px] font-semibold text-text">{c.name}</div>
                     <ul className="space-y-1.5">
                       {docs.filter((d) => d.clientId === c.id).map((d) => (
-                        <DocRow key={d.id} doc={d} selected={selected.has(dk(d.id))} onSelect={(additive) => toggle(dk(d.id), additive)} onDragStart={(e) => onDragStart(e, dk(d.id))} onDownload={() => downloadDoc(d.id)} />
+                        <DocRow key={d.id} doc={d} selected={selected.has(dk(d.id))} onSelect={(additive) => toggle(dk(d.id), additive)} onDragStart={(e) => onDragStart(e, dk(d.id))} onDownload={() => downloadDoc(d.id)} onRename={() => { setRenameDoc(d); setRenameDocName(d.name); }} onAssign={() => kebabAssign(d)} onShare={() => kebabShare(dk(d.id))} onDelete={() => void kebabDelete({ documentIds: [d.id], folderIds: [] }, d.name)} />
                       ))}
                     </ul>
                   </div>
@@ -665,6 +696,20 @@ export function DocumentManager({
       </Dialog>
 
       <Dialog
+        open={Boolean(renameDoc)}
+        onClose={() => setRenameDoc(null)}
+        title="Rename document"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setRenameDoc(null)}>Cancel</Button>
+            <Button size="sm" onClick={onRenameDoc} disabled={renameDocName.trim().length < 1}>Rename</Button>
+          </div>
+        }
+      >
+        <Input value={renameDocName} onChange={(e) => setRenameDocName(e.target.value)} />
+      </Dialog>
+
+      <Dialog
         open={requestOpen}
         onClose={() => setRequestOpen(false)}
         title="Request a document"
@@ -754,10 +799,11 @@ function FolderRow({ label, icon: Icon, depth, active, dropping, onClick, onDrag
   );
 }
 
-function FolderCard({ folder, count, selected, dropping, renaming, onOpen, onSelect, onRenameStart, onRenameChange, onRenameCommit, onDragStart, onDragOver, onDragLeave, onDrop }: {
+function FolderCard({ folder, count, selected, dropping, renaming, onOpen, onSelect, onRenameStart, onRenameChange, onRenameCommit, onDragStart, onDragOver, onDragLeave, onDrop, onShare, onDelete }: {
   folder: DocumentFolder; count: number; selected: boolean; dropping: boolean; renaming: string | null;
   onOpen: () => void; onSelect: (additive: boolean) => void; onRenameStart: () => void; onRenameChange: (v: string) => void; onRenameCommit: () => void;
   onDragStart: (e: React.DragEvent) => void; onDragOver: (e: React.DragEvent) => void; onDragLeave: () => void; onDrop: () => void;
+  onShare?: () => void; onDelete?: () => void;
 }) {
   return (
     <div
@@ -791,20 +837,24 @@ function FolderCard({ folder, count, selected, dropping, renaming, onOpen, onSel
         )}
         <div className="text-[11.5px] text-text-3">{count} item{count === 1 ? "" : "s"}</div>
       </div>
-      <button
-        type="button"
-        onClick={(e) => { e.stopPropagation(); onRenameStart(); }}
-        className="absolute right-2 top-2 hidden size-7 items-center justify-center rounded-control text-text-3 transition-colors hover:bg-surface-hover hover:text-text group-hover:flex"
-        aria-label={`Rename ${folder.name}`}
-      >
-        <Pencil className="size-3.5" aria-hidden />
-      </button>
+      <span onClick={(e) => e.stopPropagation()} className="shrink-0">
+        <KebabMenu
+          label={`Options for ${folder.name}`}
+          items={[
+            { label: "Open", icon: FolderOpen, onClick: onOpen },
+            { label: "Rename", icon: Pencil, onClick: onRenameStart },
+            ...(onShare ? [{ label: "Share with counsellors", icon: Share2, onClick: onShare }] : []),
+            ...(onDelete ? [{ label: "Delete", icon: Trash2, onClick: onDelete, danger: true }] : []),
+          ]}
+        />
+      </span>
     </div>
   );
 }
 
-function DocRow({ doc, clientName, selected, onSelect, onDragStart, onDownload }: {
+function DocRow({ doc, clientName, selected, onSelect, onDragStart, onDownload, onRename, onAssign, onShare, onDelete }: {
   doc: Document; clientName?: string; selected: boolean; onSelect: (additive: boolean) => void; onDragStart: (e: React.DragEvent) => void; onDownload: () => void;
+  onRename?: () => void; onAssign?: () => void; onShare?: () => void; onDelete?: () => void;
 }) {
   const isLink = Boolean(doc.externalUrl);
   const openable = isLink || (doc.scanStatus === "clean" && Boolean(doc.storageKey));
@@ -843,6 +893,20 @@ function DocRow({ doc, clientName, selected, onSelect, onDragStart, onDownload }
         >
           {isLink ? <ExternalLink className="size-[17px]" strokeWidth={1.9} aria-hidden /> : <Download className="size-[17px]" strokeWidth={1.9} aria-hidden />}
         </button>
+      )}
+      {onRename && (
+        <span onClick={(e) => e.stopPropagation()}>
+          <KebabMenu
+            label={`Options for ${doc.name}`}
+            items={[
+              ...(openable ? [{ label: isLink ? "Open link" : "Download", icon: isLink ? ExternalLink : Download, onClick: onDownload }] : []),
+              { label: "Rename", icon: Pencil, onClick: onRename },
+              ...(onAssign ? [{ label: "Assign to client", icon: UserPlus, onClick: onAssign }] : []),
+              ...(onShare ? [{ label: "Share with counsellors", icon: Share2, onClick: onShare }] : []),
+              ...(onDelete ? [{ label: "Delete", icon: Trash2, onClick: onDelete, danger: true }] : []),
+            ]}
+          />
+        </span>
       )}
     </li>
   );

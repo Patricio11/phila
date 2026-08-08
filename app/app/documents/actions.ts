@@ -71,3 +71,39 @@ export async function addSharedFolderLink(raw: { folderId: string; name: string;
   revalidatePath("/hub/documents");
   return { ok: true };
 }
+
+/** Batch 2k - a counsellor edits their OWN link (wrong URL, better name). */
+export async function updateMyLink(raw: { documentId: string; name: string; url: string }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg(["counsellor"]);
+  const provider = await getDataProvider();
+  const me = (await provider.listCounsellors(membership.orgId)).find((c) => c.userId === principal.userId);
+  if (!me) return { ok: false, error: "Not found." };
+  const name = String(raw?.name ?? "").trim();
+  const url = String(raw?.url ?? "").trim();
+  if (name.length < 2) return { ok: false, error: "Name the link." };
+  if (!/^https?:\/\//i.test(url) || url.length > 2000) return { ok: false, error: "Enter a valid link (https://...)" };
+  const { updateOwnLinkDb } = await import("@/db/queries/documents");
+  const ok = await updateOwnLinkDb(membership.orgId, String(raw?.documentId ?? ""), me.id, { name, url });
+  if (!ok) return { ok: false, error: "You can only edit your own links." };
+  await logAccess({ action: "file.access", actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole }, orgId: membership.orgId, target: `document:${raw.documentId}`, reason: "counsellor_edit_link" });
+  const { revalidatePath } = await import("next/cache");
+  revalidatePath("/app/documents");
+  revalidatePath("/hub/documents");
+  return { ok: true };
+}
+
+/** Batch 2k - a counsellor removes their OWN link. */
+export async function deleteMyLink(raw: { documentId: string }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg(["counsellor"]);
+  const provider = await getDataProvider();
+  const me = (await provider.listCounsellors(membership.orgId)).find((c) => c.userId === principal.userId);
+  if (!me) return { ok: false, error: "Not found." };
+  const { deleteOwnLinkDb } = await import("@/db/queries/documents");
+  const ok = await deleteOwnLinkDb(membership.orgId, String(raw?.documentId ?? ""), me.id);
+  if (!ok) return { ok: false, error: "You can only remove your own links." };
+  await logAccess({ action: "file.access", actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole }, orgId: membership.orgId, target: `document:${raw.documentId}`, reason: "counsellor_delete_link" });
+  const { revalidatePath } = await import("next/cache");
+  revalidatePath("/app/documents");
+  revalidatePath("/hub/documents");
+  return { ok: true };
+}

@@ -174,6 +174,7 @@ Sign in as **Thandeka**.
 
 **Documents** (`/hub/documents`)
 - ☐ **Add link** creates a LINK document (Google Doc etc.) that opens in a new tab; link rows show the link icon + "link" size; the selection bar gains **Download** (all files in selected folders/files)
+- ☐ **Three dots (⋮)** on a document row: Open/Download · Rename · Assign to client · Share · Delete; on a folder card: Open · Rename · Share · Delete; in `/app/documents` a counsellor's own link has Open · Edit link · Remove (their own only - server-enforced)
 - ☐ **Share a folder** offers Select-all counsellors, an instruction **note**, and **"Counsellors see only their own files"**; in `/app/documents` the shared folder shows as a card with the note + badge; a counsellor's **Add link** submission is visible to them + the org but NOT to other counsellors (server-filtered)
 - ☐ The library + starter folders render; storage usage shows against the plan/override limit
 - ☐ An open **document request** to a client is listed

@@ -351,6 +351,15 @@ export interface FormField {
   options?: string[];
   /** Tags a field as carrying contact PII (drives encryption/redaction later). */
   sensitive?: boolean;
+  /** `scale` only - endpoints of a linear scale (e.g. 1..5, "None of the time" → "All the time"). */
+  scale?: { min: number; max: number; minLabel?: string; maxLabel?: string };
+  /** `checkbox` only - cap how many options may be picked (0/undefined = no cap). */
+  maxChoices?: number;
+}
+
+/** A field type that collects an answer (everything but layout blocks). */
+export function isAnswerable(type: FormFieldType): boolean {
+  return type !== "statement" && type !== "section";
 }
 
 /**

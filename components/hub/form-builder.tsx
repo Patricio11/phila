@@ -21,10 +21,23 @@ type FieldType = FormField["type"];
 const TYPES: { value: FieldType; label: string }[] = [
   { value: "text", label: "Short text" },
   { value: "textarea", label: "Paragraph" },
+  { value: "number", label: "Number" },
+  { value: "date", label: "Date" },
   { value: "tel", label: "Phone number" },
   { value: "email", label: "Email" },
-  { value: "radio", label: "Multiple choice" },
+  { value: "radio", label: "Single choice" },
+  { value: "select", label: "Dropdown" },
+  { value: "checkbox", label: "Tick all that apply" },
+  { value: "scale", label: "Linear scale (1-5)" },
+  { value: "acknowledge", label: "Acknowledgement tick" },
+  { value: "statement", label: "Statement (no answer)" },
+  { value: "section", label: "Section break (new step)" },
 ];
+
+/** Types that carry a list of options. */
+const HAS_OPTIONS: FieldType[] = ["radio", "select", "checkbox"];
+/** Layout blocks - no required flag, no PII flag, no answer. */
+const IS_BLOCK: FieldType[] = ["statement", "section"];
 
 const KIND_OPTIONS = FORM_KINDS.map((k) => ({ value: k, label: FORM_KIND_LABELS[k] }));
 
@@ -113,7 +126,10 @@ export function FormBuilder({ initial, orgId, orgName }: { initial: Form | null;
       intro,
       fields: fields.map((f) => ({
         id: f.id, label: f.label, type: f.type, required: f.required, help: f.help ?? "",
-        placeholder: f.placeholder ?? "", sensitive: f.sensitive, options: f.type === "radio" ? f.options ?? [] : undefined,
+        placeholder: f.placeholder ?? "", sensitive: f.sensitive,
+        options: HAS_OPTIONS.includes(f.type) ? f.options ?? [] : undefined,
+        scale: f.type === "scale" ? { min: 1, max: f.scale?.max ?? 5, minLabel: f.scale?.minLabel ?? "", maxLabel: f.scale?.maxLabel ?? "" } : undefined,
+        maxChoices: f.type === "checkbox" && f.maxChoices ? f.maxChoices : undefined,
       })),
       theme,
     });
@@ -187,14 +203,50 @@ export function FormBuilder({ initial, orgId, orgName }: { initial: Form | null;
               </div>
 
               <div className="min-w-0 flex-1 space-y-3">
-                <Input value={f.label} onChange={(e) => patch(i, { label: e.target.value })} placeholder={`Question ${i + 1}  e.g. What would you like support with?`} className="font-medium" />
+                <Input
+                  value={f.label}
+                  onChange={(e) => patch(i, { label: e.target.value })}
+                  placeholder={f.type === "section" ? `Section ${i + 1} - e.g. Consent & acknowledgements` : f.type === "statement" ? "Statement heading - e.g. Please read before continuing" : `Question ${i + 1} - e.g. What would you like support with?`}
+                  className="font-medium"
+                />
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <div className="w-44"><Select value={f.type} options={TYPES} onChange={(v) => patch(i, { type: v as FieldType })} /></div>
-                  <Chip on={f.required} onClick={() => patch(i, { required: !f.required })}>Required</Chip>
-                  <Chip on={Boolean(f.sensitive)} onClick={() => patch(i, { sensitive: !f.sensitive })}>Confidential (PII)</Chip>
+                  <div className="w-52"><Select value={f.type} options={TYPES} onChange={(v) => patch(i, { type: v as FieldType })} /></div>
+                  {!IS_BLOCK.includes(f.type) && <Chip on={f.required} onClick={() => patch(i, { required: !f.required })}>Required</Chip>}
+                  {!IS_BLOCK.includes(f.type) && <Chip on={Boolean(f.sensitive)} onClick={() => patch(i, { sensitive: !f.sensitive })}>Confidential (PII)</Chip>}
+                  {f.type === "section" && <span className="text-[11.5px] text-text-3">Everything below starts a new step for the client.</span>}
                 </div>
-                {f.type === "radio" && <OptionsEditor options={f.options ?? []} onChange={(options) => patch(i, { options })} />}
-                <Input value={f.help ?? ""} onChange={(e) => patch(i, { help: e.target.value })} placeholder="Helper text under the question (optional)" className="h-9 text-[13px]" />
+                {HAS_OPTIONS.includes(f.type) && <OptionsEditor options={f.options ?? []} onChange={(options) => patch(i, { options })} />}
+                {f.type === "scale" && (
+                  <div className="flex flex-wrap items-end gap-2.5 rounded-control border border-border bg-surface-2/40 p-3">
+                    <div className="space-y-1">
+                      <Label className="text-[11.5px]">Points</Label>
+                      <div className="w-24">
+                        <Select
+                          value={String(f.scale?.max ?? 5)}
+                          options={[3, 4, 5, 7, 10].map((n) => ({ value: String(n), label: `1 - ${n}` }))}
+                          onChange={(v) => patch(i, { scale: { min: 1, max: Number(v), minLabel: f.scale?.minLabel ?? "", maxLabel: f.scale?.maxLabel ?? "" } })}
+                        />
+                      </div>
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <Label className="text-[11.5px]">Label at 1</Label>
+                      <Input value={f.scale?.minLabel ?? ""} onChange={(e) => patch(i, { scale: { min: 1, max: f.scale?.max ?? 5, minLabel: e.target.value, maxLabel: f.scale?.maxLabel ?? "" } })} placeholder="None of the time" className="h-9 text-[13px]" />
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <Label className="text-[11.5px]">Label at {f.scale?.max ?? 5}</Label>
+                      <Input value={f.scale?.maxLabel ?? ""} onChange={(e) => patch(i, { scale: { min: 1, max: f.scale?.max ?? 5, minLabel: f.scale?.minLabel ?? "", maxLabel: e.target.value } })} placeholder="All the time" className="h-9 text-[13px]" />
+                    </div>
+                  </div>
+                )}
+                {f.type === "acknowledge" && (
+                  <Input value={f.placeholder ?? ""} onChange={(e) => patch(i, { placeholder: e.target.value })} placeholder="Tick label - e.g. I acknowledge" className="h-9 text-[13px]" />
+                )}
+                <Input
+                  value={f.help ?? ""}
+                  onChange={(e) => patch(i, { help: e.target.value })}
+                  placeholder={IS_BLOCK.includes(f.type) ? "The wording shown to the client (optional)" : "Helper text under the question (optional)"}
+                  className="h-9 text-[13px]"
+                />
               </div>
 
               <button type="button" onClick={() => remove(i)} disabled={fields.length === 1} className="mt-1 text-text-3 hover:text-danger disabled:opacity-30" aria-label="Delete question"><Trash2 className="size-4" /></button>

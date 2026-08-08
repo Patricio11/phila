@@ -257,7 +257,11 @@ export const FORM_ASSIGNMENT_STATUSES = ["sent", "completed", "revoked"] as cons
 export type FormAssignmentStatus = (typeof FORM_ASSIGNMENT_STATUSES)[number];
 
 /** A question's answer type (shared by the builder, renderer, and validation). */
-export const FORM_FIELD_TYPES = ["text", "textarea", "tel", "email", "radio"] as const;
+export const FORM_FIELD_TYPES = [
+  "text", "textarea", "tel", "email", "number", "date",
+  "radio", "select", "checkbox", "scale",
+  "statement", "acknowledge", "section",
+] as const;
 export type FormFieldType = (typeof FORM_FIELD_TYPES)[number];
 
 /** How a form's public/share page is laid out. `split` adds a branded hero panel. */

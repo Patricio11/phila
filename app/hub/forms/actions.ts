@@ -26,9 +26,17 @@ const field = z.object({
   type: z.enum(FORM_FIELD_TYPES),
   required: z.boolean(),
   placeholder: z.string().trim().max(160).optional().or(z.literal("")),
-  help: z.string().trim().max(160).optional().or(z.literal("")),
+  help: z.string().trim().max(600).optional().or(z.literal("")),
   sensitive: z.boolean().optional(),
-  options: z.array(z.string().trim().min(1)).optional(),
+  options: z.array(z.string().trim().min(1)).max(40).optional(),
+  /** Batch 2l - linear scale endpoints + labels. */
+  scale: z.object({
+    min: z.number().int().min(0).max(1),
+    max: z.number().int().min(2).max(10),
+    minLabel: z.string().trim().max(60).optional().or(z.literal("")),
+    maxLabel: z.string().trim().max(60).optional().or(z.literal("")),
+  }).optional(),
+  maxChoices: z.number().int().min(1).max(40).optional(),
 });
 
 const themeInput = z
@@ -73,7 +81,9 @@ function normalise(fields: z.infer<typeof field>[]) {
     placeholder: f.placeholder || undefined,
     help: f.help || undefined,
     sensitive: f.sensitive,
-    options: f.type === "radio" ? f.options ?? [] : undefined,
+    options: ["radio", "select", "checkbox"].includes(f.type) ? f.options ?? [] : undefined,
+    scale: f.type === "scale" ? { min: 1, max: f.scale?.max ?? 5, minLabel: f.scale?.minLabel || undefined, maxLabel: f.scale?.maxLabel || undefined } : undefined,
+    maxChoices: f.type === "checkbox" ? f.maxChoices : undefined,
   }));
 }
 

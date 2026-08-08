@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { CheckCircle2, Phone } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Phone } from "lucide-react";
 import type { FormSnapshot, FormTheme } from "@/lib/domain/types";
 import { Button } from "@/components/ui/button";
 import { PhilaMark } from "@/components/brand/logo";
 import { FormFields } from "@/components/forms/form-fields";
 import { HeroPanel } from "@/components/forms/form-theme";
 import { intakeErrors } from "@/components/booking/validation";
+import { splitIntoSteps } from "@/lib/forms/steps";
 import { submitForm } from "@/app/f/[token]/actions";
 
 /**
@@ -30,14 +31,42 @@ export function FormFillView({
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Batch 2l - a long form walks in steps (a `section` field is a page break).
+  const [step, setStep] = useState(0);
 
-  const errors = showErrors ? intakeErrors(snapshot.fields, values) : {};
+  const steps = useMemo(() => splitIntoSteps(snapshot.fields), [snapshot.fields]);
+  const multi = steps.length > 1;
+  const current = steps[Math.min(step, steps.length - 1)]!;
+  const isLast = step >= steps.length - 1;
+
+  const errors = showErrors ? intakeErrors(current.fields, values) : {};
   const split = theme?.layout === "split";
+
+  const next = () => {
+    const errs = intakeErrors(current.fields, values);
+    if (Object.keys(errs).length > 0) { setShowErrors(true); return; }
+    setShowErrors(false);
+    setStep((s) => Math.min(s + 1, steps.length - 1));
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const back = () => {
+    setShowErrors(false);
+    setStep((s) => Math.max(0, s - 1));
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const submit = async () => {
     setError(null);
+    // Validate the whole form on submit - a skipped required answer on an
+    // earlier step sends the client back to it rather than failing silently.
     const errs = intakeErrors(snapshot.fields, values);
-    if (Object.keys(errs).length > 0) { setShowErrors(true); return; }
+    if (Object.keys(errs).length > 0) {
+      setShowErrors(true);
+      const bad = steps.findIndex((st) => st.fields.some((f) => errs[f.id]));
+      if (bad >= 0 && bad !== step) setStep(bad);
+      return;
+    }
     setSubmitting(true);
     const res = await submitForm({ token, answers: values });
     setSubmitting(false);
@@ -55,11 +84,45 @@ export function FormFillView({
     <div className="px-6 py-6 sm:px-7">
       <div className="mb-4">
         <h1 className="text-[18px] font-[680] tracking-[-0.01em] text-text">{snapshot.title}</h1>
-        {snapshot.intro && <p className="mt-1.5 text-[13px] leading-relaxed text-text-2">{snapshot.intro}</p>}
+        {step === 0 && snapshot.intro && <p className="mt-1.5 text-[13px] leading-relaxed text-text-2">{snapshot.intro}</p>}
       </div>
-      <FormFields fields={snapshot.fields} values={values} errors={errors} onChange={(id, v) => setValues((prev) => ({ ...prev, [id]: v }))} idPrefix="fill" />
+
+      {multi && (
+        <div className="mb-5">
+          <div className="flex items-center justify-between text-[11.5px] text-text-3">
+            <span>Step {step + 1} of {steps.length}</span>
+            <span className="tabular-nums">{Math.round(((step + 1) / steps.length) * 100)}%</span>
+          </div>
+          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
+            <div className="h-full rounded-full bg-accent transition-[width] duration-300" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
+          </div>
+        </div>
+      )}
+
+      {current.section && (
+        <div className="mb-4">
+          <h2 className="text-[15px] font-[680] text-text">{current.section.label}</h2>
+          {current.section.help && <p className="mt-1 whitespace-pre-wrap text-[12.5px] leading-relaxed text-text-2">{current.section.help}</p>}
+        </div>
+      )}
+
+      <FormFields fields={current.fields} values={values} errors={errors} onChange={(id, v) => setValues((prev) => ({ ...prev, [id]: v }))} idPrefix="fill" />
       {error && <p className="mt-3 text-[12.5px] font-medium text-danger">{error}</p>}
-      <Button onClick={submit} loading={submitting} className="mt-6 w-full">Submit</Button>
+
+      <div className="mt-6 flex items-center gap-3">
+        {multi && step > 0 && (
+          <Button variant="ghost" onClick={back} disabled={submitting}>
+            <ArrowLeft className="size-4" strokeWidth={2} aria-hidden /> Back
+          </Button>
+        )}
+        {isLast ? (
+          <Button onClick={submit} loading={submitting} className="flex-1">Submit</Button>
+        ) : (
+          <Button onClick={next} className="flex-1">
+            Continue <ArrowRight className="size-4" strokeWidth={2.2} aria-hidden />
+          </Button>
+        )}
+      </div>
       <p className="mt-3 text-center text-[11px] text-text-3">Your answers are kept confidential under POPIA.</p>
     </div>
   );

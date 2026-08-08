@@ -25,10 +25,17 @@ export function intakeErrors(
   const format = (f: IntakeField, v: string): string | undefined => {
     if (v && f.type === "email" && !EMAIL.test(v)) return "That email doesn't look right.";
     if (v && f.type === "tel" && v.replace(/\D/g, "").length < 9) return "That number looks too short.";
+    if (v && f.type === "number" && Number.isNaN(Number(v))) return "Numbers only, please.";
     return undefined;
   };
   for (const f of fields) {
+    // Batch 2l - layout blocks never validate (they hold no answer).
+    if (f.type === "section" || f.type === "statement") continue;
     const v = (values[f.id] ?? "").trim();
+    if (f.type === "acknowledge") {
+      if (f.required && v !== "yes") errors[f.id] = "Please tick to acknowledge.";
+      continue;
+    }
     if (pair && (f.id === pair[0] || f.id === pair[1])) {
       const err = !pairSatisfied ? "Add a phone number or an email." : format(f, v);
       if (err) errors[f.id] = err;

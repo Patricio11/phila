@@ -19,10 +19,17 @@ const { availableSlots } = await import("@/lib/domain/helpers");
 const ORG = "org_avail_probe";
 const HOURS: import("@/lib/domain/types").BusinessHours = { 1: { start: "08:00", end: "17:00" }, 2: { start: "08:00", end: "17:00" }, 3: { start: "08:00", end: "17:00" }, 4: { start: "08:00", end: "17:00" }, 5: { start: "08:00", end: "17:00" }, 6: null, 7: null };
 
-/** Next Monday at least a week out - far from seeded data, always a working day. */
+/**
+ * Next Monday at least a week out - far from seeded data, always a working day.
+ * Computed in SAST wall-clock: before 02:00 SAST the UTC date is still
+ * yesterday, and a UTC-based sum landed this on a Sunday (no business hours,
+ * nobody bookable, red suite at midnight).
+ */
+const SAST_DAY = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit" });
 function nextMonday(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 7 + ((8 - d.getDay()) % 7));
+  const today = SAST_DAY.format(new Date());
+  const d = new Date(`${today}T12:00:00Z`); // noon anchor - no rollover either way
+  d.setUTCDate(d.getUTCDate() + 7 + ((8 - d.getUTCDay()) % 7));
   return d.toISOString().slice(0, 10);
 }
 const MONDAY = nextMonday();

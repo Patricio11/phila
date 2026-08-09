@@ -173,6 +173,7 @@ Sign in as **Thandeka**.
 - ☐ Create / duplicate / archive a form; the **builder** (Build + Design tabs) previews live
 
 **Forms** (batch 2l) - `/hub/forms`
+- ☐ **New form** offers templates with step counts - **Full intake (3 steps)** and **K10 distress scale (2 steps)**; picking one fills a real multi-step form, and **Add step (section break)** builds one from scratch (section cards show "Step N starts here"; the header shows "N steps for the client")
 - ☐ The builder offers every input type (short text · paragraph · number · date · phone · email · single choice · dropdown · tick-all · **linear scale** · acknowledgement · statement · **section**); a **section** makes the client's form multi-step (progress rail, Back/Continue, per-step validation)
 - ☐ A form page shows **Send automatically** (when a booking is made / after N attended sessions) and **Counsellors may send this** (all or named); the automation fires by itself and sends a client a given form only once
 - ☐ `/app/forms` (counsellor): forms shared with them, **Send** to their OWN clients only (another counsellor's clients are never listed), and **From your clients** with each completed response openable in full

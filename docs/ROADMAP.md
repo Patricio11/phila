@@ -1340,6 +1340,15 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   fired on the 2nd attended session, a counsellor sent to their own client (another counsellor's
   client never listed), the client filled it, and the answers appeared for the counsellor and on
   the record.
+- [x] **Multi-step templates + a visible way to add steps** *(2026-08-09)*: the New-form template
+  picker gained **Full intake (3 steps)** - the real SA intake shape (about you · health &
+  history · consent acknowledgements, with dropdowns, tick-all, statements and acknowledgement
+  ticks) - and **K10 distress scale (2 steps)** (the ten Kessler questions as linear scales).
+  Each chip shows its question and step count. In the builder, an **Add step (section break)**
+  button sits beside Add question, section cards render as accent-edged **"Step N starts here"**
+  dividers, and a **"N steps for the client"** badge tracks the header - so multi-step is
+  discoverable instead of a hidden field type. Also raised the question-label cap from 120 to
+  300 characters (real consent questions are long, and the save failed silently at 120).
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, Eye, GripVertical, ListChecks, Palette, Plus, Save, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Eye, GripVertical, ListChecks, Palette, Plus, Save, SplitSquareVertical, Trash2, X } from "lucide-react";
 import type { Form, FormField, FormTheme } from "@/lib/domain/types";
 import { FORM_KINDS, FORM_KIND_LABELS, type FormKind } from "@/lib/domain/enums";
 import { Card } from "@/components/ui/card";
@@ -41,7 +41,10 @@ const IS_BLOCK: FieldType[] = ["statement", "section"];
 
 const KIND_OPTIONS = FORM_KINDS.map((k) => ({ value: k, label: FORM_KIND_LABELS[k] }));
 
-/** Starter templates for a brand-new form (create mode only). */
+/**
+ * Starter templates for a brand-new form (create mode only). `steps` is derived,
+ * not stored - a template with `section` blocks simply becomes a multi-step form.
+ */
 const TEMPLATES: Record<string, { label: string; kind: FormKind; title: string; intro: string; fields: FormField[] }> = {
   blank: { label: "Blank", kind: "custom", title: "", intro: "", fields: [{ id: "q1", label: "", type: "text", required: false }] },
   intake: {
@@ -68,6 +71,61 @@ const TEMPLATES: Record<string, { label: string; kind: FormKind; title: string; 
     fields: [
       { id: "interest", label: "Little interest or pleasure in doing things", type: "radio", required: true, options: ["Not at all", "Several days", "More than half the days", "Nearly every day"] },
       { id: "down", label: "Feeling down, depressed, or hopeless", type: "radio", required: true, options: ["Not at all", "Several days", "More than half the days", "Nearly every day"] },
+    ],
+  },
+  intake_full: {
+    label: "Full intake (3 steps)", kind: "intake", title: "Intake Form | CONFIDENTIAL",
+    intro: "Welcome, and thank you for taking this first step toward accessing support. This form gathers what your counsellor needs to prepare. Everything you share is kept confidential under POPIA.",
+    fields: [
+      { id: "s_about", label: "About you", type: "section", required: false, help: "A few details so we know who we are meeting." },
+      { id: "first_name", label: "First name", type: "text", required: true, sensitive: true },
+      { id: "surname", label: "Surname", type: "text", required: true, sensitive: true },
+      { id: "phone", label: "Telephone number", type: "tel", required: true, sensitive: true, help: "We use this to confirm your session." },
+      { id: "email", label: "Email", type: "email", required: false, sensitive: true },
+      { id: "address", label: "Residential address", type: "text", required: false, sensitive: true },
+      { id: "province", label: "Province", type: "select", required: true, options: ["Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal", "Limpopo", "Mpumalanga", "Northern Cape", "North West", "Western Cape"] },
+      { id: "age", label: "Age", type: "number", required: true },
+      { id: "gender", label: "Gender", type: "radio", required: false, options: ["Woman", "Man", "Transgender", "Non-binary", "Prefer not to say", "Other"] },
+      { id: "pronouns", label: "Preferred pronouns", type: "text", required: false },
+      { id: "marital", label: "Marital status", type: "select", required: false, options: ["Single", "Living together (with a partner)", "Married", "Widowed", "Divorced or separated", "Other"] },
+      { id: "work", label: "Work status", type: "select", required: false, options: ["Unemployed or not working", "Employee or worker", "Self-employed", "Volunteer", "Student", "Other"] },
+      { id: "trusted_name", label: "Trusted person - name & surname", type: "text", required: true, sensitive: true, help: "Someone we may contact in an emergency." },
+      { id: "trusted_phone", label: "Trusted person - telephone number", type: "tel", required: true, sensitive: true },
+      { id: "s_health", label: "Your health & history", type: "section", required: false, help: "None of this changes your care - it only helps your counsellor prepare." },
+      { id: "diagnosis", label: "Have you been diagnosed with any psychiatric illness(es) by a medical doctor, psychologist or psychiatrist?", type: "textarea", required: false, help: "Write \"None\" if that is the case." },
+      { id: "medication", label: "Do you take any prescribed medication?", type: "textarea", required: false, help: "Write \"None\" if that is the case." },
+      { id: "disability", label: "Do you live with any disability or long-term condition that affects your daily functioning?", type: "textarea", required: false },
+      { id: "prior", label: "Have you had counselling before?", type: "radio", required: true, options: ["No", "Yes"] },
+      { id: "prior_detail", label: "If yes, how long ago and from where?", type: "text", required: false },
+      { id: "heard", label: "How did you hear about us?", type: "select", required: false, options: ["Instagram", "Facebook", "TikTok", "Word of mouth", "Website", "Other"] },
+      { id: "brings", label: "What brings you to counselling?", type: "checkbox", required: true, options: ["Feeling low, down, or depressed", "Anxiety, stress, or worry", "Trauma or difficult past experiences", "Grief or loss", "Anger or emotional regulation", "Identity, self-esteem, or sense of self", "Eating or body-related concerns", "Sleep or fatigue difficulties", "Relationship challenges", "Life changes or transitions (work, study, relocation)", "General support / not sure where to start", "Other"] },
+      { id: "s_consent", label: "Consent & acknowledgements", type: "section", required: false, help: "Please read and confirm the following before proceeding:" },
+      { id: "st1", label: "1. Short-term, supportive counselling", type: "statement", required: false, help: "We provide short-term, supportive counselling and are not a crisis or emergency service." },
+      { id: "ack1", label: "Do you understand and accept this?", type: "acknowledge", required: true, placeholder: "I acknowledge" },
+      { id: "st2", label: "2. Confidentiality and its limits", type: "statement", required: false, help: "Information shared during counselling is kept confidential, except where there is a risk of harm to you or others, or where disclosure is required by law." },
+      { id: "ack2", label: "Do you understand and accept this?", type: "acknowledge", required: true, placeholder: "I acknowledge" },
+      { id: "st3", label: "3. Safety", type: "statement", required: false, help: "If your counsellor believes you are at risk of harm, they may contact your trusted person or relevant services to keep you safe." },
+      { id: "ack3", label: "Do you understand and accept this?", type: "acknowledge", required: true, placeholder: "I acknowledge" },
+      { id: "followup", label: "May we contact you for follow-up related to your care, evaluation, or research? Any identifying information is protected and anonymised.", type: "radio", required: true, options: ["Yes", "No"] },
+    ],
+  },
+  k10: {
+    label: "K10 distress scale (2 steps)", kind: "screening", title: "(K10) Kessler Psychological Distress Scale",
+    intro: "This questionnaire measures psychological distress - stress, anxiety, low mood - over the past 4 weeks. There are no right or wrong answers.",
+    fields: [
+      { id: "s_intro", label: "Before you begin", type: "section", required: false, help: "The questions ask how often you have felt certain ways in the past 4 weeks. This is a screening tool, not a diagnosis - it guides the conversation with your counsellor." },
+      { id: "ready", label: "I understand this is not a diagnosis", type: "acknowledge", required: true, placeholder: "I understand" },
+      { id: "s_k10", label: "The past 4 weeks", type: "section", required: false, help: "Please answer honestly based on your own experience." },
+      { id: "k1", label: "1. In the past 4 weeks, about how often did you feel tired for no good reason?", type: "scale", required: true, scale: { min: 1, max: 5, minLabel: "None of the time", maxLabel: "All the time" } },
+      { id: "k2", label: "2. In the past 4 weeks, about how often did you feel nervous?", type: "scale", required: true, scale: { min: 1, max: 5, minLabel: "None of the time", maxLabel: "All the time" } },
+      { id: "k3", label: "3. In the past 4 weeks, about how often did you feel so nervous that nothing could calm you down?", type: "scale", required: true, scale: { min: 1, max: 5, minLabel: "None of the time", maxLabel: "All the time" } },
+      { id: "k4", label: "4. In the past 4 weeks, about how often did you feel hopeless?", type: "scale", required: true, scale: { min: 1, max: 5, minLabel: "None of the time", maxLabel: "All the time" } },
+      { id: "k5", label: "5. In the past 4 weeks, about how often did you feel restless and fidgety?", type: "scale", required: true, scale: { min: 1, max: 5, minLabel: "None of the time", maxLabel: "All the time" } },
+      { id: "k6", label: "6. In the past 4 weeks, about how often did you feel so restless you could not sit still?", type: "scale", required: true, scale: { min: 1, max: 5, minLabel: "None of the time", maxLabel: "All the time" } },
+      { id: "k7", label: "7. In the past 4 weeks, about how often did you feel depressed?", type: "scale", required: true, scale: { min: 1, max: 5, minLabel: "None of the time", maxLabel: "All the time" } },
+      { id: "k8", label: "8. In the past 4 weeks, about how often did you feel that everything was an effort?", type: "scale", required: true, scale: { min: 1, max: 5, minLabel: "None of the time", maxLabel: "All the time" } },
+      { id: "k9", label: "9. In the past 4 weeks, about how often did you feel so sad that nothing could cheer you up?", type: "scale", required: true, scale: { min: 1, max: 5, minLabel: "None of the time", maxLabel: "All the time" } },
+      { id: "k10", label: "10. In the past 4 weeks, about how often did you feel worthless?", type: "scale", required: true, scale: { min: 1, max: 5, minLabel: "None of the time", maxLabel: "All the time" } },
     ],
   },
 };
@@ -109,7 +167,12 @@ export function FormBuilder({ initial, orgId, orgName }: { initial: Form | null;
       return copy;
     });
   const add = () => setFields((fs) => [...fs, { id: `q${counter.current++}`, label: "", type: "text", required: false }]);
+  /** Batch 2l - a section break is how a form becomes multi-step; make it a button. */
+  const addSection = () => setFields((fs) => [...fs, { id: `s${counter.current++}`, label: "", type: "section", required: false }]);
   const remove = (i: number) => setFields((fs) => fs.filter((_, idx) => idx !== i));
+
+  // How many steps the client will see (a section block opens each one).
+  const stepCount = Math.max(1, fields.filter((f) => f.type === "section").length);
 
   const draftForm: Form = {
     id: initial?.id ?? `draft_${orgId}`, orgId, kind, title, intro: intro || undefined, fields,
@@ -159,12 +222,17 @@ export function FormBuilder({ initial, orgId, orgName }: { initial: Form | null;
         <Card className="space-y-2 p-4">
           <div className="text-[12.5px] font-medium text-text">Start from a template</div>
           <div className="flex flex-wrap gap-2">
-            {Object.entries(TEMPLATES).map(([key, t]) => (
-              <button key={key} type="button" onClick={() => applyTemplate(key)} className="rounded-control border border-border bg-surface px-3 py-1.5 text-[12.5px] font-medium text-text-2 transition-colors hover:border-accent/40 hover:bg-accent-soft hover:text-accent">
-                {t.label}
-              </button>
-            ))}
+            {Object.entries(TEMPLATES).map(([key, t]) => {
+              const steps = t.fields.filter((f) => f.type === "section").length;
+              return (
+                <button key={key} type="button" onClick={() => applyTemplate(key)} className="inline-flex items-center gap-1.5 rounded-control border border-border bg-surface px-3 py-1.5 text-[12.5px] font-medium text-text-2 transition-colors hover:border-accent/40 hover:bg-accent-soft hover:text-accent">
+                  {t.label}
+                  <span className="text-[11px] text-text-3">{t.fields.filter((f) => f.type !== "section" && f.type !== "statement").length} q{steps > 1 ? ` · ${steps} steps` : ""}</span>
+                </button>
+              );
+            })}
           </div>
+          <p className="text-[11.5px] text-text-3">A template with steps drops in <strong className="font-medium text-text-2">Section breaks</strong> - the client then fills it one step at a time.</p>
         </Card>
       )}
 
@@ -191,10 +259,24 @@ export function FormBuilder({ initial, orgId, orgName }: { initial: Form | null;
 
       {/* Questions */}
       <div className="space-y-3">
-        <h2 className="text-[14px] font-semibold text-text">Questions <span className="text-text-3">({fields.length})</span></h2>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-[14px] font-semibold text-text">
+            Questions <span className="text-text-3">({fields.filter((f) => f.type !== "section" && f.type !== "statement").length})</span>
+          </h2>
+          {stepCount > 1 && (
+            <span className="rounded-chip bg-accent-soft px-2 py-0.5 text-[11.5px] font-semibold text-accent">
+              {stepCount} steps for the client
+            </span>
+          )}
+        </div>
 
         {fields.map((f, i) => (
-          <Card key={f.id} className="p-4">
+          <Card key={f.id} className={cn("p-4", f.type === "section" && "border-l-[3px] border-l-accent bg-accent-soft/20")}>
+            {f.type === "section" && (
+              <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-accent">
+                Step {fields.slice(0, i + 1).filter((x) => x.type === "section").length} starts here
+              </div>
+            )}
             <div className="flex items-start gap-2.5">
               <div className="mt-1.5 flex flex-col items-center gap-0.5">
                 <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className="text-text-3 hover:text-text disabled:opacity-30" aria-label="Move up"><ChevronUp className="size-4" /></button>
@@ -254,9 +336,17 @@ export function FormBuilder({ initial, orgId, orgName }: { initial: Form | null;
           </Card>
         ))}
 
-        <Button variant="ghost" onClick={add} className="w-full border border-dashed border-border">
-          <Plus className="size-4" strokeWidth={2} aria-hidden /> Add question
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button variant="ghost" onClick={add} className="flex-1 border border-dashed border-border">
+            <Plus className="size-4" strokeWidth={2} aria-hidden /> Add question
+          </Button>
+          <Button variant="ghost" onClick={addSection} className="flex-1 border border-dashed border-accent/40 text-accent">
+            <SplitSquareVertical className="size-4" strokeWidth={2} aria-hidden /> Add step (section break)
+          </Button>
+        </div>
+        <p className="text-[11.5px] text-text-3">
+          Everything after a step break becomes its own page for the client, with Back / Continue and a progress bar.
+        </p>
       </div>
       </div>
       )}

@@ -22,7 +22,7 @@ import { FORM_KINDS, FORM_FIELD_TYPES, FORM_LAYOUTS, FORM_BG_TYPES, FORM_IMAGE_F
  */
 const field = z.object({
   id: z.string().min(1),
-  label: z.string().trim().min(2, "Each question needs a label.").max(120),
+  label: z.string().trim().min(2, "Each question needs a label.").max(300),
   type: z.enum(FORM_FIELD_TYPES),
   required: z.boolean(),
   placeholder: z.string().trim().max(160).optional().or(z.literal("")),

@@ -223,3 +223,61 @@ export async function setFormArchived(formId: string, archived: boolean): Promis
   revalidatePath(`/hub/forms/${id}`);
   return { ok: true };
 }
+
+/* ── Automations + counsellor sharing (batch 2l) ────────────────────────── */
+
+const autoInput = z.object({
+  formId: z.string().min(1),
+  trigger: z.enum(["on_booking", "after_attended"]),
+  threshold: z.number().int().min(1).max(50).nullable().optional(),
+  firstBookingOnly: z.boolean().optional(),
+});
+
+/** "Send this form when X happens." */
+export async function createFormAutomation(raw: z.infer<typeof autoInput>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = autoInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Check the automation." };
+  if (process.env.DATA_PROVIDER !== "db") return { ok: false, error: "Not available in demo mode." };
+  const { createAutomationDb } = await import("@/db/queries/form-automations");
+  await createAutomationDb(membership.orgId, {
+    formId: parsed.data.formId, trigger: parsed.data.trigger,
+    threshold: parsed.data.threshold ?? null, firstBookingOnly: Boolean(parsed.data.firstBookingOnly),
+    createdBy: principal.userId,
+  });
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `form:${parsed.data.formId}/automation`, reason: `create_automation_${parsed.data.trigger}` });
+  revalidatePath(`/hub/forms/${parsed.data.formId}`);
+  return { ok: true };
+}
+
+export async function deleteFormAutomation(raw: { id: string; formId: string }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  if (!raw?.id) return { ok: false, error: "Not found." };
+  if (process.env.DATA_PROVIDER !== "db") return { ok: false, error: "Not available in demo mode." };
+  const { deleteAutomationDb } = await import("@/db/queries/form-automations");
+  const ok = await deleteAutomationDb(membership.orgId, raw.id);
+  if (!ok) return { ok: false, error: "That automation couldn't be found." };
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `automation:${raw.id}`, reason: "delete_automation" });
+  revalidatePath(`/hub/forms/${raw.formId}`);
+  return { ok: true };
+}
+
+const shareTeamInput = z.object({
+  formId: z.string().min(1),
+  all: z.boolean(),
+  counsellorIds: z.array(z.string().min(1)).max(200),
+});
+
+/** Share a form with counsellors so they can send it to their own clients. */
+export async function shareFormWithCounsellors(raw: z.infer<typeof shareTeamInput>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = shareTeamInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Check the sharing settings." };
+  if (process.env.DATA_PROVIDER !== "db") return { ok: false, error: "Not available in demo mode." };
+  const { setFormSharingDb } = await import("@/db/queries/form-automations");
+  const ok = await setFormSharingDb(membership.orgId, parsed.data.formId, parsed.data.all, parsed.data.counsellorIds);
+  if (!ok) return { ok: false, error: "That form couldn't be found." };
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `form:${parsed.data.formId}`, reason: parsed.data.all ? "share_form_all_counsellors" : `share_form_counsellors:${parsed.data.counsellorIds.length}` });
+  revalidatePath(`/hub/forms/${parsed.data.formId}`);
+  return { ok: true };
+}

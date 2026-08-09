@@ -13,6 +13,7 @@ import { FormFields } from "@/components/forms/form-fields";
 import { IntakeDetail } from "@/components/hub/intake-detail";
 import { SendFormModal, type SendClient } from "@/components/hub/send-form-modal";
 import { FormShare } from "@/components/hub/form-share";
+import { FormAutomations, type AutomationRow } from "@/components/hub/form-automations";
 import { cn } from "@/lib/utils";
 
 const KIND_TONE: Record<string, TagTone> = { intake: "accent", feedback: "info", screening: "warn", consent: "neutral", custom: "neutral" };
@@ -25,7 +26,11 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 
 type Tab = "responses" | "questions" | "preview";
 
-export function FormDetail({ form, responses, clients }: { form: Form; responses: FormResponseRow[]; clients: SendClient[] }) {
+export function FormDetail({ form, responses, clients, automations = [], counsellors = [], sharedWithAll = false, sharedWith = [] }: {
+  form: Form; responses: FormResponseRow[]; clients: SendClient[];
+  automations?: AutomationRow[]; counsellors?: { id: string; name: string }[];
+  sharedWithAll?: boolean; sharedWith?: string[];
+}) {
   const [tab, setTab] = useState<Tab>("responses");
   const [sendOpen, setSendOpen] = useState(false);
   const [viewing, setViewing] = useState<FormResponseRow | null>(null);
@@ -69,6 +74,15 @@ export function FormDetail({ form, responses, clients }: { form: Form; responses
       {tab === "responses" ? (
         <div className="space-y-4">
           <FormShare formId={form.id} shareToken={form.shareToken} shareEnabled={form.shareEnabled} />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <FormAutomations
+              formId={form.id}
+              automations={automations}
+              counsellors={counsellors}
+              sharedWithAll={sharedWithAll}
+              sharedWith={sharedWith}
+            />
+          </div>
           {responses.length === 0 ? (
             <EmptyResponses onSend={() => setSendOpen(true)} />
           ) : (

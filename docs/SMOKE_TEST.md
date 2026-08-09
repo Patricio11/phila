@@ -172,6 +172,12 @@ Sign in as **Thandeka**.
 - ☐ Open the feedback form → **Responses** shows the open **share link**; visiting `/f/s_feedback_masizakhe` (no login) renders the themed two-pane fill page
 - ☐ Create / duplicate / archive a form; the **builder** (Build + Design tabs) previews live
 
+**Forms** (batch 2l) - `/hub/forms`
+- ☐ The builder offers every input type (short text · paragraph · number · date · phone · email · single choice · dropdown · tick-all · **linear scale** · acknowledgement · statement · **section**); a **section** makes the client's form multi-step (progress rail, Back/Continue, per-step validation)
+- ☐ A form page shows **Send automatically** (when a booking is made / after N attended sessions) and **Counsellors may send this** (all or named); the automation fires by itself and sends a client a given form only once
+- ☐ `/app/forms` (counsellor): forms shared with them, **Send** to their OWN clients only (another counsellor's clients are never listed), and **From your clients** with each completed response openable in full
+- ☐ A completed response also appears on the client's record (counsellor dossier + hub) with a **Score** chip for scale forms
+
 **Documents** (`/hub/documents`)
 - ☐ **Add link** creates a LINK document (Google Doc etc.) that opens in a new tab; link rows show the link icon + "link" size; the selection bar gains **Download** (all files in selected folders/files)
 - ☐ **Three dots (⋮)** on a document row: Open/Download · Rename · Assign to client · Share · Delete; on a folder card: Open · Rename · Share · Delete; in `/app/documents` a counsellor's own link has Open · Edit link · Remove (their own only - server-enforced)

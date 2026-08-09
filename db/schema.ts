@@ -961,10 +961,33 @@ export const forms = pgTable("forms", {
   theme: jsonb("theme"), // FormTheme | null  presentation of the public/share page
   shareToken: text("share_token"), // open share link (anyone can fill)
   shareEnabled: boolean("share_enabled").default(false).notNull(),
+  /** Batch 2l - the org shares a form with counsellors, who then send it to
+   *  their own clients. `all` = every counsellor; else the listed counsellor ids. */
+  sharedWithAll: boolean("shared_with_all").default(false).notNull(),
+  sharedWith: jsonb("shared_with").$type<string[]>().default([]).notNull(),
   createdBy: text("created_by"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 }, (t) => [index("forms_org_idx").on(t.orgId), uniqueIndex("forms_share_token_uq").on(t.shareToken)]);
+
+/**
+ * Batch 2l - form automations: the practice says "send this form when X happens"
+ * and the system does it. `on_booking` fires when an appointment is created;
+ * `after_attended` fires when the client's Nth session is marked held.
+ */
+export const formAutomations = pgTable("form_automations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  formId: text("form_id").notNull(),
+  trigger: text("trigger").notNull(), // on_booking | after_attended
+  /** `after_attended` only - the session count that fires it (e.g. 5). */
+  threshold: integer("threshold"),
+  /** Only fire for a client's FIRST booking (on_booking only). */
+  firstBookingOnly: boolean("first_booking_only").default(false).notNull(),
+  active: boolean("active").default(true).notNull(),
+  createdBy: text("created_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("form_automations_org_idx").on(t.orgId)]);
 
 /** A form sent to a client  and, once filled, their response. `snapshot` freezes
  *  the form at send time so later edits never rewrite past answers. The `token` is

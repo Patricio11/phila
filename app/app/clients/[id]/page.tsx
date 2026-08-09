@@ -14,6 +14,7 @@ import { Tag } from "@/components/ui/tag";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SessionTimeline } from "@/components/client/session-timeline";
 import { OutcomeSparkline } from "@/components/charts/outcome-sparkline";
+import { ClientFormsCard } from "@/components/forms/client-forms-card";
 import { SafeguardingPanel } from "@/components/workspace/safeguarding-panel";
 import { CounsellorCareSteps } from "@/components/client/counsellor-care-steps";
 import { StatusDot } from "@/components/ui/status-dot";
@@ -61,6 +62,11 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
   });
 
   const { client, counsellor, consents, demographics, sessions, outcomes, documents, carePlan } = dossier;
+  // Batch 2l - forms this client was sent, with completed answers readable.
+  const formRows = process.env.DATA_PROVIDER === "db"
+    ? await (await import("@/db/queries/form-automations")).clientFormResponsesDb(membership.orgId, id)
+    : [];
+
   // Outcome tracking is feature-switched (batch 2h).
   const outcomesOn = process.env.DATA_PROVIDER === "db"
     ? (await (await import("@/db/queries/features")).effectiveFeaturesDb(membership.orgId)).outcomes
@@ -181,6 +187,8 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
               )}
             </div>
           </Card>
+
+          <ClientFormsCard rows={formRows} />
 
           {outcomesOn && (
             <Card>

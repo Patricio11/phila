@@ -174,6 +174,16 @@ export async function createAppointment(
         new Promise((resolve) => setTimeout(resolve, 4_000)),
       ]);
     }
+    // Batch 2l - form automations: "send this form when a booking is made".
+    try {
+      const { runFormAutomations } = await import("@/db/queries/form-automations");
+      const res = await runFormAutomations(data.orgId, data.clientId, "on_booking", principal.userId, clockNow());
+      if (res.sent.length) {
+        const { notifyFormSent } = await import("@/lib/messaging/notify-form");
+        await notifyFormSent(data.orgId, res.sent[0]!.title, [{ clientId: data.clientId, token: res.sent[0]!.token }]);
+      }
+    } catch { /* an automation never breaks a booking */ }
+
     // Auto-raise an invoice for the (first) session - priced services only, org-toggleable.
     try {
       const [svc] = await getDb().select({ name: servicesTable.name, priceCents: servicesTable.priceCents }).from(servicesTable).where(eq(servicesTable.id, data.serviceId)).limit(1);

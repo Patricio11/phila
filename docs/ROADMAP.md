@@ -1319,6 +1319,27 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   hover-only pencil). Counsellor side: on their OWN link submissions - Open · Edit link ·
   Remove, both server-guarded to the owning counsellor. Proven live: menu items render, rename
   and delete round-trip to the DB.
+- [x] **Forms: the engine** *(2026-08-09, batch 2l)*: every input type - short text, paragraph,
+  number, date, phone, email, single choice, dropdown, tick-all-that-apply (optional cap), linear
+  scale with end labels (the K10 shape), acknowledgement tick, plus statement and **section**
+  blocks. A section is a page break, so a long form becomes a **multi-step wizard** with a
+  progress rail, Back/Continue, per-step validation and a submit-time sweep that returns the
+  client to the first step holding a missed required answer. Multi-answers ride as a joined
+  string, so snapshots/exports/DB are untouched. The builder gained the full type picker, options
+  for every choice type, scale points + labels, and honest block handling.
+- [x] **Forms: the flow** *(2026-08-09, batch 2l)*: **automations** - "send this form when a
+  booking is made (optionally first booking only)" or "after their Nth attended session" - fire
+  from the hub modal, the public booking page, and the moment a session is marked held; each
+  client gets a given form once (structural idempotence), and an automation never breaks the
+  action it rides on. The org **shares a form with counsellors** (all, or named), who get a
+  **Forms page** in their workspace: what's shared with them, Send to their OWN clients only
+  (server-guarded both ways), and every response their clients returned - openable in full.
+  Completed responses also land on the **client record** in both the counsellor dossier and the
+  hub, rendered from the assignment snapshot (with a summed score for scale forms). Migration
+  0067 (`form_automations`, `forms.shared_with*`) + RLS. Proven live end to end: automation
+  fired on the 2nd attended session, a counsellor sent to their own client (another counsellor's
+  client never listed), the client filled it, and the answers appeared for the counsellor and on
+  the record.
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

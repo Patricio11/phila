@@ -26,6 +26,7 @@ import { DataPrivacyCard } from "@/components/hub/data-privacy-card";
 import { REFERRAL_SOURCE_LABELS, type ReferralSource } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
 import { ClientLanguageControl } from "@/components/hub/client-language-control";
+import { ClientFormsCard } from "@/components/forms/client-forms-card";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,11 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
   const pricedServices = services.filter((s) => (s.priceCents ?? 0) > 0).map((s) => ({ name: s.name, priceCents: s.priceCents ?? 0 }));
   const referralsOn = Boolean(dossier.org.features.referrals);
   const referralSource = referralsOn && isDbMode ? await getClientReferralDb(membership.orgId, id) : null;
+  // Batch 2l - forms sent to this client + their completed answers.
+  const formRows = isDbMode
+    ? await (await import("@/db/queries/form-automations")).clientFormResponsesDb(membership.orgId, id)
+    : [];
+
   // Feature switches (kill-switch → override → plan → self-toggle) - one resolve.
   const eff = isDbMode ? await (await import("@/db/queries/features")).effectiveFeaturesDb(membership.orgId) : null;
   const languageOn = eff ? eff.language : Boolean(dossier.org.features.language);
@@ -144,6 +150,8 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
               </div>
             </Card>
           )}
+
+          <ClientFormsCard rows={formRows} />
 
           <Card>
             <CardHead title="Timeline" />

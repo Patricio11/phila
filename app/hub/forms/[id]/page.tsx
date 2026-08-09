@@ -25,5 +25,30 @@ export default async function HubFormPage({ params }: { params: Promise<{ id: st
     .map((c) => ({ id: c.id, name: c.name, counsellorName: counsellorName(c.primaryCounsellorId) }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  return <FormDetail form={result.form} responses={result.rows} clients={clients} />;
+  // Batch 2l - automations + which counsellors may send this form.
+  const isDb = process.env.DATA_PROVIDER === "db";
+  const { listAutomationsDb } = await import("@/db/queries/form-automations");
+  const automations = isDb ? (await listAutomationsDb(membership.orgId)).filter((a) => a.formId === id) : [];
+  let sharedWithAll = false;
+  let sharedWith: string[] = [];
+  if (isDb) {
+    const { getDb } = await import("@/db/client");
+    const { forms } = await import("@/db/schema");
+    const { eq } = await import("drizzle-orm");
+    const [row] = await getDb().select({ all: forms.sharedWithAll, list: forms.sharedWith }).from(forms).where(eq(forms.id, id)).limit(1);
+    sharedWithAll = Boolean(row?.all);
+    sharedWith = row?.list ?? [];
+  }
+
+  return (
+    <FormDetail
+      form={result.form}
+      responses={result.rows}
+      clients={clients}
+      automations={automations.map((a) => ({ id: a.id, formId: a.formId, trigger: a.trigger, threshold: a.threshold, firstBookingOnly: a.firstBookingOnly, active: a.active }))}
+      counsellors={counsellors.map((c) => ({ id: c.id, name: c.name }))}
+      sharedWithAll={sharedWithAll}
+      sharedWith={sharedWith}
+    />
+  );
 }

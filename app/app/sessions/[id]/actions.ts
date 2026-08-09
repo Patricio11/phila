@@ -203,6 +203,19 @@ export async function markProgress(
         const { ensureInvoiceForAppointmentDb } = await import("@/db/queries/invoices");
         await ensureInvoiceForAppointmentDb(membership.orgId, parsed.data.appointmentId, new Date(clockNow()), { respectAutoToggle: true });
       } catch { /* billing must never block the clinical action; the invoicing page backfill catches it */ }
+      // Batch 2l - form automations: "send this form after their Nth session".
+      try {
+        const [appt] = await getDb().select({ clientId: appointments.clientId }).from(appointments)
+          .where(and(eq(appointments.id, parsed.data.appointmentId), eq(appointments.orgId, membership.orgId))).limit(1);
+        if (appt) {
+          const { runFormAutomations } = await import("@/db/queries/form-automations");
+          const res = await runFormAutomations(membership.orgId, appt.clientId, "after_attended", principal.userId, clockNow());
+          if (res.sent.length) {
+            const { notifyFormSent } = await import("@/lib/messaging/notify-form");
+            await notifyFormSent(membership.orgId, res.sent[0]!.title, [{ clientId: appt.clientId, token: res.sent[0]!.token }]);
+          }
+        }
+      } catch { /* an automation never blocks the clinical action */ }
     }
   }
   await logAccess({

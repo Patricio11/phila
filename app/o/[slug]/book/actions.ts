@@ -257,6 +257,15 @@ export async function submitBooking(
       // Auto-raise an invoice for the session (priced services only; org-toggleable) so
       // the client can pay online. Best-effort - never break a booking over billing.
       try { await createInvoiceForBookingDb({ orgId: config.org.id, appointmentId: res.appointmentId, clientId: res.clientId, serviceName: service.name, amountCents: companyId ? 0 : (service.priceCents ?? 0), issuedAt: new Date(clockNow()) }); } catch { /* never break booking */ }
+      // Batch 2l - form automations on a public booking (e.g. auto-send intake).
+      try {
+        const { runFormAutomations } = await import("@/db/queries/form-automations");
+        const auto = await runFormAutomations(config.org.id, res.clientId, "on_booking", "public_booking", clockNow());
+        if (auto.sent.length) {
+          const { notifyFormSent } = await import("@/lib/messaging/notify-form");
+          await notifyFormSent(config.org.id, auto.sent[0]!.title, [{ clientId: res.clientId, token: auto.sent[0]!.token }]);
+        }
+      } catch { /* never break a booking */ }
       void recordPageEvent(config.org.id, "booked"); // PII-free conversion (Phase 17)
       // Mirror the intake into the active intake form's Responses (best-effort).
       try { await recordBookingIntakeDb(config.org.id, res.clientId, input.intake, clockNow()); } catch { /* never break booking */ }

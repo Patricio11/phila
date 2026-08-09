@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { za } from "@/lib/format";
 import { isRemote, type AppointmentType } from "@/lib/domain/enums";
 import { CalendarHeart, Video } from "lucide-react";
 import type { UpcomingRow } from "@/db/queries/hub-dashboard";
+import type { AppointmentView } from "@/lib/data-provider";
+import { AppointmentDetail } from "@/components/calendar/appointment-detail";
 import { Card, CardHead } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -13,7 +15,10 @@ import { cn } from "@/lib/utils";
  * Feedback #3 - "Coming up next": the practice's next sessions, worded our way.
  * Date badge · service with client · price · counsellor · time. Now filterable
  * by how the session happens (All / In person / Online / Hybrid); the list
- * scrolls inside the shared widget height.
+ * scrolls inside the shared widget height. Clicking a row opens the real
+ * appointment right here (batch 2m) - the same detail card the calendar shows,
+ * with reschedule / cancel / join - instead of dumping the reader on the
+ * calendar page to find it again.
  */
 const DAY_NUM = new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric" });
 const MONTH = new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", month: "short" });
@@ -21,8 +26,22 @@ const TIME = new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Johannesburg",
 
 type TypeFilter = "all" | "in_person" | "online" | "hybrid";
 
-export function ComingUpNext({ upcoming, className, periodLabel }: { upcoming: UpcomingRow[]; className?: string; periodLabel?: string }) {
+export function ComingUpNext({
+  upcoming,
+  className,
+  periodLabel,
+  details,
+}: {
+  upcoming: UpcomingRow[];
+  className?: string;
+  periodLabel?: string;
+  /** The full appointment behind each row, so a click opens it in place. */
+  details?: Record<string, AppointmentView>;
+}) {
+  const router = useRouter();
   const [filter, setFilter] = useState<TypeFilter>("all");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const open = openId ? (details?.[openId] ?? null) : null;
 
   const counts = useMemo(() => ({
     all: upcoming.length,
@@ -78,7 +97,11 @@ export function ComingUpNext({ upcoming, className, periodLabel }: { upcoming: U
               const d = new Date(u.startsAt);
               return (
                 <li key={u.id}>
-                  <Link href={`/hub/appointments`} className="flex items-center gap-3.5 py-3 transition-colors hover:bg-surface-hover">
+                  <button
+                    type="button"
+                    onClick={() => setOpenId(u.id)}
+                    className="flex w-full items-center gap-3.5 py-3 text-left transition-colors hover:bg-surface-hover"
+                  >
                     <span className="flex w-11 shrink-0 flex-col items-center rounded-control border border-border bg-surface-2/40 py-1.5">
                       <span className="text-[16px] font-bold leading-none tabular-nums text-accent">{DAY_NUM.format(d)}</span>
                       <span className="text-[10px] font-semibold uppercase text-text-3">{MONTH.format(d)}</span>
@@ -94,13 +117,21 @@ export function ComingUpNext({ upcoming, className, periodLabel }: { upcoming: U
                     ) : (
                       <span className="shrink-0 rounded-chip bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent">Scheduled</span>
                     )}
-                  </Link>
+                  </button>
                 </li>
               );
             })}
           </ul>
         )}
       </div>
+
+      <AppointmentDetail
+        appt={open}
+        onClose={() => setOpenId(null)}
+        onUpdated={() => { setOpenId(null); router.refresh(); }}
+        openSessions={false}
+        clientBasePath="/hub/clients"
+      />
     </Card>
   );
 }

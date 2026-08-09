@@ -1363,6 +1363,12 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   Last month shows last month's activity, or an honest "Nothing recorded last month"), and Today's
   bookings chart widens its hours to cover an out-of-hours session instead of drawing an empty
   chart under a tile that counts it.
+- [x] **A dashboard session opens where you clicked it** *(2026-08-10, batch 2m)*: rows in
+  **Coming up next** used to link to `/hub/appointments` and leave the reader to find the booking
+  again. They now open the real appointment in place - the same `AppointmentDetail` card the
+  calendar uses, with reschedule, completed / no-show / postponed, cancel, the join link and
+  View client. The full appointment behind every visible row is already loaded for the widgets,
+  so opening one costs no extra fetch, and an edit refreshes the dashboard behind the modal.
 
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees

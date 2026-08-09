@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { now as clockNow } from "@/lib/clock";
 import { requireHub } from "@/lib/auth/guard";
-import { getDataProvider } from "@/lib/data-provider";
+import { getDataProvider, type AppointmentView } from "@/lib/data-provider";
 import { getCreditBalances } from "@/db/queries/messaging";
 import { LOW_CREDIT_THRESHOLD } from "@/lib/payments/packs";
 import { logAccess } from "@/lib/audit";
@@ -75,6 +75,14 @@ export default async function HubOverviewPage() {
     activityByPeriod[key] = dashboard.activity.filter((a) => inWindow(a.at, w)).slice(0, 40);
   }
 
+  // The full appointment behind every row shown by any period, so clicking one
+  // opens it in place. These are already in hand - no second fetch.
+  const shownIds = new Set(Object.values(upcomingByPeriod).flat().map((u) => u.id));
+  const apptDetails: Record<string, AppointmentView> = {};
+  for (const view of sessionsByCounsellor.flat()) {
+    if (shownIds.has(view.id)) apptDetails[view.id] = view;
+  }
+
   await logAccess({
     action: "pii.read",
     actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
@@ -110,6 +118,7 @@ export default async function HubOverviewPage() {
         teamByPeriod={teamByPeriod}
         attention={overview.attention}
         rooms={roomsNow}
+        apptDetails={apptDetails}
       />
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { DashPeriod, HubDashboard, UpcomingRow, ActivityRow } from "@/db/queries/hub-dashboard";
-import type { AttentionItem } from "@/lib/data-provider";
+import type { AppointmentView, AttentionItem } from "@/lib/data-provider";
 import type { RoomNow } from "@/db/queries/room-assignments";
 import { DASH_PERIODS } from "@/lib/dashboard/periods";
 import { Card, CardHead } from "@/components/ui/card";
@@ -33,6 +33,7 @@ export function HubPeriodDashboard({
   teamByPeriod,
   attention,
   rooms,
+  apptDetails,
 }: {
   data: HubDashboard;
   paymentsOn: boolean;
@@ -41,6 +42,8 @@ export function HubPeriodDashboard({
   teamByPeriod: Record<DashPeriod, TeamLoadRow[]>;
   attention: AttentionItem[];
   rooms: RoomNow[];
+  /** Full appointments behind the "Coming up next" rows, keyed by id. */
+  apptDetails: Record<string, AppointmentView>;
 }) {
   const [period, setPeriod] = useState<DashPeriod>("week");
   const periodLabel = DASH_PERIODS.find((p) => p.key === period)!.label.toLowerCase();
@@ -51,7 +54,7 @@ export function HubPeriodDashboard({
 
       {/* One calm grid: every widget the same height, content scrolls inside. */}
       <div className="grid items-stretch gap-6 lg:grid-cols-2">
-        <ComingUpNext upcoming={upcomingByPeriod[period]} className={WIDGET_H} periodLabel={periodLabel} />
+        <ComingUpNext upcoming={upcomingByPeriod[period]} className={WIDGET_H} periodLabel={periodLabel} details={apptDetails} />
 
         <Card className={`flex flex-col ${WIDGET_H}`}>
           <CardHead title="Activity feed" action={<span className="text-[11.5px] text-text-3">{periodLabel}</span>} />

@@ -113,6 +113,7 @@ Sign in as **Thandeka**.
 - ☐ **Coming up next filters**: chips with live counts (All · In person · Online · Hybrid) narrow the next 20 sessions by how they happen; the count pill updates; honest empty state per type
 - ☐ **One filter drives the whole dashboard** (batch 2m): clicking **Today** narrows the widgets too - Coming up next lists only today's sessions (its head reads "today"), the Activity feed shows only today's events, and the staffing card retitles to **Team today** with that day's load; **This month** / **Last month** widen the same way (Last month shows that month's sessions, not the future); **Needs attention** deliberately does NOT filter - safeguarding flags and pending credentials are standing states, so the card is labelled **"always current"**
 - ☐ A session outside practice hours (say 23:30) still appears on **Today**'s bookings chart - the chart's hours widen to cover it rather than disagreeing with the tile above
+- ☐ **Clicking a session opens it in place** (batch 2m): a row in **Coming up next** opens the real appointment as a modal on `/hub` - client, state, series badge, date/time/duration/counsellor, room or Join link, and the full actions (Reschedule · Completed · No-show · Postponed · Cancel · View client) - no jump to the calendar page; Esc closes it and the dashboard is exactly where it was; rescheduling or cancelling refreshes the widgets behind it
 
 **Calendar** (`/hub/appointments`) (feedback #1/#2)
 - ☐ Creating an appointment shows it on the calendar **immediately, no refresh**, at the correct **SAST** time

@@ -62,9 +62,13 @@ function humanize(r: ActivityRow): Meta {
 
 const WHEN = new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
 
-export function ActivityFeed({ activity }: { activity: ActivityRow[] }) {
+export function ActivityFeed({ activity, periodLabel }: { activity: ActivityRow[]; periodLabel?: string }) {
   if (activity.length === 0) {
-    return <p className="px-[17px] pb-[17px] pt-2 text-[12.5px] text-text-3">Activity will appear here as the practice works.</p>;
+    return (
+      <p className="px-[17px] pb-[17px] pt-2 text-[12.5px] text-text-3">
+        {periodLabel ? `Nothing recorded ${periodLabel}.` : "Activity will appear here as the practice works."}
+      </p>
+    );
   }
   return (
     <ul className="divide-y divide-border px-[17px] pb-[9px]">

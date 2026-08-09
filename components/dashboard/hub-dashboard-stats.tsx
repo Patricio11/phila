@@ -24,8 +24,17 @@ const PERIODS: { key: DashPeriod; label: string }[] = [
 
 const rands = (cents: number) => `R${za(Math.round(cents / 100))}`;
 
-export function HubDashboardStats({ data, paymentsOn }: { data: HubDashboard; paymentsOn: boolean }) {
-  const [period, setPeriod] = useState<DashPeriod>("week");
+export function HubDashboardStats({ data, paymentsOn, period: controlledPeriod, onPeriod }: {
+  data: HubDashboard;
+  paymentsOn: boolean;
+  /** When supplied, the dashboard owns the period (one filter for every widget). */
+  period?: DashPeriod;
+  onPeriod?: (p: DashPeriod) => void;
+}) {
+  const [ownPeriod, setOwnPeriod] = useState<DashPeriod>("week");
+  // Controlled by the dashboard when one filter drives every widget (batch 2m).
+  const period = controlledPeriod ?? ownPeriod;
+  const setPeriod = (p: DashPeriod) => (onPeriod ? onPeriod(p) : setOwnPeriod(p));
   const s = data.periods[period];
   const totalCents = s.receivedCents + s.projectedCents;
 

@@ -1349,6 +1349,21 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   dividers, and a **"N steps for the client"** badge tracks the header - so multi-step is
   discoverable instead of a hidden field type. Also raised the question-label cap from 120 to
   300 characters (real consent questions are long, and the save failed silently at 120).
+- [x] **One filter for the whole dashboard** *(2026-08-09, batch 2m)*: the Today / This week /
+  This month / Last month filter no longer moves only the stat tiles - it drives the widgets
+  beneath them. Every period's slice is computed server-side up front (`lib/dashboard/periods.ts`
+  holds the SAST windows the tiles already use), so switching is instant with no refetch:
+  **Coming up next** lists that period's sessions (future-only for a window that contains now,
+  the whole month for a past one), the **Activity feed** shows that period's events, and
+  **Team this week** retitles to **Team today / this month / last month** with the load recomputed
+  against a capacity scaled to the window. **Needs attention stays unfiltered on purpose** and
+  says **"always current"** - a safeguarding flag or a pending credential is a standing state, not
+  something that happened inside a date range, and hiding live risk behind a filter would be
+  dangerous. Two honesty fixes rode along: the audit pull now covers the whole period window (so
+  Last month shows last month's activity, or an honest "Nothing recorded last month"), and Today's
+  bookings chart widens its hours to cover an out-of-hours session instead of drawing an empty
+  chart under a tile that counts it.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

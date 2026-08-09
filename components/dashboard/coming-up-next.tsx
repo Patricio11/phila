@@ -21,7 +21,7 @@ const TIME = new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Johannesburg",
 
 type TypeFilter = "all" | "in_person" | "online" | "hybrid";
 
-export function ComingUpNext({ upcoming, className }: { upcoming: UpcomingRow[]; className?: string }) {
+export function ComingUpNext({ upcoming, className, periodLabel }: { upcoming: UpcomingRow[]; className?: string; periodLabel?: string }) {
   const [filter, setFilter] = useState<TypeFilter>("all");
 
   const counts = useMemo(() => ({
@@ -42,7 +42,7 @@ export function ComingUpNext({ upcoming, className }: { upcoming: UpcomingRow[];
 
   return (
     <Card className={cn("flex flex-col", className)}>
-      <CardHead title="Coming up next" count={shown.length} />
+      <CardHead title="Coming up next" count={shown.length} action={periodLabel ? <span className="text-[11.5px] text-text-3">{periodLabel}</span> : undefined} />
       <div className="flex flex-wrap gap-1.5 px-[17px] pb-2.5">
         {CHIPS.map((c) => (
           <button
@@ -66,7 +66,9 @@ export function ComingUpNext({ upcoming, className }: { upcoming: UpcomingRow[];
             <div className="flex flex-col items-center gap-2 py-8 text-center">
               <CalendarHeart className="size-5 text-text-3" strokeWidth={1.8} aria-hidden />
               <p className="text-[12.5px] text-text-3">
-                {upcoming.length === 0 ? "Nothing scheduled yet - new bookings appear here." : "No upcoming sessions of that type."}
+                {upcoming.length === 0
+                  ? `Nothing scheduled ${periodLabel ?? "yet"} - bookings appear here.`
+                  : "No sessions of that type in this period."}
               </p>
             </div>
           </div>

@@ -111,6 +111,8 @@ Sign in as **Thandeka**.
 - ☐ **Uniform widgets**: every overview widget (Coming up next · Activity feed · Team this week · Needs attention · Rooms right now) is the SAME height; long content (esp. the Activity feed) scrolls inside its card - the page never becomes one long feed
 - ☐ **Team this week filters**: chips with live counts (All · Near capacity · Has room · Unverified) narrow the list; the name search finds a member; count pill updates
 - ☐ **Coming up next filters**: chips with live counts (All · In person · Online · Hybrid) narrow the next 20 sessions by how they happen; the count pill updates; honest empty state per type
+- ☐ **One filter drives the whole dashboard** (batch 2m): clicking **Today** narrows the widgets too - Coming up next lists only today's sessions (its head reads "today"), the Activity feed shows only today's events, and the staffing card retitles to **Team today** with that day's load; **This month** / **Last month** widen the same way (Last month shows that month's sessions, not the future); **Needs attention** deliberately does NOT filter - safeguarding flags and pending credentials are standing states, so the card is labelled **"always current"**
+- ☐ A session outside practice hours (say 23:30) still appears on **Today**'s bookings chart - the chart's hours widen to cover it rather than disagreeing with the tile above
 
 **Calendar** (`/hub/appointments`) (feedback #1/#2)
 - ☐ Creating an appointment shows it on the calendar **immediately, no refresh**, at the correct **SAST** time

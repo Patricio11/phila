@@ -27,7 +27,7 @@ type Filter = "all" | "stretched" | "capacity" | "unverified";
  * name when the team grows. Same fixed widget height as the rest of the
  * dashboard; the list scrolls inside.
  */
-export function TeamThisWeek({ rows, className }: { rows: TeamLoadRow[]; className?: string }) {
+export function TeamThisWeek({ rows, className, periodLabel }: { rows: TeamLoadRow[]; className?: string; periodLabel?: string }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
 
@@ -59,7 +59,7 @@ export function TeamThisWeek({ rows, className }: { rows: TeamLoadRow[]; classNa
   return (
     <Card className={cn("flex flex-col", className)}>
       <CardHead
-        title="Team this week"
+        title={periodLabel ? `Team ${periodLabel}` : "Team this week"}
         count={shown.length}
         action={
           <label className="relative">

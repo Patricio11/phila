@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, ne } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { appointments, invoices, payments, clients, services, counsellors, auditLog, user } from "@/db/schema";
 
@@ -51,6 +51,9 @@ export interface ActivityRow {
 export interface HubDashboard {
   periods: Record<DashPeriod, PeriodStats>;
   upcoming: UpcomingRow[];
+  /** Batch 2m - every session across the period windows, so the dashboard's
+   *  one filter can slice "Coming up next" without another fetch. */
+  periodUpcoming: UpcomingRow[];
   activity: ActivityRow[];
 }
 
@@ -122,9 +125,16 @@ export async function getHubDashboardDb(orgId: string, nowISO: string): Promise<
     // Chart buckets: hours for Today, days otherwise.
     const series: { label: string; count: number }[] = [];
     if (p === "today") {
-      for (let h = 6; h <= 20; h++) {
+      // A practice day is 06:00-20:00, but a session outside those hours still
+      // counts on the tile - so widen the buckets to cover it rather than
+      // showing a chart that quietly disagrees with the number above it.
+      const hourOf = (d: Date) => Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Johannesburg", hour: "2-digit", hour12: false }).format(d));
+      const hours = live.map((a) => hourOf(a.startsAt));
+      const from = Math.min(6, ...hours);
+      const to = Math.max(20, ...hours);
+      for (let h = from; h <= to; h++) {
         const label = `${String(h).padStart(2, "0")}:00`;
-        series.push({ label, count: live.filter((a) => Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Johannesburg", hour: "2-digit", hour12: false }).format(a.startsAt)) === h).length });
+        series.push({ label, count: live.filter((a) => hourOf(a.startsAt) === h).length });
       }
     } else {
       for (let d = from; d < to; d = addDays(d, 1)) {
@@ -154,24 +164,42 @@ export async function getHubDashboardDb(orgId: string, nowISO: string): Promise<
     .orderBy(appointments.startsAt)
     .limit(20);
 
-  // Activity feed - the org's own audit trail, minus read-noise.
+  // Batch 2m - the same shape across the whole period window (last month ->
+  // end of this month), so the period filter can slice it client-side.
+  const periodRows = await db
+    .select({ a: appointments, clientName: clients.name, serviceName: services.name, priceCents: services.priceCents, counsellorName: counsellors.name })
+    .from(appointments)
+    .leftJoin(clients, eq(appointments.clientId, clients.id))
+    .leftJoin(services, eq(appointments.serviceId, services.id))
+    .leftJoin(counsellors, eq(appointments.counsellorId, counsellors.id))
+    .where(and(eq(appointments.orgId, orgId), ne(appointments.state, "cancelled"), gte(appointments.startsAt, windowFrom), lte(appointments.startsAt, windowTo)))
+    .orderBy(appointments.startsAt);
+
+  // Activity feed - the org's own audit trail, minus read-noise. Pulled across
+  // the whole period window (not just the last few rows) so "Last month" shows
+  // last month's activity rather than an empty card.
   const activityRows = await db
     .select({ action: auditLog.action, reason: auditLog.reason, target: auditLog.target, actorName: user.name, at: auditLog.at })
     .from(auditLog)
     .leftJoin(user, eq(auditLog.actorUserId, user.id))
-    .where(eq(auditLog.orgId, orgId))
+    .where(and(eq(auditLog.orgId, orgId), gte(auditLog.at, windowFrom), lte(auditLog.at, windowTo)))
     .orderBy(desc(auditLog.at))
-    .limit(60);
+    .limit(400);
   const activity = activityRows
     .filter((r) => !["pii.read", "note.read", "note.read_hub_override", "demographics.read", "funder.view", "file.access"].includes(r.action))
     // Page-view reads are "who looked", not "what happened" - same rule as above.
     .filter((r) => !["view_member"].includes(r.reason ?? ""))
-    .slice(0, 12)
+    .slice(0, 200)
     .map((r) => ({ action: r.action, reason: r.reason, target: r.target, actorName: r.actorName, at: r.at.toISOString() }));
 
   return {
     periods: { today: compute("today"), week: compute("week"), month: compute("month"), lastMonth: compute("lastMonth") },
     upcoming: upcomingRows.map((r) => ({
+      id: r.a.id, startsAt: r.a.startsAt.toISOString(), clientName: r.clientName ?? "Client",
+      serviceName: r.serviceName ?? "Session", counsellorName: r.counsellorName ?? "Counsellor",
+      durationMin: r.a.durationMin, priceCents: r.priceCents, type: r.a.type,
+    })),
+    periodUpcoming: periodRows.map((r) => ({
       id: r.a.id, startsAt: r.a.startsAt.toISOString(), clientName: r.clientName ?? "Client",
       serviceName: r.serviceName ?? "Session", counsellorName: r.counsellorName ?? "Counsellor",
       durationMin: r.a.durationMin, priceCents: r.priceCents, type: r.a.type,

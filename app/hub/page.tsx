@@ -7,28 +7,18 @@ import { getDataProvider } from "@/lib/data-provider";
 import { getCreditBalances } from "@/db/queries/messaging";
 import { LOW_CREDIT_THRESHOLD } from "@/lib/payments/packs";
 import { logAccess } from "@/lib/audit";
-import { isoWeekday, WEEK_CAPACITY } from "@/lib/domain/helpers";
+import { WEEK_CAPACITY } from "@/lib/domain/helpers";
 import { PageHead } from "@/components/shell/page-head";
-import { Card, CardHead } from "@/components/ui/card";
-import { HubDashboardStats } from "@/components/dashboard/hub-dashboard-stats";
-import { ComingUpNext } from "@/components/dashboard/coming-up-next";
-import { ActivityFeed } from "@/components/dashboard/activity-feed";
+import { HubPeriodDashboard } from "@/components/dashboard/hub-period-dashboard";
+import { periodWindows, inWindow } from "@/lib/dashboard/periods";
+import type { DashPeriod, UpcomingRow, ActivityRow } from "@/db/queries/hub-dashboard";
 import { getHubDashboardDb } from "@/db/queries/hub-dashboard";
-import { RoomsRightNow } from "@/components/dashboard/rooms-right-now";
 import { roomsRightNowDb, type RoomNow } from "@/db/queries/room-assignments";
-import { TeamThisWeek } from "@/components/dashboard/team-this-week";
-import { AttentionList } from "@/components/dashboard/attention-list";
+import type { TeamLoadRow } from "@/components/dashboard/team-this-week";
 import { VerificationBanner } from "@/components/hub/verification-banner";
 import { getOnboardingStatusDb } from "@/db/queries/onboarding";
-import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
-
-function addDays(date: string, n: number): string {
-  const d = new Date(`${date}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
-}
 
 export default async function HubOverviewPage() {
   const { principal, membership } = await requireHub();
@@ -47,20 +37,43 @@ export default async function HubOverviewPage() {
   // Verification gate  a nudge (not a wall) until the practice is verified.
   const onboardingStatus = process.env.DATA_PROVIDER === "db" ? await getOnboardingStatusDb(membership.orgId) : "verified";
 
-  // Staffing load  who's stretched, who has capacity (this week, Mon–Sun).
+  // Batch 2m - ONE period filter drives the tiles AND every widget beneath them.
+  // Each period's slice is computed here so switching is instant on the client.
   const counsellors = await provider.listCounsellors(membership.orgId);
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(now));
-  const monday = addDays(today, -(isoWeekday(today) - 1));
-  const weekDates = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   const sessionsByCounsellor = await Promise.all(counsellors.map((c) => provider.listCounsellorSessions(membership.orgId, c.id, now)));
-  const teamLoad = counsellors
-    .map((c, i) => {
-      const wk = (sessionsByCounsellor[i] ?? []).filter((s) => weekDates.some((d) => s.startsAt.startsWith(d)));
-      const seen = wk.filter((s) => s.state === "completed" || s.state === "discharged").length;
-      const upcoming = wk.filter((s) => s.state === "scheduled").length;
-      return { c, total: wk.length, seen, upcoming, pct: Math.min(100, Math.round((wk.length / WEEK_CAPACITY) * 100)) };
-    })
-    .sort((a, b) => b.total - a.total);
+  const windows = periodWindows(now);
+  const PERIOD_KEYS: DashPeriod[] = ["today", "week", "month", "lastMonth"];
+  const nowMs = new Date(now).getTime();
+
+  const teamByPeriod = {} as Record<DashPeriod, TeamLoadRow[]>;
+  const upcomingByPeriod = {} as Record<DashPeriod, UpcomingRow[]>;
+  const activityByPeriod = {} as Record<DashPeriod, ActivityRow[]>;
+  for (const key of PERIOD_KEYS) {
+    const w = windows[key];
+    // Team: sessions inside the window, per counsellor. Capacity scales with the
+    // window so the bar stays meaningful (a day is a fifth of a working week).
+    const capacity = key === "today" ? Math.max(1, Math.round(WEEK_CAPACITY / 5)) : key === "week" ? WEEK_CAPACITY : WEEK_CAPACITY * 4;
+    teamByPeriod[key] = counsellors
+      .map((c, i) => {
+        const inPeriod = (sessionsByCounsellor[i] ?? []).filter((sn) => inWindow(sn.startsAt, w));
+        const seen = inPeriod.filter((sn) => sn.state === "completed" || sn.state === "discharged").length;
+        const upcoming = inPeriod.filter((sn) => sn.state === "scheduled").length;
+        return {
+          id: c.id, name: c.name, total: inPeriod.length, seen, upcoming,
+          pct: Math.min(100, Math.round((inPeriod.length / capacity) * 100)),
+          credentialBody: c.credential.body, credentialStatus: c.credential.status,
+        };
+      })
+      .sort((a, b) => b.total - a.total);
+
+    // Coming up: sessions inside the window. For a window that includes now, only
+    // what is still ahead ("coming up"); for a past window, what happened in it.
+    upcomingByPeriod[key] = dashboard.periodUpcoming
+      .filter((u) => inWindow(u.startsAt, w) && (w.to.getTime() < nowMs || new Date(u.startsAt).getTime() >= nowMs))
+      .slice(0, 20);
+
+    activityByPeriod[key] = dashboard.activity.filter((a) => inWindow(a.at, w)).slice(0, 40);
+  }
 
   await logAccess({
     action: "pii.read",
@@ -89,43 +102,18 @@ export default async function HubOverviewPage() {
         </Link>
       )}
 
-      <HubDashboardStats data={dashboard} paymentsOn={Boolean(org?.features.payments)} />
-
-      {/* One calm grid: every widget the same height, content scrolls inside -
-          the page stays a dashboard, never a long feed. */}
-      <div className="grid items-stretch gap-6 lg:grid-cols-2">
-        <ComingUpNext upcoming={dashboard.upcoming} className={WIDGET_H} />
-
-        <Card className={cn("flex flex-col", WIDGET_H)}>
-          <CardHead title="Activity feed" />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <ActivityFeed activity={dashboard.activity} />
-          </div>
-        </Card>
-
-        <TeamThisWeek
-          className={WIDGET_H}
-          rows={teamLoad.map(({ c, total, seen, upcoming, pct }) => ({
-            id: c.id, name: c.name, total, seen, upcoming, pct,
-            credentialBody: c.credential.body, credentialStatus: c.credential.status,
-          }))}
-        />
-
-        <Card className={cn("flex flex-col", WIDGET_H)}>
-          <CardHead title="Needs attention" count={overview.attention.length} />
-          <div className="min-h-0 flex-1 overflow-y-auto px-[17px] pb-[17px]">
-            <AttentionList items={overview.attention} />
-          </div>
-        </Card>
-
-        <RoomsRightNow rooms={roomsNow} className={WIDGET_H} />
-      </div>
+      <HubPeriodDashboard
+        data={dashboard}
+        paymentsOn={Boolean(org?.features.payments)}
+        upcomingByPeriod={upcomingByPeriod}
+        activityByPeriod={activityByPeriod}
+        teamByPeriod={teamByPeriod}
+        attention={overview.attention}
+        rooms={roomsNow}
+      />
     </div>
   );
 }
-
-/** Every dashboard widget shares this height; long content scrolls inside. */
-const WIDGET_H = "h-[380px]";
 
 function greeting(): string {
   const hour = Number(

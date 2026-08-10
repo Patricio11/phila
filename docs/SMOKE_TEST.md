@@ -131,6 +131,13 @@ Sign in as **Thandeka**.
 - ☐ A **counsellor** opens `/app/settings` → **Your availability** and edits their own (same editor). On save: every org admin gets a **bell notification** ("… updated their availability") and the hub **Activity feed** shows *Counsellor availability updated*
 - ☐ **Profile photo**: `/app/settings` → the camera button on your avatar uploads a PNG/JPG/WebP up to 3 MB; it then shows in the header, the team roster and the member page, with **Remove** returning you to initials. It counts against the practice's storage, and replacing one releases the old bytes *(needs Phila Storage switched on in /admin → Integrations)*
 
+**Storage backend: Supabase or Amazon S3** (batch 2o)
+- ☐ `/admin/integrations/storage` offers two chips: **Supabase** and **Amazon S3**. The chip you are not on shows *configured* when its credentials are stored, so switching back needs no retyping
+- ☐ Picking **Amazon S3** asks for region, bucket, access key ID, secret and an optional endpoint (MinIO / Cloudflare R2), and stops asking for a Supabase project URL
+- ☐ Switching on with a half-filled form is refused: "Add the region, bucket, access key ID, and secret before switching S3 on."
+- ☐ After saving, the card header reads **Phila Storage · Amazon S3**, the secret is never echoed back to the browser, and **Test connection** reports honestly rather than pretending
+- ☐ **Nothing is orphaned by a switch**: documents, onboarding uploads, org logos, profile photos and chat attachments each record the backend they were written to, so files uploaded before the switch still open afterwards. New uploads go to the newly chosen backend and count against the practice's storage allowance either way
+
 **Team - full profile editing** (batch 2i)
 - ☐ On a member page, **Edit profile** edits EVERYTHING: name · phone · date of birth · address · bio · display languages · specialties · education rows (add/remove) · and for counsellors the **credential** (body + registration number)
 - ☐ Changing the credential warns, saves, and resets verification to **pending** (re-verify under Verification); the header name, Personal & contact card and Education card all show the new truth immediately

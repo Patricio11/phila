@@ -246,10 +246,14 @@ export async function confirmMyPhotoUpload(
 
   const { getMemberPhotoDb, saveMemberPhotoDb } = await import("@/db/queries/team");
   const { addStorageUsage } = await import("@/db/queries/documents");
+  const { activeStorageBackend } = await import("@/lib/storage");
   const prev = await getMemberPhotoDb(membership.orgId, principal.userId);
-  await saveMemberPhotoDb(membership.orgId, principal.userId, key, bytes);
+  await saveMemberPhotoDb(membership.orgId, principal.userId, key, bytes, await activeStorageBackend());
   await addStorageUsage(membership.orgId, bytes - prev.bytes);
-  if (prev.key && prev.key !== key) { try { await storage.remove(prev.key); } catch { /* best effort */ } }
+  // The old one may live on the backend we have since switched away from.
+  if (prev.key && prev.key !== key) {
+    try { await (await getStorageProvider(prev.backend)).remove(prev.key); } catch { /* best effort */ }
+  }
 
   await logAccess({
     action: "admin.action",
@@ -272,7 +276,7 @@ export async function removeMyPhoto(): Promise<{ ok: true } | { ok: false; error
   await saveMemberPhotoDb(membership.orgId, principal.userId, null, 0);
   if (prev.bytes > 0) await addStorageUsage(membership.orgId, -prev.bytes);
   if (prev.key) {
-    try { (await (await import("@/lib/storage")).getStorageProvider()).remove(prev.key); } catch { /* best effort */ }
+    try { (await (await import("@/lib/storage")).getStorageProvider(prev.backend)).remove(prev.key); } catch { /* best effort */ }
   }
   await logAccess({
     action: "admin.action",

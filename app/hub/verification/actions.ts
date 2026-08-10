@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { randomUUID } from "node:crypto";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
-import { getStorageProvider, objectKey } from "@/lib/storage";
+import { getStorageProvider, activeStorageBackend, objectKey } from "@/lib/storage";
 import { validateUpload } from "@/lib/documents/quota";
 import { scanObject } from "@/lib/documents/scan";
 import { saveCompanyProfileDb, upsertOnboardingDocDb, submitOnboardingDb, getOnboardingDocKeyDb } from "@/db/queries/onboarding";
@@ -90,7 +90,7 @@ export async function confirmOnboardingUpload(raw: z.infer<typeof confirmInput>)
 
   const scan = await scanObject(parsed.data.storageKey);
   if (scan === "quarantined") return { ok: false, error: "That file didn't pass our safety scan. Try another." };
-  await upsertOnboardingDocDb(membership.orgId, parsed.data.requirementId, { fileName: parsed.data.name, storageKey: parsed.data.storageKey, bytes: parsed.data.bytes });
+  await upsertOnboardingDocDb(membership.orgId, parsed.data.requirementId, { fileName: parsed.data.name, storageKey: parsed.data.storageKey, storageBackend: await activeStorageBackend(), bytes: parsed.data.bytes });
   await logAccess({ action: "file.access", actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `onboarding:${parsed.data.requirementId}`, reason: `upload_${scan}` });
   revalidatePath("/hub/verification");
   return { ok: true };

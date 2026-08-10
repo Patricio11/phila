@@ -6,7 +6,7 @@ import { logAccess } from "@/lib/audit";
 import { sendTeamMessageDb, sendToThreadDb, createGroupThreadDb, markThreadReadDb, getUserName, editMessageDb, deleteMessageDb, getAttachmentAccess, listMemberThreadIds } from "@/db/queries/messages";
 import { currentStorageBytes, addStorageUsage } from "@/db/queries/documents";
 import { broadcastToThread, broadcastThreadAdded, broadcastMessageUpdate, getRealtimeAuthSecret, signRealtimeToken } from "@/lib/messaging/realtime";
-import { getStorageProvider, objectKey } from "@/lib/storage";
+import { getStorageProvider, activeStorageBackend, objectKey } from "@/lib/storage";
 import { validateUpload } from "@/lib/documents/quota";
 import { orgStorageLimitBytes } from "@/db/queries/resources";
 import { randomUUID } from "node:crypto";
@@ -43,7 +43,9 @@ export async function sendTeamMessage(
   const parsed = input.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Couldn't send." };
   const d = parsed.data;
-  const attachment = d.attachment;
+  // Batch 2o - record which backend the bytes went to, so a later switch to S3
+  // never orphans an attachment already sitting in the old bucket.
+  const attachment = d.attachment ? { ...d.attachment, backend: await activeStorageBackend() } : undefined;
 
   let threadId: string | undefined;
   let messageId: string | undefined;
@@ -136,7 +138,7 @@ export async function signChatAttachment(raw: { messageId: string }): Promise<{ 
   if (!messageId) return { ok: false, error: "Not found." };
   const acc = await getAttachmentAccess(messageId, principal.userId);
   if (!acc) return { ok: false, error: "That file isn't available to open." };
-  const storage = await getStorageProvider();
+  const storage = await getStorageProvider(acc.backend);
   if (storage.status !== "live") return { ok: false, error: "Attachments aren't available right now." };
   let url: string;
   try {

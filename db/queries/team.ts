@@ -6,7 +6,7 @@ import { getDb } from "@/db/client";
 import { orgMembers, counsellors, clients, appointments, services, rooms, roomAssignments, teamProfiles } from "@/db/schema";
 import { user, account } from "@/db/auth-schema";
 import type { TeamMemberView, TeamMemberDetail, MemberStatus, AppointmentView } from "@/lib/data-provider";
-import type { TeamRole, CredentialBody, CredentialStatus, AppointmentState, AppointmentType } from "@/lib/domain/enums";
+import type { TeamRole, CredentialBody, CredentialStatus, AppointmentState, AppointmentType, StorageBackend } from "@/lib/domain/enums";
 
 /**
  * Hub team management (W1.4). Real membership from `org_members` + `user` (+ the
@@ -316,24 +316,24 @@ export async function saveMemberProfileDb(orgId: string, userId: string, input: 
 
 /* ── Profile photo (batch 2n) - one image per member, on their team profile ── */
 
-export interface MemberPhoto { key: string | null; bytes: number }
+export interface MemberPhoto { key: string | null; bytes: number; backend: StorageBackend }
 
 /** The member's photo, if they have set one. Owner read - used by the image route. */
 export async function getMemberPhotoDb(orgId: string, userId: string): Promise<MemberPhoto> {
-  const [row] = await getDb().select({ key: teamProfiles.photoKey, bytes: teamProfiles.photoBytes })
+  const [row] = await getDb().select({ key: teamProfiles.photoKey, bytes: teamProfiles.photoBytes, backend: teamProfiles.photoBackend })
     .from(teamProfiles)
     .where(and(eq(teamProfiles.orgId, orgId), eq(teamProfiles.userId, userId)))
     .limit(1);
-  return { key: row?.key ?? null, bytes: row?.bytes ?? 0 };
+  return { key: row?.key ?? null, bytes: row?.bytes ?? 0, backend: (row?.backend ?? "supabase") as StorageBackend };
 }
 
 /** Point a member at a new photo (or clear it). Creates the profile row if needed. */
-export async function saveMemberPhotoDb(orgId: string, userId: string, key: string | null, bytes: number): Promise<void> {
+export async function saveMemberPhotoDb(orgId: string, userId: string, key: string | null, bytes: number, backend: StorageBackend = "supabase"): Promise<void> {
   const db = getDb();
   const [existing] = await db.select({ id: teamProfiles.id }).from(teamProfiles)
     .where(and(eq(teamProfiles.orgId, orgId), eq(teamProfiles.userId, userId))).limit(1);
-  if (existing) await db.update(teamProfiles).set({ photoKey: key, photoBytes: bytes }).where(eq(teamProfiles.id, existing.id));
-  else await db.insert(teamProfiles).values({ orgId, userId, photoKey: key, photoBytes: bytes });
+  if (existing) await db.update(teamProfiles).set({ photoKey: key, photoBytes: bytes, photoBackend: backend }).where(eq(teamProfiles.id, existing.id));
+  else await db.insert(teamProfiles).values({ orgId, userId, photoKey: key, photoBytes: bytes, photoBackend: backend });
 }
 
 /** Which members of an org have a photo (one query for a whole list view). */

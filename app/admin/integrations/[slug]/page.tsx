@@ -57,6 +57,14 @@ export default async function IntegrationConfigPage({ params }: { params: Promis
           anonKey: raw?.creds.anonKey ?? "",
           jwtConfigured: Boolean(raw?.creds.jwtSecret),
           realtimePrivate: raw?.creds.realtimePrivate === "true",
+          provider: raw?.creds.provider === "s3" ? "s3" : "supabase",
+          s3: {
+            region: raw?.creds.s3_region ?? "",
+            bucket: raw?.creds.s3_bucket ?? "",
+            accessKeyId: raw?.creds.s3_accessKeyId ?? "",
+            endpoint: raw?.creds.s3_endpoint ?? "",
+            configured: Boolean(raw?.creds.s3_secretAccessKey),
+          },
         }}
       />
     );

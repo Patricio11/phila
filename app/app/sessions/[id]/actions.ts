@@ -16,7 +16,7 @@ import { saveSessionNoteDb, counsellorIdForUser } from "@/db/queries/session-not
 import { shareCarePlanDb } from "@/db/queries/care-plans";
 import { draftNote, draftCarePlan } from "@/lib/ai/scribe";
 import { insertPendingDocument, finalizeDocument, getDocumentRow, addStorageUsage, currentStorageBytes, ensureSessionFolderDb } from "@/db/queries/documents";
-import { getStorageProvider, objectKey } from "@/lib/storage";
+import { getStorageProvider, activeStorageBackend, objectKey } from "@/lib/storage";
 import { validateUpload } from "@/lib/documents/quota";
 import { orgStorageLimitBytes } from "@/db/queries/resources";
 import { scanObject } from "@/lib/documents/scan";
@@ -391,7 +391,7 @@ export async function requestSessionAttachment(
   const folderId = await ensureSessionFolderDb(membership.orgId, ctx.clientId, ctx.clientName, ctx.dateLabel);
   await insertPendingDocument({
     id: documentId, orgId: membership.orgId, folderId, name: parsed.data.name,
-    contentType: parsed.data.contentType, storageKey: key, uploadedBy: principal.userId,
+    contentType: parsed.data.contentType, storageKey: key, storageBackend: await activeStorageBackend(), uploadedBy: principal.userId,
     sessionId: parsed.data.appointmentId, clientId: ctx.clientId, counsellorId: author,
     visibility: "clinical", sharedBy: "counsellor",
   });
@@ -429,7 +429,7 @@ export async function signSessionAttachment(
   const doc = await getDocumentRow(membership.orgId, documentId);
   if (!doc || !doc.storageKey || doc.scanStatus !== "clean") return { ok: false, error: "That file isn't available to open." };
 
-  const storage = await getStorageProvider();
+  const storage = await getStorageProvider(doc.storageProvider);
   if (storage.status !== "live") return { ok: false, error: "Files aren't available right now." };
   let url: string;
   try {

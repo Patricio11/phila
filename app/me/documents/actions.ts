@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { randomUUID } from "node:crypto";
 import { requireClient } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
-import { getStorageProvider, objectKey } from "@/lib/storage";
+import { getStorageProvider, activeStorageBackend, objectKey } from "@/lib/storage";
 import { validateUpload } from "@/lib/documents/quota";
 import { orgStorageLimitBytes } from "@/db/queries/resources";
 import { scanObject } from "@/lib/documents/scan";
@@ -59,7 +59,7 @@ export async function requestClientUpload(raw: z.infer<typeof uploadInput>): Pro
   } catch {
     return { ok: false, error: "Storage rejected the upload. Please try again." };
   }
-  await insertClientUpload({ id: documentId, orgId: req.orgId, clientId, requestId: req.id, name: parsed.data.name, contentType: parsed.data.contentType, storageKey: key, uploadedBy: principal.userId });
+  await insertClientUpload({ id: documentId, orgId: req.orgId, clientId, requestId: req.id, name: parsed.data.name, contentType: parsed.data.contentType, storageKey: key, storageBackend: await activeStorageBackend(), uploadedBy: principal.userId });
   await logAccess({ action: "file.access", actor: { userId: principal.userId, platformRole: "client", teamRole: null }, orgId: req.orgId, target: `document:${documentId}`, reason: "client_upload" });
   return { ok: true, uploadUrl, documentId };
 }
@@ -91,7 +91,7 @@ export async function signClientDownload(raw: { documentId: string }): Promise<{
   if (!doc || !doc.storageKey || doc.visibility !== "client_visible" || doc.scanStatus !== "clean")
     return { ok: false, error: "That file isn't available to open." };
 
-  const storage = await getStorageProvider();
+  const storage = await getStorageProvider(doc.storageProvider);
   if (storage.status !== "live") return { ok: false, error: "Files aren't available right now." };
   let url: string;
   try {

@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { activeDb, runForOrg } from "@/lib/db/scoped";
 import { getDb } from "@/db/client";
 import { orgs, orgOnboardingDocs, onboardingRequirements } from "@/db/schema";
+import type { StorageBackend } from "@/lib/domain/enums";
 
 /**
  * Org-facing verification onboarding (W1.8b). The practice completes its company
@@ -82,14 +83,14 @@ export async function saveCompanyProfileDb(orgId: string, name: string, profile:
 }
 
 /** Record an uploaded document (or replace an existing/rejected one) as pending review. */
-export async function upsertOnboardingDocDb(orgId: string, requirementId: string, input: { fileName: string; storageKey: string; bytes: number }): Promise<void> {
+export async function upsertOnboardingDocDb(orgId: string, requirementId: string, input: { fileName: string; storageKey: string; bytes: number; storageBackend?: StorageBackend }): Promise<void> {
   const now = new Date();
   await runForOrg(orgId, () =>
     activeDb().insert(orgOnboardingDocs)
-      .values({ orgId, requirementId, status: "pending", fileName: input.fileName, storageKey: input.storageKey, bytes: input.bytes, reviewNote: null, uploadedAt: now })
+      .values({ orgId, requirementId, status: "pending", fileName: input.fileName, storageKey: input.storageKey, storageBackend: input.storageBackend ?? "supabase", bytes: input.bytes, reviewNote: null, uploadedAt: now })
       .onConflictDoUpdate({
         target: [orgOnboardingDocs.orgId, orgOnboardingDocs.requirementId],
-        set: { status: "pending", fileName: input.fileName, storageKey: input.storageKey, bytes: input.bytes, reviewNote: null, uploadedAt: now },
+        set: { status: "pending", fileName: input.fileName, storageKey: input.storageKey, storageBackend: input.storageBackend ?? "supabase", bytes: input.bytes, reviewNote: null, uploadedAt: now },
       }),
   );
 }
@@ -97,7 +98,7 @@ export async function upsertOnboardingDocDb(orgId: string, requirementId: string
 /** The storage key for one of the org's own onboarding docs (for a signed download). */
 export async function getOnboardingDocKeyDb(orgId: string, requirementId: string): Promise<string | null> {
   return runForOrg(orgId, async () => {
-    const [row] = await activeDb().select({ key: orgOnboardingDocs.storageKey }).from(orgOnboardingDocs)
+    const [row] = await activeDb().select({ key: orgOnboardingDocs.storageKey, backend: orgOnboardingDocs.storageBackend }).from(orgOnboardingDocs)
       .where(and(eq(orgOnboardingDocs.orgId, orgId), eq(orgOnboardingDocs.requirementId, requirementId))).limit(1);
     return row?.key ?? null;
   });

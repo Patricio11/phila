@@ -1,4 +1,5 @@
 import "server-only";
+import type { StorageBackend } from "@/lib/domain/enums";
 import { and, eq, inArray } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { getDb } from "@/db/client";
@@ -116,11 +117,12 @@ async function findOrCreateDirectThread(db: Db, orgId: string, a: string, b: str
 }
 
 export interface SentMessage { threadId: string; messageId: string; createdAt: string; created?: boolean }
-export interface ChatAttachment { key: string; name: string; contentType: string; bytes: number }
+export interface ChatAttachment { key: string; name: string; contentType: string; bytes: number; backend?: StorageBackend }
 
 function attachmentCols(a?: ChatAttachment) {
   return {
     attachmentKey: a?.key ?? null,
+    attachmentBackend: a?.backend ?? "supabase",
     attachmentName: a?.name ?? null,
     attachmentType: a?.contentType ?? null,
     attachmentBytes: a?.bytes ?? null,
@@ -178,14 +180,14 @@ export async function markThreadReadDb(threadId: string, userId: string): Promis
 }
 
 /** The attachment's storage key + meta, but only if the user is a member of its thread. */
-export async function getAttachmentAccess(messageId: string, userId: string): Promise<{ key: string; name: string; contentType: string } | null> {
+export async function getAttachmentAccess(messageId: string, userId: string): Promise<{ key: string; name: string; contentType: string; backend: StorageBackend } | null> {
   const db = getDb();
   const [row] = await db
-    .select({ threadId: teamMessages.threadId, orgId: teamMessages.orgId, key: teamMessages.attachmentKey, name: teamMessages.attachmentName, type: teamMessages.attachmentType, deletedAt: teamMessages.deletedAt })
+    .select({ threadId: teamMessages.threadId, orgId: teamMessages.orgId, key: teamMessages.attachmentKey, backend: teamMessages.attachmentBackend, name: teamMessages.attachmentName, type: teamMessages.attachmentType, deletedAt: teamMessages.deletedAt })
     .from(teamMessages).where(eq(teamMessages.id, messageId)).limit(1);
   if (!row || !row.key || row.deletedAt) return null;
   if (!(await isThreadMember(db, row.orgId, row.threadId, userId))) return null;
-  return { key: row.key, name: row.name ?? "file", contentType: row.type ?? "application/octet-stream" };
+  return { key: row.key, name: row.name ?? "file", contentType: row.type ?? "application/octet-stream", backend: (row.backend ?? "supabase") as StorageBackend };
 }
 
 /** The thread ids a user is a member of (for scoping their realtime token's topics). */

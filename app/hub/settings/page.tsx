@@ -76,8 +76,8 @@ export default async function HubSettingsPage() {
   // A short-lived signed URL for the current logo (if any + storage is live).
   let logoUrl: string | null = null;
   if (process.env.DATA_PROVIDER === "db") {
-    const { key } = await getOrgLogoDb(membership.orgId);
-    if (key) { try { const s = await getStorageProvider(); if (s.status === "live") logoUrl = await s.signedDownloadUrl(key, 3600); } catch { /* wordmark fallback */ } }
+    const logo = await getOrgLogoDb(membership.orgId);
+    if (logo.key) { try { const s = await getStorageProvider(logo.backend); if (s.status === "live") logoUrl = await s.signedDownloadUrl(logo.key, 3600); } catch { /* wordmark fallback */ } }
   }
   // Fall back to a standard week if an org has no business hours set yet (robust
   // for lightweight/just-created orgs).

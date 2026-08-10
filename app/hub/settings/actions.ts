@@ -7,7 +7,7 @@ import { saveBusinessHours as persistBusinessHours, saveClientPortal as persistC
 import { saveVideoSettings } from "@/db/queries/video";
 import { saveAiSettings } from "@/db/queries/ai";
 import { ORG_FEATURES } from "@/lib/domain/enums";
-import { getStorageProvider } from "@/lib/storage";
+import { getStorageProvider, activeStorageBackend } from "@/lib/storage";
 import { scanObject } from "@/lib/documents/scan";
 import { currentStorageBytes, addStorageUsage } from "@/db/queries/documents";
 import { orgStorageLimitBytes } from "@/db/queries/resources";
@@ -280,9 +280,11 @@ export async function confirmLogoUpload(
   if (scan !== "clean") { try { await storage.remove(key); } catch { /* best effort */ } return { ok: false, error: "That image didn't pass the security scan." }; }
 
   const prev = await getOrgLogoDb(membership.orgId);
-  await saveOrgLogoDb(membership.orgId, key, bytes);
+  await saveOrgLogoDb(membership.orgId, key, bytes, await activeStorageBackend());
   await addStorageUsage(membership.orgId, bytes - prev.bytes); // net change vs the replaced logo
-  if (prev.key && prev.key !== key) { try { await storage.remove(prev.key); } catch { /* best effort */ } }
+  if (prev.key && prev.key !== key) {
+    try { await (await getStorageProvider(prev.backend)).remove(prev.key); } catch { /* best effort */ }
+  }
 
   await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `org:${membership.orgId}/logo`, reason: "set_logo" });
   revalidatePath("/hub/settings");
@@ -297,7 +299,7 @@ export async function removeOrgLogo(): Promise<{ ok: true } | { ok: false; error
   const prev = await getOrgLogoDb(membership.orgId);
   await saveOrgLogoDb(membership.orgId, null, 0);
   if (prev.bytes > 0) await addStorageUsage(membership.orgId, -prev.bytes);
-  if (prev.key) { try { (await getStorageProvider()).remove(prev.key); } catch { /* best effort */ } }
+  if (prev.key) { try { (await getStorageProvider(prev.backend)).remove(prev.key); } catch { /* best effort */ } }
   await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `org:${membership.orgId}/logo`, reason: "remove_logo" });
   revalidatePath("/hub/settings");
   revalidatePath("/o", "layout");

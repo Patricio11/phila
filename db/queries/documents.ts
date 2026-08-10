@@ -209,14 +209,14 @@ export async function currentStorageBytes(orgId: string): Promise<number> {
 /** Insert a `pending` document row (bytes land on confirm; not downloadable until scanned). */
 export async function insertPendingDocument(input: {
   id: string; orgId: string; folderId: string | null; name: string; contentType: string;
-  storageKey: string; uploadedBy: string | null;
+  storageKey: string; storageBackend?: StorageBackend; uploadedBy: string | null;
   /** Session-attachment context (W6.2): link to the session + client, kept clinical. */
   sessionId?: string | null; clientId?: string | null; counsellorId?: string | null;
   visibility?: "internal" | "clinical" | "client_visible"; sharedBy?: "org" | "counsellor" | "client";
 }): Promise<void> {
   await runForOrg(input.orgId, () => activeDb().insert(documents).values({
     id: input.id, orgId: input.orgId, folderId: input.folderId, name: input.name,
-    kind: "upload", visibility: input.visibility ?? "internal", storageProvider: "supabase", storageKey: input.storageKey,
+    kind: "upload", visibility: input.visibility ?? "internal", storageProvider: input.storageBackend ?? "supabase", storageKey: input.storageKey,
     contentType: input.contentType, bytes: 0, sizeLabel: "…", scanStatus: "pending",
     sessionId: input.sessionId ?? null, clientId: input.clientId ?? null, counsellorId: input.counsellorId ?? null,
     uploadedBy: input.uploadedBy, sharedBy: input.sharedBy ?? "org", createdAt: new Date(),
@@ -377,11 +377,11 @@ export async function getClientDocumentRow(clientId: string, documentId: string)
 /** A client's upload against a request  visible to them, awaiting scan. */
 export async function insertClientUpload(input: {
   id: string; orgId: string; clientId: string; requestId: string; name: string; contentType: string;
-  storageKey: string; uploadedBy: string | null;
+  storageKey: string; storageBackend?: StorageBackend; uploadedBy: string | null;
 }): Promise<void> {
   await getDb().insert(documents).values({
     id: input.id, orgId: input.orgId, clientId: input.clientId, requestId: input.requestId, name: input.name,
-    kind: "upload", visibility: "client_visible", storageProvider: "supabase", storageKey: input.storageKey,
+    kind: "upload", visibility: "client_visible", storageProvider: input.storageBackend ?? "supabase", storageKey: input.storageKey,
     contentType: input.contentType, bytes: 0, sizeLabel: "…", scanStatus: "pending",
     uploadedBy: input.uploadedBy, sharedBy: "client", createdAt: new Date(),
   });

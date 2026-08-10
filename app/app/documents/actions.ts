@@ -22,7 +22,7 @@ export async function signCounsellorDownload(raw: { documentId: string }): Promi
   const doc = [...own, ...shared].find((d) => d.id === documentId);
   if (!doc || !doc.storageKey || doc.scanStatus !== "clean") return { ok: false, error: "That file isn't available to open." };
 
-  const storage = await getStorageProvider();
+  const storage = await getStorageProvider(doc.storageProvider);
   if (storage.status !== "live") return { ok: false, error: "Files aren't available right now." };
   let url: string;
   try {

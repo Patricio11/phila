@@ -1396,6 +1396,19 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   the photo upload: this machine cannot resolve the configured Supabase project, so the byte hop
   itself is unproven locally - everything either side of it is.
 
+- [x] **Storage backend is a choice: Supabase or Amazon S3** *(2026-08-10, batch 2o)*: the
+  super-admin picks the backend in /admin/integrations, configures it, tests it and switches it on;
+  the other backend keeps its stored credentials so switching back costs nothing. S3 sits behind
+  the same `StorageProvider` seam as Supabase, presigned with SigV4 in-process (no SDK), private
+  bucket, short-lived signed URLs only, and an optional endpoint for S3-compatible stores
+  (MinIO, Cloudflare R2). Usage still counts against each practice's storage allowance, unchanged.
+  Crucially, **switching never orphans a file**: documents already recorded their backend, and
+  onboarding uploads, org logos, profile photos and chat attachments now do too (migration 0070),
+  so reads follow the backend an object was written to while writes use the active one. The card
+  also gained proper `aria-label`s - its fields were unlabelled for screen readers. SigV4 is
+  covered by 7 unit tests that recompute the signature independently from the AWS spec; a real
+  AWS round-trip is unproven here (this machine resolves no `*.supabase.co` or AWS host).
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

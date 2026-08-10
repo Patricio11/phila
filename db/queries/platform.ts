@@ -1,4 +1,5 @@
 import "server-only";
+import type { StorageBackend } from "@/lib/domain/enums";
 import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import { hashPassword } from "better-auth/crypto";
 import { getDb } from "@/db/client";
@@ -298,11 +299,11 @@ export async function sendBackOnboardingDb(orgId: string): Promise<{ ok: boolean
   return { ok: res.length > 0 };
 }
 
-/** A signed download URL for one of an org's onboarding documents (super-admin). */
-export async function getAdminOnboardingDocKeyDb(orgId: string, requirementId: string): Promise<string | null> {
-  const [row] = await getDb().select({ key: orgOnboardingDocs.storageKey }).from(orgOnboardingDocs)
+/** The object + backend for one of an org's onboarding documents (super-admin). */
+export async function getAdminOnboardingDocKeyDb(orgId: string, requirementId: string): Promise<{ key: string; backend: StorageBackend } | null> {
+  const [row] = await getDb().select({ key: orgOnboardingDocs.storageKey, backend: orgOnboardingDocs.storageBackend }).from(orgOnboardingDocs)
     .where(and(eq(orgOnboardingDocs.orgId, orgId), eq(orgOnboardingDocs.requirementId, requirementId))).limit(1);
-  return row?.key ?? null;
+  return row?.key ? { key: row.key, backend: (row.backend ?? "supabase") as StorageBackend } : null;
 }
 
 /* ── Platform operators (super-admin user management) ──────────────────── */

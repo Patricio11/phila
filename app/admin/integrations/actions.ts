@@ -106,6 +106,8 @@ export async function testLivekitConnection(raw: { provider?: "selfhosted" | "cl
  * switched on, document uploads stay honestly dormant (Dormant-by-Default).
  */
 const storageInput = z.object({
+  /** Batch 2o - which backend holds the bytes from now on. */
+  provider: z.enum(["supabase", "s3"]).default("supabase"),
   url: z.string().trim().max(200),
   serviceKey: z.string().trim().default(""),
   bucket: z.string().trim().max(100),
@@ -115,8 +117,26 @@ const storageInput = z.object({
   jwtSecret: z.string().trim().max(400).default(""),
   /** Enable RLS-authorized private realtime channels (requires the setup SQL). */
   realtimePrivate: z.boolean().default(false),
+  /* Amazon S3 (or any S3-compatible store). Blank secret keeps the stored one. */
+  s3Region: z.string().trim().max(40).default(""),
+  s3Bucket: z.string().trim().max(120).default(""),
+  s3AccessKeyId: z.string().trim().max(200).default(""),
+  s3SecretAccessKey: z.string().trim().max(400).default(""),
+  s3Endpoint: z.string().trim().max(200).default(""),
   enabled: z.boolean(),
 });
+
+/** Merge submitted S3 fields over what is stored (blank secret = keep). */
+async function resolveS3Creds(raw: { s3Region?: string; s3Bucket?: string; s3AccessKeyId?: string; s3SecretAccessKey?: string; s3Endpoint?: string }) {
+  const existing = await getPlatformIntegration(STORAGE_KEY);
+  return {
+    s3_region: (raw.s3Region ?? "").trim() || existing?.creds.s3_region || "",
+    s3_bucket: (raw.s3Bucket ?? "").trim() || existing?.creds.s3_bucket || "",
+    s3_accessKeyId: (raw.s3AccessKeyId ?? "").trim() || existing?.creds.s3_accessKeyId || "",
+    s3_secretAccessKey: (raw.s3SecretAccessKey ?? "").trim() || existing?.creds.s3_secretAccessKey || "",
+    s3_endpoint: (raw.s3Endpoint ?? "").trim() || existing?.creds.s3_endpoint || "",
+  };
+}
 
 async function resolveStorageCreds(raw: { url?: string; serviceKey?: string; bucket?: string }): Promise<{ url: string; serviceKey: string; bucket: string }> {
   const existing = await getPlatformIntegration(STORAGE_KEY);
@@ -133,22 +153,38 @@ export async function saveStorageConfig(raw: z.infer<typeof storageInput>): Prom
   if (!parsed.success) return { ok: false, error: "Check the details." };
   const d = parsed.data;
   const creds = await resolveStorageCreds({ url: d.url, serviceKey: d.serviceKey, bucket: d.bucket });
+  const s3 = await resolveS3Creds(d);
   const existing = await getPlatformIntegration(STORAGE_KEY);
   const anonKey = d.anonKey.trim() || existing?.creds.anonKey || "";
   const jwtSecret = d.jwtSecret.trim() || existing?.creds.jwtSecret || "";
-  if (d.enabled && (!creds.url || !creds.serviceKey || !creds.bucket))
+
+  // Only the backend being switched ON has to be complete. The other keeps its
+  // stored config, so a practice can move back without re-typing anything.
+  if (d.enabled && d.provider === "s3" && (!s3.s3_region || !s3.s3_bucket || !s3.s3_accessKeyId || !s3.s3_secretAccessKey))
+    return { ok: false, error: "Add the region, bucket, access key ID, and secret before switching S3 on." };
+  if (d.enabled && d.provider === "supabase" && (!creds.url || !creds.serviceKey || !creds.bucket))
     return { ok: false, error: "Add the project URL, service-role key, and bucket before switching it on." };
   if (d.realtimePrivate && !jwtSecret)
     return { ok: false, error: "Add the Supabase JWT secret before enabling private channels." };
 
-  await savePlatformIntegration(STORAGE_KEY, { ...creds, anonKey, jwtSecret, realtimePrivate: d.realtimePrivate ? "true" : "false" }, d.enabled);
+  await savePlatformIntegration(
+    STORAGE_KEY,
+    { ...creds, ...s3, provider: d.provider, anonKey, jwtSecret, realtimePrivate: d.realtimePrivate ? "true" : "false" },
+    d.enabled,
+  );
   await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: null, target: "platform_integration:phila_storage", reason: d.enabled ? "enable_storage" : "save_storage" });
   return { ok: true };
 }
 
-export async function testStorageConnectionAction(raw: { url: string; serviceKey: string; bucket: string }): Promise<{ ok: boolean; detail: string }> {
+export async function testStorageConnectionAction(raw: {
+  provider?: "supabase" | "s3"; url?: string; serviceKey?: string; bucket?: string;
+  s3Region?: string; s3Bucket?: string; s3AccessKeyId?: string; s3SecretAccessKey?: string; s3Endpoint?: string;
+}): Promise<{ ok: boolean; detail: string }> {
   await requireSuperAdmin();
-  const creds = await resolveStorageCreds(raw);
+  const provider = raw?.provider === "s3" ? "s3" : "supabase";
+  const creds = provider === "s3"
+    ? { provider, ...(await resolveS3Creds(raw)) }
+    : { provider, ...(await resolveStorageCreds(raw)) };
   const res = await testStorageConnection(creds);
   return { ok: res.ok, detail: res.detail ?? (res.ok ? "Bucket reachable." : "Could not connect.") };
 }

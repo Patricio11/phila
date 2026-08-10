@@ -1,4 +1,5 @@
 import "server-only";
+import type { StorageBackend } from "@/lib/domain/enums";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { activeDb, runForOrg } from "@/lib/db/scoped";
@@ -70,14 +71,14 @@ export async function saveOrgBrandingDb(orgId: string, brandAccent: string): Pro
 }
 
 /** Set (or clear, with null) the org's logo storage key + its byte size. RLS-scoped. */
-export async function saveOrgLogoDb(orgId: string, brandLogoKey: string | null, brandLogoBytes: number): Promise<void> {
-  await runForOrg(orgId, () => activeDb().update(orgs).set({ brandLogoKey, brandLogoBytes }).where(eq(orgs.id, orgId)));
+export async function saveOrgLogoDb(orgId: string, brandLogoKey: string | null, brandLogoBytes: number, backend: StorageBackend = "supabase"): Promise<void> {
+  await runForOrg(orgId, () => activeDb().update(orgs).set({ brandLogoKey, brandLogoBytes, brandLogoBackend: backend }).where(eq(orgs.id, orgId)));
 }
 
-/** The org's current logo (key + bytes; key null = wordmark only). RLS-scoped. */
-export async function getOrgLogoDb(orgId: string): Promise<{ key: string | null; bytes: number }> {
-  const [row] = await runForOrg(orgId, () => activeDb().select({ k: orgs.brandLogoKey, b: orgs.brandLogoBytes }).from(orgs).where(eq(orgs.id, orgId)).limit(1));
-  return { key: row?.k ?? null, bytes: row?.b ?? 0 };
+/** The org's current logo (key + bytes + which backend holds it). RLS-scoped. */
+export async function getOrgLogoDb(orgId: string): Promise<{ key: string | null; bytes: number; backend: StorageBackend }> {
+  const [row] = await runForOrg(orgId, () => activeDb().select({ k: orgs.brandLogoKey, b: orgs.brandLogoBytes, be: orgs.brandLogoBackend }).from(orgs).where(eq(orgs.id, orgId)).limit(1));
+  return { key: row?.k ?? null, bytes: row?.b ?? 0, backend: (row?.be ?? "supabase") as StorageBackend };
 }
 
 export interface InvoiceSettingsRow {

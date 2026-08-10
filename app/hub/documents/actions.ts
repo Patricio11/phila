@@ -19,7 +19,7 @@ import {
   shareWithCounsellorDb,
   softDeleteItemsDb,
 } from "@/db/queries/documents";
-import { getStorageProvider, objectKey } from "@/lib/storage";
+import { getStorageProvider, activeStorageBackend, objectKey } from "@/lib/storage";
 import { validateUpload } from "@/lib/documents/quota";
 import { orgStorageLimitBytes } from "@/db/queries/resources";
 import { scanObject } from "@/lib/documents/scan";
@@ -234,7 +234,7 @@ export async function requestUpload(raw: z.infer<typeof uploadInput>): Promise<{
   }
   await insertPendingDocument({
     id: documentId, orgId: membership.orgId, folderId: parsed.data.folderId, name: parsed.data.name,
-    contentType: parsed.data.contentType, storageKey: key, uploadedBy: principal.userId,
+    contentType: parsed.data.contentType, storageKey: key, storageBackend: await activeStorageBackend(), uploadedBy: principal.userId,
   });
   await audit(membership.orgId, principal.userId, `document:${documentId}`, "request_upload");
   return { ok: true, uploadUrl, documentId };
@@ -265,7 +265,7 @@ export async function signDownload(raw: { documentId: string }): Promise<{ ok: t
   if (!doc || !doc.storageKey) return { ok: false, error: "That file isn't available to open." };
   if (doc.scanStatus !== "clean") return { ok: false, error: "This file is still being checked." };
 
-  const storage = await getStorageProvider();
+  const storage = await getStorageProvider(doc.storageProvider);
   if (storage.status !== "live") return { ok: false, error: "Phila Storage isn't switched on." };
   let url: string;
   try {

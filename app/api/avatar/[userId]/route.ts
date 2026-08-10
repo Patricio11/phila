@@ -24,13 +24,15 @@ export async function GET(_req: Request, ctx: { params: Promise<{ userId: string
   if (orgIds.length === 0) return new NextResponse("No practice", { status: 403 });
 
   let key: string | null = null;
+  let backend: "supabase" | "s3" = "supabase";
   for (const orgId of orgIds) {
     const photo = await getMemberPhotoDb(orgId, userId);
-    if (photo.key) { key = photo.key; break; }
+    if (photo.key) { key = photo.key; backend = photo.backend; break; }
   }
   if (!key) return new NextResponse("No photo", { status: 404 });
 
-  const storage = await getStorageProvider();
+  // Read from the backend that actually holds it, not today's default.
+  const storage = await getStorageProvider(backend);
   if (storage.status !== "live") return new NextResponse("Storage off", { status: 503 });
   let url: string;
   try {

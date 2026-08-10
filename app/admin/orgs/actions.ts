@@ -123,13 +123,13 @@ export async function sendBackOnboarding(raw: z.infer<typeof decisionInput>): Pr
 export async function signAdminOnboardingDoc(raw: { orgId: string; requirementId: string }): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
   const principal = await requireSuperAdmin();
   if (!isDb()) return { ok: false, error: "Not available in this demo." };
-  const key = await getAdminOnboardingDocKeyDb(String(raw?.orgId ?? ""), String(raw?.requirementId ?? ""));
-  if (!key) return { ok: false, error: "Not found." };
-  const storage = await getStorageProvider();
+  const doc = await getAdminOnboardingDocKeyDb(String(raw?.orgId ?? ""), String(raw?.requirementId ?? ""));
+  if (!doc) return { ok: false, error: "Not found." };
+  const storage = await getStorageProvider(doc.backend);
   if (storage.status !== "live") return { ok: false, error: "Storage isn't switched on." };
   await logAccess({ action: "file.access", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: raw.orgId, target: `onboarding:${raw.requirementId}`, reason: "admin_review_download" });
   try {
-    return { ok: true, url: await storage.signedDownloadUrl(key) };
+    return { ok: true, url: await storage.signedDownloadUrl(doc.key) };
   } catch {
     return { ok: false, error: "Could not open the document." };
   }

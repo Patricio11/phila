@@ -44,6 +44,8 @@ export const orgs = pgTable("orgs", {
   brandAccent: text("brand_accent").default("#1C7D58").notNull(),
   /** Storage key of the org's uploaded logo (W6.1), shown on the public page + branding. Null = wordmark only. */
   brandLogoKey: text("brand_logo_key"),
+  /** Batch 2o - the backend the logo lives on. */
+  brandLogoBackend: text("brand_logo_backend").default("supabase").notNull(),
   /** The logo's size in bytes - tracked so it counts against (and releases from) org storage. */
   brandLogoBytes: integer("brand_logo_bytes").default(0).notNull(),
   timezone: text("timezone").default("Africa/Johannesburg").notNull(),
@@ -130,6 +132,8 @@ export const orgOnboardingDocs = pgTable("org_onboarding_docs", {
   status: text("status").notNull(), // verified | pending | rejected
   fileName: text("file_name"),
   storageKey: text("storage_key"), // the object in Phila Storage (null until uploaded)
+  /** Batch 2o - which backend holds it, so switching Supabase -> S3 never orphans a file. */
+  storageBackend: text("storage_backend").default("supabase").notNull(),
   bytes: bigint("bytes", { mode: "number" }).default(0).notNull(),
   reviewNote: text("review_note"), // why a doc was sent back
   uploadedAt: timestamp("uploaded_at", { withTimezone: true }),
@@ -665,6 +669,8 @@ export const teamProfiles = pgTable("team_profiles", {
   specialties: jsonb("specialties").$type<string[]>().default([]).notNull(),
   /** Batch 2n - storage key of the member's profile photo (null = coloured initials). */
   photoKey: text("photo_key"),
+  /** Batch 2o - the backend the photo lives on. */
+  photoBackend: text("photo_backend").default("supabase").notNull(),
   /** The photo's size in bytes - counts against (and releases from) org storage. */
   photoBytes: integer("photo_bytes").default(0).notNull(),
 }, (t) => [
@@ -950,6 +956,8 @@ export const teamMessages = pgTable("team_messages", {
   editedAt: timestamp("edited_at", { withTimezone: true }),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   attachmentKey: text("attachment_key"),
+  /** Batch 2o - the backend the attachment lives on. */
+  attachmentBackend: text("attachment_backend").default("supabase").notNull(),
   attachmentName: text("attachment_name"),
   attachmentType: text("attachment_type"),
   attachmentBytes: bigint("attachment_bytes", { mode: "number" }),

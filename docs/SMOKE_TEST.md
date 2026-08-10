@@ -131,6 +131,12 @@ Sign in as **Thandeka**.
 - ☐ A **counsellor** opens `/app/settings` → **Your availability** and edits their own (same editor). On save: every org admin gets a **bell notification** ("… updated their availability") and the hub **Activity feed** shows *Counsellor availability updated*
 - ☐ **Profile photo**: `/app/settings` → the camera button on your avatar uploads a PNG/JPG/WebP up to 3 MB; it then shows in the header, the team roster and the member page, with **Remove** returning you to initials. It counts against the practice's storage, and replacing one releases the old bytes *(needs Phila Storage switched on in /admin → Integrations)*
 
+**Client data export uses the system's Export menu** (batch 2q)
+- ☐ On a client profile → **Data & privacy**, **Export** is the same dropdown as every other list (CSV · Excel · PDF), not a JSON download
+- ☐ Picking a format downloads `data-export-<name>-<date>.csv/.xls` (or opens the print view): columns **Section · Record · Field · Value**, covering personal details, demographics, care plan, sessions, note metadata, outcomes, consents, documents, invoices, who accessed the record, then retention and when the copy was made
+- ☐ Nothing is fetched, and nothing is audited, until a format is chosen; each export writes one `dsar.export` audit row *before* the data leaves (fail-strict)
+- ☐ The menu opens **upwards** when the button sits low on the page (this one does), so it is never off-screen
+
 **Storage backend: Supabase or Amazon S3** (batch 2o)
 - ☐ `/admin/integrations/storage` offers two chips: **Supabase** and **Amazon S3**. The chip you are not on shows *configured* when its credentials are stored, so switching back needs no retyping
 - ☐ Picking **Amazon S3** asks for region, bucket, access key ID, secret and an optional endpoint (MinIO / Cloudflare R2), and stops asking for a Supabase project URL

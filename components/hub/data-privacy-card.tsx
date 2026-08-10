@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Download, Gavel, ShieldAlert, Timer } from "lucide-react";
+import { Gavel, ShieldAlert, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { exportDataSubject, eraseDataSubject, setLegalHold } from "@/app/hub/clients/dsar-actions";
+import { ExportMenu } from "@/components/hub/export-menu";
+import { dsarExportTable } from "@/lib/export/dsar-table";
 import { cn } from "@/lib/utils";
 
 /**
@@ -36,18 +38,16 @@ export function DataPrivacyCard({
   const [holdReason, setHoldReason] = useState(legalHoldReason ?? "");
   const [outcome, setOutcome] = useState<string | null>(null);
 
-  const doExport = () => start(async () => {
+  // Batch 2q - the same Export dropdown as the rest of Phila (CSV / Excel /
+  // PDF). The fetch is the audited act, so it runs when a format is picked.
+  const fetchExport = async () => {
     const res = await exportDataSubject({ clientId });
-    if (!res.ok) return toast({ tone: "error", title: res.error });
-    const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `data-export-${clientName.toLowerCase().replace(/\s+/g, "-")}-${res.data.generatedAt.slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast({ tone: "success", title: "Export downloaded", description: "Everything held on this person, in one portable file. The export was audited." });
-  });
+    if (!res.ok) {
+      toast({ tone: "error", title: res.error });
+      return null;
+    }
+    return dsarExportTable(res.data, clientName);
+  };
 
   const doErase = () => start(async () => {
     const res = await eraseDataSubject({ clientId, confirmName, expectedName: clientName });
@@ -83,9 +83,10 @@ export function DataPrivacyCard({
       )}
 
       <div className="flex flex-wrap gap-2">
-        <Button variant="ghost" size="sm" onClick={doExport} loading={pending}>
-          <Download className="size-3.5" strokeWidth={2} aria-hidden /> Export data
-        </Button>
+        <ExportMenu
+          getTable={fetchExport}
+          onExported={() => toast({ tone: "success", title: "Export downloaded", description: "Everything held on this person, in one file. The export was audited." })}
+        />
         <Button variant="ghost" size="sm" onClick={() => { setConfirmName(""); setOutcome(null); setEraseOpen(true); }}>
           <ShieldAlert className="size-3.5" strokeWidth={2} aria-hidden /> Handle deletion request
         </Button>

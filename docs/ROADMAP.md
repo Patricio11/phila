@@ -1418,6 +1418,20 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   which is what that page actually holds; the counsellor's own **Supervision** keeps its name,
   because theirs really is supervision (their supervisor, sign-off, feedback).
 
+- [x] **The client export is the system's export** *(2026-08-10, batch 2q)*: the POPIA
+  data-subject export on a client profile was a hand-rolled JSON download - the one place in Phila
+  that did not use the shared Export dropdown, and a file most people cannot open. It now goes out
+  as **CSV / Excel / PDF** through the same menu as every other list, flattened to
+  **Section · Record · Field · Value** so nothing is lost: every section, every record, every
+  field, with nested structures kept verbatim and retention plus provenance closing the file.
+  `ExportMenu` gained an optional `getTable` for cases where fetching the rows is itself the
+  audited act, so the `dsar.export` audit row is still written before any data leaves, and only
+  when someone actually picks a format. Two fixes rode along: the menu now opens **upwards** when
+  the button sits low on the page (it was rendering off-screen, and scrolling to reach it closed
+  it), and field names read as sentences rather than camelCase columns. 9 unit tests cover the
+  flattening, including that `false` and `0` survive and that a person with nothing on file still
+  gets a real file.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

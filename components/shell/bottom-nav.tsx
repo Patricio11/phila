@@ -28,7 +28,7 @@ export function BottomNav({ sections, settingsHref }: { sections: NavSection[]; 
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
 
-  const items = sections.flatMap((s) => s.items).filter((i) => i.ready ?? true);
+  const items = sections.flatMap((s) => s.items).filter((i) => (i.ready ?? true) && !i.paletteOnly);
   if (items.length < 2) return null; // e.g. the funder portal is a single surface
 
   const activeHref = activeHrefFor(items, pathname);

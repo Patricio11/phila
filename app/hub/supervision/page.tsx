@@ -7,7 +7,7 @@ import { ClassroomsBoard } from "@/components/hub/classrooms-board";
 import type { ClassSessionView, ClassView } from "@/db/queries/classrooms";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Supervision" };
+export const metadata = { title: "Classroom" };
 
 /**
  * Hub - supervision classrooms (batch 2). The org creates a class per
@@ -41,7 +41,7 @@ export default async function HubSupervisionPage() {
   return (
     <div className="rise space-y-6">
       <PageHead
-        title="Supervision"
+        title="Classroom"
         summary="A classroom per supervisor - announcements, discussion, and the trainee group in one place. Clinical sign-off stays in each counsellor's workspace."
       />
       <ClassroomsBoard

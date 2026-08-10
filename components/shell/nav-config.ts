@@ -48,6 +48,12 @@ export interface NavItem {
   ready?: boolean;
   /** Hidden unless this org feature is on (Dormant-by-Default). */
   feature?: import("@/lib/domain/enums").OrgFeature;
+  /**
+   * Batch 2p - reachable but not in the rail. The page lives inside another
+   * one (Companies sits behind a button on Clients), yet search should still
+   * find it, so the command palette keeps it and the sidebar drops it.
+   */
+  paletteOnly?: boolean;
 }
 
 export interface NavSection {
@@ -107,14 +113,16 @@ export const hubNav: NavSection[] = [
       { label: "Clients", href: "/hub/clients", icon: Contact, ready: true },
       { label: "Insights", href: "/hub/insights", icon: TrendingUp, ready: true },
       { label: "Funders & grants", href: "/hub/funders", icon: HandCoins, ready: true, feature: "funders" },
-      { label: "Companies", href: "/hub/companies", icon: Building2, ready: true },
+      // Companies are clients, so they live behind a button on Clients - here
+      // only so ⌘K still finds them.
+      { label: "Companies", href: "/hub/companies", icon: Building2, ready: true, paletteOnly: true },
     ],
   },
   {
     label: "Run the practice",
     items: [
       { label: "Team", href: "/hub/team", icon: Users, ready: true },
-      { label: "Supervision", href: "/hub/supervision", icon: GraduationCap, ready: true },
+      { label: "Classroom", href: "/hub/supervision", icon: GraduationCap, ready: true },
       { label: "Messages", href: "/hub/messages", icon: MessagesSquare, ready: true },
       { label: "Rooms", href: "/hub/rooms", icon: DoorOpen, ready: true },
       { label: "Services", href: "/hub/services", icon: HeartHandshake, ready: true },

@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
@@ -33,6 +35,10 @@ export default async function HubCompaniesPage() {
 
   return (
     <div className="rise space-y-6">
+      <Link href="/hub/clients" className="inline-flex items-center gap-1.5 text-[13px] text-text-2 transition-colors hover:text-text">
+        <ArrowLeft className="size-4" strokeWidth={2} aria-hidden /> All clients
+      </Link>
+
       <PageHead
         title="Companies"
         summary="Employers who cover sessions for their staff. They see usage and money only - never who came."

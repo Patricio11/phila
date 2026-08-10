@@ -116,6 +116,18 @@ function summarise(c: typeof companies.$inferSelect, paid: number, agg: { employ
   };
 }
 
+/**
+ * Batch 2p - just how many companies the practice has. The Clients page shows
+ * this on its Companies button, and it should not pay for the whole usage
+ * rollup to print one number.
+ */
+export async function countCompaniesDb(orgId: string): Promise<number> {
+  return runForOrg(orgId, async () => {
+    const rows = await activeDb().select({ id: companies.id }).from(companies).where(eq(companies.orgId, orgId));
+    return rows.length;
+  });
+}
+
 export async function listCompaniesDb(orgId: string, nowISO: string): Promise<CompanySummary[]> {
   return runForOrg(orgId, async () => {
     const db = activeDb();

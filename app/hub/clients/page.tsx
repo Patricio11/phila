@@ -1,6 +1,8 @@
 import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
+import Link from "next/link";
+import { Building2 } from "lucide-react";
 import { PageHead } from "@/components/shell/page-head";
 import { HubClientsTable } from "@/components/hub/hub-clients-table";
 import { AddClientButton } from "@/components/hub/add-client-modal";
@@ -35,6 +37,12 @@ export default async function HubClientsPage() {
   });
 
   const counsellorOpts = counsellors.map((c) => ({ id: c.id, name: c.name }));
+
+  // Batch 2p - companies ARE clients (an employer paying for its staff), so they
+  // live behind a button here rather than a separate place in the sidebar.
+  const companyCount = process.env.DATA_PROVIDER === "db"
+    ? await (await import("@/db/queries/companies")).countCompaniesDb(membership.orgId)
+    : 0;
 
   // Phase 32.0 behind the feature switch: off = no Language column or filter.
   const languageOn = process.env.DATA_PROVIDER === "db"
@@ -76,7 +84,25 @@ export default async function HubClientsPage() {
 
       <DedupeBanner groups={duplicates} />
 
-      <HubClientsTable rows={rows} removedRows={removedRows} counsellors={counsellorOpts} languageOn={languageOn} />
+      <HubClientsTable
+        rows={rows}
+        removedRows={removedRows}
+        counsellors={counsellorOpts}
+        languageOn={languageOn}
+        rightSlot={
+          // Companies are clients too - the employer paying for its staff. Same
+          // row as the status filters, held to the right so it reads as a
+          // sibling view rather than another filter.
+          <Link
+            href="/hub/companies"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-[13px] font-medium text-text-2 transition-colors hover:bg-surface-hover hover:text-text"
+          >
+            <Building2 className="size-3.5" strokeWidth={2} aria-hidden />
+            Companies
+            {companyCount > 0 && <span className="tabular-nums text-text-3">{companyCount}</span>}
+          </Link>
+        }
+      />
     </div>
   );
 }

@@ -66,7 +66,7 @@ export function Sidebar({
               {section.label}
             </p>
             <ul className="space-y-0.5">
-              {section.items.map((item) => {
+              {section.items.filter((i) => !i.paletteOnly).map((item) => {
                 const active = item.href === activeHref;
                 const Icon = item.icon;
                 const ready = item.ready ?? false;

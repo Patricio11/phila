@@ -82,9 +82,9 @@ Cross-tenant / cross-role checks (signed in):
 - ☐ **Messages** → the seeded team threads render; sending a message persists (live if the Supabase anon key is set, else on refresh)
 - ☐ **Rooms** shows the room schedule
 
-**Supervision - both sides + classrooms** (batch 2)
+**Classroom / supervision - both sides** (batch 2; renamed in 2p)
 - ☐ As a **supervised** counsellor (e.g. Aisha), `/app/supervision` shows **Your supervision**: your supervisor's card (+ Message link), notes awaiting review, changes-requested feedback with a link to revise, recent sign-offs; a sign-off decision pops an in-app notification
-- ☐ As the **org**, `/hub/supervision` creates a **classroom** per supervisor - supervisees auto-join, the card shows the class **code** (copyable) + members, roster is editable
+- ☐ As the **org**, **Classroom** in the sidebar (was "Supervision", renamed in 2p because that page IS the classrooms) creates a **classroom** per supervisor - supervisees auto-join, the card shows the class **code** (copyable) + members, roster is editable
 - ☐ The **stream**: the supervisor posts (tagged "Supervisor"), members see it in `/app/supervision`, get an in-app notification, and can reply
 - ☐ **Class sessions**: the supervisor schedules one (online or in person) - members are notified, it auto-posts to the stream, and online sessions show a **Join** button (early clicks land in the waiting room; the room is staff-only); on a past session, **Mark register** records Present/Absent per member ("2 present · 1 absent" stays on the row)
 - ☐ **The org inside the classroom** (batch 2e): in `/hub/supervision`, **Open classroom** shows the org the full stream (every post + session + join link); the org can post (badged **"Practice"**), schedule sessions, mark registers, and **join an online class session** (waiting room, never a bounce)
@@ -214,7 +214,9 @@ Sign in as **Thandeka**.
 - ☐ Setting **company retainer** previews every service as **Free**, saves (DB `{"kind":"retainer"}`), and new bookings invoice at R0; Megan Pillay is the seeded example
 - ☐ A legacy sliding-scale client (e.g. Johan, pays 50%) still shows + bills their old arrangement until changed
 
-**EAP companies (batch 2j)** - `/hub/companies`
+**EAP companies (batch 2j, moved in 2p)** - `/hub/companies`
+- ☐ **Companies is no longer in the sidebar**: it opens from the **Companies** button on the far right of the Clients status-filter row (companies are clients - an employer paying for its staff). The button carries the count; the page has an **All clients** link back; ⌘K still finds "Companies"
+
 - ☐ **Add company** (name · contact · per-session rate) → card shows Paid / Used / Sessions + "R... left"; **Record payment** grows the retainer; the ledger lists every payment
 - ☐ **Employee booking link** (`/o/<slug>/book?c=<token>`): the wizard shows the "Covered by <company>... only ever sees anonymous usage numbers" banner; booking creates a client invisibly linked (company_id) on the **company retainer** fee (R0, no invoice)
 - ☐ A held session draws the rate down (Used up, Remaining down, monthly row appears); the **Export** (CSV/Excel/PDF) is aggregate-only - months, sessions, amounts, totals - with the confidentiality line, and NO employee name anywhere on the page or in the file

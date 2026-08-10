@@ -1409,6 +1409,15 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   covered by 7 unit tests that recompute the signature independently from the AWS spec; a real
   AWS round-trip is unproven here (this machine resolves no `*.supabase.co` or AWS host).
 
+- [x] **Companies moved in with the clients; Supervision reads Classroom** *(2026-08-10, batch 2p)*:
+  a company IS a client (an employer paying for its staff), so it no longer needs its own place in
+  the sidebar. It opens from a **Companies** button carrying the count, sitting on the far right of
+  the Clients status-filter row, with an **All clients** link back. The rail entry is gone but the
+  page is not hidden: a new `paletteOnly` nav flag keeps it in ⌘K search while dropping it from the
+  sidebar and mobile bar. Separately, the org's **Supervision** rail entry now reads **Classroom**,
+  which is what that page actually holds; the counsellor's own **Supervision** keeps its name,
+  because theirs really is supervision (their supervisor, sign-off, feedback).
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

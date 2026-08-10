@@ -43,7 +43,14 @@ function shortDate(iso: string | null | undefined): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "short" }).format(new Date(iso));
 }
 
-export function HubClientsTable({ rows, removedRows, counsellors, languageOn = false }: { rows: OrgClientRow[]; removedRows: OrgClientRow[]; counsellors: { id: string; name: string }[]; languageOn?: boolean }) {
+export function HubClientsTable({ rows, removedRows, counsellors, languageOn = false, rightSlot }: {
+  rows: OrgClientRow[];
+  removedRows: OrgClientRow[];
+  counsellors: { id: string; name: string }[];
+  languageOn?: boolean;
+  /** Sits at the far right of the filter row (batch 2p - the Companies view). */
+  rightSlot?: React.ReactNode;
+}) {
   const { toast } = useToast();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("all");
@@ -207,8 +214,9 @@ export function HubClientsTable({ rows, removedRows, counsellors, languageOn = f
 
   return (
     <div className="space-y-4">
-      {/* Status tabs with live counts (the filter) */}
-      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+      {/* Status tabs with live counts (the filter), with room on the right for
+          a sibling view - companies are clients too (batch 2p). */}
+      <div className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1">
         {TABS.map((t) => {
           const active = tab === t.key;
           const count = counts[t.key];
@@ -231,6 +239,7 @@ export function HubClientsTable({ rows, removedRows, counsellors, languageOn = f
             </button>
           );
         })}
+        {rightSlot && <div className="ml-auto shrink-0 pl-2">{rightSlot}</div>}
       </div>
 
       {/* Bulk action bar  appears when clients are selected. */}

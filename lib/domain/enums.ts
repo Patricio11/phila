@@ -53,6 +53,21 @@ export const isRemote = (type: AppointmentType): boolean => type === "online" ||
 /** The counsellor occupies a practice room - a room is required + conflict-checked. */
 export const needsRoom = (type: AppointmentType): boolean => type === "in_person" || type === "hybrid";
 
+/**
+ * Batch 2n - what a working window can hold. "both" is the base pattern; the
+ * other two narrow a window to one way of meeting, so an in-person morning is
+ * never offered for a video session (and the room engine knows the difference).
+ * A hybrid session needs a room, so it asks for in-person availability.
+ */
+export const AVAILABILITY_MODES = ["both", "in_person", "online"] as const;
+export type AvailabilityMode = (typeof AVAILABILITY_MODES)[number];
+
+/** Does a window of this mode allow a session of that type? */
+export function windowAllowsType(mode: AvailabilityMode, type: AppointmentType): boolean {
+  if (mode === "both") return true;
+  return mode === "online" ? type === "online" : needsRoom(type);
+}
+
 /** Professional registration bodies relevant in South Africa. */
 export const CREDENTIAL_STATUSES = [
   "unverified",

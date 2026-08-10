@@ -54,8 +54,13 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
   ]);
   if (!detail) notFound();
 
-  // Feedback #5 - the counsellor's ORG-managed working windows (empty = follows
-  // practice hours). Editing is hub-only; the counsellor sees it read-only.
+  // Batch 2n - has this member uploaded a picture?
+  const memberHasPhoto = process.env.DATA_PROVIDER === "db"
+    ? Boolean((await (await import("@/db/queries/team")).getMemberPhotoDb(membership.orgId, detail.member.userId)).key)
+    : false;
+
+  // Feedback #5 - the counsellor's weekly working windows (empty = follows the
+  // practice hours). The org edits them here; the counsellor edits their own.
   const availability = detail.counsellorId && process.env.DATA_PROVIDER === "db"
     ? await (await import("@/db/queries/availability")).getCounsellorAvailabilityDb(membership.orgId, detail.counsellorId)
     : [];
@@ -100,7 +105,7 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
       <PageHead
         title={
           <span className="flex items-center gap-2.5">
-            <Avatar name={member.name} size="md" verified={member.credential?.status === "verified"} /> {member.name}
+            <Avatar name={member.name} size="md" verified={member.credential?.status === "verified"} photoUrl={memberHasPhoto ? `/api/avatar/${member.userId}` : null} /> {member.name}
           </span>
         }
         summary={member.email}

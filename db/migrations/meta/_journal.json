@@ -477,6 +477,20 @@
       "when": 1786201268615,
       "tag": "0067_deep_alex_wilder",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1786315257765,
+      "tag": "0068_greedy_magneto",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1786345144381,
+      "tag": "0069_rainy_boomerang",
+      "breakpoints": true
     }
   ]
 }

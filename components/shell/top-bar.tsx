@@ -22,7 +22,7 @@ export function TopBar({
 }: {
   title: string;
   date: string;
-  user: { name: string; email: string; roleLabel: string };
+  user: { name: string; email: string; roleLabel: string; photoUrl?: string | null };
   sections: NavSection[];
   settingsHref?: string;
 }) {
@@ -74,7 +74,7 @@ export function TopBar({
 
         <ThemeToggle />
         <NotificationsMenu />
-        <AccountMenu name={user.name} email={user.email} roleLabel={user.roleLabel} settingsHref={settingsHref} />
+        <AccountMenu name={user.name} email={user.email} roleLabel={user.roleLabel} photoUrl={user.photoUrl ?? null} settingsHref={settingsHref} />
       </div>
 
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} sections={sections} />

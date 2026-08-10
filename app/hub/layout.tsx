@@ -18,12 +18,18 @@ export default async function HubLayout({ children }: { children: React.ReactNod
   // Nav gates on the *effective* features (kill-switch → override → plan → self-toggle).
   const features = process.env.DATA_PROVIDER === "db" ? await effectiveFeaturesDb(membership.orgId) : org?.features;
 
+  // Batch 2n - the header wears the member's own picture when they have one.
+  const photoUrl = process.env.DATA_PROVIDER === "db"
+    && (await (await import("@/db/queries/team")).getMemberPhotoDb(membership.orgId, principal.userId)).key
+    ? `/api/avatar/${principal.userId}`
+    : null;
+
   return (
     <ToastProvider>
       <AppShell
         navKey="hub"
         orgName={membership.orgName}
-        user={{ name: principal.name, email: principal.email, roleLabel: "Org admin" }}
+        user={{ name: principal.name, email: principal.email, roleLabel: "Org admin", photoUrl }}
         settingsHref="/hub/settings"
         features={features}
         twoFactorPrompt={twoFactorPrompt}

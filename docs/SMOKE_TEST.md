@@ -122,6 +122,15 @@ Sign in as **Thandeka**.
 - ☐ **Hybrid** (feedback #7): the Where picker offers **In person / Online / Hybrid**; Hybrid requires a room AND generates the video link; the calendar filter gains a **Hybrid** button; the event detail reads "**room · client joins online**" with Join/Copy link; the counsellor's session page shows "Hybrid session · room" + Open video room; the client sees it exactly like an online session
 - ☐ **Service colours** (batch 2f): each service on `/hub/services` has a **Calendar colour** swatch row (house palette + a rainbow swatch that opens the native picker for any colour); calendar events wear their service's colour (week/day tint, month minis, agenda left stripe) in BOTH the hub and counsellor calendars; risk/no-show tones still win; changing a colour + Save re-paints the events
 
+**Availability per session type + profile photo** (batch 2n)
+- ☐ On a member page, **Availability** now has three chips with live counts: **Any session** (the base pattern) · **In person** · **Online**. Clicking a chip switches which set of hours you are editing; the blurb under it says what that set means
+- ☐ Set (say) Wednesdays under **Any session** and Tuesday 17:00-20:00 under **Online**, save: the toast names the split, and `counsellor_availability` holds one row per window with its `mode`
+- ☐ In **New appointment**, pick that Tuesday at 18:00: with **In person** selected the caption reads "N of M counsellors available **in person**" and that counsellor is NOT in the list; switch **Where** to **Online** and the count rises by one and they appear. Hybrid asks for in-person availability (they hold a room)
+- ☐ The same rule holds on the **public booking page** (the client's In person / Online choice narrows the times offered) and in **Rooms** (assigning a room warns against their *in-person* hours, since a room is not for video)
+- ☐ Server-side too: a stale tab that posts a booking outside the counsellor's window for that session type is refused with "That counsellor doesn't work online / in person at that time"
+- ☐ A **counsellor** opens `/app/settings` → **Your availability** and edits their own (same editor). On save: every org admin gets a **bell notification** ("… updated their availability") and the hub **Activity feed** shows *Counsellor availability updated*
+- ☐ **Profile photo**: `/app/settings` → the camera button on your avatar uploads a PNG/JPG/WebP up to 3 MB; it then shows in the header, the team roster and the member page, with **Remove** returning you to initials. It counts against the practice's storage, and replacing one releases the old bytes *(needs Phila Storage switched on in /admin → Integrations)*
+
 **Team - full profile editing** (batch 2i)
 - ☐ On a member page, **Edit profile** edits EVERYTHING: name · phone · date of birth · address · bio · display languages · specialties · education rows (add/remove) · and for counsellors the **credential** (body + registration number)
 - ☐ Changing the credential warns, saves, and resets verification to **pending** (re-verify under Verification); the header name, Personal & contact card and Education card all show the new truth immediately

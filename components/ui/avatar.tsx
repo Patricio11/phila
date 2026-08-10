@@ -23,18 +23,21 @@ export function Avatar({
   name,
   size = "md",
   verified = false,
+  photoUrl,
   className,
 }: {
   name: string;
   size?: keyof typeof SIZE;
   verified?: boolean;
+  /** Batch 2n - the member's uploaded picture; initials stay the fallback. */
+  photoUrl?: string | null;
   className?: string;
 }) {
   const tone = PALETTE[hashString(name) % PALETTE.length]!;
   return (
     <span
       className={cn(
-        "relative inline-flex shrink-0 items-center justify-center rounded-full font-semibold",
+        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold",
         SIZE[size],
         tone,
         verified && "ring-2 ring-accent ring-offset-1 ring-offset-surface",
@@ -42,7 +45,12 @@ export function Avatar({
       )}
       aria-hidden
     >
-      {initials(name)}
+      {photoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- signed redirect, not an optimisable asset
+        <img src={photoUrl} alt="" className="size-full object-cover" />
+      ) : (
+        initials(name)
+      )}
     </span>
   );
 }

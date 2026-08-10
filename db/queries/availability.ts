@@ -4,23 +4,36 @@ import { activeDb, runForOrg } from "@/lib/db/scoped";
 import { getDb } from "@/db/client";
 import { counsellorAvailability, counsellors, appointments } from "@/db/schema";
 import { isoWeekday } from "@/lib/domain/helpers";
+import { windowAllowsType, type AvailabilityMode, type AppointmentType } from "@/lib/domain/enums";
 import type { BusinessHours } from "@/lib/domain/types";
 
 /**
- * Feedback #5 - per-counsellor availability. ORG-managed windows per weekday;
- * a counsellor with no rows inherits the org's business hours. Read by the hub
- * booking modal, the public slot engine, and the counsellor's read-only view.
+ * Feedback #5 - per-counsellor availability. Windows per weekday; a counsellor
+ * with no rows inherits the org's business hours. Read by the hub booking modal,
+ * the public slot engine, the room engine and the counsellor's own editor.
+ *
+ * Batch 2n - every window carries a MODE: "both" (the base pattern), or one of
+ * "in_person" / "online" when the counsellor only meets that way then. Booking
+ * asks for the session's type and gets only the counsellors who can hold it.
  */
 
-export interface AvailabilityWindow { weekday: number; start: string; end: string }
+export interface AvailabilityWindow { weekday: number; start: string; end: string; mode: AvailabilityMode }
+
+/** The windows that can hold a session of this type (mode "both" always can). */
+export function windowsForType(windows: AvailabilityWindow[], type: AppointmentType | null | undefined): AvailabilityWindow[] {
+  if (!type) return windows;
+  return windows.filter((w) => windowAllowsType(w.mode, type));
+}
 
 /** All of one counsellor's windows (sorted weekday, then start). */
 export async function getCounsellorAvailabilityDb(orgId: string, counsellorId: string): Promise<AvailabilityWindow[]> {
   return runForOrg(orgId, async () => {
-    const rows = await activeDb().select({ weekday: counsellorAvailability.weekday, start: counsellorAvailability.start, end: counsellorAvailability.end })
+    const rows = await activeDb().select({ weekday: counsellorAvailability.weekday, start: counsellorAvailability.start, end: counsellorAvailability.end, mode: counsellorAvailability.mode })
       .from(counsellorAvailability)
       .where(and(eq(counsellorAvailability.orgId, orgId), eq(counsellorAvailability.counsellorId, counsellorId)));
-    return rows.sort((a, b) => a.weekday - b.weekday || a.start.localeCompare(b.start));
+    return rows
+      .map((r) => ({ ...r, mode: (r.mode ?? "both") as AvailabilityMode }))
+      .sort((a, b) => a.weekday - b.weekday || a.start.localeCompare(b.start) || a.mode.localeCompare(b.mode));
   });
 }
 
@@ -30,19 +43,19 @@ export async function saveCounsellorAvailabilityDb(orgId: string, counsellorId: 
     await activeDb().delete(counsellorAvailability)
       .where(and(eq(counsellorAvailability.orgId, orgId), eq(counsellorAvailability.counsellorId, counsellorId)));
     if (windows.length > 0) {
-      await activeDb().insert(counsellorAvailability).values(windows.map((w) => ({ orgId, counsellorId, weekday: w.weekday, start: w.start, end: w.end })));
+      await activeDb().insert(counsellorAvailability).values(windows.map((w) => ({ orgId, counsellorId, weekday: w.weekday, start: w.start, end: w.end, mode: w.mode ?? "both" })));
     }
   });
 }
 
 /** The org-wide map counsellorId → windows (public engine + modal filter). Owner read - no session on /o. */
 export async function getOrgAvailabilityMapDb(orgId: string): Promise<Map<string, AvailabilityWindow[]>> {
-  const rows = await getDb().select({ counsellorId: counsellorAvailability.counsellorId, weekday: counsellorAvailability.weekday, start: counsellorAvailability.start, end: counsellorAvailability.end })
+  const rows = await getDb().select({ counsellorId: counsellorAvailability.counsellorId, weekday: counsellorAvailability.weekday, start: counsellorAvailability.start, end: counsellorAvailability.end, mode: counsellorAvailability.mode })
     .from(counsellorAvailability).where(eq(counsellorAvailability.orgId, orgId));
   const map = new Map<string, AvailabilityWindow[]>();
   for (const r of rows) {
     const list = map.get(r.counsellorId) ?? [];
-    list.push({ weekday: r.weekday, start: r.start, end: r.end });
+    list.push({ weekday: r.weekday, start: r.start, end: r.end, mode: (r.mode ?? "both") as AvailabilityMode });
     map.set(r.counsellorId, list);
   }
   return map;
@@ -55,12 +68,17 @@ const hm = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
  * the whole session fits one of their windows (or the org's hours when they have
  * none) AND they have no blocking booking then. Several counsellors can share the
  * hour - that's the point.
+ *
+ * Batch 2n - `type` narrows by HOW the session happens: only windows that can
+ * hold it count, so an online-only Thursday evening never answers an in-person
+ * booking. Omit it and every window counts (the old behaviour).
  */
 export async function availableCounsellorsAtDb(
   orgId: string,
   startISO: string,
   durationMin: number,
   businessHours: BusinessHours,
+  type?: AppointmentType | null,
 ): Promise<{ available: string[]; total: number }> {
   const db = getDb();
   const all = await db.select({ id: counsellors.id }).from(counsellors).where(eq(counsellors.orgId, orgId));
@@ -94,7 +112,8 @@ export async function availableCounsellorsAtDb(
 
   const available = all
     .filter((c) => {
-      const windows = map.get(c.id);
+      const pattern = map.get(c.id);
+      const windows = pattern === undefined ? undefined : windowsForType(pattern, type);
       const fits = windows === undefined
         ? inOrgHours
         : windows.some((w) => w.weekday === wd && t >= hm(w.start) && end <= hm(w.end));

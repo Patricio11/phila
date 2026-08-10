@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, ne, gte, lt } from "drizzle-orm";
 import { activeDb, runForOrg } from "@/lib/db/scoped";
 import { roomAssignments, rooms, sites, counsellors, appointments, clients } from "@/db/schema";
-import { getOrgAvailabilityMapDb } from "@/db/queries/availability";
+import { getOrgAvailabilityMapDb, windowsForType } from "@/db/queries/availability";
 
 /**
  * Feedback #8 - rooms fully functional. Assignments are REAL rows now (the old
@@ -36,16 +36,19 @@ export async function assignmentWarningsDb(orgId: string, input: AssignmentInput
     const roomOf = (id: string) => roomRows.find((r) => r.id === id)?.name ?? "another room";
     const warnings: string[] = [];
 
-    // 1) The counsellor's own working windows (feedback #5). No pattern = org hours, no warning.
-    const windows = availability.get(input.counsellorId);
+    // 1) The counsellor's own working windows (feedback #5). No pattern = org hours,
+    // no warning. A room is for in-person work, so an online-only window doesn't
+    // count towards it (batch 2n).
+    const pattern = availability.get(input.counsellorId);
+    const windows = pattern === undefined ? undefined : windowsForType(pattern, "in_person");
     if (windows !== undefined) {
       for (const day of input.days) {
         const dayWindows = windows.filter((w) => w.weekday === day);
         if (dayWindows.length === 0) {
-          warnings.push(`${nameOf(input.counsellorId)} doesn't work on ${DOW[day]}s.`);
+          warnings.push(`${nameOf(input.counsellorId)} doesn't work in person on ${DOW[day]}s.`);
         } else if (!dayWindows.some((w) => hm(input.start) >= hm(w.start) && hm(input.end) <= hm(w.end))) {
           const span = dayWindows.map((w) => `${w.start}–${w.end}`).join(", ");
-          warnings.push(`Outside ${nameOf(input.counsellorId)}'s ${DOW[day]} hours (${span}).`);
+          warnings.push(`Outside ${nameOf(input.counsellorId)}'s in-person ${DOW[day]} hours (${span}).`);
         }
       }
     }

@@ -57,9 +57,9 @@ describe("counsellor availability", () => {
       VALUES ('cl_av_1', ${ORG}, 'couns_av_b', 'Avail Client', 'Gauteng', now()) ON CONFLICT (id) DO NOTHING`;
 
     // 1) Save + read back: A works Monday mornings only. B has no pattern.
-    await saveCounsellorAvailabilityDb(ORG, "couns_av_a", [{ weekday: 1, start: "09:00", end: "13:00" }]);
+    await saveCounsellorAvailabilityDb(ORG, "couns_av_a", [{ weekday: 1, start: "09:00", end: "13:00", mode: "both" }]);
     const rows = await getCounsellorAvailabilityDb(ORG, "couns_av_a");
-    expect(rows).toEqual([{ weekday: 1, start: "09:00", end: "13:00" }]);
+    expect(rows).toEqual([{ weekday: 1, start: "09:00", end: "13:00", mode: "both" }]);
 
     // 2) Monday 10:00 fits both; Monday 14:00 only B (A's window ended).
     const at10 = await availableCounsellorsAtDb(ORG, `${MONDAY}T10:00:00+02:00`, 60, HOURS);
@@ -95,5 +95,51 @@ describe("counsellor availability", () => {
       now: `${MONDAY}T00:00:00+02:00`, minNoticeHours: 0, slotIntervalMin: 60, windows: [],
     });
     expect(off).toEqual([]);
+  });
+});
+
+/**
+ * Batch 2n - availability is per session type. A window carries a mode:
+ * "both" (the base pattern), "in_person" or "online". Booking asks for the
+ * session's type and only gets counsellors who work that way then.
+ */
+describe("availability by session type", () => {
+  it("an online-only window never answers an in-person booking (and vice versa)", { timeout: 40_000 }, async () => {
+    // The previous test parked a booking on B at 10:00; this one is about the
+    // windows, not the diary, so clear it first.
+    await sql`DELETE FROM appointments WHERE id='appt_av_b10'`;
+
+    // A works Monday mornings in person, Monday evenings online only.
+    await saveCounsellorAvailabilityDb(ORG, "couns_av_a", [
+      { weekday: 1, start: "09:00", end: "13:00", mode: "in_person" },
+      { weekday: 1, start: "18:00", end: "20:00", mode: "online" },
+    ]);
+    // B keeps a plain base pattern - any kind of session, all day Monday.
+    await saveCounsellorAvailabilityDb(ORG, "couns_av_b", [
+      { weekday: 1, start: "08:00", end: "20:00", mode: "both" },
+    ]);
+
+    const at = (time: string, type: "in_person" | "online" | "hybrid" | null) =>
+      availableCounsellorsAtDb(ORG, `${MONDAY}T${time}:00+02:00`, 60, HOURS, type);
+
+    // 10:00 - A is in the room, B is open to anything.
+    expect((await at("10:00", "in_person")).available.sort()).toEqual(["couns_av_a", "couns_av_b"]);
+    // The same hour asked as an ONLINE session: A's window is in-person only.
+    expect((await at("10:00", "online")).available).toEqual(["couns_av_b"]);
+
+    // 18:00 - A is online only, so an in-person request skips her.
+    expect((await at("18:00", "online")).available.sort()).toEqual(["couns_av_a", "couns_av_b"]);
+    expect((await at("18:00", "in_person")).available).toEqual(["couns_av_b"]);
+
+    // Hybrid holds a room, so it asks for in-person availability.
+    expect((await at("18:00", "hybrid")).available).toEqual(["couns_av_b"]);
+    expect((await at("10:00", "hybrid")).available.sort()).toEqual(["couns_av_a", "couns_av_b"]);
+
+    // No type asked = every window counts (the pre-2n behaviour).
+    expect((await at("18:00", null)).available.sort()).toEqual(["couns_av_a", "couns_av_b"]);
+
+    // The mode survives the round trip.
+    const rows = await getCounsellorAvailabilityDb(ORG, "couns_av_a");
+    expect(rows.map((r) => r.mode).sort()).toEqual(["in_person", "online"]);
   });
 });

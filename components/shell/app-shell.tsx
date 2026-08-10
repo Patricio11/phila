@@ -58,7 +58,7 @@ export function AppShell({
 }: {
   navKey: NavKey;
   orgName: string;
-  user: { name: string; email: string; roleLabel: string };
+  user: { name: string; email: string; roleLabel: string; photoUrl?: string | null };
   settingsHref?: string;
   /** Org feature flags  used to hide feature-gated nav items (e.g. Funders). */
   features?: Record<string, boolean>;

@@ -1370,6 +1370,32 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   View client. The full appointment behind every visible row is already loaded for the widgets,
   so opening one costs no extra fetch, and an edit refreshes the dashboard behind the modal.
 
+- [x] **Availability per session type** *(2026-08-10, batch 2n)*: a counsellor's weekly hours now
+  carry a **mode** - "Any session" (the base pattern), **In person**, or **Online** - edited through
+  three chips with live counts. Booking asks the question the way it will actually happen: the hub
+  modal re-reads availability when you change **Where**, the public page narrows times by the
+  client's In person / Online choice, room assignment warns against *in-person* hours only (a room
+  is not for video), and hybrid asks for in-person availability because the counsellor holds a
+  room. Enforced server-side in `createAppointment`, not just hidden in the UI. Migration 0068
+  (`counsellor_availability.mode`).
+- [x] **Counsellors keep their own hours** *(2026-08-10, batch 2n)*: `/app/settings` gained the
+  same editor, so a counsellor updates their own availability instead of asking an admin. The
+  practice keeps oversight: every save rings **every org admin's bell** and lands on the hub
+  activity feed as *Counsellor availability updated*, with the counsellor as the actor.
+- [x] **Profile pictures** *(2026-08-10, batch 2n)*: a member uploads their own photo (PNG / JPG /
+  WebP, 3 MB) through the same presign → PUT → scan pipeline as the org logo; it counts against the
+  practice's storage and replacing one releases the old bytes. It shows in the header, the team
+  roster, the member page and their own settings, with coloured initials as the fallback. Served
+  through `/api/avatar/[userId]`, which redirects to a short-lived signed URL only for someone
+  signed in and sharing that practice, so no bucket is public and no signed link is threaded
+  through pages. Migration 0068 (`team_profiles.photo_key/photo_bytes`) + 0069 (one profile row
+  per member per practice - both writers were select-then-insert).
+- [x] **Storage calls are bounded** *(2026-08-10, batch 2n)*: every Supabase storage call now
+  carries an 8s timeout. An unreachable storage host used to leave the person watching a spinner
+  until the platform default gave up; now they get an honest error in seconds. Found while proving
+  the photo upload: this machine cannot resolve the configured Supabase project, so the byte hop
+  itself is unproven locally - everything either side of it is.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

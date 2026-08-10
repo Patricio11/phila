@@ -28,7 +28,12 @@ function joined(iso: string): string {
 
 type Tab = "active" | "invited" | "archived";
 
-export function TeamBoard({ members }: { members: TeamMemberView[] }) {
+export function TeamBoard({ members, photoUserIds = [] }: {
+  members: TeamMemberView[];
+  /** Batch 2n - members with a profile picture; the rest keep their initials. */
+  photoUserIds?: string[];
+}) {
+  const photos = useMemo(() => new Set(photoUserIds), [photoUserIds]);
   const [tab, setTab] = useState<Tab>("active");
   const [query, setQuery] = useState("");
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -114,7 +119,7 @@ export function TeamBoard({ members }: { members: TeamMemberView[] }) {
         ) : (
           <ul className="divide-y divide-border">
             {rows.map((m) => (
-              <MemberRow key={m.userId} member={m} supervisorOptions={supervisorOptions} counsellorOptions={counsellorOptions} />
+              <MemberRow key={m.userId} member={m} supervisorOptions={supervisorOptions} counsellorOptions={counsellorOptions} hasPhoto={photos.has(m.userId)} />
             ))}
           </ul>
         )}
@@ -125,13 +130,13 @@ export function TeamBoard({ members }: { members: TeamMemberView[] }) {
   );
 }
 
-function MemberRow({ member: m, supervisorOptions, counsellorOptions }: { member: TeamMemberView; supervisorOptions: { id: string; name: string }[]; counsellorOptions: { id: string; name: string }[] }) {
+function MemberRow({ member: m, supervisorOptions, counsellorOptions, hasPhoto = false }: { member: TeamMemberView; supervisorOptions: { id: string; name: string }[]; counsellorOptions: { id: string; name: string }[]; hasPhoto?: boolean }) {
   const [manageOpen, setManageOpen] = useState(false);
 
   return (
     <li className="group flex items-center gap-3 px-3.5 py-3 transition-colors last:rounded-b-card hover:bg-surface-hover">
       <Link href={`/hub/team/${m.userId}`} className="flex min-w-0 flex-1 items-center gap-3">
-        <Avatar name={m.name} size="sm" verified={m.credential?.status === "verified"} />
+        <Avatar name={m.name} size="sm" verified={m.credential?.status === "verified"} photoUrl={hasPhoto ? `/api/avatar/${m.userId}` : null} />
         <div className="min-w-0">
           <div className="truncate text-[13.5px] font-medium text-text group-hover:text-accent">{m.name}</div>
           <div className="truncate text-[11.5px] text-text-3">{m.email}</div>

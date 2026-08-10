@@ -26,6 +26,14 @@ function base(url: string): string {
   return `${url.replace(/\/$/, "")}/storage/v1`;
 }
 
+/**
+ * Every call is bounded. Without this, an unreachable storage host leaves the
+ * caller (and the person waiting on a spinner) hanging until the platform
+ * default gives up minutes later; a bounded call fails honestly in seconds.
+ */
+const STORAGE_TIMEOUT_MS = 8_000;
+const bounded = () => AbortSignal.timeout(STORAGE_TIMEOUT_MS);
+
 export function supabaseStorage(cfg: SupabaseStorageConfig): StorageProvider {
   const root = base(cfg.url);
   const enc = (key: string) => key.split("/").map(encodeURIComponent).join("/");
@@ -39,6 +47,7 @@ export function supabaseStorage(cfg: SupabaseStorageConfig): StorageProvider {
         headers: headers(cfg.serviceKey),
         // Supabase rejects a JSON content-type with an empty body (400); send `{}`.
         body: "{}",
+        signal: bounded(),
       });
       if (!res.ok) throw new Error(`Storage upload-sign failed (${res.status})`);
       const data = (await res.json()) as { url: string };
@@ -50,6 +59,7 @@ export function supabaseStorage(cfg: SupabaseStorageConfig): StorageProvider {
         method: "POST",
         headers: headers(cfg.serviceKey),
         body: JSON.stringify({ expiresIn: ttlSeconds }),
+        signal: bounded(),
       });
       if (!res.ok) throw new Error(`Storage download-sign failed (${res.status})`);
       const data = (await res.json()) as { signedURL: string };
@@ -60,6 +70,7 @@ export function supabaseStorage(cfg: SupabaseStorageConfig): StorageProvider {
       const res = await fetch(`${root}/object/${cfg.bucket}/${enc(key)}`, {
         method: "DELETE",
         headers: headers(cfg.serviceKey),
+        signal: bounded(),
       });
       if (!res.ok && res.status !== 404) throw new Error(`Storage delete failed (${res.status})`);
     },

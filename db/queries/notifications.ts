@@ -1,7 +1,7 @@
 import "server-only";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { getDb } from "@/db/client";
-import { notifications, counsellors } from "@/db/schema";
+import { notifications, counsellors, orgMembers } from "@/db/schema";
 import { user } from "@/db/auth-schema";
 
 /** In-app notifications (the bell)  always-on, no external dependency (Phase 17.2). */
@@ -40,6 +40,18 @@ export async function createNotification(n: NewNotification): Promise<void> {
 export async function notifyCounsellor(counsellorId: string, n: Omit<NewNotification, "userId" | "orgId">): Promise<void> {
   const [c] = await getDb().select({ userId: counsellors.userId, orgId: counsellors.orgId }).from(counsellors).where(eq(counsellors.id, counsellorId)).limit(1);
   if (c) await createNotification({ userId: c.userId, orgId: c.orgId, ...n });
+}
+
+/**
+ * Notify every active practice admin (batch 2n). Used when a counsellor changes
+ * something the practice owns the consequences of - their availability, say -
+ * so oversight hears about it without anyone having to watch a feed.
+ */
+export async function notifyOrgAdmins(orgId: string, n: Omit<NewNotification, "userId" | "orgId">): Promise<number> {
+  const rows = await getDb().select({ userId: orgMembers.userId }).from(orgMembers)
+    .where(and(eq(orgMembers.orgId, orgId), eq(orgMembers.teamRole, "org_admin"), eq(orgMembers.status, "active")));
+  for (const r of rows) await createNotification({ userId: r.userId, orgId, ...n });
+  return rows.length;
 }
 
 /** Notify the user behind a client record, if the client has a portal account. */

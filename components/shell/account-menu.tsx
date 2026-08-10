@@ -19,11 +19,14 @@ export function AccountMenu({
   name,
   email,
   roleLabel,
+  photoUrl = null,
   settingsHref,
 }: {
   name: string;
   email: string;
   roleLabel: string;
+  /** Batch 2n - the member's profile picture, when they have uploaded one. */
+  photoUrl?: string | null;
   settingsHref?: string;
 }) {
   const router = useRouter();
@@ -65,7 +68,7 @@ export function AccountMenu({
         aria-expanded={open}
         className="ml-1 flex items-center gap-2 rounded-pill border border-border bg-surface py-1 pl-1 pr-1 transition-colors hover:bg-surface-hover sm:pr-2"
       >
-        <Avatar name={name} size="sm" />
+        <Avatar name={name} size="sm" photoUrl={photoUrl} />
         <span className="hidden min-w-0 flex-col items-start leading-tight sm:flex">
           <span className="truncate text-[12.5px] font-medium text-text">{name}</span>
           <span className="truncate text-[11px] text-text-3">{roleLabel}</span>
@@ -76,7 +79,7 @@ export function AccountMenu({
       {open && (
         <div className="absolute right-0 top-full z-50 mt-1.5 w-64 overflow-hidden rounded-card border border-border bg-surface shadow-[var(--shadow-card)]">
           <div className="flex items-center gap-3 border-b border-border px-3.5 py-3">
-            <Avatar name={name} size="md" />
+            <Avatar name={name} size="md" photoUrl={photoUrl} />
             <div className="min-w-0">
               <div className="truncate text-[13.5px] font-[600] text-text">{name}</div>
               <div className="truncate text-[11.5px] text-text-3">{email}</div>

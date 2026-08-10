@@ -663,7 +663,15 @@ export const teamProfiles = pgTable("team_profiles", {
   bio: text("bio"),
   qualifications: jsonb("qualifications").$type<{ qualification: string; institution: string; year: number }[]>().default([]).notNull(),
   specialties: jsonb("specialties").$type<string[]>().default([]).notNull(),
-});
+  /** Batch 2n - storage key of the member's profile photo (null = coloured initials). */
+  photoKey: text("photo_key"),
+  /** The photo's size in bytes - counts against (and releases from) org storage. */
+  photoBytes: integer("photo_bytes").default(0).notNull(),
+}, (t) => [
+  // One profile per member per practice. Every writer here is select-then-insert,
+  // so without this a race leaves two rows and half the profile goes missing.
+  uniqueIndex("team_profiles_org_user_uq").on(t.orgId, t.userId),
+]);
 
 export const counsellorAvailability = pgTable("counsellor_availability", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -672,6 +680,13 @@ export const counsellorAvailability = pgTable("counsellor_availability", {
   weekday: integer("weekday").notNull(), // 1 = Monday … 7 = Sunday
   start: text("start").notNull(), // "HH:MM"
   end: text("end").notNull(),
+  /**
+   * Batch 2n - which kind of session this window can hold: "both" (the base
+   * pattern), "in_person" (they are at the practice) or "online" (video only).
+   * Booking asks for the session's type, so a room-only morning never gets
+   * offered for a video session, and vice versa.
+   */
+  mode: text("mode").default("both").notNull(),
 });
 
 /** Phila credit balances per metered channel (sms, email). WhatsApp is BYO (org pays Meta). */

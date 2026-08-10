@@ -25,12 +25,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     : TEAM_ROLE_LABELS[membership.teamRole];
   const twoFactorPrompt = await shouldPromptTwoFactor(principal);
 
+  // Batch 2n - the header wears the member's own picture when they have one.
+  const photoUrl = process.env.DATA_PROVIDER === "db"
+    && (await (await import("@/db/queries/team")).getMemberPhotoDb(membership.orgId, principal.userId)).key
+    ? `/api/avatar/${principal.userId}`
+    : null;
+
   return (
     <ToastProvider>
       <AppShell
         navKey="counsellor"
         orgName={membership.orgName}
-        user={{ name: principal.name, email: principal.email, roleLabel }}
+        user={{ name: principal.name, email: principal.email, roleLabel, photoUrl }}
         settingsHref="/app/settings"
         twoFactorPrompt={twoFactorPrompt}
       >

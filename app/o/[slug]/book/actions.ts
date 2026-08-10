@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { getDataProvider } from "@/lib/data-provider";
 import { availableSlots, isoWeekday, type Slot } from "@/lib/domain/helpers";
-import { getOrgAvailabilityMapDb } from "@/db/queries/availability";
+import { getOrgAvailabilityMapDb, windowsForType } from "@/db/queries/availability";
 import { logAccess } from "@/lib/audit";
 import { CONSENT_PURPOSES } from "@/lib/domain/enums";
 import { now as clockNow } from "@/lib/clock";
@@ -63,6 +63,8 @@ const slotsInput = z.object({
   language: z.string().nullable().optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   durationMin: z.number().int().positive().max(600),
+  /** Batch 2n - the client picked how they want to meet; availability is per type. */
+  modality: z.enum(["in_person", "online"]).nullable().optional(),
 });
 
 export async function getAvailableSlots(
@@ -70,7 +72,7 @@ export async function getAvailableSlots(
 ): Promise<{ ok: true; slots: SlotOption[] } | { ok: false; error: string }> {
   const parsed = slotsInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid request" };
-  const { slug, counsellorId, language, date, durationMin } = parsed.data;
+  const { slug, counsellorId, language, date, durationMin, modality } = parsed.data;
 
   const provider = await getDataProvider();
   const config = await provider.getBookingConfig(slug);
@@ -108,7 +110,9 @@ export async function getAvailableSlots(
   const byStart = new Map<string, { start: string; label: string; options: { id: string; load: number }[] }>();
   for (const c of candidates) {
     const pattern = availability.get(c.id);
-    const windows = pattern === undefined ? undefined : pattern.filter((w: { weekday: number }) => w.weekday === wd);
+    const windows = pattern === undefined
+      ? undefined
+      : windowsForType(pattern, modality ?? null).filter((w) => w.weekday === wd);
     const existing = await provider.listAppointmentsForCounsellor(c.id, { from: date, to: date });
     const slots: Slot[] = availableSlots({ org, date, durationMin, existing, now, minNoticeHours: config.minNoticeHours, slotIntervalMin: config.slotIntervalMin, windows });
     const load = existing.filter((a) => a.state === "scheduled" || a.state === "completed").length;

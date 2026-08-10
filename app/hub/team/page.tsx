@@ -13,6 +13,10 @@ export default async function HubTeamPage() {
   const { membership } = await requireHub();
   const provider = await getDataProvider();
   const members = await provider.listTeam(membership.orgId);
+  // Batch 2n - who has uploaded a picture (one query for the whole roster).
+  const photoUserIds = process.env.DATA_PROVIDER === "db"
+    ? [...(await (await import("@/db/queries/team")).membersWithPhotoDb(membership.orgId))]
+    : [];
 
   // Feedback #9 - the export table (matches the roster on screen).
   const now = clockNow();
@@ -36,7 +40,7 @@ export default async function HubTeamPage() {
         summary="Invite colleagues, set what each role can reach, and manage access  clinical notes stay with the counsellor and their supervisor."
         actions={<TeamExport table={exportTable} />}
       />
-      <TeamBoard members={members} />
+      <TeamBoard members={members} photoUserIds={photoUserIds} />
     </div>
   );
 }

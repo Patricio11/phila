@@ -47,6 +47,7 @@ export function TimeStep({
   minNoticeHours,
   counsellorId,
   language = null,
+  modality = null,
   date,
   slotStart,
   onPickDate,
@@ -60,6 +61,8 @@ export function TimeStep({
   counsellorId: string | null;
   /** Chosen session language - preferred in auto-assignment (32.0). */
   language?: string | null;
+  /** How the client wants to meet - only counsellors who work that way answer (2n). */
+  modality?: "in_person" | "online" | null;
   date: string | null;
   slotStart: string | null;
   onPickDate: (date: string) => void;
@@ -76,14 +79,14 @@ export function TimeStep({
     if (!activeDate) return;
     startTransition(async () => {
       setError(null);
-      const res = await getAvailableSlots({ slug, counsellorId, language, date: activeDate, durationMin });
+      const res = await getAvailableSlots({ slug, counsellorId, language, modality, date: activeDate, durationMin });
       if (res.ok) setSlots(res.slots);
       else {
         setSlots([]);
         setError(res.error);
       }
     });
-  }, [slug, counsellorId, language, activeDate, durationMin]);
+  }, [slug, counsellorId, language, modality, activeDate, durationMin]);
 
   return (
     <div>

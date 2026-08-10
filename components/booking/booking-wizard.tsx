@@ -251,6 +251,7 @@ export function BookingWizard({
           durationMin={durationMin}
           maxDaysAhead={config.maxDaysAhead}
           minNoticeHours={config.minNoticeHours}
+          modality={state.modality ?? null}
           counsellorId={null}
           language={languageEnabled ? state.language : null}
           date={state.date}

@@ -7,7 +7,7 @@ import { getDataProvider } from "@/lib/data-provider";
 import { auth } from "@/lib/auth/better-auth";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
-import { TEAM_ROLES } from "@/lib/domain/enums";
+import { TEAM_ROLES, AVAILABILITY_MODES } from "@/lib/domain/enums";
 import { transferCaseloadDb } from "@/db/queries/clients";
 import { getMemberContactDb } from "@/db/queries/team";
 import { notifyCounsellor } from "@/db/queries/notifications";
@@ -286,15 +286,18 @@ const windowSchema = z.object({
   weekday: z.number().int().min(1).max(7),
   start: z.string().regex(/^\d{2}:\d{2}$/),
   end: z.string().regex(/^\d{2}:\d{2}$/),
+  /** Batch 2n - which kind of session the window can hold. */
+  mode: z.enum(AVAILABILITY_MODES).default("both"),
 });
 const availabilityInput = z.object({
   counsellorId: z.string().min(1),
-  windows: z.array(windowSchema).max(28),
+  // Three modes x seven days, with room to split a day into two windows.
+  windows: z.array(windowSchema).max(84),
 });
 
 /**
- * Replace a counsellor's weekly working windows. Only the org (requireHub =
- * org_admin) may edit - counsellors see their pattern read-only. Every save is
+ * Replace a counsellor's weekly working windows (all modes in one save). The
+ * org edits any member here; a counsellor edits their OWN from Settings. Every save is
  * audited as `update_availability`, which surfaces on the dashboard Activity
  * feed. No windows at all = the counsellor inherits the org's business hours.
  */

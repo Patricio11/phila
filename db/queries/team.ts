@@ -313,3 +313,32 @@ export async function saveMemberProfileDb(orgId: string, userId: string, input: 
   await getDb().update(user).set({ name: input.name }).where(eq(user.id, userId));
   return { ok: true, credentialReset };
 }
+
+/* ── Profile photo (batch 2n) - one image per member, on their team profile ── */
+
+export interface MemberPhoto { key: string | null; bytes: number }
+
+/** The member's photo, if they have set one. Owner read - used by the image route. */
+export async function getMemberPhotoDb(orgId: string, userId: string): Promise<MemberPhoto> {
+  const [row] = await getDb().select({ key: teamProfiles.photoKey, bytes: teamProfiles.photoBytes })
+    .from(teamProfiles)
+    .where(and(eq(teamProfiles.orgId, orgId), eq(teamProfiles.userId, userId)))
+    .limit(1);
+  return { key: row?.key ?? null, bytes: row?.bytes ?? 0 };
+}
+
+/** Point a member at a new photo (or clear it). Creates the profile row if needed. */
+export async function saveMemberPhotoDb(orgId: string, userId: string, key: string | null, bytes: number): Promise<void> {
+  const db = getDb();
+  const [existing] = await db.select({ id: teamProfiles.id }).from(teamProfiles)
+    .where(and(eq(teamProfiles.orgId, orgId), eq(teamProfiles.userId, userId))).limit(1);
+  if (existing) await db.update(teamProfiles).set({ photoKey: key, photoBytes: bytes }).where(eq(teamProfiles.id, existing.id));
+  else await db.insert(teamProfiles).values({ orgId, userId, photoKey: key, photoBytes: bytes });
+}
+
+/** Which members of an org have a photo (one query for a whole list view). */
+export async function membersWithPhotoDb(orgId: string): Promise<Set<string>> {
+  const rows = await getDb().select({ userId: teamProfiles.userId, key: teamProfiles.photoKey })
+    .from(teamProfiles).where(eq(teamProfiles.orgId, orgId));
+  return new Set(rows.filter((r) => r.key).map((r) => r.userId));
+}

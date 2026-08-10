@@ -94,17 +94,20 @@ export function CreateAppointmentModal({
   // Feedback #5 - once a date + time are picked, only counsellors actually
   // available then are offered. Keyed fetch: a stale response simply never
   // matches the current key, so no synchronous resets are needed.
-  const availKey = `${date}|${time}|${durationMin}|${clientId ?? ""}`;
+  // Batch 2n - the session type is part of the question: "who is free at 10:00"
+  // has a different answer for a room session and a video one.
+  const apptType = isOnline ? "online" : type === "Hybrid" ? "hybrid" : "in_person";
+  const availKey = `${date}|${time}|${durationMin}|${clientId ?? ""}|${apptType}`;
   const [avail, setAvail] = useState<{ key: string; ids: string[]; speakers: string[]; clientLanguage: string | null } | null>(null);
   useEffect(() => {
     if (!date || !time) return;
-    const key = `${date}|${time}|${durationMin}|${clientId ?? ""}`;
+    const key = `${date}|${time}|${durationMin}|${clientId ?? ""}|${apptType}`;
     let alive = true;
-    getAvailableCounsellors({ orgId: options.orgId, date, time, durationMin, clientId }).then((res) => {
+    getAvailableCounsellors({ orgId: options.orgId, date, time, durationMin, clientId, type: apptType }).then((res) => {
       if (alive && res.ok && res.available) setAvail({ key, ids: res.available, speakers: res.speakers ?? [], clientLanguage: res.clientLanguage ?? null });
     }).catch(() => {});
     return () => { alive = false; };
-  }, [date, time, durationMin, options.orgId, clientId]);
+  }, [date, time, durationMin, options.orgId, clientId, apptType]);
   const availability = date && time && avail?.key === availKey ? avail : null;
   const freeSet = useMemo(() => (availability ? new Set(availability.ids) : null), [availability]);
   // The picked counsellor stays visible even when busy - the validation below explains why.
@@ -115,6 +118,9 @@ export function CreateAppointmentModal({
     : options.counsellors;
   const freeCount = freeSet ? options.counsellors.filter((c) => freeSet.has(c.id)).length : null;
   const freeSpeakerCount = freeSet && clientLanguageName ? options.counsellors.filter((c) => freeSet.has(c.id) && speakerSet.has(c.id)).length : 0;
+
+  // How the caption reads the session type back to the reader.
+  const typeWord = apptType === "online" ? "online" : apptType === "hybrid" ? "for hybrid" : "in person";
 
   const onService = (id: string) => {
     setServiceId(id);
@@ -127,7 +133,7 @@ export function CreateAppointmentModal({
     if (!clientId) e.client = "Pick a client.";
     if (!serviceId) e.service = "Pick a service.";
     if (!counsellorId) e.counsellor = "Pick a counsellor.";
-    else if (freeSet && !freeSet.has(counsellorId)) e.counsellor = "Not available at that time - pick another counsellor or time.";
+    else if (freeSet && !freeSet.has(counsellorId)) e.counsellor = `Not available ${typeWord} at that time - pick another counsellor, time, or way to meet.`;
     if (!date) e.date = "Pick a date.";
     if (!time) e.time = "Pick a time.";
     if (roomNeeded && !roomId) e.room = "Pick a room.";
@@ -254,8 +260,8 @@ export function CreateAppointmentModal({
           {freeCount !== null && (
             <p className={cn("text-[11.5px]", freeCount === 0 ? "text-danger" : "text-text-3")}>
               {freeCount === 0
-                ? `No counsellors are available at ${time} - try another time.`
-                : `${freeCount} of ${options.counsellors.length} counsellors available at ${time}.${clientLanguageName ? ` ${freeSpeakerCount} speak${freeSpeakerCount === 1 ? "s" : ""} ${clientLanguageName}.` : ""}`}
+                ? `No counsellors are available ${typeWord} at ${time} - try another time or another way to meet.`
+                : `${freeCount} of ${options.counsellors.length} counsellors available ${typeWord} at ${time}.${clientLanguageName ? ` ${freeSpeakerCount} speak${freeSpeakerCount === 1 ? "s" : ""} ${clientLanguageName}.` : ""}`}
             </p>
           )}
         </Row>

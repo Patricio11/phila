@@ -5,7 +5,7 @@ import { Lock } from "lucide-react";
 import { Input, Label, Textarea, FieldError } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
-import { Avatar } from "@/components/ui/avatar";
+import { ProfilePhoto } from "@/components/settings/profile-photo";
 import { CredentialChip } from "@/components/ui/credential-chip";
 import type { CredentialBody, CredentialStatus } from "@/lib/domain/enums";
 import { useToast } from "@/components/ui/toast";
@@ -25,10 +25,15 @@ export function MyProfileForm({
   initial,
   credential,
   registrationNo,
+  userId,
+  hasPhoto = false,
 }: {
   initial: MyProfile;
   credential: { body: CredentialBody; status: CredentialStatus } | null;
   registrationNo?: string | null;
+  /** Batch 2n - whose photo the camera button uploads. */
+  userId: string;
+  hasPhoto?: boolean;
 }) {
   const { toast } = useToast();
   const [pending, start] = useTransition();
@@ -54,7 +59,7 @@ export function MyProfileForm({
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3.5">
-        <Avatar name={form.name || "You"} size="lg" verified={credential?.status === "verified"} />
+        <ProfilePhoto name={form.name} userId={userId} hasPhoto={hasPhoto} verified={credential?.status === "verified"} />
         <div className="min-w-0">
           <div className="text-[15px] font-[660] text-text">{form.name || "Your name"}</div>
           <div className="mt-1 flex flex-wrap items-center gap-2">

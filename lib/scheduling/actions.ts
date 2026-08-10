@@ -12,7 +12,8 @@ import { createClientDb } from "@/db/queries/clients";
 import { isSlotTakenError, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
 import { notifyAppointmentBooked } from "@/lib/messaging/notify";
 import { now as clockNow } from "@/lib/clock";
-import { needsRoom, type Province } from "@/lib/domain/enums";
+import { needsRoom, APPOINTMENT_TYPES, type Province } from "@/lib/domain/enums";
+import { isoWeekday } from "@/lib/domain/helpers";
 
 const BOOKERS = ["counsellor", "org_admin", "front_desk"] as const;
 
@@ -28,6 +29,8 @@ const availInput = z.object({
   durationMin: z.number().int().positive().max(600),
   /** Phase 32.0 - when a client is picked, matching surfaces who speaks their language. */
   clientId: z.string().nullable().optional(),
+  /** Batch 2n - how the session happens; availability is per session type. */
+  type: z.enum(APPOINTMENT_TYPES).optional(),
 });
 
 export async function getAvailableCounsellors(
@@ -44,7 +47,7 @@ export async function getAvailableCounsellors(
   const businessHours = ((org?.scheduling as { businessHours?: unknown })?.businessHours ?? {}) as import("@/lib/domain/types").BusinessHours;
   const startISO = new Date(`${d.date}T${d.time}:00+02:00`).toISOString(); // SAST wall clock, no DST
   const { availableCounsellorsAtDb } = await import("@/db/queries/availability");
-  const res = await availableCounsellorsAtDb(d.orgId, startISO, d.durationMin, businessHours);
+  const res = await availableCounsellorsAtDb(d.orgId, startISO, d.durationMin, businessHours, d.type ?? null);
 
   // Phase 32.0 - prefer a language match over translation, visibly.
   // Behind the `language` feature: off = the caption and hints never appear.
@@ -150,6 +153,27 @@ export async function createAppointment(
       .where(and(eq(appointments.orgId, membership.orgId), eq(appointments.clientId, data.clientId), eq(appointments.counsellorId, mine.id))).limit(1);
     if (!prior)
       return { ok: false, error: "You can only add sessions for clients already in your care. New client bookings live with your practice admin." };
+  }
+
+  // Batch 2n - availability is a rule, not a hint. A counsellor who keeps a
+  // pattern is only bookable inside a window that allows THIS kind of session,
+  // so a video-only evening can't be filled with a room booking from a stale
+  // tab or a hand-rolled request. No pattern = the practice hours, as before.
+  if (process.env.DATA_PROVIDER === "db") {
+    const { getCounsellorAvailabilityDb, windowsForType } = await import("@/db/queries/availability");
+    const pattern = await getCounsellorAvailabilityDb(data.orgId, data.counsellorId);
+    if (pattern.length > 0) {
+      const wd = isoWeekday(data.date);
+      const hm = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+      const from = hm(data.time);
+      const to = from + data.durationMin;
+      const fits = windowsForType(pattern, data.type)
+        .some((w) => w.weekday === wd && from >= hm(w.start) && to <= hm(w.end));
+      if (!fits) {
+        const how = data.type === "online" ? "online" : data.type === "hybrid" ? "for a hybrid session" : "in person";
+        return { ok: false, error: `That counsellor doesn't work ${how} at that time. Pick another time, counsellor, or way to meet.` };
+      }
+    }
   }
 
   if (process.env.DATA_PROVIDER === "db") {

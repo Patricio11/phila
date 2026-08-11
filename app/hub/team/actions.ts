@@ -254,13 +254,19 @@ export async function offboardMember(
         });
       } else if (d.mode === "cancel") {
         const ids = await cancelUpcomingForCounsellorDb(membership.orgId, w.counsellorId, "Counsellor left the practice");
+        // The dialog promises their clients stay on the books UNASSIGNED - so
+        // actually unassign them, rather than leaving them pointing at an
+        // archived counsellor. Their records open fine unassigned (batch 2s).
+        const { unassignCaseloadDb } = await import("@/db/queries/clients");
+        const freed = await unassignCaseloadDb(membership.orgId, w.counsellorId);
+        void freed;
         // Clients are told, dormant-safe; bounded so the archive answers promptly.
         const { notifyAppointment } = await import("@/lib/messaging/notify");
         await Promise.race([
           Promise.allSettled(ids.map((id) => notifyAppointment(id, "cancelled"))),
           new Promise((resolve) => setTimeout(resolve, 5_000)),
         ]);
-        summary = `${ids.length} upcoming session${ids.length === 1 ? "" : "s"} cancelled and clients notified. History stays on record.`;
+        summary = `${ids.length} upcoming session${ids.length === 1 ? "" : "s"} cancelled and clients notified; their clients are unassigned, ready to re-place. History stays on record.`;
       } else {
         return { ok: false, error: "Choose what happens to their caseload first." };
       }

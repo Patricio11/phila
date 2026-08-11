@@ -1522,6 +1522,14 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   panel's counsellor field now uses the shared searchable people-picker (avatars + search),
   still filtered to who is available for that slot in that mode.
 
+- [x] **Archive-with-cancel now unassigns the leaver's clients** *(2026-08-11, batch 2x)*:
+  offboarding already existed and was solid - Archive member offers "move everything to a
+  successor" (clients + every future session, clash-skipped rather than failing) or "cancel their
+  upcoming sessions", and nothing is ever deleted (HPCSA). But the cancel path's copy promised
+  the clients would stay on the books *unassigned*, while the code left them pointed at the
+  archived counsellor. `unassignCaseloadDb` now frees them for real - safe since 2s made an
+  unassigned client a first-class record - and the archive summary says so.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

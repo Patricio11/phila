@@ -192,3 +192,17 @@ export async function transferCaseloadDb(orgId: string, fromCounsellorId: string
   const sessions = await moveFutureSessions(orgId, { fromCounsellorId }, toCounsellorId);
   return { clients: reassigned.length, ...sessions };
 }
+
+/**
+ * Batch 2x - free a departing counsellor's clients rather than leaving them
+ * pointed at an archived person. Unassigned is a first-class state (2s): the
+ * record opens, says "No counsellor assigned yet", and Reassign works there.
+ */
+export async function unassignCaseloadDb(orgId: string, fromCounsellorId: string): Promise<number> {
+  const rows = await runForOrg(orgId, () => activeDb()
+    .update(clients)
+    .set({ primaryCounsellorId: null })
+    .where(and(eq(clients.orgId, orgId), eq(clients.primaryCounsellorId, fromCounsellorId), isNull(clients.deletedAt)))
+    .returning({ id: clients.id }));
+  return rows.length;
+}

@@ -76,3 +76,18 @@ describe("counsellor offboarding", () => {
     expect(counts!.clients).toBe(2);
   });
 });
+
+describe("archive with cancel keeps the promise", () => {
+  it("unassigns the leaver's clients instead of pointing them at an archive", { timeout: 40_000 }, async () => {
+    const { unassignCaseloadDb } = await import("@/db/queries/clients");
+    // Give the leaver a client, then free the caseload the way cancel-mode does.
+    await sql`INSERT INTO clients (id, org_id, primary_counsellor_id, name, province, created_at)
+      VALUES ('cl_ob_free', ${ORG}, 'couns_ob_leaver', 'Freed Client', 'Gauteng', now()) ON CONFLICT (id) DO NOTHING`;
+    await sql`UPDATE clients SET primary_counsellor_id='couns_ob_leaver', deleted_at=NULL WHERE id='cl_ob_free'`;
+    const freed = await unassignCaseloadDb(ORG, "couns_ob_leaver");
+    expect(freed).toBeGreaterThanOrEqual(1);
+    const [row] = await sql`SELECT primary_counsellor_id FROM clients WHERE id='cl_ob_free'`;
+    expect(row!.primary_counsellor_id).toBeNull();
+    await sql`DELETE FROM clients WHERE id='cl_ob_free'`;
+  });
+});

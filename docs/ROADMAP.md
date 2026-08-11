@@ -1449,6 +1449,21 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   view; and **Add link** had no submit guard, so a double click created the document twice. The
   link dialogs also had no accessible labels.
 
+- [x] **Responsive, measured rather than eyeballed** *(2026-08-11, batch 2s)*: two specs now hold
+  the line - `responsive-overflow` walks 47 pages across every role at phone (390px) and tablet
+  (820px) and fails naming the widest offending element, and `responsive-details` checks the things
+  a scroll test cannot see: that pages actually rendered, that dialogs fit with their buttons
+  reachable, that portaled menus land on screen, and that wide tables scroll inside their own box.
+  Fixes from the sweep: the **Export dropdown and row menus** were rendering off the left edge on a
+  phone (now clamped, and they flip upwards near the bottom); **Insights** truncated its stat
+  labels to "2 S…" and its revenue to "R" (labels wrap, the value shrinks a step, the trend chip
+  takes its own line); and the **calendar opens in Agenda on a phone** instead of a seven-day grid,
+  while a desktop still opens on Week and a manual choice always wins.
+  It also turned up a bug that had nothing to do with layout: `getClientDossier` returned null when
+  a client had **no primary counsellor**, so every unassigned client 404'd - **27 of 41 clients** in
+  the demo practice could not be opened from the list they appear in. The dossier now treats an
+  unassigned client as normal ("No counsellor assigned yet") and Reassign works from there.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

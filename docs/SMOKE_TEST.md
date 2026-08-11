@@ -131,6 +131,14 @@ Sign in as **Thandeka**.
 - ☐ A **counsellor** opens `/app/settings` → **Your availability** and edits their own (same editor). On save: every org admin gets a **bell notification** ("… updated their availability") and the hub **Activity feed** shows *Counsellor availability updated*
 - ☐ **Profile photo**: `/app/settings` → the camera button on your avatar uploads a PNG/JPG/WebP up to 3 MB; it then shows in the header, the team roster and the member page, with **Remove** returning you to initials. It counts against the practice's storage, and replacing one releases the old bytes *(needs Phila Storage switched on in /admin → Integrations)*
 
+**Responsive: it works on a phone** (batch 2s)
+- ☐ On a phone (390px) no page scrolls sideways, in any role: hub, counsellor workspace, client portal, admin console, public page and booking. Two Playwright specs enforce this - `responsive-overflow` (47 pages x phone + tablet) and `responsive-details` (dialogs, portaled menus, wide tables)
+- ☐ **Calendar** opens in **Agenda** on a phone (a seven-day grid is unreadable there) and stays on **Week** on a desktop; picking a view by hand always wins
+- ☐ **Insights** on a phone reads properly: stat labels wrap instead of truncating to "2 S…", the revenue shows "R500" not "R", and each trend chip takes its own line under the value
+- ☐ **Menus stay on screen**: the Export dropdown and the row (⋮) menus clamp to the viewport horizontally and flip upwards near the bottom
+- ☐ Wide tables (Clients, Invoicing, Team) scroll inside their own box; the page itself never does
+- ☐ **An unassigned client's record opens** (it used to 404): the dossier says "No counsellor assigned yet" and Reassign works from there
+
 **A folder per counsellor + document search** (batch 2r)
 - ☐ `/hub/documents` → **Counsellor folders** creates one folder per counsellor, named after them, under a single **Counsellors** folder, each already shared with its owner. Pressing it again says "Everyone already has a folder" and changes nothing
 - ☐ **Adding a counsellor creates their folder automatically** (invite one and look in Documents) - the button is for the team that joined before, and for restoring a deleted folder

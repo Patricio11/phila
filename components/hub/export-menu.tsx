@@ -36,7 +36,14 @@ export function ExportMenu({ table, getTable, onExported }: {
   const toggle = () => {
     if (!open && ref.current) {
       const r = ref.current.getBoundingClientRect();
-      const right = window.innerWidth - r.right;
+      // Right-aligned to the button, but never past either edge: on a phone the
+      // button sits close enough to the left that the menu ran off-screen.
+      const MENU_W = 208; // w-52
+      const GAP = 8;
+      const right = Math.min(
+        Math.max(GAP, window.innerWidth - r.right),
+        Math.max(GAP, window.innerWidth - MENU_W - GAP),
+      );
       // Open upwards when there isn't room below (this control also lives far
       // down long pages). Opening off-screen meant scrolling to reach it, and
       // scrolling closes the menu - so it could not be used at all down there.

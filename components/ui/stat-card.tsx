@@ -46,18 +46,26 @@ export function StatCard({
   className?: string;
 }) {
   return (
-    <Card className={cn("p-4", className)}>
-      <div className="flex items-center gap-3.5">
+    <Card className={cn("p-3.5 sm:p-4", className)}>
+      {/* A narrow phone column (three of these across 390px) cannot hold an
+          icon, a number, a label and a trend chip on one line - so the icon
+          shrinks, the label wraps instead of truncating, and the chip is free
+          to drop below rather than squeezing the value out of view. */}
+      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 sm:flex-nowrap sm:gap-3.5">
         {Icon ? (
-          <span className={cn("inline-flex size-10 shrink-0 items-center justify-center rounded-chip", ICON_TONE[tone])}>
-            <Icon className="size-[19px]" strokeWidth={1.9} aria-hidden />
+          <span className={cn("inline-flex size-8 shrink-0 items-center justify-center rounded-chip sm:size-10", ICON_TONE[tone])}>
+            <Icon className="size-4 sm:size-[19px]" strokeWidth={1.9} aria-hidden />
           </span>
         ) : null}
         <div className="min-w-0 flex-1">
-          <div className={cn("text-[24px] font-bold leading-none tracking-[-0.03em] tabular-nums", VALUE_TONE[tone])}>{value}</div>
-          <div className="mt-1.5 truncate text-[12.5px] font-medium text-text-2">{label}</div>
+          <div className={cn("text-[21px] font-bold leading-none tracking-[-0.03em] tabular-nums sm:text-[24px]", VALUE_TONE[tone])}>{value}</div>
+          <div className="mt-1.5 text-[12px] font-medium leading-snug text-text-2 sm:text-[12.5px]">{label}</div>
         </div>
-        {trend ? <TrendChip trend={trend} invert={invertTrend} /> : null}
+        {trend ? (
+          <span className="order-last w-full sm:order-none sm:w-auto">
+            <TrendChip trend={trend} invert={invertTrend} />
+          </span>
+        ) : null}
       </div>
       {coverage ? <div className="mt-2.5 text-[11.5px] text-text-3">{coverage}</div> : null}
     </Card>
@@ -69,7 +77,9 @@ function TrendChip({ trend, invert }: { trend: Trend; invert: boolean }) {
   const tone = good === "good" ? "bg-accent-soft text-accent" : good === "bad" ? "bg-danger-soft text-danger" : "bg-surface-2 text-text-3";
   const TrendIcon = trend.direction === "up" ? ArrowUpRight : trend.direction === "down" ? ArrowDownRight : Minus;
   return (
-    <span className={cn("inline-flex shrink-0 items-center gap-0.5 self-start rounded-pill px-1.5 py-0.5 text-[11.5px] font-semibold tabular-nums", tone)}>
+    // On a phone the chip takes its own line: sharing one with the value clipped
+    // the number itself ("10" rendering as "1C").
+    <span className={cn("inline-flex w-fit shrink-0 items-center gap-0.5 self-start rounded-pill px-1.5 py-0.5 text-[11.5px] font-semibold tabular-nums", tone)}>
       <TrendIcon className="size-3" aria-hidden />
       {trend.label}
     </span>

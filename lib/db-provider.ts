@@ -542,7 +542,8 @@ export const dbProvider: DataProvider = {
     const counsRows = client.primaryCounsellorId
       ? await db.select().from(counsellorsTable).where(eq(counsellorsTable.id, client.primaryCounsellorId)).limit(1)
       : [];
-    if (!orgRow || !counsRows[0]) return null;
+    // An unassigned client still has a record worth opening.
+    if (!orgRow) return null;
 
     const [consentRows, demoRows, outcomeRows, docRows, carePlanRows, views] = await Promise.all([
       db.select().from(consentsTable).where(eq(consentsTable.clientId, clientId)),
@@ -570,7 +571,7 @@ export const dbProvider: DataProvider = {
     return {
       client,
       org: toOrg(orgRow),
-      counsellor: toCounsellor(counsRows[0]),
+      counsellor: counsRows[0] ? toCounsellor(counsRows[0]) : null,
       consents,
       demographics,
       sessions: views.filter((v) => v.clientId === clientId).sort((a, b) => b.startsAt.localeCompare(a.startsAt)),

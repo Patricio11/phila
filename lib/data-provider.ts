@@ -186,7 +186,12 @@ export interface CaseloadRow {
 export interface ClientDossier {
   client: Client;
   org: Org;
-  counsellor: Counsellor;
+  /**
+   * The client's primary counsellor, or null when nobody is assigned yet. A
+   * new referral has no counsellor for a while, and their record must still
+   * open - it used to 404, which hid two thirds of one practice's clients.
+   */
+  counsellor: Counsellor | null;
   /** Each consent purpose + whether it's currently active. */
   consents: ConsentRecord[];
   /** Present only when the `demographics` consent is active. */

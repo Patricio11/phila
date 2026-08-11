@@ -281,7 +281,7 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
           </Card>
 
           <p className="px-1 text-[11px] text-text-3">
-            With {counsellor.name.split(" ")[0]} · client since{" "}
+            {counsellor ? `With ${counsellor.name.split(" ")[0]}` : "Not yet assigned"} · client since{" "}
             {new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", month: "long", year: "numeric" }).format(new Date(client.createdAt))}
           </p>
         </div>

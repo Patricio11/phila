@@ -19,7 +19,7 @@ export interface KebabItem {
  */
 export function KebabMenu({ items, label = "More options", className }: { items: KebabItem[]; label?: string; className?: string }) {
   const [open, setOpen] = React.useState(false);
-  const [anchor, setAnchor] = React.useState<{ top: number; right: number } | null>(null);
+  const [anchor, setAnchor] = React.useState<{ top?: number; bottom?: number; right: number } | null>(null);
   const btnRef = React.useRef<HTMLButtonElement>(null);
   const menuRef = React.useRef<HTMLDivElement>(null);
 
@@ -27,7 +27,19 @@ export function KebabMenu({ items, label = "More options", className }: { items:
     e.stopPropagation();
     if (!open && btnRef.current) {
       const r = btnRef.current.getBoundingClientRect();
-      setAnchor({ top: r.bottom + 6, right: window.innerWidth - r.right });
+      // Stay on screen on a phone: clamp horizontally, and open upwards when
+      // the row sits low on the page (this menu hangs off list rows).
+      const MENU_W = 208;
+      const MENU_H = 180;
+      const GAP = 8;
+      const right = Math.min(
+        Math.max(GAP, window.innerWidth - r.right),
+        Math.max(GAP, window.innerWidth - MENU_W - GAP),
+      );
+      const below = window.innerHeight - r.bottom;
+      setAnchor(below < MENU_H + GAP && r.top > MENU_H
+        ? { bottom: window.innerHeight - r.top + 6, right }
+        : { top: r.bottom + 6, right });
     }
     setOpen((v) => !v);
   };
@@ -66,7 +78,7 @@ export function KebabMenu({ items, label = "More options", className }: { items:
         <div
           ref={menuRef}
           role="menu"
-          style={{ position: "fixed", top: anchor.top, right: anchor.right, zIndex: 90 }}
+          style={{ position: "fixed", top: anchor.top, bottom: anchor.bottom, right: anchor.right, zIndex: 90 }}
           className="pop w-48 rounded-card border border-border bg-surface p-1.5 shadow-[var(--shadow-card)]"
         >
           {items.map((item) => (

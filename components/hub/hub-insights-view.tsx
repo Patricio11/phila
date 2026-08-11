@@ -55,10 +55,10 @@ export function HubInsightsView({ initial }: { initial: HubInsights }) {
       </div>
 
       {/* Period switch + the shared export (aggregate figures only - no client rows) */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
         <h2 className="text-[15px] font-semibold text-text">How it&apos;s going</h2>
         <div className="flex items-center gap-2">
-          <div className="w-44"><Select value={data.period} options={PERIODS} onChange={(v) => update({ period: v as InsightsFilters["period"] })} /></div>
+          <div className="w-full sm:w-44"><Select value={data.period} options={PERIODS} onChange={(v) => update({ period: v as InsightsFilters["period"] })} /></div>
           <ExportMenu
             table={{
               filenameBase: `practice-insights-${String(data.period).toLowerCase().replace(/\s+/g, "-")}`,

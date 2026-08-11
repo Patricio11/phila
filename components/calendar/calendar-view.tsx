@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { isRemote } from "@/lib/domain/enums";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, MapPin, MonitorSmartphone, Plus, Video } from "lucide-react";
@@ -100,6 +100,14 @@ export function CalendarView({
   }, [nowISO]);
 
   const [view, setView] = useState<View>("week");
+  // A seven-day grid is unreadable on a phone, so start in Agenda there. Done
+  // after mount (not from `window` during render) so the server and the first
+  // client render agree; switching views by hand still wins, always.
+  const [viewChosen, setViewChosen] = useState(false);
+  useEffect(() => {
+    if (viewChosen) return;
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches) setView("agenda");
+  }, [viewChosen]);
   const [anchor, setAnchor] = useState(today);
   const [events, setEvents] = useState(initialEvents);
   // Fresh server data (e.g. after a create → router.refresh()) must flow into the
@@ -207,7 +215,7 @@ export function CalendarView({
           <h2 className="ml-1 text-[14.5px] font-[650] tracking-[-0.01em] text-text">{title}</h2>
           <div className="ml-auto inline-flex rounded-control border border-border p-0.5">
             {(["day", "week", "month", "agenda"] as View[]).map((v) => (
-              <button key={v} type="button" onClick={() => setView(v)} className={cn("h-7 rounded-[6px] px-2.5 text-[12px] font-medium capitalize transition-colors", view === v ? "bg-accent-soft text-accent" : "text-text-2 hover:text-text")}>{v}</button>
+              <button key={v} type="button" onClick={() => { setViewChosen(true); setView(v); }} className={cn("h-7 rounded-[6px] px-2.5 text-[12px] font-medium capitalize transition-colors", view === v ? "bg-accent-soft text-accent" : "text-text-2 hover:text-text")}>{v}</button>
             ))}
           </div>
         </div>

@@ -97,17 +97,17 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
             <Avatar name={client.name} size="md" /> {client.name}
           </span>
         }
-        summary={`With ${counsellor.name} · ${client.province}`}
+        summary={`${counsellor ? `With ${counsellor.name}` : "No counsellor assigned yet"} · ${client.province}`}
         actions={
           <div className="flex items-center gap-2">
             <EditClientButton
               clientId={client.id}
               counsellors={counsellorOpts}
               referralsOn={referralsOn}
-              initial={{ name: client.name, phone: client.phone ?? null, email: client.email ?? null, province: client.province, counsellorId: counsellor.id, riskFlag: client.riskFlag, referralSource }}
+              initial={{ name: client.name, phone: client.phone ?? null, email: client.email ?? null, province: client.province, counsellorId: counsellor?.id ?? null, riskFlag: client.riskFlag, referralSource }}
             />
             <InviteClientButton clientId={client.id} clientName={client.name} phone={client.phone ?? null} email={client.email ?? null} whatsappOn={Boolean(org.features.whatsapp)} smsOn={Boolean(org.features.sms)} />
-            <ReassignClientButton clientId={client.id} clientName={client.name} counsellors={counsellorOpts} currentCounsellorId={counsellor.id} />
+            <ReassignClientButton clientId={client.id} clientName={client.name} counsellors={counsellorOpts} currentCounsellorId={counsellor?.id ?? null} />
             {waitlistOn && <AddToWaitlistButton clientId={client.id} clientName={client.name} counsellors={counsellorOpts} />}
             <Button asChild>
               <Link href="/hub/appointments"><CalendarPlus className="size-4" strokeWidth={2} aria-hidden /> Book session</Link>
@@ -166,7 +166,9 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
             <div className="flex items-center gap-2 text-[13px] font-[600] text-text">
               <ShieldCheck className="size-4 text-accent" strokeWidth={2} aria-hidden /> Full clinic access
             </div>
-            <p className="mt-1 text-[12px] text-text-2">Open any past session to read {counsellor.name.split(" ")[0]}&apos;s clinical note. Every note you open is recorded in the audit trail.</p>
+            <p className="mt-1 text-[12px] text-text-2">
+              Open any past session to read {counsellor ? `${counsellor.name.split(" ")[0]}'s` : "the"} clinical note. Every note you open is recorded in the audit trail.
+            </p>
           </Card>
 
           <Card>

@@ -732,8 +732,8 @@ export const mockProvider: DataProvider = {
     const client = allClients.find((c) => c.id === clientId && c.orgId === orgId);
     if (!client) return ok(null);
     const org = orgs.find((o) => o.id === client.orgId);
-    const counsellor = allCounsellors.find((c) => c.id === client.primaryCounsellorId);
-    if (!org || !counsellor) return ok(null);
+    const counsellor = allCounsellors.find((c) => c.id === client.primaryCounsellorId) ?? null;
+    if (!org) return ok(null); // unassigned is fine; a missing org is not
     const demographicsAllowed = consentActiveFor(clientId, "demographics");
     return ok({
       client,

@@ -5,7 +5,7 @@ import { za } from "@/lib/format";
 import { isRemote } from "@/lib/domain/enums";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CalendarDays, Check, Clock, Copy, Hourglass, MapPin, MonitorSmartphone, NotebookPen, Pencil, Phone, Receipt, Repeat, Stethoscope, User, UserX, Video, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CalendarDays, Check, ChevronRight, Clock, Copy, Hourglass, MapPin, MonitorSmartphone, NotebookPen, Pencil, Phone, Receipt, Repeat, Stethoscope, UserX, Video, X } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
 import { Dialog } from "@/components/ui/dialog";
@@ -19,6 +19,7 @@ import { useToast } from "@/components/ui/toast";
 import { rescheduleAppointment, cancelAppointment, getAppointmentJoinLink, updateAppointmentDetails } from "@/app/app/appointments/actions";
 import { getAvailableCounsellors } from "@/lib/scheduling/actions";
 import { Select } from "@/components/ui/select";
+import { SearchSelect } from "@/components/ui/search-select";
 import type { SchedulingOptions } from "@/components/scheduling/create-appointment-modal";
 import { getAppointmentInvoice, generateAppointmentInvoice } from "@/app/hub/invoicing/actions";
 import { markProgress } from "@/app/app/sessions/[id]/actions";
@@ -247,20 +248,27 @@ export function AppointmentDetail({
       onClose={onClose}
       title={appt ? appt.serviceName : "Appointment"}
       footer={
-        appt ? (
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button asChild variant="ghost">
-              <Link href={`${clientBasePath}/${appt.clientId}`}>
-                <User className="size-4" strokeWidth={2} aria-hidden /> View client
-              </Link>
-            </Button>
-            {openSessions && (
-              <Button asChild>
-                <Link href={`/app/sessions/${appt.id}`}>
-                  <NotebookPen className="size-4" strokeWidth={2} aria-hidden /> Open session
+        appt && canManage && !showEdit && !showReschedule && !showCancel ? (
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+              {scheduling && appt.state !== "cancelled" && (
+                <ActionChip icon={Pencil} label="Edit" onClick={openEditor} disabled={pending} />
+              )}
+              <ActionChip icon={CalendarDays} label="Reschedule" onClick={() => setShowReschedule(true)} disabled={pending} />
+              <ActionChip icon={Check} label="Completed" tone="accent" active={appt.state === "completed"} onClick={() => mark("completed")} disabled={pending} />
+              <ActionChip icon={UserX} label="No-show" tone="warn" active={appt.state === "no_show"} onClick={() => mark("no_show")} disabled={pending} />
+              <ActionChip icon={Hourglass} label="Postponed" tone="warn" active={appt.state === "postponed"} onClick={() => mark("postponed")} disabled={pending} />
+              <ActionChip icon={X} label="Cancel" tone="danger" active={appt.state === "cancelled"} onClick={() => setShowCancel(true)} disabled={pending} />
+              {openSessions && (
+                <Link
+                  href={`/app/sessions/${appt.id}`}
+                  className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-accent bg-accent px-3 py-1.5 text-[12.5px] font-medium text-accent-ink transition-colors hover:opacity-90"
+                >
+                  <NotebookPen className="size-3.5" strokeWidth={2} aria-hidden /> Open session
                 </Link>
-              </Button>
-            )}
+              )}
+            </div>
+            <p className="text-[11px] text-text-3">Marking a session never sends a message  the messaging rail is set up later.</p>
           </div>
         ) : null
       }
@@ -271,8 +279,9 @@ export function AppointmentDetail({
           <div className="flex items-center gap-3">
             <Avatar name={appt.clientName} size="md" />
             <div className="min-w-0 flex-1">
-              <Link href={`${clientBasePath}/${appt.clientId}`} className="text-[16px] font-[660] text-text hover:text-accent hover:underline">
+              <Link href={`${clientBasePath}/${appt.clientId}`} className="group inline-flex items-center gap-1 text-[16px] font-[660] text-text hover:text-accent">
                 {appt.clientName}
+                <ChevronRight className="size-4 text-text-3 transition-transform group-hover:translate-x-0.5 group-hover:text-accent" strokeWidth={2} aria-hidden />
               </Link>
               <div className="mt-0.5 flex items-center gap-2 text-[12px] text-text-2">
                 <span className="inline-flex items-center gap-1.5"><StatusDot tone={state.tone} /> {state.label}</span>
@@ -349,7 +358,7 @@ export function AppointmentDetail({
           )}
 
           {/* Manage */}
-          {canManage && (
+          {canManage && (showEdit || showReschedule || showCancel) && (
             <div className="space-y-3 border-t border-border pt-4">
               {showEdit && scheduling ? (
                 <div className="space-y-2.5 rounded-control border border-border bg-surface-2/40 p-3">
@@ -393,10 +402,13 @@ export function AppointmentDetail({
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
                       <span className="text-[11px] font-medium text-text-3">Counsellor</span>
-                      <Select
+                      <SearchSelect
+                        avatars
                         ariaLabel="Counsellor"
                         value={eCounsellor}
                         onChange={setECounsellor}
+                        placeholder="Choose a counsellor"
+                        searchPlaceholder="Search counsellors…"
                         options={scheduling.counsellors
                           .filter((x) => !eAvail || eAvail.includes(x.id) || x.id === eCounsellor)
                           .map((x) => ({ value: x.id, label: x.name }))}
@@ -416,7 +428,9 @@ export function AppointmentDetail({
                   {isSeries && <ScopeToggle scope={scope} onChange={setScope} kind="edit" />}
 
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => { setShowEdit(false); setScope("this"); }} disabled={pending}>Cancel</Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setShowEdit(false); setScope("this"); }} disabled={pending}>
+                      <ArrowLeft className="size-3.5" strokeWidth={2} aria-hidden /> Back
+                    </Button>
                     <Button size="sm" onClick={doEdit} loading={pending} disabled={eType !== "online" && !eRoom}>
                       Save {isSeries && scope === "following" ? "all following" : "changes"}
                     </Button>
@@ -437,7 +451,9 @@ export function AppointmentDetail({
                     </div>
                   )}
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => { setShowReschedule(false); setOverride(false); setScope("this"); setMoveNote(""); }} disabled={pending}>Cancel</Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setShowReschedule(false); setOverride(false); setScope("this"); setMoveNote(""); }} disabled={pending}>
+                      <ArrowLeft className="size-3.5" strokeWidth={2} aria-hidden /> Back
+                    </Button>
                     <Button size="sm" onClick={doReschedule} loading={pending}>{conflict ? (override ? "Move anyway" : "Check & move") : "Move session"}</Button>
                   </div>
                 </div>
@@ -447,23 +463,13 @@ export function AppointmentDetail({
                   <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Reason (optional)  kept on the record" aria-label="Cancellation reason" />
                   {isSeries && <ScopeToggle scope={scope} onChange={setScope} kind="cancel" />}
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => { setShowCancel(false); setScope("this"); setReason(""); }} disabled={pending}>Keep session</Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setShowCancel(false); setScope("this"); setReason(""); }} disabled={pending}>
+                      <ArrowLeft className="size-3.5" strokeWidth={2} aria-hidden /> Back
+                    </Button>
                     <Button variant="danger" size="sm" onClick={doCancel} loading={pending}>Cancel {isSeries && scope === "following" ? "all following" : "session"}</Button>
                   </div>
                 </div>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {scheduling && appt.state !== "cancelled" && (
-                    <ActionChip icon={Pencil} label="Edit" onClick={openEditor} disabled={pending} />
-                  )}
-                  <ActionChip icon={CalendarDays} label="Reschedule" onClick={() => setShowReschedule(true)} disabled={pending} />
-                  <ActionChip icon={Check} label="Completed" tone="accent" active={appt.state === "completed"} onClick={() => mark("completed")} disabled={pending} />
-                  <ActionChip icon={UserX} label="No-show" tone="warn" active={appt.state === "no_show"} onClick={() => mark("no_show")} disabled={pending} />
-                  <ActionChip icon={Hourglass} label="Postponed" tone="warn" active={appt.state === "postponed"} onClick={() => mark("postponed")} disabled={pending} />
-                  <ActionChip icon={X} label="Cancel" tone="danger" active={appt.state === "cancelled"} onClick={() => setShowCancel(true)} disabled={pending} />
-                </div>
-              )}
-              <p className="text-[11px] text-text-3">Marking a session never sends a message  the messaging rail is set up later.</p>
+              ) : null}
             </div>
           )}
         </div>
@@ -477,25 +483,36 @@ function ScopeToggle({ scope, onChange, kind }: { scope: EditScope; onChange: (s
   const verb = kind === "move" ? "Move" : kind === "edit" ? "Update" : "Cancel";
   const opts: { value: EditScope; label: string }[] = [
     { value: "this", label: "This session only" },
-    { value: "following", label: `${verb} all following` },
+    { value: "following", label: `${verb} this and all following` },
   ];
+  // Real radios, visibly so - the earlier pill segments read as more buttons
+  // sitting right next to the actual buttons.
   return (
-    <div className="inline-flex rounded-control border border-border bg-surface p-0.5" role="radiogroup" aria-label="Apply to">
-      {opts.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          role="radio"
-          aria-checked={scope === o.value}
-          onClick={() => onChange(o.value)}
-          className={cn(
-            "rounded-[calc(var(--radius-control)-2px)] px-2.5 py-1 text-[12px] font-medium transition-colors",
-            scope === o.value ? "bg-accent-soft text-accent" : "text-text-2 hover:text-text",
-          )}
-        >
-          {o.label}
-        </button>
-      ))}
+    <div className="space-y-1" role="radiogroup" aria-label="Apply to">
+      {opts.map((o) => {
+        const on = scope === o.value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            onClick={() => onChange(o.value)}
+            className="flex w-full items-center gap-2.5 rounded-control px-1.5 py-1.5 text-left transition-colors hover:bg-surface-hover"
+          >
+            <span
+              aria-hidden
+              className={cn(
+                "flex size-[18px] shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                on ? "border-accent" : "border-border-strong",
+              )}
+            >
+              <span className={cn("size-2 rounded-full bg-accent transition-transform", on ? "scale-100" : "scale-0")} />
+            </span>
+            <span className={cn("text-[12.5px]", on ? "font-medium text-text" : "text-text-2")}>{o.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

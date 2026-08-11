@@ -1513,6 +1513,15 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   constraints check them differently. Wired on both the calendars and the dashboard's
   appointment modal.
 
+- [x] **Appointment modal polish** *(2026-08-11, batch 2w)*: the parked "View client" footer is
+  gone (the client's name opens their record); the action chips - Edit, Reschedule, the status
+  marks, Cancel, and Open session where it applies - now live in the footer, and they step aside
+  while a sub-panel is open so its **Back** button and confirm are the only choices on screen.
+  Back returns to the actions without closing the modal or touching the booking. The series scope
+  became two real radio circles instead of pill segments that read as more buttons, and the Edit
+  panel's counsellor field now uses the shared searchable people-picker (avatars + search),
+  still filtered to who is available for that slot in that mode.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

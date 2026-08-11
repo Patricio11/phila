@@ -153,6 +153,12 @@ Sign in as **Thandeka**.
 - ☐ Nothing is fetched, and nothing is audited, until a format is chosen; each export writes one `dsar.export` audit row *before* the data leaves (fail-strict)
 - ☐ The menu opens **upwards** when the button sits low on the page (this one does), so it is never off-screen
 
+**Appointment modal polish** (batch 2w)
+- ☐ The parked **View client** footer is gone - the client's name (with chevron) opens their record; the footer now holds the actions: **Edit · Reschedule · Completed · No-show · Postponed · Cancel** (+ **Open session** on the counsellor calendar)
+- ☐ Opening Cancel / Reschedule / Edit hides the footer actions, so the panel's **Back** and its confirm are the only buttons on screen; **Back** returns without closing the modal or changing anything
+- ☐ The series scope is two **real radio circles** ("This session only" / "Cancel this and all following") - visibly not buttons
+- ☐ The Edit panel's counsellor field is the shared **searchable people-picker** (avatars + search), filtered to who is available for this slot in this mode
+
 **Edit an appointment in place** (batch 2v)
 - ☐ Open any appointment (calendar or dashboard) → **Edit** sits first in the action row. The panel changes **service** (duration follows), **duration**, **where** (In person / Online / Hybrid), **counsellor** and **room** - no cancel-and-rebook
 - ☐ The counsellor list is **availability-aware for this very slot**: switch Where to Online and the list re-asks who works online then; a counsellor who doesn't fit shows a plain warning

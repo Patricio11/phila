@@ -12,6 +12,7 @@ import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { AttentionList } from "@/components/dashboard/attention-list";
 import { RoomsRightNow } from "@/components/dashboard/rooms-right-now";
 import { TeamThisWeek, type TeamLoadRow } from "@/components/dashboard/team-this-week";
+import type { SchedulingOptions } from "@/components/scheduling/create-appointment-modal";
 
 /** Every dashboard widget shares this height; long content scrolls inside. */
 const WIDGET_H = "h-[380px]";
@@ -34,6 +35,7 @@ export function HubPeriodDashboard({
   attention,
   rooms,
   apptDetails,
+  scheduling,
 }: {
   data: HubDashboard;
   paymentsOn: boolean;
@@ -44,6 +46,8 @@ export function HubPeriodDashboard({
   rooms: RoomNow[];
   /** Full appointments behind the "Coming up next" rows, keyed by id. */
   apptDetails: Record<string, AppointmentView>;
+  /** Batch 2v - lets the opened appointment be edited in place. */
+  scheduling?: SchedulingOptions;
 }) {
   const [period, setPeriod] = useState<DashPeriod>("week");
   const periodLabel = DASH_PERIODS.find((p) => p.key === period)!.label.toLowerCase();
@@ -54,7 +58,7 @@ export function HubPeriodDashboard({
 
       {/* One calm grid: every widget the same height, content scrolls inside. */}
       <div className="grid items-stretch gap-6 lg:grid-cols-2">
-        <ComingUpNext upcoming={upcomingByPeriod[period]} className={WIDGET_H} periodLabel={periodLabel} details={apptDetails} />
+        <ComingUpNext upcoming={upcomingByPeriod[period]} className={WIDGET_H} periodLabel={periodLabel} details={apptDetails} scheduling={scheduling} />
 
         <Card className={`flex flex-col ${WIDGET_H}`}>
           <CardHead title="Activity feed" action={<span className="text-[11.5px] text-text-3">{periodLabel}</span>} />

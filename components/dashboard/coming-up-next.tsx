@@ -8,6 +8,7 @@ import { CalendarHeart, Video } from "lucide-react";
 import type { UpcomingRow } from "@/db/queries/hub-dashboard";
 import type { AppointmentView } from "@/lib/data-provider";
 import { AppointmentDetail } from "@/components/calendar/appointment-detail";
+import type { SchedulingOptions } from "@/components/scheduling/create-appointment-modal";
 import { Card, CardHead } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -31,12 +32,15 @@ export function ComingUpNext({
   className,
   periodLabel,
   details,
+  scheduling,
 }: {
   upcoming: UpcomingRow[];
   className?: string;
   periodLabel?: string;
   /** The full appointment behind each row, so a click opens it in place. */
   details?: Record<string, AppointmentView>;
+  /** Batch 2v - unlocks Edit inside the opened appointment. */
+  scheduling?: SchedulingOptions;
 }) {
   const router = useRouter();
   const [filter, setFilter] = useState<TypeFilter>("all");
@@ -131,6 +135,7 @@ export function ComingUpNext({
         onUpdated={() => { setOpenId(null); router.refresh(); }}
         openSessions={false}
         clientBasePath="/hub/clients"
+        scheduling={scheduling}
       />
     </Card>
   );

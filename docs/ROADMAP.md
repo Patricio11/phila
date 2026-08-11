@@ -1499,6 +1499,20 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   inside it and the sheet's Messages row shows its own number - a count that only existed on a
   hidden surface wasn't a count at all.
 
+- [x] **Edit an appointment in place** *(2026-08-11, batch 2v)*: changing what a session IS -
+  service, counsellor, where, room, duration - used to mean cancel-and-rebook. The detail modal
+  now has **Edit**: one panel, availability-aware (the counsellor list re-asks who works this slot
+  the way the session will happen, per 2n), with the series scope **This session only / Update all
+  following** applied in a single statement so nothing is cancelled or recreated. Guards match
+  booking: a room is required off-line, online clears it, the DB's overlap constraints still
+  apply (slot-taken surfaces as the usual message), and a counsellor can edit only their own
+  session and never hand it to a colleague. Notifications stay honest: there is no "details
+  changed" email template, so the client hears **in-app** only when HOW they meet changed, and a
+  newly assigned counsellor always hears. Reschedule (date/time) and Cancel keep their own inline
+  scope flows - moving in time is a different decision from changing substance, and the exclusion
+  constraints check them differently. Wired on both the calendars and the dashboard's
+  appointment modal.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

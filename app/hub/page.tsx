@@ -40,7 +40,11 @@ export default async function HubOverviewPage() {
   // Batch 2m - ONE period filter drives the tiles AND every widget beneath them.
   // Each period's slice is computed here so switching is instant on the client.
   const counsellors = await provider.listCounsellors(membership.orgId);
-  const sessionsByCounsellor = await Promise.all(counsellors.map((c) => provider.listCounsellorSessions(membership.orgId, c.id, now)));
+  const [sessionsByCounsellor, services, rooms] = await Promise.all([
+    Promise.all(counsellors.map((c) => provider.listCounsellorSessions(membership.orgId, c.id, now))),
+    provider.listServices(membership.orgId),
+    provider.listRooms(membership.orgId),
+  ]);
   const windows = periodWindows(now);
   const PERIOD_KEYS: DashPeriod[] = ["today", "week", "month", "lastMonth"];
   const nowMs = new Date(now).getTime();
@@ -119,6 +123,15 @@ export default async function HubOverviewPage() {
         attention={overview.attention}
         rooms={roomsNow}
         apptDetails={apptDetails}
+        scheduling={{
+          orgId: membership.orgId,
+          clients: [],
+          services: services.map((s) => ({ id: s.id, name: s.name, durationMin: s.durationMin })),
+          counsellors: counsellors.map((c) => ({ id: c.id, name: c.name })),
+          rooms: rooms.map((r) => ({ id: r.id, name: r.name })),
+          defaultDurationMin: org?.scheduling.defaultDurationMin ?? 50,
+          businessHours: org?.scheduling.businessHours ?? { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null, 7: null },
+        }}
       />
     </div>
   );

@@ -11,6 +11,8 @@ import { markNoShowFollowedUpDb } from "@/db/queries/no-shows";
 import { isSlotTakenError, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
 import { notifyAppointment, offerFreedSlot } from "@/lib/messaging/notify";
 import { videoJoinPath } from "@/lib/video/livekit";
+import { APPOINTMENT_TYPES, needsRoom } from "@/lib/domain/enums";
+import { isoWeekday } from "@/lib/domain/helpers";
 
 /** A signed, in-org join link for an online session (Phase 17.2). */
 export async function getAppointmentJoinLink(
@@ -207,4 +209,118 @@ export async function extendSeries(
     reason: `extend_series:${res.added}`,
   });
   return { ok: true, added: res.added, lastDate: res.lastStartsAt.toISOString() };
+}
+
+/* ── Edit the substance of a booking (batch 2v) ──────────────────────────────
+ * Service, counsellor, where, room, duration - changed in place instead of
+ * cancel-and-rebook. Date/time stays with rescheduleAppointment: moving in time
+ * and changing what the session IS are different decisions.
+ */
+const updateDetailsInput = z.object({
+  appointmentId: z.string().min(1),
+  serviceId: z.string().min(1).optional(),
+  counsellorId: z.string().min(1).optional(),
+  type: z.enum(APPOINTMENT_TYPES).optional(),
+  roomId: z.string().min(1).nullable().optional(),
+  durationMin: z.number().int().min(10).max(600).optional(),
+  scope,
+});
+
+export async function updateAppointmentDetails(
+  raw: z.input<typeof updateDetailsInput>,
+): Promise<{ ok: true; updated: number } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg([...SCHEDULERS]);
+  const parsed = updateDetailsInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid request" };
+  const d = parsed.data;
+  if (process.env.DATA_PROVIDER !== "db") return { ok: false, error: "Not available in demo mode." };
+
+  const { getDb } = await import("@/db/client");
+  const { appointments, counsellors } = await import("@/db/schema");
+  const { and, eq } = await import("drizzle-orm");
+  const db = getDb();
+  const [appt] = await db.select().from(appointments)
+    .where(and(eq(appointments.id, d.appointmentId), eq(appointments.orgId, membership.orgId))).limit(1);
+  if (!appt) return { ok: false, error: "That session couldn't be found." };
+  if (appt.state === "cancelled") return { ok: false, error: "A cancelled session can't be edited." };
+
+  // A counsellor may only edit their OWN session, and may not hand it to a
+  // colleague - moving work between counsellors is the practice's call.
+  if (membership.teamRole === "counsellor") {
+    const [mine] = await db.select({ id: counsellors.id }).from(counsellors)
+      .where(and(eq(counsellors.orgId, membership.orgId), eq(counsellors.userId, principal.userId))).limit(1);
+    if (!mine || appt.counsellorId !== mine.id)
+      return { ok: false, error: "You can only edit your own sessions." };
+    if (d.counsellorId && d.counsellorId !== mine.id)
+      return { ok: false, error: "Reassigning a session to a colleague is done by the practice." };
+  }
+
+  const nextType = (d.type ?? appt.type) as import("@/lib/domain/enums").AppointmentType;
+  const nextRoom = d.roomId !== undefined ? d.roomId : appt.roomId;
+  if (needsRoom(nextType) && !nextRoom) return { ok: false, error: "Pick a room for an in-person or hybrid session." };
+
+  // The (possibly new) counsellor must actually work this slot, this way -
+  // the same availability rule booking enforces (batch 2n).
+  const nextCounsellor = d.counsellorId ?? appt.counsellorId;
+  const { getCounsellorAvailabilityDb, windowsForType } = await import("@/db/queries/availability");
+  const pattern = await getCounsellorAvailabilityDb(membership.orgId, nextCounsellor);
+  if (pattern.length > 0) {
+    const sastDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit" }).format(appt.startsAt);
+    const sastTime = new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Johannesburg", hour: "2-digit", minute: "2-digit", hour12: false }).format(appt.startsAt);
+    const wd = isoWeekday(sastDay);
+    const hm = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+    const from = hm(sastTime);
+    const to = from + (d.durationMin ?? appt.durationMin);
+    const fits = windowsForType(pattern, nextType).some((w) => w.weekday === wd && from >= hm(w.start) && to <= hm(w.end));
+    if (!fits) {
+      const how = nextType === "online" ? "online" : nextType === "hybrid" ? "for a hybrid session" : "in person";
+      return { ok: false, error: `That counsellor doesn't work ${how} at this time. Reschedule first, or pick someone else.` };
+    }
+  }
+
+  let updated = 0;
+  try {
+    const { updateAppointmentDetailsDb } = await import("@/db/queries/appointments");
+    updated = await updateAppointmentDetailsDb(membership.orgId, d.appointmentId, {
+      serviceId: d.serviceId, counsellorId: d.counsellorId, type: d.type,
+      roomId: nextType === "online" ? null : d.roomId, durationMin: d.durationMin,
+    }, d.scope);
+  } catch (e) {
+    if (isSlotTakenError(e)) return { ok: false, error: SLOT_TAKEN_MESSAGE };
+    throw e;
+  }
+  if (updated === 0) return { ok: false, error: "Nothing to change." };
+
+  // Honest notifications, in-app: there is no "details changed" email template
+  // yet, and a "rescheduled" one would say the wrong thing. The client hears
+  // when HOW they meet changed; a newly assigned counsellor hears always.
+  try {
+    const { notifyClientUser, notifyCounsellor } = await import("@/db/queries/notifications");
+    if (d.type && d.type !== appt.type) {
+      const how = nextType === "online" ? "an online video session" : nextType === "hybrid" ? "a hybrid session (you join online)" : "an in-person session";
+      await notifyClientUser(appt.clientId, membership.orgId, {
+        kind: "appointment_updated",
+        title: "Your session has changed",
+        body: `Your upcoming session is now ${how}. The date and time are unchanged.`,
+        href: "/me/sessions",
+      });
+    }
+    if (d.counsellorId && d.counsellorId !== appt.counsellorId) {
+      await notifyCounsellor(d.counsellorId, {
+        kind: "appointment_assigned",
+        title: "A session was assigned to you",
+        body: "A booking was moved to your calendar. Check your day.",
+        href: "/app/appointments",
+      });
+    }
+  } catch { /* the edit stands even if a bell doesn't ring */ }
+
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
+    orgId: membership.orgId,
+    target: `appointment:${d.appointmentId}`,
+    reason: `edit_details_${d.scope}`,
+  });
+  return { ok: true, updated };
 }

@@ -153,6 +153,15 @@ Sign in as **Thandeka**.
 - ☐ Nothing is fetched, and nothing is audited, until a format is chosen; each export writes one `dsar.export` audit row *before* the data leaves (fail-strict)
 - ☐ The menu opens **upwards** when the button sits low on the page (this one does), so it is never off-screen
 
+**Edit an appointment in place** (batch 2v)
+- ☐ Open any appointment (calendar or dashboard) → **Edit** sits first in the action row. The panel changes **service** (duration follows), **duration**, **where** (In person / Online / Hybrid), **counsellor** and **room** - no cancel-and-rebook
+- ☐ The counsellor list is **availability-aware for this very slot**: switch Where to Online and the list re-asks who works online then; a counsellor who doesn't fit shows a plain warning
+- ☐ On a series, the scope toggle reads **This session only / Update all following**; saving with "all following" changes every later session in one statement (nothing cancelled, nothing recreated)
+- ☐ Switching to Online clears the room; In person / Hybrid require one (the Save button waits)
+- ☐ The client gets an honest **in-app** note only when HOW they meet changed; a newly assigned counsellor is notified; no misleading "rescheduled" email is sent
+- ☐ A signed-in **counsellor** can edit only their own session and cannot reassign it to a colleague (server-enforced)
+- ☐ Reschedule and Cancel keep their inline scope choice (this / all following) - date moves stay a separate, deliberate act
+
 **Messages: live without realtime + the unread badge** (batch 2u)
 - ☐ With Supabase Realtime unreachable (this machine's situation), a reply still lands in an **open chat within ~5s** - the view polls when the socket has not connected, merging by message id so an optimistic send is never clobbered
 - ☐ The console is not flooded: after 3 socket failures the client stops retrying and polling owns delivery

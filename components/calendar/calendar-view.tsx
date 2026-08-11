@@ -248,6 +248,7 @@ export function CalendarView({
         conflictFor={(a, newStart) => findConflict(events, a, newStart)}
         openSessions={openSessions}
         clientBasePath={clientBasePath}
+        scheduling={scheduling}
       />
 
       {confirm && (

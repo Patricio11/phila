@@ -5,7 +5,7 @@ import { za } from "@/lib/format";
 import { isRemote } from "@/lib/domain/enums";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CalendarDays, Check, Clock, Copy, Hourglass, MapPin, NotebookPen, Phone, Receipt, Repeat, Stethoscope, User, UserX, Video, X } from "lucide-react";
+import { AlertTriangle, CalendarDays, Check, Clock, Copy, Hourglass, MapPin, MonitorSmartphone, NotebookPen, Pencil, Phone, Receipt, Repeat, Stethoscope, User, UserX, Video, X } from "lucide-react";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
 import { Dialog } from "@/components/ui/dialog";
@@ -16,7 +16,10 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { StatusDot, type DotTone } from "@/components/ui/status-dot";
 import { useToast } from "@/components/ui/toast";
-import { rescheduleAppointment, cancelAppointment, getAppointmentJoinLink } from "@/app/app/appointments/actions";
+import { rescheduleAppointment, cancelAppointment, getAppointmentJoinLink, updateAppointmentDetails } from "@/app/app/appointments/actions";
+import { getAvailableCounsellors } from "@/lib/scheduling/actions";
+import { Select } from "@/components/ui/select";
+import type { SchedulingOptions } from "@/components/scheduling/create-appointment-modal";
 import { getAppointmentInvoice, generateAppointmentInvoice } from "@/app/hub/invoicing/actions";
 import { markProgress } from "@/app/app/sessions/[id]/actions";
 import { cn } from "@/lib/utils";
@@ -57,6 +60,7 @@ export function AppointmentDetail({
   openSessions = true,
   canManage = true,
   clientBasePath = "/app/clients",
+  scheduling,
 }: {
   appt: AppointmentView | null;
   onClose: () => void;
@@ -65,6 +69,8 @@ export function AppointmentDetail({
   openSessions?: boolean;
   canManage?: boolean;
   clientBasePath?: string;
+  /** Batch 2v - with these, Edit can change service / counsellor / where / room / duration in place. */
+  scheduling?: SchedulingOptions;
 }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -72,6 +78,14 @@ export function AppointmentDetail({
   const [showReschedule, setShowReschedule] = useState(false);
   const [moveNote, setMoveNote] = useState("");
   const [showCancel, setShowCancel] = useState(false);
+  // Batch 2v - the full editor: what the session IS, changed in place.
+  const [showEdit, setShowEdit] = useState(false);
+  const [eService, setEService] = useState<string>("");
+  const [eCounsellor, setECounsellor] = useState<string>("");
+  const [eType, setEType] = useState<"in_person" | "online" | "hybrid">("in_person");
+  const [eRoom, setERoom] = useState<string | null>(null);
+  const [eDuration, setEDuration] = useState<number>(50);
+  const [eAvail, setEAvail] = useState<string[] | null>(null);
   const [date, setDate] = useState(appt?.startsAt.slice(0, 10) ?? "");
   const [time, setTime] = useState(appt?.startsAt.slice(11, 16) ?? "");
   const [override, setOverride] = useState(false);
@@ -123,6 +137,60 @@ export function AppointmentDetail({
   const copyJoin = async () => {
     if (!joinUrl) return;
     try { await navigator.clipboard.writeText(joinUrl); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* clipboard blocked */ }
+  };
+
+  const openEditor = () => {
+    if (!appt) return;
+    setEService(appt.serviceId);
+    setECounsellor(appt.counsellorId);
+    setEType(appt.type as "in_person" | "online" | "hybrid");
+    setERoom(appt.roomId ?? null);
+    setEDuration(appt.durationMin);
+    setShowEdit(true);
+  };
+
+  // Who is free for THIS slot, asked the way it will happen (type-aware, 2n).
+  useEffect(() => {
+    if (!showEdit || !appt || !scheduling) return;
+    let live = true;
+    const d = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(appt.startsAt));
+    const t = new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Johannesburg", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(appt.startsAt));
+    getAvailableCounsellors({ orgId: scheduling.orgId, date: d, time: t, durationMin: eDuration, clientId: appt.clientId, type: eType })
+      .then((res) => { if (live && res.ok) setEAvail(res.available); })
+      .catch(() => {});
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showEdit, appt?.id, eType, eDuration]);
+
+  const doEdit = () => {
+    if (!appt) return;
+    const useScope: EditScope = isSeries ? scope : "this";
+    start(async () => {
+      const res = await updateAppointmentDetails({
+        appointmentId: appt.id,
+        serviceId: eService !== appt.serviceId ? eService : undefined,
+        counsellorId: eCounsellor !== appt.counsellorId ? eCounsellor : undefined,
+        type: eType !== appt.type ? eType : undefined,
+        roomId: eType === "online" ? null : eRoom,
+        durationMin: eDuration !== appt.durationMin ? eDuration : undefined,
+        scope: useScope,
+      });
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      const svc = scheduling?.services.find((x) => x.id === eService);
+      const couns = scheduling?.counsellors.find((x) => x.id === eCounsellor);
+      const room = scheduling?.rooms.find((x) => x.id === eRoom);
+      onUpdated?.({
+        ...appt,
+        serviceId: eService, serviceName: svc?.name ?? appt.serviceName,
+        counsellorId: eCounsellor, counsellorName: couns?.name ?? appt.counsellorName,
+        type: eType, roomId: eType === "online" ? null : eRoom, roomName: eType === "online" ? null : (room?.name ?? appt.roomName),
+        durationMin: eDuration,
+      });
+      if (useScope === "following") router.refresh();
+      setShowEdit(false);
+      setScope("this");
+      toast({ tone: "success", title: res.updated > 1 ? `${res.updated} sessions updated` : "Session updated" });
+    });
   };
 
   const isSeries = Boolean(appt?.seriesId);
@@ -283,7 +351,78 @@ export function AppointmentDetail({
           {/* Manage */}
           {canManage && (
             <div className="space-y-3 border-t border-border pt-4">
-              {showReschedule ? (
+              {showEdit && scheduling ? (
+                <div className="space-y-2.5 rounded-control border border-border bg-surface-2/40 p-3">
+                  <div className="text-[12px] font-semibold text-text">Edit {isSeries && scope === "following" ? "these sessions" : "this session"}</div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-medium text-text-3">Service</span>
+                      <Select ariaLabel="Service" value={eService} onChange={(v) => { setEService(v); const svc = scheduling.services.find((x) => x.id === v); if (svc) setEDuration(svc.durationMin); }} options={scheduling.services.map((x) => ({ value: x.id, label: x.name }))} />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-medium text-text-3">Duration</span>
+                      <Select ariaLabel="Duration" value={String(eDuration)} onChange={(v) => setEDuration(Number(v))} options={Array.from(new Set([30, 45, 50, 60, 90, eDuration])).sort((a, b) => a - b).map((n) => ({ value: String(n), label: `${n} minutes` }))} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[11px] font-medium text-text-3">Where</span>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {([
+                        { key: "in_person" as const, label: "In person", icon: MapPin },
+                        { key: "online" as const, label: "Online", icon: Video },
+                        { key: "hybrid" as const, label: "Hybrid", icon: MonitorSmartphone },
+                      ]).map(({ key, label, icon: Icon }) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => { setEType(key); if (key === "online") setERoom(null); }}
+                          aria-pressed={eType === key}
+                          className={cn(
+                            "flex items-center justify-center gap-1.5 rounded-control border px-2 py-2 text-[12px] font-medium transition-colors",
+                            eType === key ? "border-accent bg-accent-soft text-accent" : "border-border bg-surface text-text-2 hover:bg-surface-hover",
+                          )}
+                        >
+                          <Icon className="size-3.5" strokeWidth={2} aria-hidden /> {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-medium text-text-3">Counsellor</span>
+                      <Select
+                        ariaLabel="Counsellor"
+                        value={eCounsellor}
+                        onChange={setECounsellor}
+                        options={scheduling.counsellors
+                          .filter((x) => !eAvail || eAvail.includes(x.id) || x.id === eCounsellor)
+                          .map((x) => ({ value: x.id, label: x.name }))}
+                      />
+                      {eAvail && !eAvail.includes(eCounsellor) && (
+                        <p className="text-[11px] text-warn">Not available {eType === "online" ? "online" : eType === "hybrid" ? "for hybrid" : "in person"} at this time.</p>
+                      )}
+                    </div>
+                    {eType !== "online" && (
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-medium text-text-3">Room</span>
+                        <Select ariaLabel="Room" value={eRoom ?? ""} onChange={(v) => setERoom(v || null)} options={[{ value: "", label: "Choose a room…" }, ...scheduling.rooms.map((x) => ({ value: x.id, label: x.name }))]} />
+                      </div>
+                    )}
+                  </div>
+
+                  {isSeries && <ScopeToggle scope={scope} onChange={setScope} kind="edit" />}
+
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => { setShowEdit(false); setScope("this"); }} disabled={pending}>Cancel</Button>
+                    <Button size="sm" onClick={doEdit} loading={pending} disabled={eType !== "online" && !eRoom}>
+                      Save {isSeries && scope === "following" ? "all following" : "changes"}
+                    </Button>
+                  </div>
+                </div>
+              ) : showReschedule ? (
                 <div className="space-y-2.5 rounded-control border border-border bg-surface-2/40 p-3">
                   <div className="text-[12px] font-semibold text-text">Move {isSeries && scope === "following" ? "these sessions" : "this session"}</div>
                   <div className="grid grid-cols-2 gap-2">
@@ -314,6 +453,9 @@ export function AppointmentDetail({
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
+                  {scheduling && appt.state !== "cancelled" && (
+                    <ActionChip icon={Pencil} label="Edit" onClick={openEditor} disabled={pending} />
+                  )}
                   <ActionChip icon={CalendarDays} label="Reschedule" onClick={() => setShowReschedule(true)} disabled={pending} />
                   <ActionChip icon={Check} label="Completed" tone="accent" active={appt.state === "completed"} onClick={() => mark("completed")} disabled={pending} />
                   <ActionChip icon={UserX} label="No-show" tone="warn" active={appt.state === "no_show"} onClick={() => mark("no_show")} disabled={pending} />
@@ -331,8 +473,8 @@ export function AppointmentDetail({
 }
 
 /** This-session vs whole-series picker, shown only for recurring appointments. */
-function ScopeToggle({ scope, onChange, kind }: { scope: EditScope; onChange: (s: EditScope) => void; kind: "move" | "cancel" }) {
-  const verb = kind === "move" ? "Move" : "Cancel";
+function ScopeToggle({ scope, onChange, kind }: { scope: EditScope; onChange: (s: EditScope) => void; kind: "move" | "cancel" | "edit" }) {
+  const verb = kind === "move" ? "Move" : kind === "edit" ? "Update" : "Cancel";
   const opts: { value: EditScope; label: string }[] = [
     { value: "this", label: "This session only" },
     { value: "following", label: `${verb} all following` },

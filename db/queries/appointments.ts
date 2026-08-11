@@ -194,3 +194,52 @@ export async function setAppointmentState(orgId: string, appointmentId: string, 
     .returning({ id: appointments.id });
   return res.length;
 }
+
+/** Batch 2v - what an edit can change without deleting and rebooking. */
+export interface AppointmentPatch {
+  serviceId?: string;
+  counsellorId?: string;
+  type?: string;
+  roomId?: string | null;
+  durationMin?: number;
+}
+
+/**
+ * Change the substance of a booking - service, counsellor, where, room, length -
+ * in place. `scope: "following"` carries the change to this + every later
+ * session in the series (skipping cancelled ones). Date and time stay with
+ * rescheduleAppointment: moving in time and changing substance are different
+ * decisions, and the exclusion constraints check them differently.
+ */
+export async function updateAppointmentDetailsDb(
+  orgId: string,
+  appointmentId: string,
+  patch: AppointmentPatch,
+  scope: EditScope = "this",
+): Promise<number> {
+  const db = getDb();
+  const [appt] = await db.select().from(appointments).where(and(eq(appointments.id, appointmentId), eq(appointments.orgId, orgId))).limit(1);
+  if (!appt) return 0;
+
+  const set: Record<string, unknown> = {};
+  if (patch.serviceId !== undefined) set.serviceId = patch.serviceId;
+  if (patch.counsellorId !== undefined) set.counsellorId = patch.counsellorId;
+  if (patch.type !== undefined) set.type = patch.type;
+  if (patch.roomId !== undefined) set.roomId = patch.roomId;
+  if (patch.durationMin !== undefined) set.durationMin = patch.durationMin;
+  if (Object.keys(set).length === 0) return 0;
+
+  if (scope === "this" || !appt.seriesId) {
+    const res = await db.update(appointments).set(set)
+      .where(and(eq(appointments.id, appointmentId), eq(appointments.orgId, orgId)))
+      .returning({ id: appointments.id });
+    return res.length;
+  }
+  const res = await db.update(appointments).set(set)
+    .where(and(
+      eq(appointments.orgId, orgId), eq(appointments.seriesId, appt.seriesId),
+      gte(appointments.startsAt, appt.startsAt), ne(appointments.state, "cancelled"),
+    ))
+    .returning({ id: appointments.id });
+  return res.length;
+}

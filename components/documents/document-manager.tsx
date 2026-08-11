@@ -22,6 +22,8 @@ import {
   X,
   Link2,
   ExternalLink,
+  Search,
+  UsersRound,
 } from "lucide-react";
 import type { Document, DocumentFolder, DocumentRequest, StorageUsage } from "@/lib/domain/types";
 import { sizeLabel } from "@/lib/documents/quota";
@@ -46,6 +48,7 @@ import {
   requestUpload,
   shareWithCounsellors,
   signDownload,
+  generateCounsellorFolders,
 } from "@/app/hub/documents/actions";
 
 type Named = { id: string; name: string };
@@ -93,6 +96,14 @@ export function DocumentManager({
 
   const [view, setView] = useState<View>("folders");
   const [cwd, setCwd] = useState<string | null>(null); // current folder; null = root
+  // Batch 2r - search across every folder at once. A practice's documents live
+  // several folders deep; hunting for one by clicking down the tree is the
+  // slowest way to find anything.
+  const [query, setQuery] = useState("");
+  const [makingFolders, setMakingFolders] = useState(false);
+  // Guard against a second submit landing before the first returns - without it
+  // a double-click on "Add link" creates the document twice.
+  const [addingLink, setAddingLink] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [dropTarget, setDropTarget] = useState<string | "root" | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; value: string } | null>(null);
@@ -249,9 +260,11 @@ export function DocumentManager({
     if (!ids.length) return;
     setShareOpen(false);
     // Share each selected item (file or folder) with each chosen counsellor.
-    // Folders also carry the org's note + submission privacy (batch 2k).
-    for (const id of docIds) await shareWithCounsellors({ targetType: "file", targetId: id, counsellorUserIds: ids });
-    for (const id of folderIds) await shareWithCounsellors({ targetType: "folder", targetId: id, counsellorUserIds: ids, note: shareNote.trim() || undefined, submissionsPrivate: sharePrivate });
+    // The note travels with whatever is being shared (batch 2r); folders also
+    // carry submission privacy (batch 2k).
+    const note = shareNote.trim() || undefined;
+    for (const id of docIds) await shareWithCounsellors({ targetType: "file", targetId: id, counsellorIds: ids, note });
+    for (const id of folderIds) await shareWithCounsellors({ targetType: "folder", targetId: id, counsellorIds: ids, note, submissionsPrivate: sharePrivate });
     toast({ tone: "success", title: "Shared", description: `with ${ids.length} counsellor${ids.length > 1 ? "s" : ""}` });
     setShareWith(new Set());
     setShareNote("");
@@ -358,18 +371,61 @@ export function DocumentManager({
   }
 
   async function onAddLink() {
-    const res = await addLinkDocument({ name: linkName.trim(), url: linkUrl.trim(), folderId: cwd });
-    if (!res.ok) { toast({ tone: "error", title: "Couldn't add the link", description: res.error }); return; }
-    toast({ tone: "success", title: "Link added", description: "It opens in a new tab - no storage used." });
-    setLinkOpen(false); setLinkName(""); setLinkUrl("");
-    router.refresh();
+    if (addingLink) return;
+    setAddingLink(true);
+    try {
+      const res = await addLinkDocument({ name: linkName.trim(), url: linkUrl.trim(), folderId: cwd });
+      if (!res.ok) { toast({ tone: "error", title: "Couldn't add the link", description: res.error }); return; }
+      toast({ tone: "success", title: "Link added", description: "It opens in a new tab - no storage used." });
+      setLinkOpen(false); setLinkName(""); setLinkUrl("");
+      router.refresh();
+    } finally {
+      setAddingLink(false);
+    }
   }
 
   /* ── Derived view data ───────────────────────────────────────────────── */
   const reviewDocs = docs.filter((d) => d.sharedBy === "client" || d.scanStatus === "pending");
   const openRequests = requests.filter((r) => r.status === "pending").length;
-  const subFolders = childFolders(cwd);
-  const folderDocs = docsIn(cwd);
+  // Batch 2r - one folder per counsellor, named after them. Idempotent: new
+  // counsellors already get one, so this catches everyone who joined before.
+  const makeCounsellorFolders = async () => {
+    setMakingFolders(true);
+    try {
+      const res = await generateCounsellorFolders();
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      toast({
+        tone: "success",
+        title: res.created > 0 ? `${res.created} folder${res.created === 1 ? "" : "s"} created` : "Everyone already has a folder",
+        description: `${res.total} counsellor${res.total === 1 ? "" : "s"} in the practice. Anything you share with them lands in theirs.`,
+      });
+      router.refresh();
+    } finally {
+      setMakingFolders(false);
+    }
+  };
+
+  // Search runs across everything, not just the folder you happen to be in.
+  const q = query.trim().toLowerCase();
+  const searching = q.length > 0;
+  const folderPath = (id: string | null): string => {
+    const parts: string[] = [];
+    let cur = id;
+    for (let i = 0; i < 12 && cur; i++) {
+      const f = folders.find((x) => x.id === cur);
+      if (!f) break;
+      parts.unshift(f.name);
+      cur = f.parentId;
+    }
+    return parts.length ? parts.join(" / ") : "Home";
+  };
+  const hitFolders = searching ? folders.filter((f) => f.name.toLowerCase().includes(q)) : [];
+  const hitDocs = searching
+    ? docs.filter((d) => d.name.toLowerCase().includes(q) || (d.clientId ? (clientName.get(d.clientId) ?? "").toLowerCase().includes(q) : false))
+    : [];
+
+  const subFolders = searching ? hitFolders : childFolders(cwd);
+  const folderDocs = searching ? hitDocs : docsIn(cwd);
   const usedPct = usage.bytesLimit ? Math.min(100, Math.round((usage.bytesUsed / usage.bytesLimit) * 100)) : 0;
   const selCount = selected.size;
 
@@ -441,7 +497,25 @@ export function DocumentManager({
               </span>
             ))}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-3" strokeWidth={2} aria-hidden />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search documents"
+                aria-label="Search documents"
+                className="h-8 w-44 rounded-control border border-border bg-surface pl-8 pr-7 text-[12.5px] text-text placeholder:text-text-3 focus:outline-none focus:ring-2 focus:ring-accent/40"
+              />
+              {query && (
+                <button type="button" onClick={() => setQuery("")} aria-label="Clear search" className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-text-3 transition-colors hover:text-text">
+                  <X className="size-3.5" strokeWidth={2} aria-hidden />
+                </button>
+              )}
+            </label>
+            <Button variant="ghost" size="sm" onClick={() => void makeCounsellorFolders()} loading={makingFolders}>
+              <UsersRound className="size-4" aria-hidden /> Counsellor folders
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => setRequestOpen(true)}>
               <Inbox className="size-4" aria-hidden /> Request{openRequests ? ` (${openRequests})` : ""}
             </Button>
@@ -480,9 +554,16 @@ export function DocumentManager({
             onDrop={(e) => { if (e.dataTransfer.files?.length) { e.preventDefault(); void uploadFiles(e.dataTransfer.files); } }}
           >
             {subFolders.length === 0 && folderDocs.length === 0 ? (
-              <EmptyState icon={FolderOpen} title="This folder is empty" body="Create a subfolder, or drag files in once uploads are switched on." />
+              searching
+                ? <EmptyState icon={Search} title="Nothing matches" body={`No folder or file named like "${query}".`} />
+                : <EmptyState icon={FolderOpen} title="This folder is empty" body="Create a subfolder, or drag files in once uploads are switched on." />
             ) : (
               <>
+                {searching && (
+                  <p className="mb-2.5 text-[12px] text-text-3">
+                    {hitFolders.length + hitDocs.length} match{hitFolders.length + hitDocs.length === 1 ? "" : "es"} across every folder
+                  </p>
+                )}
                 {subFolders.length > 0 && (
                   <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
                     {subFolders.map((f) => (
@@ -513,6 +594,7 @@ export function DocumentManager({
                     <DocRow
                       key={d.id}
                       doc={d}
+                      where={searching ? folderPath(d.folderId) : undefined}
                       clientName={d.clientId ? clientName.get(d.clientId) : undefined}
                       selected={selected.has(dk(d.id))}
                       onSelect={(additive) => toggle(dk(d.id), additive)}
@@ -655,26 +737,36 @@ export function DocumentManager({
             </div>
           )}
         </div>
-        {selectedFolderIds().length > 0 && (
-          <div className="mt-4 space-y-3 border-t border-border pt-4">
+        <div className="mt-4 space-y-3 border-t border-border pt-4">
             <div className="space-y-1.5">
-              <label className="text-[12.5px] font-medium text-text-2">Note for counsellors (what to do here)</label>
+              <label className="text-[12.5px] font-medium text-text-2" htmlFor="share-note">
+                Note for counsellors (what to do with this)
+              </label>
               <textarea
+                id="share-note"
                 value={shareNote}
                 onChange={(e) => setShareNote(e.target.value)}
                 placeholder="e.g. Open the link, make a copy of the Google Doc, fill it in, then Add link with your completed copy - only you and the practice see yours."
                 className="min-h-[72px] w-full rounded-control border border-border bg-surface px-3 py-2 text-[13px] text-text placeholder:text-text-3 focus:outline-none focus:ring-2 focus:ring-accent/40"
               />
             </div>
-            <label className="flex items-start gap-2.5 rounded-control border border-border p-3">
-              <input type="checkbox" checked={sharePrivate} onChange={(e) => setSharePrivate(e.target.checked)} className="mt-0.5 size-4 accent-current" />
-              <span className="min-w-0">
-                <span className="block text-[13px] font-medium text-text">Counsellors see only their own files</span>
-                <span className="block text-[11.5px] text-text-2">Each counsellor sees the practice&apos;s material plus what THEY added - never another counsellor&apos;s submissions.</span>
-              </span>
-            </label>
+            {selectedFolderIds().length > 0 && (
+              <label className="flex items-start gap-2.5 rounded-control border border-border p-3">
+                <input type="checkbox" checked={sharePrivate} onChange={(e) => setSharePrivate(e.target.checked)} className="mt-0.5 size-4 accent-current" />
+                <span className="min-w-0">
+                  <span className="block text-[13px] font-medium text-text">Counsellors see only their own files</span>
+                  <span className="block text-[11.5px] text-text-2">Each counsellor sees the practice&apos;s material plus what THEY added - never another counsellor&apos;s submissions.</span>
+                </span>
+              </label>
+            )}
+            {selectedDocIds().length > 0 && (
+              <p className="text-[11.5px] leading-relaxed text-text-3">
+                {shareWith.size === 1
+                  ? "Sent to one counsellor, a file moves into their folder (client and session files stay where they belong)."
+                  : "Sent to several counsellors, a file stays where it is and appears for each of them."}
+              </p>
+            )}
           </div>
-        )}
       </Dialog>
 
       <Dialog
@@ -685,13 +777,13 @@ export function DocumentManager({
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" size="sm" onClick={() => setLinkOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={onAddLink} disabled={linkName.trim().length < 2 || !/^https?:\/\//i.test(linkUrl.trim())}>Add link</Button>
+            <Button size="sm" onClick={onAddLink} loading={addingLink} disabled={addingLink || linkName.trim().length < 2 || !/^https?:\/\//i.test(linkUrl.trim())}>Add link</Button>
           </div>
         }
       >
         <div className="space-y-3">
-          <Input placeholder="Name - e.g. CPD declaration (template)" value={linkName} onChange={(e) => setLinkName(e.target.value)} />
-          <Input inputMode="url" placeholder="https://docs.google.com/..." value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
+          <Input aria-label="Link name" placeholder="Name - e.g. CPD declaration (template)" value={linkName} onChange={(e) => setLinkName(e.target.value)} />
+          <Input aria-label="Link URL" inputMode="url" placeholder="https://docs.google.com/..." value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
         </div>
       </Dialog>
 
@@ -820,7 +912,9 @@ function FolderCard({ folder, count, selected, dropping, renaming, onOpen, onSel
         dropping && "border-accent ring-2 ring-accent/50 bg-accent/5 scale-[1.02]",
       )}
     >
-      <FolderClosed className="size-7 shrink-0 text-accent/80" strokeWidth={1.6} aria-hidden />
+      {folder.counsellorId
+        ? <UsersRound className="size-7 shrink-0 text-accent/80" strokeWidth={1.6} aria-hidden />
+        : <FolderClosed className="size-7 shrink-0 text-accent/80" strokeWidth={1.6} aria-hidden />}
       <div className="min-w-0 flex-1">
         {renaming !== null ? (
           <input
@@ -852,8 +946,11 @@ function FolderCard({ folder, count, selected, dropping, renaming, onOpen, onSel
   );
 }
 
-function DocRow({ doc, clientName, selected, onSelect, onDragStart, onDownload, onRename, onAssign, onShare, onDelete }: {
-  doc: Document; clientName?: string; selected: boolean; onSelect: (additive: boolean) => void; onDragStart: (e: React.DragEvent) => void; onDownload: () => void;
+function DocRow({ doc, clientName, where, selected, onSelect, onDragStart, onDownload, onRename, onAssign, onShare, onDelete }: {
+  doc: Document; clientName?: string;
+  /** Batch 2r - which folder this lives in; shown only in search results. */
+  where?: string;
+  selected: boolean; onSelect: (additive: boolean) => void; onDragStart: (e: React.DragEvent) => void; onDownload: () => void;
   onRename?: () => void; onAssign?: () => void; onShare?: () => void; onDelete?: () => void;
 }) {
   const isLink = Boolean(doc.externalUrl);
@@ -878,6 +975,7 @@ function DocRow({ doc, clientName, selected, onSelect, onDragStart, onDownload, 
           <span>{isLink ? "link" : sizeLabel(doc.bytes)}</span>
           <span>· {dateLabel(doc.createdAt)}</span>
           {clientName && <span>· {clientName}</span>}
+          {where && <span className="text-text-2">· in {where}</span>}
         </div>
       </div>
       {doc.scanStatus === "pending" && <Chip tone="warn" label="Scanning…" />}

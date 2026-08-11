@@ -59,6 +59,21 @@ export async function addSharedFolderLink(raw: { folderId: string; name: string;
   await addLinkDocumentDb(membership.orgId, {
     name, url, folderId, uploadedBy: me.id, sharedBy: "counsellor", counsellorId: me.id,
   });
+
+  // Batch 2r - the practice hears about a submission the moment it lands, with
+  // enough to act on: who, what, and which folder. Never breaks the save.
+  try {
+    const { notifyOrgAdmins } = await import("@/db/queries/notifications");
+    const { folderNameDb } = await import("@/db/queries/documents");
+    const where = await folderNameDb(membership.orgId, folderId);
+    await notifyOrgAdmins(membership.orgId, {
+      kind: "document_submitted",
+      title: `${me.name} added a link`,
+      body: `"${name}"${where ? ` in ${where}` : ""}. Open Documents to read it.`,
+      href: "/hub/documents",
+    });
+  } catch { /* the link is saved either way */ }
+
   await logAccess({
     action: "file.access",
     actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },

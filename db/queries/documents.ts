@@ -5,6 +5,7 @@ import { getDb } from "@/db/client";
 import { activeDb, runForOrg } from "@/lib/db/scoped";
 import {
   clients,
+  counsellors,
   documents,
   documentFolders,
   documentRequests,
@@ -42,7 +43,7 @@ function toDocument(r: typeof documents.$inferSelect): Document {
 function toFolder(r: typeof documentFolders.$inferSelect): DocumentFolder {
   return {
     id: r.id, orgId: r.orgId, parentId: r.parentId, name: r.name,
-    scope: r.scope as FolderScope, clientId: r.clientId,
+    scope: r.scope as FolderScope, clientId: r.clientId, counsellorId: r.counsellorId ?? null,
     note: r.note ?? null, submissionsPrivate: r.submissionsPrivate,
     createdAt: r.createdAt.toISOString(),
   };
@@ -174,11 +175,104 @@ export async function softDeleteItemsDb(orgId: string, items: { documentIds: str
 }
 
 export async function shareWithCounsellorDb(
-  orgId: string, targetType: ShareTargetType, targetId: string, sharedWith: string, grantedBy: string,
+  orgId: string, targetType: ShareTargetType, targetId: string, sharedWith: string, grantedBy: string, note?: string | null,
 ): Promise<void> {
-  await runForOrg(orgId, () => activeDb().insert(documentShares).values({
-    id: `share_${randomUUID()}`, orgId, targetType, targetId, sharedWith, grantedBy, createdAt: new Date(),
-  }).onConflictDoNothing());
+  await runForOrg(orgId, async () => {
+    const db = activeDb();
+    await db.insert(documentShares).values({
+      id: `share_${randomUUID()}`, orgId, targetType, targetId, sharedWith, grantedBy, note: note ?? null, createdAt: new Date(),
+    }).onConflictDoNothing();
+    // Re-sharing with a new instruction should update it, not silently keep the old one.
+    if (note !== undefined) {
+      await db.update(documentShares).set({ note: note ?? null })
+        .where(and(eq(documentShares.orgId, orgId), eq(documentShares.targetType, targetType), eq(documentShares.targetId, targetId), eq(documentShares.sharedWith, sharedWith)));
+    }
+  });
+}
+
+/* ── Counsellor folders (batch 2r) ─────────────────────────────────────────
+ * Every counsellor gets one folder, named after them, living under a single
+ * "Counsellors" folder. It is auto-shared with them, so anything the practice
+ * puts inside is theirs to see - and anything shared TO them gathers there
+ * rather than scattering across the tree.
+ */
+
+/** The parent all counsellor folders hang under. */
+export async function counsellorRootFolderDb(orgId: string): Promise<string> {
+  return runForOrg(orgId, () => findOrCreateFolder(activeDb(), orgId, "Counsellors", null, "org", null));
+}
+
+export interface CounsellorFolder { folderId: string; counsellorId: string; created: boolean }
+
+/**
+ * One counsellor's folder: found or created, and always shared with them.
+ * Idempotent - safe to call on every counsellor creation and on demand.
+ */
+export async function ensureCounsellorFolderDb(
+  orgId: string,
+  counsellor: { id: string; userId: string; name: string },
+  createdBy: string | null = "system",
+): Promise<CounsellorFolder> {
+  const rootId = await counsellorRootFolderDb(orgId);
+  return runForOrg(orgId, async () => {
+    const db = activeDb();
+    const [existing] = await db.select({ id: documentFolders.id }).from(documentFolders)
+      .where(and(eq(documentFolders.orgId, orgId), eq(documentFolders.counsellorId, counsellor.id), isNull(documentFolders.deletedAt)))
+      .limit(1);
+    let folderId = existing?.id;
+    let created = false;
+    if (!folderId) {
+      folderId = `fold_${randomUUID()}`;
+      await db.insert(documentFolders).values({
+        id: folderId, orgId, name: counsellor.name, parentId: rootId, scope: "counsellor",
+        clientId: null, counsellorId: counsellor.id, createdBy, createdAt: new Date(),
+      });
+      created = true;
+    }
+    // Always (re)assert the share: a folder they cannot see is not their folder.
+    // `document_shares.shared_with` holds the COUNSELLOR id (what the counsellor
+    // views read), not the user id - getting this wrong hides the folder.
+    await db.insert(documentShares).values({
+      id: `share_${randomUUID()}`, orgId, targetType: "folder", targetId: folderId,
+      sharedWith: counsellor.id, grantedBy: createdBy ?? "system", createdAt: new Date(),
+    }).onConflictDoNothing();
+    return { folderId, counsellorId: counsellor.id, created };
+  });
+}
+
+/** Give every counsellor in the practice a folder. Returns what actually changed. */
+export async function ensureAllCounsellorFoldersDb(orgId: string, createdBy: string | null): Promise<{ created: number; total: number }> {
+  const people = await getDb().select({ id: counsellors.id, userId: counsellors.userId, name: counsellors.name })
+    .from(counsellors).where(eq(counsellors.orgId, orgId));
+  let created = 0;
+  for (const c of people) {
+    const res = await ensureCounsellorFolderDb(orgId, c, createdBy);
+    if (res.created) created++;
+  }
+  return { created, total: people.length };
+}
+
+/** A folder's name, for messages that should say where something landed. */
+export async function folderNameDb(orgId: string, folderId: string): Promise<string | null> {
+  const [row] = await getDb().select({ name: documentFolders.name }).from(documentFolders)
+    .where(and(eq(documentFolders.orgId, orgId), eq(documentFolders.id, folderId))).limit(1);
+  return row?.name ?? null;
+}
+
+/** The folder belonging to one counsellor, if it exists. */
+export async function counsellorFolderIdDb(orgId: string, counsellorId: string): Promise<string | null> {
+  const [row] = await getDb().select({ id: documentFolders.id }).from(documentFolders)
+    .where(and(eq(documentFolders.orgId, orgId), eq(documentFolders.counsellorId, counsellorId), isNull(documentFolders.deletedAt)))
+    .limit(1);
+  return row?.id ?? null;
+}
+
+/** Counsellors by id - shares are keyed by counsellor id, notifications by user id. */
+export async function counsellorsByIdDb(orgId: string, ids: string[]): Promise<Map<string, { id: string; userId: string; name: string }>> {
+  if (ids.length === 0) return new Map();
+  const rows = await getDb().select({ id: counsellors.id, userId: counsellors.userId, name: counsellors.name })
+    .from(counsellors).where(and(eq(counsellors.orgId, orgId), inArray(counsellors.id, ids)));
+  return new Map(rows.map((r) => [r.id, r]));
 }
 
 export async function createRequestDb(
@@ -246,6 +340,14 @@ export async function finalizeDocument(orgId: string, documentId: string, bytes:
 export interface SharedFolderView {
   folder: DocumentFolder;
   docs: Document[];
+  /** Batch 2r - true for the counsellor's OWN folder (their gathering place). */
+  mine?: boolean;
+}
+
+/** Batch 2r - a file or link shared straight at a counsellor, with its note. */
+export interface SharedDocView {
+  doc: Document;
+  note: string | null;
 }
 
 /**
@@ -254,7 +356,7 @@ export interface SharedFolderView {
  * folder marked `submissionsPrivate` shows the org's source material plus ONLY
  * this counsellor's own submissions - never another counsellor's.
  */
-export async function listCounsellorDocumentsDb(counsellorId: string): Promise<{ own: Document[]; shared: Document[]; sharedFolders: SharedFolderView[] }> {
+export async function listCounsellorDocumentsDb(counsellorId: string): Promise<{ own: Document[]; shared: Document[]; sharedNotes: Record<string, string>; sharedFolders: SharedFolderView[] }> {
   const db = getDb();
   const ownRows = await db.select({ d: documents }).from(documents)
     .innerJoin(clients, eq(documents.clientId, clients.id))
@@ -277,6 +379,11 @@ export async function listCounsellorDocumentsDb(counsellorId: string): Promise<{
     seen.add(r.id);
     shared.push(r);
   }
+  // The instruction that travelled with each file/link share (batch 2r).
+  const sharedNotes: Record<string, string> = {};
+  for (const sh of shares) {
+    if (sh.targetType === "file" && sh.note) sharedNotes[sh.targetId] = sh.note;
+  }
 
   // Shared folders - each with its note; private folders filter to org material
   // + this counsellor's own submissions.
@@ -291,11 +398,22 @@ export async function listCounsellorDocumentsDb(counsellorId: string): Promise<{
       const docs = f.submissionsPrivate
         ? all.filter((d) => d.sharedBy === "org" || d.uploadedBy === counsellorId)
         : all;
-      sharedFolders.push({ folder: toFolder(f), docs: docs.sort((a, b) => b.createdAt.localeCompare(a.createdAt)) });
+      sharedFolders.push({
+        folder: toFolder(f),
+        docs: docs.sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+        mine: f.counsellorId === counsellorId,
+      });
     }
-    sharedFolders.sort((a, b) => a.folder.name.localeCompare(b.folder.name));
+    // Their own folder leads - it is where their work gathers.
+    sharedFolders.sort((a, b) => Number(Boolean(b.mine)) - Number(Boolean(a.mine)) || a.folder.name.localeCompare(b.folder.name));
   }
-  return { own, shared, sharedFolders };
+
+  // Batch 2r - a file that lives in a folder they can see is shown there, once.
+  // Sharing it directly AND placing it in their folder used to list it twice.
+  const inFolders = new Set(sharedFolders.flatMap((f) => f.docs.map((d) => d.id)));
+  const dedupedShared = shared.filter((d) => !inFolders.has(d.id));
+
+  return { own, shared: dedupedShared, sharedNotes, sharedFolders };
 }
 
 /* ── Link documents + folder share meta (batch 2k) ─────────────────────── */

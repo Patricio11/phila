@@ -129,7 +129,8 @@ export async function deleteItems(raw: z.infer<typeof ids>): Promise<Result> {
 const shareInput = z.object({
   targetType: z.enum(["file", "folder"]),
   targetId: z.string().min(1),
-  counsellorUserIds: z.array(z.string().min(1)).min(1, "Pick at least one counsellor."),
+  /** Counsellor ids (what `document_shares.shared_with` holds), not user ids. */
+  counsellorIds: z.array(z.string().min(1)).min(1, "Pick at least one counsellor."),
   /** Batch 2k - the org's instruction note (folders only) - "what to do here". */
   note: z.string().trim().max(600).optional(),
   /** Batch 2k - counsellors see only their OWN files in this folder. */
@@ -139,17 +140,70 @@ export async function shareWithCounsellors(raw: z.infer<typeof shareInput>): Pro
   const { principal, membership } = await requireHub();
   const parsed = shareInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Could not share." };
+  const note = parsed.data.note?.trim() || null;
+
   if (isDb()) {
-    for (const userId of parsed.data.counsellorUserIds)
-      await shareWithCounsellorDb(membership.orgId, parsed.data.targetType, parsed.data.targetId, userId, principal.userId);
+    const {
+      shareWithCounsellorDb: share, counsellorsByIdDb, ensureCounsellorFolderDb, moveItemsDb, getDocumentRow,
+    } = await import("@/db/queries/documents");
+
+    for (const counsellorId of parsed.data.counsellorIds)
+      await share(membership.orgId, parsed.data.targetType, parsed.data.targetId, counsellorId, principal.userId, note);
+
     if (parsed.data.targetType === "folder" && (parsed.data.note !== undefined || parsed.data.submissionsPrivate !== undefined)) {
       const { setFolderShareMetaDb } = await import("@/db/queries/documents");
-      await setFolderShareMetaDb(membership.orgId, [parsed.data.targetId], parsed.data.note?.trim() || null, Boolean(parsed.data.submissionsPrivate));
+      await setFolderShareMetaDb(membership.orgId, [parsed.data.targetId], note, Boolean(parsed.data.submissionsPrivate));
     }
+
+    // Batch 2r - a file or link sent to ONE counsellor moves into their folder,
+    // so their things are in one place instead of scattered across the tree.
+    // Sent to several, it stays put (it cannot live in two folders) and still
+    // reaches each of them - their folder view gathers it either way.
+    const people = await counsellorsByIdDb(membership.orgId, parsed.data.counsellorIds);
+    for (const person of people.values()) {
+      await ensureCounsellorFolderDb(membership.orgId, person, principal.userId);
+    }
+    if (parsed.data.targetType === "file" && people.size === 1) {
+      const only = [...people.values()][0]!;
+      const doc = await getDocumentRow(membership.orgId, parsed.data.targetId);
+      // Never drag a client's or a session's file out of where it belongs.
+      if (doc && !doc.clientId && !doc.sessionId) {
+        const { folderId } = await ensureCounsellorFolderDb(membership.orgId, only, principal.userId);
+        if (doc.folderId !== folderId) await moveItemsDb(membership.orgId, { documentIds: [doc.id], folderIds: [] }, folderId);
+      }
+    }
+
+    // Notify the people it was shared with, so a share is not a silent event.
+    try {
+      const { createNotification } = await import("@/db/queries/notifications");
+      for (const person of people.values()) {
+        await createNotification({
+          userId: person.userId, orgId: membership.orgId, kind: "document_shared",
+          title: parsed.data.targetType === "folder" ? "A folder was shared with you" : "A document was shared with you",
+          body: note ? `Instructions: ${note}` : "It is in your Documents.",
+          href: "/app/documents",
+        });
+      }
+    } catch { /* the share stands even if the bell does not ring */ }
   }
   await audit(membership.orgId, principal.userId, `${parsed.data.targetType}:${parsed.data.targetId}`, "share_with_counsellor");
   revalidatePath("/hub/documents");
   return { ok: true };
+}
+
+/**
+ * Batch 2r - give every counsellor a folder of their own (idempotent). New
+ * counsellors get one automatically; this is the button for the ones who
+ * joined before, and the way to restore a folder someone deleted.
+ */
+export async function generateCounsellorFolders(): Promise<{ ok: true; created: number; total: number } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  if (!isDb()) return { ok: false, error: "Folders need the database provider." };
+  const { ensureAllCounsellorFoldersDb } = await import("@/db/queries/documents");
+  const res = await ensureAllCounsellorFoldersDb(membership.orgId, principal.userId);
+  await audit(membership.orgId, principal.userId, `org:${membership.orgId}/documents`, "generate_counsellor_folders");
+  revalidatePath("/hub/documents");
+  return { ok: true, ...res };
 }
 
 /* ── Link documents (batch 2k) - a URL instead of bytes ────────────────── */

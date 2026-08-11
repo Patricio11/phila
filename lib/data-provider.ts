@@ -843,7 +843,13 @@ export interface DataProvider {
   getCounsellorRooms(counsellorId: string, now: string): Promise<CounsellorRoomsView>;
   listCounsellorInvoices(counsellorId: string): Promise<Invoice[]>;
   /** A counsellor's documents: their own clients' files + anything shared with them  Phase 18. */
-  listCounsellorDocuments(counsellorId: string): Promise<{ own: Document[]; shared: Document[]; sharedFolders: { folder: DocumentFolder; docs: Document[] }[] }>;
+  listCounsellorDocuments(counsellorId: string): Promise<{
+    own: Document[];
+    shared: Document[];
+    /** Batch 2r - the instruction that came with each directly shared file. */
+    sharedNotes?: Record<string, string>;
+    sharedFolders: { folder: DocumentFolder; docs: Document[]; mine?: boolean }[];
+  }>;
 
   // Client portal (a client only ever sees their own data)
   getClient(clientId: string): Promise<Client | null>;

@@ -254,6 +254,8 @@ export interface DocumentFolder {
   name: string;
   scope: FolderScope;
   clientId: string | null;
+  /** Batch 2r - whose folder this is: every counsellor has exactly one. */
+  counsellorId?: string | null;
   /** Batch 2k - the org's instruction note for counsellors this folder is shared with. */
   note?: string | null;
   /** Batch 2k - counsellors see only their OWN files in this folder. */

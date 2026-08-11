@@ -1432,6 +1432,23 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   flattening, including that `false` and `0` survive and that a person with nothing on file still
   gets a real file.
 
+- [x] **A folder per counsellor, and document search** *(2026-08-11, batch 2r)*: every counsellor
+  now has one folder, named after them, under a single **Counsellors** folder and shared with them
+  from the moment it exists. New counsellors get theirs on creation; **Counsellor folders** on
+  `/hub/documents` catches everyone who joined before (idempotent, so it doubles as repair).
+  Sharing routes into it: a file or link sent to one counsellor moves into their folder (client and
+  session files stay where they belong), sent to several it stays put and still reaches each of
+  them. The share **note** - "open this, fill it in, send your link back" - now travels with files
+  and links, not just folders, and shows under the item wherever the counsellor meets it. A
+  submission rings every org admin's bell with who, what and where. Documents are searchable across
+  every folder at once, each hit showing the folder it lives in. Migration 0071
+  (`document_folders.counsellor_id`, `document_shares.note`).
+  Three fixes found while proving it: **document shares are keyed by counsellor id**, and the new
+  folder share was writing the user id, which would have hidden every counsellor's own folder from
+  them; a file both placed in a counsellor's folder and shared directly **listed twice** in their
+  view; and **Add link** had no submit guard, so a double click created the document twice. The
+  link dialogs also had no accessible labels.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

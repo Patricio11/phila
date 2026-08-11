@@ -851,6 +851,9 @@ export const documentFolders = pgTable("document_folders", {
   name: text("name").notNull(),
   scope: text("scope").notNull(), // org | client | counsellor
   clientId: text("client_id"),
+  /** Batch 2r - whose folder this is (scope "counsellor"): one per counsellor,
+   *  auto-created and auto-shared, where everything sent to them gathers. */
+  counsellorId: text("counsellor_id"),
   /** Batch 2k - the org's instruction note shown to counsellors the folder is shared with. */
   note: text("note"),
   /** Batch 2k - counsellors see ONLY their own files in this folder (submission privacy). */
@@ -908,6 +911,9 @@ export const documentShares = pgTable("document_shares", {
   targetType: text("target_type").notNull(), // file | folder
   targetId: text("target_id").notNull(),
   sharedWith: text("shared_with").notNull(), // counsellor user id
+  /** Batch 2r - the instruction that travelled with THIS share ("fill this in
+   *  and put the link back"). Folders had one; files and links now do too. */
+  note: text("note"),
   grantedBy: text("granted_by").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
 }, (t) => [uniqueIndex("doc_share_uq").on(t.targetType, t.targetId, t.sharedWith)]);

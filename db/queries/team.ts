@@ -118,7 +118,18 @@ export async function inviteMemberDb(
     }
     await db.insert(orgMembers).values({ orgId, userId, teamRole: input.teamRole, isSupervisor: false, status: "invited", createdAt: new Date(now) }).onConflictDoNothing();
     if (input.teamRole === "counsellor") {
-      await db.insert(counsellors).values({ id: rid("couns"), userId, orgId, name: input.name, credentialBody: "HPCSA", credentialStatus: "unverified", isSupervisor: false }).onConflictDoNothing();
+      const counsellorId = rid("couns");
+      await db.insert(counsellors).values({ id: counsellorId, userId, orgId, name: input.name, credentialBody: "HPCSA", credentialStatus: "unverified", isSupervisor: false }).onConflictDoNothing();
+      // Batch 2r - their document folder exists from day one, so there is
+      // somewhere to send them things before they have even signed in.
+      const [row] = await db.select({ id: counsellors.id }).from(counsellors)
+        .where(and(eq(counsellors.orgId, orgId), eq(counsellors.userId, userId))).limit(1);
+      if (row) {
+        const { ensureCounsellorFolderDb } = await import("@/db/queries/documents");
+        try {
+          await ensureCounsellorFolderDb(orgId, { id: row.id, userId, name: input.name }, "system");
+        } catch { /* a missing folder must never block adding a colleague */ }
+      }
     }
     return { userId, existing: Boolean(found) };
   });

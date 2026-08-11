@@ -14,7 +14,7 @@ export default async function CounsellorDocumentsPage() {
   const me = (await provider.listCounsellors(membership.orgId)).find((c) => c.userId === principal.userId);
   if (!me) notFound();
 
-  const [{ own, shared, sharedFolders }, clients] = await Promise.all([
+  const [{ own, shared, sharedNotes, sharedFolders }, clients] = await Promise.all([
     provider.listCounsellorDocuments(me.id),
     provider.listClients(membership.orgId),
   ]);
@@ -30,7 +30,7 @@ export default async function CounsellorDocumentsPage() {
   return (
     <div className="rise space-y-6">
       <PageHead title="Documents" summary="Your clients' files, plus anything the practice has shared with you." />
-      <CounsellorDocuments own={own} shared={shared} sharedFolders={sharedFolders} clients={clients.map((c) => ({ id: c.id, name: c.name }))} />
+      <CounsellorDocuments sharedNotes={sharedNotes} own={own} shared={shared} sharedFolders={sharedFolders} clients={clients.map((c) => ({ id: c.id, name: c.name }))} />
     </div>
   );
 }

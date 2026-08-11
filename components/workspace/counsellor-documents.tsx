@@ -14,7 +14,7 @@ import { KebabMenu } from "@/components/ui/kebab-menu";
 import { signCounsellorDownload, addSharedFolderLink, updateMyLink, deleteMyLink } from "@/app/app/documents/actions";
 
 type Named = { id: string; name: string };
-type SharedFolder = { folder: DocumentFolder; docs: Document[] };
+type SharedFolder = { folder: DocumentFolder; docs: Document[]; mine?: boolean };
 
 function dateLabel(iso: string): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "short", year: "numeric" }).format(new Date(iso));
@@ -27,9 +27,11 @@ function dateLabel(iso: string): string {
  * plus ONLY their own links/files, never another counsellor's. They can add a
  * link (e.g. their completed Google Doc) straight into a shared folder.
  */
-export function CounsellorDocuments({ own, shared, sharedFolders, clients }: {
+export function CounsellorDocuments({ own, shared, sharedNotes = {}, sharedFolders, clients }: {
   own: Document[];
   shared: Document[];
+  /** Batch 2r - the instruction that came with a directly shared file, by id. */
+  sharedNotes?: Record<string, string>;
   sharedFolders: SharedFolder[];
   clients: Named[];
 }) {
@@ -108,11 +110,12 @@ export function CounsellorDocuments({ own, shared, sharedFolders, clients }: {
       {empty && <EmptyState icon={FileText} title="No documents yet" body="Your clients' files and anything the practice shares with you will appear here." />}
 
       {/* Folders the practice shared - the org's note + this counsellor's view */}
-      {sharedFolders.map(({ folder, docs }) => (
+      {sharedFolders.map(({ folder, docs, mine }) => (
         <section key={folder.id} className="rounded-card border border-border bg-surface shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
             <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-text">
               <FolderClosed className="size-4 text-accent" aria-hidden /> {folder.name}
+              {mine && <span className="rounded-chip bg-accent-soft px-1.5 py-0.5 text-[10.5px] font-semibold text-accent">Your folder</span>}
               {folder.submissionsPrivate && <span className="rounded-chip bg-accent-soft px-1.5 py-0.5 text-[10.5px] font-semibold text-accent">Only you see your files</span>}
             </h2>
             <div className="flex gap-2">
@@ -132,9 +135,13 @@ export function CounsellorDocuments({ own, shared, sharedFolders, clients }: {
           )}
           <div className="p-4 pt-3">
             {docs.length === 0 ? (
-              <p className="py-3 text-center text-[12.5px] text-text-3">Nothing here yet{folder.submissionsPrivate ? " - your submissions will appear here, visible only to you and the practice." : "."}</p>
+              <p className="py-3 text-center text-[12.5px] text-text-3">
+                {mine
+                  ? "Nothing here yet - anything the practice sends you lands in this folder."
+                  : `Nothing here yet${folder.submissionsPrivate ? " - your submissions will appear here, visible only to you and the practice." : "."}`}
+              </p>
             ) : (
-              <DocList docs={docs} onOpen={openDoc} onEditLink={openEdit} onDeleteLink={removeLink} />
+              <DocList docs={docs} onOpen={openDoc} notes={sharedNotes} onEditLink={openEdit} onDeleteLink={removeLink} />
             )}
           </div>
         </section>
@@ -156,7 +163,7 @@ export function CounsellorDocuments({ own, shared, sharedFolders, clients }: {
           <h2 className="flex items-center gap-2 px-0.5 text-[13px] font-semibold text-text">
             <FolderClosed className="size-3.5 text-accent" aria-hidden /> Shared with you
           </h2>
-          <DocList docs={shared} onOpen={openDoc} showClient clientName={clientName} />
+          <DocList docs={shared} onOpen={openDoc} showClient clientName={clientName} notes={sharedNotes} />
         </section>
       )}
 
@@ -195,11 +202,11 @@ export function CounsellorDocuments({ own, shared, sharedFolders, clients }: {
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label>Name</Label>
-            <Input value={linkName} onChange={(e) => setLinkName(e.target.value)} placeholder="e.g. CPD form - completed (Aisha)" />
+            <Input aria-label="Link name" value={linkName} onChange={(e) => setLinkName(e.target.value)} placeholder="e.g. CPD form - completed (Aisha)" />
           </div>
           <div className="space-y-1.5">
             <Label>Link</Label>
-            <Input inputMode="url" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="https://docs.google.com/..." />
+            <Input aria-label="Link URL" inputMode="url" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="https://docs.google.com/..." />
           </div>
         </div>
       </Dialog>
@@ -207,8 +214,10 @@ export function CounsellorDocuments({ own, shared, sharedFolders, clients }: {
   );
 }
 
-function DocList({ docs, onOpen, showClient, clientName, onEditLink, onDeleteLink }: {
+function DocList({ docs, onOpen, showClient, clientName, notes, onEditLink, onDeleteLink }: {
   docs: Document[]; onOpen: (d: Document) => void; showClient?: boolean; clientName?: Map<string, string>;
+  /** Batch 2r - the instruction the practice attached when sharing this file. */
+  notes?: Record<string, string>;
   /** Present only where the counsellor's OWN links live (a shared folder). */
   onEditLink?: (d: Document) => void; onDeleteLink?: (d: Document) => void;
 }) {
@@ -217,8 +226,10 @@ function DocList({ docs, onOpen, showClient, clientName, onEditLink, onDeleteLin
       {docs.map((d) => {
         const isLink = Boolean(d.externalUrl);
         const openable = isLink || (d.scanStatus === "clean" && Boolean(d.storageKey));
+        const note = notes?.[d.id];
         return (
-          <li key={d.id} className="flex items-center gap-3 rounded-card border border-border bg-surface p-3">
+          <li key={d.id} className="rounded-card border border-border bg-surface p-3">
+          <div className="flex items-center gap-3">
             <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-control bg-surface-2 text-text-3">
               {isLink ? <Link2 className="size-[18px] text-accent" strokeWidth={1.9} aria-hidden /> : <FileText className="size-[18px]" strokeWidth={1.9} aria-hidden />}
             </span>
@@ -250,6 +261,13 @@ function DocList({ docs, onOpen, showClient, clientName, onEditLink, onDeleteLin
                   ...(onDeleteLink ? [{ label: "Remove", icon: Trash2, onClick: () => onDeleteLink(d), danger: true }] : []),
                 ]}
               />
+            )}
+            </div>
+            {note && (
+              <div className="mt-2.5 flex items-start gap-2 rounded-control border border-accent/20 bg-accent-soft/40 px-3 py-2">
+                <Info className="mt-0.5 size-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+                <p className="text-[12px] leading-relaxed text-text-2">{note}</p>
+              </div>
             )}
           </li>
         );

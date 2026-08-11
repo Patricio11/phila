@@ -131,6 +131,14 @@ Sign in as **Thandeka**.
 - ☐ A **counsellor** opens `/app/settings` → **Your availability** and edits their own (same editor). On save: every org admin gets a **bell notification** ("… updated their availability") and the hub **Activity feed** shows *Counsellor availability updated*
 - ☐ **Profile photo**: `/app/settings` → the camera button on your avatar uploads a PNG/JPG/WebP up to 3 MB; it then shows in the header, the team roster and the member page, with **Remove** returning you to initials. It counts against the practice's storage, and replacing one releases the old bytes *(needs Phila Storage switched on in /admin → Integrations)*
 
+**A folder per counsellor + document search** (batch 2r)
+- ☐ `/hub/documents` → **Counsellor folders** creates one folder per counsellor, named after them, under a single **Counsellors** folder, each already shared with its owner. Pressing it again says "Everyone already has a folder" and changes nothing
+- ☐ **Adding a counsellor creates their folder automatically** (invite one and look in Documents) - the button is for the team that joined before, and for restoring a deleted folder
+- ☐ **Sharing sends things to their folder**: share a file or link with ONE counsellor and it moves into that counsellor's folder (client and session files stay where they belong); share with several and it stays put but reaches all of them. The dialog now takes a **note** for files and links too, not only folders, and the note travels with the share
+- ☐ The counsellor opens `/app/documents` and sees **their own folder first**, badged **Your folder**, with the shared item inside it and the note under it. It appears once, not twice
+- ☐ **Submissions ring the practice's bell**: the counsellor uses **Add link** in their folder; every org admin gets a notification naming who, what and which folder
+- ☐ **Search**: the toolbar box searches every folder at once (file and folder names, plus client names). Each hit shows **in <folder path>**; clearing it returns to browsing. No match says so plainly
+
 **Client data export uses the system's Export menu** (batch 2q)
 - ☐ On a client profile → **Data & privacy**, **Export** is the same dropdown as every other list (CSV · Excel · PDF), not a JSON download
 - ☐ Picking a format downloads `data-export-<name>-<date>.csv/.xls` (or opens the print view): columns **Section · Record · Field · Value**, covering personal details, demographics, care plan, sessions, note metadata, outcomes, consents, documents, invoices, who accessed the record, then retention and when the copy was made

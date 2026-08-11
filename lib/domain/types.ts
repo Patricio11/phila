@@ -412,6 +412,8 @@ export interface Form {
   /** The open share link's token (anyone with it can fill), when generated. */
   shareToken?: string | null;
   shareEnabled?: boolean;
+  /** Batch 2t - everyone who completes this form joins the waitlist as a client. */
+  waitlistOnSubmit?: boolean;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
 }

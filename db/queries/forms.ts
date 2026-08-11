@@ -22,6 +22,7 @@ function toForm(r: typeof forms.$inferSelect): Form {
     id: r.id, orgId: r.orgId, kind: r.kind as FormKind, title: r.title,
     intro: r.intro ?? undefined, fields: r.fields as FormField[], status: r.status as FormStatus,
     theme: (r.theme as FormTheme | null) ?? null, shareToken: r.shareToken, shareEnabled: r.shareEnabled,
+    waitlistOnSubmit: r.waitlistOnSubmit,
     createdAt: r.createdAt.toISOString(), updatedAt: r.updatedAt.toISOString(),
   };
 }
@@ -128,6 +129,13 @@ export async function getFormByTokenDb(tok: string): Promise<FormTokenView | nul
   return null;
 }
 
+/** The open share token for one form (batch 2t - employer intake links). */
+export async function formShareTokenDb(orgId: string, formId: string): Promise<string | null> {
+  const [f] = await getDb().select({ token: forms.shareToken, enabled: forms.shareEnabled, status: forms.status })
+    .from(forms).where(and(eq(forms.id, formId), eq(forms.orgId, orgId))).limit(1);
+  return f && f.enabled && f.status === "active" ? f.token : null;
+}
+
 /** Enable/disable the open share link (mints a token on first enable). */
 export async function setFormShareDb(orgId: string, formId: string, enabled: boolean, now: string): Promise<{ shareToken: string | null; shareEnabled: boolean } | null> {
   return runForOrg(orgId, async () => {
@@ -231,7 +239,7 @@ export async function recordBookingIntakeDb(orgId: string, clientId: string, ans
   }));
 }
 
-export async function submitFormResponseDb(tok: string, answers: Record<string, string>, now: string): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function submitFormResponseDb(tok: string, answers: Record<string, string>, now: string): Promise<{ ok: true; assignmentId: string } | { ok: false; error: string }> {
   const db = getDb();
   const at = new Date(now);
   // 1) A per-client assignment link  fill it in place.
@@ -240,16 +248,17 @@ export async function submitFormResponseDb(tok: string, answers: Record<string, 
     if (a.status === "revoked") return { ok: false, error: "This form link is no longer valid." };
     if (a.status === "completed") return { ok: false, error: "This form has already been submitted." };
     await db.update(formAssignments).set({ answers, status: "completed", submittedAt: at }).where(eq(formAssignments.id, a.id));
-    return { ok: true };
+    return { ok: true, assignmentId: a.id };
   }
   // 2) An open share link  each submission is a fresh response row.
   const [f] = await db.select().from(forms).where(eq(forms.shareToken, tok)).limit(1);
   if (!f || !f.shareEnabled || f.status !== "active") return { ok: false, error: "This form link is no longer valid." };
   const snapshot = snapshotOf(toForm(f));
+  const assignmentId = `fa_${randomUUID().slice(0, 12)}`;
   await db.insert(formAssignments).values({
-    id: `fa_${randomUUID().slice(0, 12)}`, orgId: f.orgId, formId: f.id, clientId: null,
+    id: assignmentId, orgId: f.orgId, formId: f.id, clientId: null,
     respondentName: respondentNameFrom(snapshot, answers), token: `r_${randomUUID().replace(/-/g, "")}`,
     status: "completed", snapshot, answers, sentBy: null, sentAt: at, submittedAt: at,
   });
-  return { ok: true };
+  return { ok: true, assignmentId };
 }

@@ -18,9 +18,11 @@ import { submitForm } from "@/app/f/[token]/actions";
  * the form (stacked on mobile). SADAG crisis line is always in reach.
  */
 export function FormFillView({
-  token, orgName, snapshot, theme, imageUrl,
+  token, companyToken = null, orgName, snapshot, theme, imageUrl,
 }: {
   token: string;
+  /** Batch 2t - the employer link this form was opened from, if any. */
+  companyToken?: string | null;
   orgName: string;
   snapshot: FormSnapshot;
   theme?: FormTheme | null;
@@ -68,7 +70,7 @@ export function FormFillView({
       return;
     }
     setSubmitting(true);
-    const res = await submitForm({ token, answers: values });
+    const res = await submitForm({ token, answers: values, companyToken });
     setSubmitting(false);
     if (!res.ok) return setError(res.error);
     setDone(true);

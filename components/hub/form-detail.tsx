@@ -73,7 +73,7 @@ export function FormDetail({ form, responses, clients, automations = [], counsel
 
       {tab === "responses" ? (
         <div className="space-y-4">
-          <FormShare formId={form.id} shareToken={form.shareToken} shareEnabled={form.shareEnabled} />
+          <FormShare formId={form.id} shareToken={form.shareToken} shareEnabled={form.shareEnabled} waitlistOnSubmit={form.waitlistOnSubmit} />
           <div className="grid gap-4 lg:grid-cols-2">
             <FormAutomations
               formId={form.id}

@@ -12,13 +12,19 @@ import { Input, Label, FieldError, Textarea } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
+import { Select } from "@/components/ui/select";
 import { createCompany } from "@/app/hub/companies/actions";
 import { cn } from "@/lib/utils";
 
 const rands = (c: number) => `R${za(Math.round(c / 100))}`;
 
 /** EAP companies board (batch 2j) - list, create, and the employee link. */
-export function CompaniesBoard({ companies, slug }: { companies: CompanySummary[]; slug: string }) {
+export function CompaniesBoard({ companies, slug, forms = [] }: {
+  companies: CompanySummary[];
+  slug: string;
+  /** Batch 2t - the org's active forms, to choose an employer intake from. */
+  forms?: { id: string; title: string }[];
+}) {
   const { toast } = useToast();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -31,7 +37,13 @@ export function CompaniesBoard({ companies, slug }: { companies: CompanySummary[
   const [rateR, setRateR] = useState("");
   const [notes, setNotes] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
+  // Batch 2t - who books. "practice_books" turns the employee link into an
+  // intake form; whoever completes it waits for the practice to book them.
+  const [mode, setMode] = useState<"self_book" | "practice_books">("self_book");
+  const [intakeFormId, setIntakeFormId] = useState<string | null>(null);
 
+  // Whatever the mode, the same URL works: a practice-books company redirects
+  // it to the intake form, so a link already shared never goes stale.
   const linkFor = (token: string) =>
     `${typeof window !== "undefined" ? window.location.origin : ""}/o/${slug}/book?c=${token}`;
 
@@ -47,14 +59,23 @@ export function CompaniesBoard({ companies, slug }: { companies: CompanySummary[
   const create = () => {
     setAttempted(true);
     if (name.trim().length < 2) return;
+    if (mode === "practice_books" && !intakeFormId) return;
     start(async () => {
       const res = await createCompany({
         name: name.trim(), contactName: contactName.trim(), contactEmail: contactEmail.trim(),
         contactPhone: contactPhone.trim(), sessionRateCents: rateR ? Number(rateR) * 100 : null, notes: notes.trim(),
+        bookingMode: mode, intakeFormId: mode === "practice_books" ? intakeFormId : null,
       });
       if (!res.ok) return toast({ tone: "error", title: res.error });
-      toast({ tone: "success", title: "Company added", description: "Record their first payment and share the employee link from the company page." });
-      setOpen(false); setName(""); setContactName(""); setContactEmail(""); setContactPhone(""); setRateR(""); setNotes(""); setAttempted(false);
+      toast({
+        tone: "success",
+        title: "Company added",
+        description: mode === "practice_books"
+          ? `Their link opens the intake form. Everyone who completes it waits on your waitlist.${res.waitlistTurnedOn ? " The client waitlist has been switched on." : ""}`
+          : "Record their first payment and share the employee link from the company page.",
+      });
+      setOpen(false); setName(""); setContactName(""); setContactEmail(""); setContactPhone(""); setRateR(""); setNotes("");
+      setMode("self_book"); setIntakeFormId(null); setAttempted(false);
       router.refresh();
     });
   };
@@ -136,35 +157,86 @@ export function CompaniesBoard({ companies, slug }: { companies: CompanySummary[
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label>Company name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Ubuntu Logistics (Pty) Ltd" />
+            <Input aria-label="Company name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Ubuntu Logistics (Pty) Ltd" />
             {attempted && name.trim().length < 2 ? <FieldError>Give the company a name.</FieldError> : null}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Contact person</Label>
-              <Input value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="HR / wellness contact" />
+              <Input aria-label="Contact person" value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="HR / wellness contact" />
             </div>
             <div className="space-y-1.5">
               <Label>Contact email</Label>
-              <Input inputMode="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="hr@company.co.za" />
+              <Input aria-label="Contact email" inputMode="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="hr@company.co.za" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Contact phone</Label>
-              <Input inputMode="tel" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="+27 ..." />
+              <Input aria-label="Contact phone" inputMode="tel" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="+27 ..." />
             </div>
             <div className="space-y-1.5">
               <Label>Rate per session (R)</Label>
-              <Input inputMode="numeric" value={rateR} onChange={(e) => setRateR(e.target.value.replace(/[^\d]/g, ""))} placeholder="List price if empty" />
+              <Input aria-label="Rate per session (R)" inputMode="numeric" value={rateR} onChange={(e) => setRateR(e.target.value.replace(/[^\d]/g, ""))} placeholder="List price if empty" />
             </div>
           </div>
+          <div className="space-y-2 rounded-control border border-border p-3">
+            <Label>Who books the session?</Label>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <ModeCard
+                on={mode === "self_book"}
+                title="Employees book themselves"
+                body="The link opens booking. They choose a time; the employer never sees who."
+                onClick={() => setMode("self_book")}
+              />
+              <ModeCard
+                on={mode === "practice_books"}
+                title="The practice books"
+                body="The link opens an intake form. Whoever completes it joins your waitlist."
+                onClick={() => setMode("practice_books")}
+              />
+            </div>
+            {mode === "practice_books" && (
+              <div className="space-y-1.5 pt-1">
+                <Label>Intake form</Label>
+                <Select
+                  ariaLabel="Intake form"
+                  value={intakeFormId ?? ""}
+                  onChange={(v) => setIntakeFormId(v || null)}
+                  options={[{ value: "", label: forms.length ? "Choose a form…" : "No forms yet - create one first" }, ...forms.map((f) => ({ value: f.id, label: f.title }))]}
+                />
+                {attempted && !intakeFormId ? <FieldError>Pick the form employees should fill.</FieldError> : null}
+                <p className="text-[11.5px] leading-relaxed text-text-3">
+                  Sharing is switched on for this form automatically, and the client waitlist with it - that is where these people wait.
+                </p>
+              </div>
+            )}
+          </div>
+
           <div className="space-y-1.5">
             <Label>Notes (optional)</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="min-h-[56px]" placeholder="Contract terms, billing cycle…" />
+            <Textarea aria-label="Company notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="min-h-[56px]" placeholder="Contract terms, billing cycle…" />
           </div>
         </div>
       </Dialog>
     </div>
+  );
+}
+
+/** One of the two booking arrangements, chosen like a radio card. */
+function ModeCard({ on, title, body, onClick }: { on: boolean; title: string; body: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={on}
+      className={cn(
+        "rounded-control border p-3 text-left transition-colors",
+        on ? "border-accent bg-accent-soft/40" : "border-border bg-surface hover:bg-surface-hover",
+      )}
+    >
+      <span className={cn("block text-[13px] font-[620]", on ? "text-accent" : "text-text")}>{title}</span>
+      <span className="mt-0.5 block text-[11.5px] leading-snug text-text-2">{body}</span>
+    </button>
   );
 }

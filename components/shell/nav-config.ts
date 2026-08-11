@@ -116,6 +116,7 @@ export const hubNav: NavSection[] = [
       // Companies are clients, so they live behind a button on Clients - here
       // only so ⌘K still finds them.
       { label: "Companies", href: "/hub/companies", icon: Building2, ready: true, paletteOnly: true },
+      { label: "Waitlist", href: "/hub/waitlist", icon: Contact, ready: true, paletteOnly: true },
     ],
   },
   {

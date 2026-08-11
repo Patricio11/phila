@@ -3,8 +3,8 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Building2, Check, Copy, HandCoins, Pencil, ShieldCheck } from "lucide-react";
-import type { CompanyDetail } from "@/db/queries/companies";
+import { ArrowLeft, Building2, CalendarPlus, Check, Copy, HandCoins, Pencil, ShieldCheck } from "lucide-react";
+import type { CompanyDetail, CompanyEmployee } from "@/db/queries/companies";
 import { za } from "@/lib/format";
 import { Card, CardHead } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { PageHead } from "@/components/shell/page-head";
 import { ExportMenu } from "@/components/hub/export-menu";
 import { useToast } from "@/components/ui/toast";
+import { Select } from "@/components/ui/select";
+import { CreateAppointmentModal, type SchedulingOptions } from "@/components/scheduling/create-appointment-modal";
 import { recordCompanyPayment, updateCompany } from "@/app/hub/companies/actions";
 import { cn } from "@/lib/utils";
 
@@ -23,11 +25,16 @@ const DAY = (iso: string) =>
   new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "2-digit", month: "short", year: "numeric" }).format(new Date(iso));
 
 /** One EAP company - ledger, aggregate usage, employee link, aggregate-only export. */
-export function CompanyDetailView({ detail, slug, orgName, nowISO }: {
+export function CompanyDetailView({ detail, slug, orgName, nowISO, forms = [], employees = [], scheduling }: {
   detail: CompanyDetail;
   slug: string;
   orgName: string;
   nowISO: string;
+  /** Batch 2t - forms an employer intake can be chosen from. */
+  forms?: { id: string; title: string }[];
+  /** Batch 2t - who is linked, for the PRACTICE only. Never shown to the employer. */
+  employees?: CompanyEmployee[];
+  scheduling?: SchedulingOptions;
 }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -43,6 +50,9 @@ export function CompanyDetailView({ detail, slug, orgName, nowISO }: {
   const [ePhone, setEPhone] = useState(detail.contactPhone ?? "");
   const [eRate, setERate] = useState(detail.sessionRateCents != null ? String(Math.round(detail.sessionRateCents / 100)) : "");
   const [eNotes, setENotes] = useState(detail.notes ?? "");
+  const [eMode, setEMode] = useState<"self_book" | "practice_books">(detail.bookingMode);
+  const [eFormId, setEFormId] = useState<string | null>(detail.intakeFormId);
+  const [booking, setBooking] = useState<CompanyEmployee | null>(null);
 
   const link = `${typeof window !== "undefined" ? window.location.origin : ""}/o/${slug}/book?c=${detail.bookingToken}`;
 
@@ -63,12 +73,22 @@ export function CompanyDetailView({ detail, slug, orgName, nowISO }: {
   });
 
   const saveEdit = () => start(async () => {
+    if (eMode === "practice_books" && !eFormId) {
+      return toast({ tone: "error", title: "Pick the intake form employees should fill." });
+    }
     const res = await updateCompany({
       companyId: detail.id, name: eName.trim(), contactName: eContact.trim(), contactEmail: eEmail.trim(),
       contactPhone: ePhone.trim(), sessionRateCents: eRate ? Number(eRate) * 100 : null, notes: eNotes.trim(),
+      bookingMode: eMode, intakeFormId: eMode === "practice_books" ? eFormId : null,
     });
     if (!res.ok) return toast({ tone: "error", title: res.error });
-    toast({ tone: "success", title: "Company updated" });
+    toast({
+      tone: "success",
+      title: "Company updated",
+      description: eMode === "practice_books"
+        ? `Their link now opens the intake form.${res.waitlistTurnedOn ? " The client waitlist has been switched on." : ""}`
+        : "Employees book themselves from their link.",
+    });
     setEditOpen(false);
     router.refresh();
   });
@@ -230,6 +250,44 @@ export function CompanyDetailView({ detail, slug, orgName, nowISO }: {
         </div>
       </Dialog>
 
+      {/* Who is linked - the PRACTICE's view. The employer's own reporting
+          stays aggregate: no name here ever reaches them. */}
+      <Card>
+        <CardHead
+          title="Employees"
+          count={employees.length}
+          action={<span className="text-[11.5px] text-text-3">Practice-only - never shown to {detail.name}</span>}
+        />
+        <div className="px-[17px] pb-[17px]">
+          {employees.length === 0 ? (
+            <p className="py-3 text-[12.5px] text-text-3">
+              Nobody yet. {detail.bookingMode === "practice_books"
+                ? "People appear here when they complete the intake form."
+                : "People appear here when they book through the employee link."}
+            </p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {employees.map((e) => (
+                <li key={e.clientId} className="flex flex-wrap items-center gap-2 py-2.5">
+                  <Link href={`/hub/clients/${e.clientId}`} className="min-w-0 flex-1 text-[13.5px] font-medium text-text hover:text-accent">
+                    {e.name}
+                  </Link>
+                  {e.waiting && <span className="rounded-chip bg-warn-soft px-2 py-0.5 text-[11px] font-semibold text-warn">Waiting</span>}
+                  <span className="text-[11.5px] tabular-nums text-text-3">
+                    {e.sessionsHeld} held{e.nextAt ? ` · next ${DAY(e.nextAt)}` : e.lastAt ? ` · last ${DAY(e.lastAt)}` : ""}
+                  </span>
+                  {scheduling && (
+                    <Button size="sm" variant={e.waiting ? "primary" : "ghost"} onClick={() => setBooking(e)}>
+                      <CalendarPlus className="size-3.5" strokeWidth={2} aria-hidden /> Book
+                    </Button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </Card>
+
       {/* Edit company */}
       <Dialog
         open={editOpen}
@@ -243,18 +301,63 @@ export function CompanyDetailView({ detail, slug, orgName, nowISO }: {
         }
       >
         <div className="space-y-4">
-          <div className="space-y-1.5"><Label>Company name</Label><Input value={eName} onChange={(e) => setEName(e.target.value)} /></div>
+          <div className="space-y-1.5"><Label>Company name</Label><Input aria-label="Company name" value={eName} onChange={(e) => setEName(e.target.value)} /></div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5"><Label>Contact person</Label><Input value={eContact} onChange={(e) => setEContact(e.target.value)} /></div>
-            <div className="space-y-1.5"><Label>Contact email</Label><Input inputMode="email" value={eEmail} onChange={(e) => setEEmail(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label>Contact person</Label><Input aria-label="Contact person" value={eContact} onChange={(e) => setEContact(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label>Contact email</Label><Input aria-label="Contact email" inputMode="email" value={eEmail} onChange={(e) => setEEmail(e.target.value)} /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5"><Label>Contact phone</Label><Input inputMode="tel" value={ePhone} onChange={(e) => setEPhone(e.target.value)} /></div>
-            <div className="space-y-1.5"><Label>Rate per session (R)</Label><Input inputMode="numeric" value={eRate} onChange={(e) => setERate(e.target.value.replace(/[^\d]/g, ""))} placeholder="List price if empty" /></div>
+            <div className="space-y-1.5"><Label>Contact phone</Label><Input aria-label="Contact phone" inputMode="tel" value={ePhone} onChange={(e) => setEPhone(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label>Rate per session (R)</Label><Input aria-label="Rate per session (R)" inputMode="numeric" value={eRate} onChange={(e) => setERate(e.target.value.replace(/[^\d]/g, ""))} placeholder="List price if empty" /></div>
           </div>
-          <div className="space-y-1.5"><Label>Notes</Label><Textarea value={eNotes} onChange={(e) => setENotes(e.target.value)} className="min-h-[56px]" /></div>
+          <div className="space-y-2 rounded-control border border-border p-3">
+            <Label>Who books the session?</Label>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setEMode("self_book")}
+                aria-pressed={eMode === "self_book"}
+                className={cn("rounded-control border p-3 text-left transition-colors", eMode === "self_book" ? "border-accent bg-accent-soft/40" : "border-border hover:bg-surface-hover")}
+              >
+                <span className={cn("block text-[13px] font-[620]", eMode === "self_book" ? "text-accent" : "text-text")}>Employees book themselves</span>
+                <span className="mt-0.5 block text-[11.5px] leading-snug text-text-2">The link opens booking.</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setEMode("practice_books")}
+                aria-pressed={eMode === "practice_books"}
+                className={cn("rounded-control border p-3 text-left transition-colors", eMode === "practice_books" ? "border-accent bg-accent-soft/40" : "border-border hover:bg-surface-hover")}
+              >
+                <span className={cn("block text-[13px] font-[620]", eMode === "practice_books" ? "text-accent" : "text-text")}>The practice books</span>
+                <span className="mt-0.5 block text-[11.5px] leading-snug text-text-2">The link opens an intake form; they join your waitlist.</span>
+              </button>
+            </div>
+            {eMode === "practice_books" && (
+              <div className="space-y-1.5 pt-1">
+                <Label>Intake form</Label>
+                <Select
+                  ariaLabel="Intake form"
+                  value={eFormId ?? ""}
+                  onChange={(v) => setEFormId(v || null)}
+                  options={[{ value: "", label: forms.length ? "Choose a form…" : "No forms yet - create one first" }, ...forms.map((f) => ({ value: f.id, label: f.title }))]}
+                />
+              </div>
+            )}
+          </div>
+          <div className="space-y-1.5"><Label>Notes</Label><Textarea aria-label="Company notes" value={eNotes} onChange={(e) => setENotes(e.target.value)} className="min-h-[56px]" /></div>
         </div>
       </Dialog>
+
+      {/* Book someone straight off this employer's list (practice-side only). */}
+      {scheduling && booking && (
+        <CreateAppointmentModal
+          open
+          onClose={() => setBooking(null)}
+          options={scheduling}
+          initial={{ clientId: booking.clientId }}
+          onCreated={() => { setBooking(null); router.refresh(); }}
+        />
+      )}
     </div>
   );
 }

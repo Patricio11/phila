@@ -211,6 +211,38 @@ export async function signFormImage(key: string): Promise<{ ok: true; url: strin
   }
 }
 
+/**
+ * Batch 2t - everyone who completes this form becomes a client on the waitlist.
+ * That is how an employer intake works, and it is useful on its own: a "request
+ * a first session" form now has somewhere for the person to land.
+ */
+export async function setFormWaitlist(formId: string, on: boolean): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  if (process.env.DATA_PROVIDER !== "db") return { ok: false, error: "Not available in demo mode." };
+  const { setFormWaitlistDb } = await import("@/db/queries/intake-waitlist");
+  await setFormWaitlistDb(membership.orgId, formId, on);
+
+  // Somewhere to land means somewhere visible: switch the waitlist on with it.
+  if (on) {
+    const { effectiveFeaturesDb } = await import("@/db/queries/features");
+    if (!(await effectiveFeaturesDb(membership.orgId)).waitlist) {
+      const { setOrgFeature } = await import("@/db/queries/settings");
+      await setOrgFeature(membership.orgId, "waitlist", true);
+    }
+  }
+
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `form:${formId}`,
+    reason: on ? "form_waitlist_on" : "form_waitlist_off",
+  });
+  revalidatePath(`/hub/forms/${formId}`);
+  revalidatePath("/hub/waitlist");
+  return { ok: true };
+}
+
 export async function setFormArchived(formId: string, archived: boolean): Promise<{ ok: true } | { ok: false; error: string }> {
   const { principal, membership } = await requireHub();
   const id = String(formId ?? "");

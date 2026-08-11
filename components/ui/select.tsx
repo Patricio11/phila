@@ -21,6 +21,7 @@ export function Select({
   placeholder = "Select…",
   invalid,
   id,
+  ariaLabel,
 }: {
   value: string | null;
   options: SelectOption[];
@@ -28,6 +29,8 @@ export function Select({
   placeholder?: string;
   invalid?: boolean;
   id?: string;
+  /** Names the control for screen readers when no <label> is wired to it. */
+  ariaLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -49,6 +52,7 @@ export function Select({
         id={id}
         type="button"
         onClick={() => setOpen((v) => !v)}
+        aria-label={ariaLabel}
         aria-haspopup="listbox"
         aria-expanded={open}
         className={cn(

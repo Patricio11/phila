@@ -16,11 +16,31 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
   if (process.env.DATA_PROVIDER !== "db") notFound();
 
   const now = clockNow();
-  const [detail, org] = await Promise.all([
-    (await import("@/db/queries/companies")).companyDetailDb(membership.orgId, id, now),
-    (await getDataProvider()).getOrg(membership.orgId),
+  const provider = await getDataProvider();
+  const companiesQ = await import("@/db/queries/companies");
+  const [detail, org, employees, forms, clientsList, services, counsellors, rooms] = await Promise.all([
+    companiesQ.companyDetailDb(membership.orgId, id, now),
+    provider.getOrg(membership.orgId),
+    // Batch 2t - practice-only: who is linked, and who is still waiting.
+    companiesQ.companyEmployeesDb(membership.orgId, id, now),
+    (await import("@/db/queries/forms")).listFormsDb(membership.orgId),
+    provider.listClients(membership.orgId),
+    provider.listServices(membership.orgId),
+    provider.listCounsellors(membership.orgId),
+    provider.listRooms(membership.orgId),
   ]);
-  if (!detail) notFound();
+  if (!detail || !org) notFound();
+
+  // Everything the Book button needs, so an employer's list books in one step.
+  const scheduling = {
+    orgId: membership.orgId,
+    clients: clientsList.map((c) => ({ id: c.id, name: c.name })),
+    services: services.map((s) => ({ id: s.id, name: s.name, durationMin: s.durationMin })),
+    counsellors: counsellors.map((c) => ({ id: c.id, name: c.name })),
+    rooms: rooms.map((r) => ({ id: r.id, name: r.name })),
+    defaultDurationMin: org.scheduling.defaultDurationMin,
+    businessHours: org.scheduling.businessHours,
+  };
 
   await logAccess({
     action: "admin.action",
@@ -30,5 +50,15 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
     reason: "view_company",
   });
 
-  return <CompanyDetailView detail={detail} slug={org?.slug ?? ""} orgName={membership.orgName} nowISO={now} />;
+  return (
+    <CompanyDetailView
+      detail={detail}
+      slug={org.slug}
+      orgName={membership.orgName}
+      nowISO={now}
+      forms={forms.filter((f) => f.status === "active").map((f) => ({ id: f.id, title: f.title }))}
+      employees={employees}
+      scheduling={scheduling}
+    />
+  );
 }

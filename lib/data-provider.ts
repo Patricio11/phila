@@ -900,7 +900,7 @@ export interface DataProvider {
   setFormShare(orgId: string, formId: string, enabled: boolean, now: string): Promise<{ shareToken: string | null; shareEnabled: boolean } | null>;
   /** Client fill (public token): resolve + submit, no session. */
   getFormByToken(token: string): Promise<FormTokenView | null>;
-  submitFormResponse(token: string, answers: Record<string, string>, now: string): Promise<{ ok: true } | { ok: false; error: string }>;
+  submitFormResponse(token: string, answers: Record<string, string>, now: string): Promise<{ ok: true; assignmentId: string } | { ok: false; error: string }>;
   /** A signed-in client's assigned forms (portal). */
   listClientForms(clientId: string): Promise<ClientFormRow[]>;
   listOrgInvoices(orgId: string): Promise<Invoice[]>;

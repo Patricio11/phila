@@ -24,6 +24,12 @@ export default async function HubCompaniesPage() {
   const companies: CompanySummary[] = process.env.DATA_PROVIDER === "db"
     ? await (await import("@/db/queries/companies")).listCompaniesDb(membership.orgId, now)
     : [];
+  // Batch 2t - the forms an employer intake can be chosen from.
+  const forms = process.env.DATA_PROVIDER === "db"
+    ? (await (await import("@/db/queries/forms")).listFormsDb(membership.orgId))
+        .filter((f) => f.status === "active")
+        .map((f) => ({ id: f.id, title: f.title }))
+    : [];
 
   await logAccess({
     action: "admin.action",
@@ -43,7 +49,7 @@ export default async function HubCompaniesPage() {
         title="Companies"
         summary="Employers who cover sessions for their staff. They see usage and money only - never who came."
       />
-      <CompaniesBoard companies={companies} slug={org?.slug ?? ""} />
+      <CompaniesBoard companies={companies} slug={org?.slug ?? ""} forms={forms} />
     </div>
   );
 }

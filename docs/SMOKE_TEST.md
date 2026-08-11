@@ -236,6 +236,16 @@ Sign in as **Thandeka**.
 - ☐ Setting **company retainer** previews every service as **Free**, saves (DB `{"kind":"retainer"}`), and new bookings invoice at R0; Megan Pillay is the seeded example
 - ☐ A legacy sliding-scale client (e.g. Johan, pays 50%) still shows + bills their old arrangement until changed
 
+**EAP: the practice books, from an intake form** (batch 2t)
+- ☐ Adding or editing a company asks **Who books the session?** - *Employees book themselves* (the original) or *The practice books*. Choosing the second asks for an **intake form**, and saving switches on that form's share link **and** the client waitlist, saying so in the toast
+- ☐ The employee link is unchanged (`/o/{slug}/book?c=…`): for a practice-books employer it **redirects to the intake form** carrying the company token, so a link already shared never goes stale. Submitting a booking with that token is refused server-side too
+- ☐ Completing the intake creates a **real client**: linked to the employer, fee set to **Waived (company retainer)**, their answers on their record (not a floating share response), and an entry on the **waitlist**. Every org admin gets a bell notification naming the person and the employer
+- ☐ An existing client (matched by **email only** - colleagues share phone numbers) is linked to the employer rather than duplicated
+- ☐ **Clients → Waitlist** (button beside Companies) lists everyone waiting: employer, how long they have waited, a link to read their answers, **Book** (the ordinary appointment modal, prefilled) and remove. Filter chips per employer
+- ☐ The company page has an **Employees** section for the practice: who is linked, who is still waiting, sessions held, next session, and Book. *Nothing here reaches the employer* - their own export stays aggregate
+- ☐ On any form, **Everyone who completes this joins the waitlist** does the same thing without an employer, and switches the waitlist on with it
+- ☐ With the waitlist feature **off**, `/hub/waitlist` still opens and says nobody new is being added (people already waiting never become invisible)
+
 **EAP companies (batch 2j, moved in 2p)** - `/hub/companies`
 - ☐ **Companies is no longer in the sidebar**: it opens from the **Companies** button on the far right of the Clients status-filter row (companies are clients - an employer paying for its staff). The button carries the count; the page has an **All clients** link back; ⌘K still finds "Companies"
 

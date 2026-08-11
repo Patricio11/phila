@@ -7,8 +7,14 @@ import { FormFillView } from "@/components/forms/form-fill-view";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "A form for you", robots: { index: false, follow: false } };
 
-export default async function FormFillPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function FormFillPage({ params, searchParams }: {
+  params: Promise<{ token: string }>;
+  searchParams: Promise<{ c?: string }>;
+}) {
   const { token } = await params;
+  // Batch 2t - `?c=` is an employer's link: the response is attributed to them
+  // and the person lands on the practice's waitlist rather than booking.
+  const { c: companyToken } = await searchParams;
   const provider = await getDataProvider();
   const view = await provider.getFormByToken(token);
 
@@ -25,7 +31,7 @@ export default async function FormFillPage({ params }: { params: Promise<{ token
     } catch { imageUrl = null; }
   }
 
-  return <FormFillView token={token} orgName={view.orgName} snapshot={view.snapshot} theme={view.theme} imageUrl={imageUrl} />;
+  return <FormFillView token={token} companyToken={companyToken ?? null} orgName={view.orgName} snapshot={view.snapshot} theme={view.theme} imageUrl={imageUrl} />;
 }
 
 function Notice({ icon: Icon, title, body, tone }: { icon: typeof Link2; title: string; body: string; tone?: "accent" }) {

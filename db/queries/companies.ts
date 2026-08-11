@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { activeDb, runForOrg } from "@/lib/db/scoped";
 import { getDb } from "@/db/client";
-import { companies, companyPayments, clients, appointments, services } from "@/db/schema";
+import { companies, companyPayments, clients, appointments, services, waitlistEntries } from "@/db/schema";
 
 /**
  * EAP companies (batch 2j) - an employer pays a retainer; its employees book as
@@ -16,6 +16,8 @@ import { companies, companyPayments, clients, appointments, services } from "@/d
 /** States that draw down the retainer - sessions that actually happened. */
 const HELD = ["completed", "discharged"];
 
+export type CompanyBookingMode = "self_book" | "practice_books";
+
 export interface CompanySummary {
   id: string;
   name: string;
@@ -25,6 +27,10 @@ export interface CompanySummary {
   sessionRateCents: number | null;
   bookingToken: string;
   notes: string | null;
+  /** Batch 2t - who books: the employee, or the practice from the waitlist. */
+  bookingMode: CompanyBookingMode;
+  /** The intake form employees fill when the practice books. */
+  intakeFormId: string | null;
   paidCents: number;
   usedCents: number;
   remainingCents: number;
@@ -42,7 +48,7 @@ export interface CompanyDetail extends CompanySummary {
 const newToken = () => randomBytes(9).toString("base64url").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 12).padEnd(12, "x");
 const rid = () => `comp_${randomBytes(6).toString("hex")}`;
 
-export async function createCompanyDb(orgId: string, input: { name: string; contactName?: string | null; contactEmail?: string | null; contactPhone?: string | null; sessionRateCents?: number | null; notes?: string | null }): Promise<{ id: string; bookingToken: string }> {
+export async function createCompanyDb(orgId: string, input: { name: string; contactName?: string | null; contactEmail?: string | null; contactPhone?: string | null; sessionRateCents?: number | null; notes?: string | null; bookingMode?: CompanyBookingMode; intakeFormId?: string | null }): Promise<{ id: string; bookingToken: string }> {
   return runForOrg(orgId, async () => {
     const id = rid();
     const bookingToken = newToken();
@@ -50,12 +56,13 @@ export async function createCompanyDb(orgId: string, input: { name: string; cont
       id, orgId, name: input.name,
       contactName: input.contactName ?? null, contactEmail: input.contactEmail ?? null, contactPhone: input.contactPhone ?? null,
       sessionRateCents: input.sessionRateCents ?? null, bookingToken, notes: input.notes ?? null,
+      bookingMode: input.bookingMode ?? "self_book", intakeFormId: input.intakeFormId ?? null,
     });
     return { id, bookingToken };
   });
 }
 
-export async function updateCompanyDb(orgId: string, companyId: string, input: { name: string; contactName: string | null; contactEmail: string | null; contactPhone: string | null; sessionRateCents: number | null; notes: string | null }): Promise<boolean> {
+export async function updateCompanyDb(orgId: string, companyId: string, input: { name: string; contactName: string | null; contactEmail: string | null; contactPhone: string | null; sessionRateCents: number | null; notes: string | null; bookingMode?: CompanyBookingMode; intakeFormId?: string | null }): Promise<boolean> {
   return runForOrg(orgId, async () => {
     const res = await activeDb().update(companies).set(input)
       .where(and(eq(companies.id, companyId), eq(companies.orgId, orgId)))
@@ -111,6 +118,8 @@ function summarise(c: typeof companies.$inferSelect, paid: number, agg: { employ
   return {
     id: c.id, name: c.name, contactName: c.contactName, contactEmail: c.contactEmail, contactPhone: c.contactPhone,
     sessionRateCents: c.sessionRateCents, bookingToken: c.bookingToken, notes: c.notes,
+    bookingMode: (c.bookingMode === "practice_books" ? "practice_books" : "self_book") as CompanyBookingMode,
+    intakeFormId: c.intakeFormId ?? null,
     paidCents: paid, usedCents, remainingCents: paid - usedCents,
     employeeCount: agg.employees, sessionsHeld: agg.held.length, sessionsUpcoming: agg.upcoming,
   };
@@ -168,8 +177,64 @@ export async function companyDetailDb(orgId: string, companyId: string, nowISO: 
  * Resolve an employee booking token to its company (public flow - owner read,
  * token IS the credential). Returns just enough for the booking to link up.
  */
-export async function companyByTokenDb(token: string): Promise<{ id: string; orgId: string; name: string } | null> {
-  const [c] = await getDb().select({ id: companies.id, orgId: companies.orgId, name: companies.name })
-    .from(companies).where(eq(companies.bookingToken, token)).limit(1);
-  return c ?? null;
+export async function companyByTokenDb(token: string): Promise<{ id: string; orgId: string; name: string; bookingMode: CompanyBookingMode; intakeFormId: string | null } | null> {
+  const [c] = await getDb().select({
+    id: companies.id, orgId: companies.orgId, name: companies.name,
+    bookingMode: companies.bookingMode, intakeFormId: companies.intakeFormId,
+  }).from(companies).where(eq(companies.bookingToken, token)).limit(1);
+  if (!c) return null;
+  return { ...c, bookingMode: (c.bookingMode === "practice_books" ? "practice_books" : "self_book") as CompanyBookingMode };
+}
+
+/**
+ * Batch 2t - the employees the PRACTICE can see: who is linked to this company,
+ * where each one stands, and when they were last seen. Org-facing only; nothing
+ * here ever reaches the employer, whose reporting stays aggregate.
+ */
+export interface CompanyEmployee {
+  clientId: string;
+  name: string;
+  addedAt: string;
+  waiting: boolean;
+  waitlistId: string | null;
+  sessionsHeld: number;
+  nextAt: string | null;
+  lastAt: string | null;
+}
+
+export async function companyEmployeesDb(orgId: string, companyId: string, nowISO: string): Promise<CompanyEmployee[]> {
+  return runForOrg(orgId, async () => {
+    const db = activeDb();
+    const people = await db.select({ id: clients.id, name: clients.name, createdAt: clients.createdAt })
+      .from(clients)
+      .where(and(eq(clients.orgId, orgId), eq(clients.companyId, companyId), isNull(clients.deletedAt)));
+    if (people.length === 0) return [];
+    const ids = people.map((p) => p.id);
+    const [appts, waiting] = await Promise.all([
+      db.select({ clientId: appointments.clientId, startsAt: appointments.startsAt, state: appointments.state })
+        .from(appointments).where(and(eq(appointments.orgId, orgId), inArray(appointments.clientId, ids))),
+      db.select({ id: waitlistEntries.id, clientId: waitlistEntries.clientId })
+        .from(waitlistEntries)
+        .where(and(eq(waitlistEntries.orgId, orgId), eq(waitlistEntries.status, "waiting"), inArray(waitlistEntries.clientId, ids))),
+    ]);
+    const nowMs = new Date(nowISO).getTime();
+    const waitingOf = new Map(waiting.map((w) => [w.clientId, w.id]));
+    return people
+      .map((p): CompanyEmployee => {
+        const mine = appts.filter((a) => a.clientId === p.id);
+        const held = mine.filter((a) => HELD.includes(a.state));
+        const future = mine
+          .filter((a) => a.state === "scheduled" && a.startsAt.getTime() > nowMs)
+          .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+        const past = held.sort((a, b) => b.startsAt.getTime() - a.startsAt.getTime());
+        return {
+          clientId: p.id, name: p.name, addedAt: p.createdAt.toISOString(),
+          waiting: waitingOf.has(p.id), waitlistId: waitingOf.get(p.id) ?? null,
+          sessionsHeld: held.length,
+          nextAt: future[0]?.startsAt.toISOString() ?? null,
+          lastAt: past[0]?.startsAt.toISOString() ?? null,
+        };
+      })
+      .sort((a, b) => Number(b.waiting) - Number(a.waiting) || a.name.localeCompare(b.name));
+  });
 }

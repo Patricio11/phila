@@ -505,6 +505,13 @@
       "when": 1786377547188,
       "tag": "0071_ordinary_raza",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1786441603155,
+      "tag": "0072_tired_punisher",
+      "breakpoints": true
     }
   ]
 }

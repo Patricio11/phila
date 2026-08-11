@@ -1464,6 +1464,27 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   the demo practice could not be opened from the list they appear in. The dossier now treats an
   unassigned client as normal ("No counsellor assigned yet") and Reassign works from there.
 
+- [x] **EAP: the practice books, from an intake form** *(2026-08-11, batch 2t)*: an employer can
+  now choose **who books**. *Employees book themselves* is the original flow, untouched. *The
+  practice books* turns the employee link into an **intake form**: the person fills it, becomes a
+  real client linked to that employer with the fee set to **Waived (company retainer)**, their
+  answers land on their record, and they join the **waitlist** for the practice to book. The link
+  already shared keeps working - it redirects to the form - and self-booking with that token is
+  refused server-side, so the choice is real rather than decorative. Matching an existing client is
+  by **email only**: colleagues share a switchboard number, and merging two people would be worse
+  than creating one twice. Every completion rings the org admins' bell.
+  The **waitlist finally has a home**: a Waitlist button beside Companies on Clients opens a page
+  showing who is waiting, for which employer, how long, and their answers, with Book (the ordinary
+  prefilled modal) and remove. The company page gained a practice-only **Employees** section with
+  the same Book button; the employer's own reporting stays aggregate and never names anyone.
+  A form-level toggle, **everyone who completes this joins the waitlist**, does the same thing
+  without an employer. Both switch the waitlist feature on rather than filing people somewhere
+  nobody can see, and the page still opens when the feature is off so nobody already waiting
+  disappears. Migration 0072 (`companies.booking_mode` + `intake_form_id`,
+  `forms.waitlist_on_submit`, `form_assignments.company_id`).
+  Accessibility, again: the company dialogs and the custom `Select` had no accessible names, so
+  the fields were invisible to a screen reader (and untestable). Both fixed.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

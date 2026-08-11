@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getDataProvider } from "@/lib/data-provider";
 import { BookingWizard } from "@/components/booking/booking-wizard";
 import { recordPageEvent, getOrgLogoUrlPublic } from "@/db/queries/public-page";
@@ -27,6 +27,28 @@ export default async function BookPage({
   const provider = await getDataProvider();
   const config = await provider.getBookingConfig(slug);
   if (!config) notFound();
+
+  // Batch 2t - this employer has chosen that the PRACTICE books. Their link is
+  // the intake form, so an employee holding the old booking URL is sent there
+  // rather than quietly booking themselves around the arrangement.
+  if (c && process.env.DATA_PROVIDER === "db") {
+    const { companyByTokenDb } = await import("@/db/queries/companies");
+    const company = await companyByTokenDb(c);
+    if (company && company.orgId === config.org.id && company.bookingMode === "practice_books") {
+      const { formShareTokenDb } = await import("@/db/queries/forms");
+      const share = company.intakeFormId ? await formShareTokenDb(config.org.id, company.intakeFormId) : null;
+      if (share) redirect(`/f/${share}?c=${encodeURIComponent(c)}`);
+      return (
+        <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-6 text-center">
+          <h1 className="text-[20px] font-semibold text-text">{config.org.name} will arrange your session</h1>
+          <p className="mt-2 text-[14px] leading-relaxed text-text-2">
+            Your employer has asked the practice to book on your behalf, and the intake form isn&apos;t ready yet.
+            Please contact {config.org.name} and they&apos;ll take it from here.
+          </p>
+        </main>
+      );
+    }
+  }
 
   // Master switch: the practice takes bookings by invite only.
   if (!config.enabled || config.services.length === 0 || config.counsellors.length === 0) {

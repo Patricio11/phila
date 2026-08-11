@@ -4,6 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
+import { now as clockNow } from "@/lib/clock";
 
 const isDb = () => process.env.DATA_PROVIDER === "db";
 
@@ -21,11 +22,36 @@ const companyInput = z.object({
   /** Negotiated per-session rate in cents; null = each service's list price. */
   sessionRateCents: z.number().int().min(0).max(10_000_00).nullable(),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
+  /** Batch 2t - who books: the employee themselves, or the practice. */
+  bookingMode: z.enum(["self_book", "practice_books"]).default("self_book"),
+  /** The intake form employees fill when the practice books. */
+  intakeFormId: z.string().min(1).nullable().default(null),
 });
+
+/**
+ * Batch 2t - people who complete an employer intake wait on the client
+ * waitlist, so a practice that chooses "we book" needs that switch on. Turning
+ * it on for them (and saying so) beats storing people where nobody can see them.
+ */
+async function ensureWaitlistOn(orgId: string): Promise<boolean> {
+  const { effectiveFeaturesDb } = await import("@/db/queries/features");
+  if ((await effectiveFeaturesDb(orgId)).waitlist) return false;
+  const { setOrgFeature } = await import("@/db/queries/settings");
+  await setOrgFeature(orgId, "waitlist", true);
+  return true;
+}
+
+/** The intake form must be shareable, or the employee link goes nowhere. */
+async function ensureFormShared(orgId: string, formId: string, now: string): Promise<boolean> {
+  const { formShareTokenDb, setFormShareDb } = await import("@/db/queries/forms");
+  if (await formShareTokenDb(orgId, formId)) return false;
+  await setFormShareDb(orgId, formId, true, now);
+  return true;
+}
 
 export async function createCompany(
   raw: z.infer<typeof companyInput>,
-): Promise<{ ok: true; id: string; bookingToken: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; id: string; bookingToken: string; waitlistTurnedOn?: boolean } | { ok: false; error: string }> {
   const { principal, membership } = await requireHub();
   const parsed = companyInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the company details." };
@@ -33,10 +59,20 @@ export async function createCompany(
 
   const { createCompanyDb } = await import("@/db/queries/companies");
   const d = parsed.data;
+  if (d.bookingMode === "practice_books" && !d.intakeFormId)
+    return { ok: false, error: "Pick the intake form employees should fill." };
+
   const res = await createCompanyDb(membership.orgId, {
     name: d.name, contactName: d.contactName || null, contactEmail: d.contactEmail || null,
     contactPhone: d.contactPhone || null, sessionRateCents: d.sessionRateCents, notes: d.notes || null,
+    bookingMode: d.bookingMode, intakeFormId: d.intakeFormId,
   });
+
+  let waitlistTurnedOn = false;
+  if (d.bookingMode === "practice_books" && d.intakeFormId) {
+    waitlistTurnedOn = await ensureWaitlistOn(membership.orgId);
+    await ensureFormShared(membership.orgId, d.intakeFormId, clockNow());
+  }
 
   await logAccess({
     action: "admin.action",
@@ -46,14 +82,15 @@ export async function createCompany(
     reason: "create_company",
   });
   revalidatePath("/hub/companies");
-  return { ok: true, ...res };
+  revalidatePath("/hub/waitlist");
+  return { ok: true, ...res, waitlistTurnedOn };
 }
 
 const updateInput = companyInput.extend({ companyId: z.string().min(1) });
 
 export async function updateCompany(
   raw: z.infer<typeof updateInput>,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<{ ok: true; waitlistTurnedOn?: boolean } | { ok: false; error: string }> {
   const { principal, membership } = await requireHub();
   const parsed = updateInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the company details." };
@@ -61,11 +98,21 @@ export async function updateCompany(
 
   const { updateCompanyDb } = await import("@/db/queries/companies");
   const d = parsed.data;
+  if (d.bookingMode === "practice_books" && !d.intakeFormId)
+    return { ok: false, error: "Pick the intake form employees should fill." };
+
   const ok = await updateCompanyDb(membership.orgId, d.companyId, {
     name: d.name, contactName: d.contactName || null, contactEmail: d.contactEmail || null,
     contactPhone: d.contactPhone || null, sessionRateCents: d.sessionRateCents, notes: d.notes || null,
+    bookingMode: d.bookingMode, intakeFormId: d.intakeFormId,
   });
   if (!ok) return { ok: false, error: "That company couldn't be found." };
+
+  let waitlistTurnedOn = false;
+  if (d.bookingMode === "practice_books" && d.intakeFormId) {
+    waitlistTurnedOn = await ensureWaitlistOn(membership.orgId);
+    await ensureFormShared(membership.orgId, d.intakeFormId, clockNow());
+  }
 
   await logAccess({
     action: "admin.action",
@@ -76,7 +123,8 @@ export async function updateCompany(
   });
   revalidatePath("/hub/companies");
   revalidatePath(`/hub/companies/${d.companyId}`);
-  return { ok: true };
+  revalidatePath("/hub/waitlist");
+  return { ok: true, waitlistTurnedOn };
 }
 
 const paymentInput = z.object({

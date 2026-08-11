@@ -990,6 +990,8 @@ export const forms = pgTable("forms", {
   theme: jsonb("theme"), // FormTheme | null  presentation of the public/share page
   shareToken: text("share_token"), // open share link (anyone can fill)
   shareEnabled: boolean("share_enabled").default(false).notNull(),
+  /** Batch 2t - everyone who completes this form becomes a client on the waitlist. */
+  waitlistOnSubmit: boolean("waitlist_on_submit").default(false).notNull(),
   /** Batch 2l - the org shares a form with counsellors, who then send it to
    *  their own clients. `all` = every counsellor; else the listed counsellor ids. */
   sharedWithAll: boolean("shared_with_all").default(false).notNull(),
@@ -1026,6 +1028,8 @@ export const formAssignments = pgTable("form_assignments", {
   orgId: text("org_id").notNull().references(() => orgs.id),
   formId: text("form_id").notNull(),
   clientId: text("client_id"), // null for open share-link submissions
+  /** Batch 2t - the employer whose link this response came through, if any. */
+  companyId: text("company_id"),
   respondentName: text("respondent_name"), // captured name for share submissions
   token: text("token").notNull(),
   status: text("status").default("sent").notNull(), // sent | completed | revoked
@@ -1091,6 +1095,16 @@ export const companies = pgTable("companies", {
   contactPhone: text("contact_phone"),
   sessionRateCents: integer("session_rate_cents"),
   bookingToken: text("booking_token").notNull().unique(),
+  /**
+   * Batch 2t - who does the booking. "self_book": the employee books straight
+   * from the link (the original behaviour). "practice_books": the link is an
+   * intake FORM; completing it puts the person on the waitlist and the practice
+   * books them. Employees who prefer nobody knows still never appear to the
+   * employer either way.
+   */
+  bookingMode: text("booking_mode").default("self_book").notNull(),
+  /** The form the employee fills when the practice books (practice_books only). */
+  intakeFormId: text("intake_form_id"),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

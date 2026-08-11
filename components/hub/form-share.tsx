@@ -5,14 +5,36 @@ import { Check, Copy, ExternalLink, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
-import { setFormShare } from "@/app/hub/forms/actions";
+import { setFormShare, setFormWaitlist } from "@/app/hub/forms/actions";
 import { cn } from "@/lib/utils";
 
 /** The open share link  anyone with it can fill the form (great for lead capture). */
-export function FormShare({ formId, shareToken, shareEnabled }: { formId: string; shareToken?: string | null; shareEnabled?: boolean }) {
+export function FormShare({ formId, shareToken, shareEnabled, waitlistOnSubmit }: {
+  formId: string;
+  shareToken?: string | null;
+  shareEnabled?: boolean;
+  /** Batch 2t - everyone who completes this form joins the waitlist. */
+  waitlistOnSubmit?: boolean;
+}) {
   const { toast } = useToast();
   const [pending, start] = useTransition();
   const [enabled, setEnabled] = useState(Boolean(shareEnabled));
+  const [waitlist, setWaitlist] = useState(Boolean(waitlistOnSubmit));
+
+  const toggleWaitlist = () =>
+    start(async () => {
+      const next = !waitlist;
+      const res = await setFormWaitlist(formId, next);
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      setWaitlist(next);
+      toast({
+        tone: "success",
+        title: next ? "They will join the waitlist" : "Waitlist off for this form",
+        description: next
+          ? "Whoever completes this becomes a client waiting for a first session. The waitlist is switched on for the practice."
+          : "Completing this form no longer puts anyone on the waitlist.",
+      });
+    });
   const [token, setToken] = useState<string | null>(shareToken ?? null);
   const [copied, setCopied] = useState(false);
 
@@ -52,6 +74,27 @@ export function FormShare({ formId, shareToken, shareEnabled }: { formId: string
           className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60", enabled ? "bg-accent" : "bg-surface-2")}
         >
           <span className={cn("absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform", enabled ? "translate-x-[22px]" : "translate-x-0.5")} />
+        </button>
+      </div>
+
+      {/* What happens to whoever completes it - the other half of a public form. */}
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
+        <div className="min-w-0">
+          <div className="text-[12.5px] font-[620] text-text">Everyone who completes this joins the waitlist</div>
+          <p className="text-[11.5px] leading-relaxed text-text-3">
+            They become a client record with their answers attached, waiting for the practice to book them. This is how an employer intake works.
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={waitlist}
+          aria-label="Everyone who completes this joins the waitlist"
+          onClick={toggleWaitlist}
+          disabled={pending}
+          className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60", waitlist ? "bg-accent" : "bg-surface-2")}
+        >
+          <span className={cn("absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform", waitlist ? "translate-x-[22px]" : "translate-x-0.5")} />
         </button>
       </div>
 

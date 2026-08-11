@@ -235,6 +235,12 @@ export async function submitBooking(
       if (input.companyToken) {
         const { companyByTokenDb } = await import("@/db/queries/companies");
         const comp = await companyByTokenDb(input.companyToken);
+        // Batch 2t - if that employer has the practice booking, self-booking is
+        // refused here too: the page redirects, and so a request that reaches
+        // this point came from a stale tab or a hand-made call.
+        if (comp && comp.orgId === config.org.id && comp.bookingMode === "practice_books") {
+          return { ok: false, error: "Your employer has asked the practice to arrange sessions. Please use the intake form they shared with you." };
+        }
         if (comp && comp.orgId === config.org.id) companyId = comp.id;
       }
       const res = await persistBooking({

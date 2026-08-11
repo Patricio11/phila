@@ -1447,13 +1447,14 @@ export const mockProvider: DataProvider = {
     if (a) {
       if (a.status === "completed") return ok({ ok: false as const, error: "This form has already been submitted." });
       a.answers = answers; a.status = "completed"; a.submittedAt = now;
-      return ok({ ok: true as const });
+      return ok({ ok: true as const, assignmentId: a.id });
     }
     const f = mockForms.find((x) => x.shareToken === token && x.shareEnabled && x.status === "active");
     if (!f) return ok({ ok: false as const, error: "This form link is no longer valid." });
     const nameField = f.fields.find((x) => /name/i.test(x.label) || /name/i.test(x.id));
-    mockAssignments.push({ id: newId("fa"), orgId: f.orgId, formId: f.id, clientId: null, token: `r_${newToken()}`, status: "completed", snapshot: snapshotOf(f), answers, sentBy: null, sentAt: now, submittedAt: now, respondentName: (nameField ? answers[nameField.id] : "") || null });
-    return ok({ ok: true as const });
+    const assignmentId = newId("fa");
+    mockAssignments.push({ id: assignmentId, orgId: f.orgId, formId: f.id, clientId: null, token: `r_${newToken()}`, status: "completed", snapshot: snapshotOf(f), answers, sentBy: null, sentAt: now, submittedAt: now, respondentName: (nameField ? answers[nameField.id] : "") || null });
+    return ok({ ok: true as const, assignmentId });
   },
 
   listClientForms: (clientId): Promise<ClientFormRow[]> => {

@@ -11,7 +11,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { createGroup, deleteMessage, editMessage, getRealtimeToken, markThreadRead, requestChatUpload, sendTeamMessage, signChatAttachment } from "@/app/app/messages/actions";
+import { createGroup, deleteMessage, editMessage, getRealtimeToken, markThreadRead, refreshThreads, requestChatUpload, sendTeamMessage, signChatAttachment } from "@/app/app/messages/actions";
 import { sizeLabel } from "@/lib/documents/quota";
 import { cn } from "@/lib/utils";
 
@@ -85,6 +85,12 @@ export function TeamMessagesView({
   const rtUrl = realtime?.url;
   const rtKey = realtime?.anonKey;
   const rtPrivate = realtime?.private ?? false;
+  // Batch 2u - live delivery depends on an external service. When it is not
+  // connected (not configured, DNS dead, network blocked), the chat quietly
+  // polls instead - a reply appears in seconds, not on the next hard refresh.
+  const [live, setLive] = useState(false);
+  const liveRef = useRef(false);
+  const markLive = (on: boolean) => { liveRef.current = on; setLive(on); };
   const threadKey = threads.map((t) => t.id).filter((id) => !id.startsWith("local_")).sort().join(",");
   useEffect(() => {
     if (!rtUrl || !rtKey || !myUserId) return;
@@ -93,12 +99,28 @@ export function TeamMessagesView({
       // Private mode: authenticate realtime with a scoped, RLS-checked JWT.
       ...(rtPrivate ? { accessToken: async () => (await getRealtimeToken())?.token ?? rtKey } : {}),
     });
+    // An unreachable host would otherwise retry forever, flooding the console
+    // with WebSocket errors while delivering nothing. Give it a fair chance,
+    // then stop the socket and let the polling fallback own delivery.
+    let socketFailures = 0;
+    const noteFailure = () => {
+      socketFailures += 1;
+      markLive(false);
+      if (socketFailures >= 3) {
+        void supabase.removeAllChannels();
+        supabase.realtime.disconnect();
+      }
+    };
     const channels = channelsRef.current;
     const chanConfig = { config: { private: rtPrivate } };
 
     const presence = supabase.channel(`presence:org:${orgId}`, { config: { private: rtPrivate, presence: { key: myUserId } } });
     presence.on("presence", { event: "sync" }, () => setOnline(new Set(Object.keys(presence.presenceState()))));
-    presence.subscribe((status) => { if (status === "SUBSCRIBED") void presence.track({ userId: myUserId }); });
+    presence.subscribe((status) => {
+      if (status === "SUBSCRIBED") { markLive(true); void presence.track({ userId: myUserId }); }
+      else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") noteFailure();
+      else if (status === "CLOSED") markLive(false);
+    });
 
     // Per-user channel: a thread just appeared for me  a new group I was added to,
     // or a brand-new DM whose first message I'd otherwise miss (I'm not subscribed
@@ -167,6 +189,7 @@ export function TeamMessagesView({
     });
 
     return () => {
+      markLive(false);
       void presence.unsubscribe();
       void userCh.unsubscribe();
       chans.forEach((c) => void c.unsubscribe());
@@ -174,6 +197,42 @@ export function TeamMessagesView({
       void supabase.removeAllChannels();
     };
   }, [rtUrl, rtKey, rtPrivate, myUserId, orgId, threadKey]);
+
+  // The polling fallback. Merges by message id on top of what is shown, so an
+  // optimistic send is never clobbered; unread counts respect the open thread.
+  useEffect(() => {
+    if (live) return; // realtime is doing this job
+    let stopped = false;
+    const tick = async () => {
+      if (stopped || document.hidden || liveRef.current) return;
+      const res = await refreshThreads().catch(() => null);
+      if (!res || !res.ok || stopped || liveRef.current) return;
+      setThreads((prev) => {
+        const mine = new Map(prev.map((t) => [t.id, t]));
+        const next = res.threads.map((server) => {
+          const local = mine.get(server.id);
+          if (!local) return server;
+          const seen = new Set(local.messages.map((m) => m.id));
+          const fresh = server.messages.filter((m) => !seen.has(m.id));
+          if (fresh.length === 0) return local;
+          const isOpen = activeIdRef.current === server.id;
+          if (isOpen) void markThreadRead(server.id);
+          return {
+            ...local,
+            messages: [...local.messages, ...fresh],
+            lastAt: server.lastAt,
+            unread: isOpen ? 0 : local.unread + fresh.filter((m) => m.from === "them").length,
+          };
+        });
+        // Threads that only exist locally (an optimistic DM not yet persisted).
+        const serverIds = new Set(res.threads.map((t) => t.id));
+        return [...next, ...prev.filter((t) => !serverIds.has(t.id))].sort((a, b) => b.lastAt.localeCompare(a.lastAt));
+      });
+    };
+    const id = setInterval(() => void tick(), 5000);
+    void tick();
+    return () => { stopped = true; clearInterval(id); };
+  }, [live]);
 
   const openThread = (id: string) => {
     setActiveId(id);

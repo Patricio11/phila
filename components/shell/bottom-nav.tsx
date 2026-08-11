@@ -35,6 +35,10 @@ export function BottomNav({ sections, settingsHref }: { sections: NavSection[]; 
   const useMore = items.length > PRIMARY;
   const tabs = useMore ? items.slice(0, PRIMARY) : items;
   const moreActive = useMore && activeHref !== undefined && !tabs.some((t) => t.href === activeHref);
+  // Unread counts must not vanish just because their page folded into "More".
+  const moreBadge = useMore
+    ? items.slice(PRIMARY).reduce((n, i) => n + (i.badge ?? 0), 0)
+    : 0;
 
   return (
     <>
@@ -45,9 +49,9 @@ export function BottomNav({ sections, settingsHref }: { sections: NavSection[]; 
       >
         <nav className="pointer-events-auto flex h-[58px] w-full max-w-[440px] items-stretch justify-around gap-0.5 rounded-[24px] border border-border/70 bg-surface/75 px-1.5 shadow-[0_12px_34px_-10px_rgba(16,24,20,0.4)] backdrop-blur-xl">
           {tabs.map((item) => (
-            <Tab key={item.href} href={item.href} icon={item.icon} label={item.label} active={item.href === activeHref} />
+            <Tab key={item.href} href={item.href} icon={item.icon} label={item.label} active={item.href === activeHref} badge={item.badge} />
           ))}
-          {useMore && <Tab icon={MoreHorizontal} label="More" active={moreActive} onClick={() => setMoreOpen(true)} />}
+          {useMore && <Tab icon={MoreHorizontal} label="More" active={moreActive} badge={moreBadge || undefined} onClick={() => setMoreOpen(true)} />}
         </nav>
       </div>
 
@@ -60,10 +64,15 @@ export function BottomNav({ sections, settingsHref }: { sections: NavSection[]; 
 
 /** One tab  a Link (destination) or a button (More). The active state pops a
  *  soft accent pill behind the icon with a spring, and the icon lifts + tints. */
-function Tab({ href, onClick, icon: Icon, label, active }: { href?: string; onClick?: () => void; icon: LucideIcon; label: string; active: boolean }) {
+function Tab({ href, onClick, icon: Icon, label, active, badge }: { href?: string; onClick?: () => void; icon: LucideIcon; label: string; active: boolean; badge?: number }) {
   const inner = (
     <>
       <span className="relative flex size-7 items-center justify-center">
+        {badge !== undefined && badge > 0 && (
+          <span className="absolute -right-2 -top-1 z-10 min-w-[16px] rounded-full bg-accent px-1 text-center text-[9.5px] font-bold leading-[16px] text-accent-ink">
+            {badge > 99 ? "99+" : badge}
+          </span>
+        )}
         <span
           aria-hidden
           className={cn("absolute -inset-1 rounded-full bg-accent-soft transition-[transform,opacity] duration-300", SPRING, active ? "scale-100 opacity-100" : "scale-0 opacity-0")}
@@ -175,6 +184,11 @@ function MoreSheet({
                   >
                     <item.icon className="size-[19px] shrink-0" strokeWidth={1.9} aria-hidden />
                     {item.label}
+                    {item.badge !== undefined && item.badge > 0 && (
+                      <span className="ml-auto min-w-[20px] rounded-full bg-accent px-1.5 text-center text-[11px] font-bold leading-[20px] text-accent-ink">
+                        {item.badge > 99 ? "99+" : item.badge}
+                      </span>
+                    )}
                   </Link>
                 ) : (
                   <span key={item.href} className="flex items-center gap-3 rounded-control px-2.5 py-2.5 text-[14.5px] text-text-3">

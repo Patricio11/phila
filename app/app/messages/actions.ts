@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { requireOrg } from "@/lib/auth/guard";
+import { getDataProvider, type TeamThread } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
 import { sendTeamMessageDb, sendToThreadDb, createGroupThreadDb, markThreadReadDb, getUserName, editMessageDb, deleteMessageDb, getAttachmentAccess, listMemberThreadIds } from "@/db/queries/messages";
 import { currentStorageBytes, addStorageUsage } from "@/db/queries/documents";
@@ -207,4 +208,17 @@ export async function deleteMessage(messageId: string): Promise<{ ok: true } | {
   }
   await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole }, orgId: membership.orgId, target: `team_message:${id}`, reason: "delete_message" });
   return { ok: true };
+}
+
+/**
+ * Batch 2u - re-read this person's threads. The chat prefers live delivery over
+ * Supabase Realtime, but that depends on an external service being reachable;
+ * when it is not, the view polls this instead of leaving people to press refresh
+ * to see a reply. Same data the page loads, same permissions.
+ */
+export async function refreshThreads(): Promise<{ ok: true; threads: TeamThread[] } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg();
+  const provider = await getDataProvider();
+  const threads = await provider.listTeamThreads(principal.userId, membership.orgId);
+  return { ok: true, threads };
 }

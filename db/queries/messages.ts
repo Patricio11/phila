@@ -222,3 +222,28 @@ export async function deleteMessageDb(messageId: string, userId: string): Promis
   await db.update(teamMessages).set({ deletedAt: new Date() }).where(eq(teamMessages.id, messageId));
   return row.threadId;
 }
+
+/**
+ * Batch 2u - how many messages are waiting for this person, across every thread.
+ * One number for the nav badge, so "you have unread messages" is visible from
+ * anywhere rather than only on the Messages page.
+ */
+export async function unreadMessageCountDb(userId: string, orgId: string): Promise<number> {
+  const db = getDb();
+  const memberships = await db
+    .select({ threadId: threadMembers.threadId, lastReadAt: threadMembers.lastReadAt })
+    .from(threadMembers)
+    .where(and(eq(threadMembers.userId, userId), eq(threadMembers.orgId, orgId)));
+  if (memberships.length === 0) return 0;
+  const ids = memberships.map((m) => m.threadId);
+  const lastRead = new Map(memberships.map((m) => [m.threadId, m.lastReadAt]));
+  const rows = await db
+    .select({ threadId: teamMessages.threadId, senderUserId: teamMessages.senderUserId, createdAt: teamMessages.createdAt, deletedAt: teamMessages.deletedAt })
+    .from(teamMessages)
+    .where(inArray(teamMessages.threadId, ids));
+  return rows.filter((m) => {
+    if (m.deletedAt || m.senderUserId === userId) return false;
+    const seen = lastRead.get(m.threadId);
+    return !seen || m.createdAt > seen;
+  }).length;
+}

@@ -31,6 +31,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     ? `/api/avatar/${principal.userId}`
     : null;
 
+  // Batch 2u - the Messages badge starts truthful on first paint.
+  const unreadMessages = process.env.DATA_PROVIDER === "db"
+    ? await (await import("@/db/queries/messages")).unreadMessageCountDb(principal.userId, membership.orgId)
+    : 0;
+
   return (
     <ToastProvider>
       <AppShell
@@ -39,6 +44,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         user={{ name: principal.name, email: principal.email, roleLabel, photoUrl }}
         settingsHref="/app/settings"
         twoFactorPrompt={twoFactorPrompt}
+        unreadMessages={unreadMessages}
       >
         {children}
       </AppShell>

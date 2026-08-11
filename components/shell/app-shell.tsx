@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/shell/sidebar";
 import { TopBar } from "@/components/shell/top-bar";
 import { BottomNav } from "@/components/shell/bottom-nav";
 import { TwoFactorBanner } from "@/components/shell/two-factor-banner";
 import { NAVS, type NavKey, type NavSection } from "@/components/shell/nav-config";
+import { getUnreadMessages } from "@/lib/messaging/unread-actions";
 
 const COLLAPSE_KEY = "phila-sidebar-collapsed";
 const COLLAPSE_EVENT = "phila:sidebar";
@@ -54,6 +55,7 @@ export function AppShell({
   settingsHref,
   features,
   twoFactorPrompt = false,
+  unreadMessages,
   children,
 }: {
   navKey: NavKey;
@@ -64,15 +66,42 @@ export function AppShell({
   features?: Record<string, boolean>;
   /** Show the skippable 2FA nudge banner (privileged users without 2FA). */
   twoFactorPrompt?: boolean;
+  /** Batch 2u - unread team messages at render time; the badge on Messages. */
+  unreadMessages?: number;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  // The count stays honest without a reload: refetch on a gentle interval and
+  // whenever the tab comes back; land on Messages and it clears optimistically
+  // (opening a thread marks it read server-side, so the next poll agrees).
+  const [unread, setUnread] = useState(unreadMessages ?? 0);
+  const onMessages = /^\/(app|hub)\/messages/.test(pathname);
+  useEffect(() => {
+    if (onMessages) setUnread(0);
+  }, [onMessages]);
+  useEffect(() => {
+    let stopped = false;
+    const tick = async () => {
+      if (stopped || document.hidden) return;
+      const res = await getUnreadMessages().catch(() => null);
+      if (!stopped && res?.ok) setUnread(res.count);
+    };
+    const id = setInterval(() => void tick(), 30_000);
+    const onVisible = () => { if (!document.hidden) void tick(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { stopped = true; clearInterval(id); document.removeEventListener("visibilitychange", onVisible); };
+  }, []);
   const sections: NavSection[] = useMemo(
     () =>
       NAVS[navKey]
-        .map((s) => ({ ...s, items: s.items.filter((i) => !i.feature || features?.[i.feature]) }))
+        .map((s) => ({
+          ...s,
+          items: s.items
+            .filter((i) => !i.feature || features?.[i.feature])
+            .map((i) => (i.href.endsWith("/messages") && unread > 0 && !onMessages ? { ...i, badge: unread } : i)),
+        }))
         .filter((s) => s.items.length > 0),
-    [navKey, features],
+    [navKey, features, unread, onMessages],
   );
   const collapsed = useSyncExternalStore(subscribeCollapse, readCollapsed, () => false);
 

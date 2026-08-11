@@ -153,6 +153,13 @@ Sign in as **Thandeka**.
 - ☐ Nothing is fetched, and nothing is audited, until a format is chosen; each export writes one `dsar.export` audit row *before* the data leaves (fail-strict)
 - ☐ The menu opens **upwards** when the button sits low on the page (this one does), so it is never off-screen
 
+**Messages: live without realtime + the unread badge** (batch 2u)
+- ☐ With Supabase Realtime unreachable (this machine's situation), a reply still lands in an **open chat within ~5s** - the view polls when the socket has not connected, merging by message id so an optimistic send is never clobbered
+- ☐ The console is not flooded: after 3 socket failures the client stops retrying and polling owns delivery
+- ☐ **Messages** in the sidebar carries a floating **unread count**, refreshed every 30s and on tab-focus, cleared when you land on Messages
+- ☐ On a **phone**, Messages folds into **More**: the More tab carries the count, and inside the sheet the Messages row shows its number; the chat itself never scrolls sideways
+- ☐ The count is org-wide (all threads), only counts others' messages, and reading a thread brings it back down
+
 **Storage backend: Supabase or Amazon S3** (batch 2o)
 - ☐ `/admin/integrations/storage` offers two chips: **Supabase** and **Amazon S3**. The chip you are not on shows *configured* when its credentials are stored, so switching back needs no retyping
 - ☐ Picking **Amazon S3** asks for region, bucket, access key ID, secret and an optional endpoint (MinIO / Cloudflare R2), and stops asking for a Supabase project URL

@@ -1485,6 +1485,20 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   Accessibility, again: the company dialogs and the custom `Select` had no accessible names, so
   the fields were invisible to a screen reader (and untestable). Both fixed.
 
+- [x] **Messages: live without realtime, plus the unread badge** *(2026-08-11, batch 2u)*: the
+  chat's live delivery rides Supabase Realtime, and when that host is unreachable (as on this
+  machine - the project's DNS is dead) the old behaviour was a console full of WebSocket errors
+  and replies that only appeared on a hard refresh. Now the presence channel's status is the
+  health signal: not SUBSCRIBED means the view **polls every 5s**, merging new messages by id on
+  top of what is shown (an optimistic send is never clobbered, unread respects the open thread),
+  and after 3 socket failures the client disconnects instead of retrying forever. Realtime still
+  wins when it works; polling pauses in hidden tabs.
+  The **Messages nav item carries an unread count**: seeded server-side on first paint
+  (`unreadMessageCountDb`), repolled every 30s and on tab-focus, cleared on landing on Messages.
+  On a phone, where Messages folds into **More**, the More tab aggregates the badges of everything
+  inside it and the sheet's Messages row shows its own number - a count that only existed on a
+  hidden surface wasn't a count at all.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

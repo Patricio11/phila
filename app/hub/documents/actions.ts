@@ -237,7 +237,10 @@ export async function addLinkDocument(raw: z.infer<typeof linkInput>): Promise<R
 }
 
 const requestInput = z.object({
-  clientId: z.string().min(1),
+  /** Who the practice is asking (batch 2z): a client, or one of its counsellors. */
+  target: z.enum(["client", "counsellor"]).default("client"),
+  clientId: z.string().min(1).optional(),
+  counsellorId: z.string().min(1).optional(),
   title: z.string().trim().min(2, "Say what you need.").max(100),
   note: z.string().trim().max(300).optional(),
 });
@@ -245,10 +248,33 @@ export async function requestDocument(raw: z.infer<typeof requestInput>): Promis
   const { principal, membership } = await requireHub();
   const parsed = requestInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the request." };
+  const d = parsed.data;
+  if (d.target === "client" && !d.clientId) return { ok: false, error: "Pick a client." };
+  if (d.target === "counsellor" && !d.counsellorId) return { ok: false, error: "Pick a counsellor." };
+
   let id: string | undefined;
-  if (isDb())
-    id = await createRequestDb(membership.orgId, { clientId: parsed.data.clientId, requestedBy: principal.userId, title: parsed.data.title, note: parsed.data.note });
-  await audit(membership.orgId, principal.userId, `client:${parsed.data.clientId}/documents`, "request_document");
+  if (isDb()) {
+    id = await createRequestDb(membership.orgId, {
+      clientId: d.target === "client" ? d.clientId : null,
+      counsellorId: d.target === "counsellor" ? d.counsellorId : null,
+      requestedBy: principal.userId, title: d.title, note: d.note,
+    });
+    // The counsellor's bell rings with what is needed; the upload lives on
+    // their Documents page (their folder), not buried in email.
+    if (d.target === "counsellor" && d.counsellorId) {
+      try {
+        const { notifyCounsellor } = await import("@/db/queries/notifications");
+        await notifyCounsellor(d.counsellorId, {
+          kind: "document_requested",
+          title: "Your practice needs a document",
+          body: `"${d.title}"${d.note ? ` - ${d.note}` : ""}. Upload it from your Documents page.`,
+          href: "/app/documents",
+        });
+      } catch { /* the request stands even if the bell doesn't ring */ }
+    }
+  }
+  const target = d.target === "client" ? `client:${d.clientId}` : `counsellor:${d.counsellorId}`;
+  await audit(membership.orgId, principal.userId, `${target}/documents`, "request_document");
   revalidatePath("/hub/documents");
   return { ok: true, id };
 }

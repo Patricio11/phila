@@ -51,7 +51,7 @@ function toFolder(r: typeof documentFolders.$inferSelect): DocumentFolder {
 
 function toRequest(r: typeof documentRequests.$inferSelect): DocumentRequest {
   return {
-    id: r.id, orgId: r.orgId, clientId: r.clientId, requestedBy: r.requestedBy,
+    id: r.id, orgId: r.orgId, clientId: r.clientId, counsellorId: r.counsellorId ?? null, requestedBy: r.requestedBy,
     title: r.title, note: r.note, status: r.status as DocumentRequest["status"],
     dueAt: r.dueAt ? r.dueAt.toISOString() : null, fulfilledDocumentId: r.fulfilledDocumentId,
     createdAt: r.createdAt.toISOString(),
@@ -276,14 +276,22 @@ export async function counsellorsByIdDb(orgId: string, ids: string[]): Promise<M
 }
 
 export async function createRequestDb(
-  orgId: string, input: { clientId: string; requestedBy: string; title: string; note?: string | null },
+  orgId: string, input: { clientId?: string | null; counsellorId?: string | null; requestedBy: string; title: string; note?: string | null },
 ): Promise<string> {
   const id = `docreq_${randomUUID()}`;
   await runForOrg(orgId, () => activeDb().insert(documentRequests).values({
-    id, orgId, clientId: input.clientId, requestedBy: input.requestedBy,
+    id, orgId, clientId: input.clientId ?? null, counsellorId: input.counsellorId ?? null,
+    requestedBy: input.requestedBy,
     title: input.title, note: input.note ?? null, status: "pending", createdAt: new Date(),
   }));
   return id;
+}
+
+/** Pending requests addressed to one counsellor (their to-do list). */
+export async function listCounsellorRequestsDb(counsellorId: string): Promise<DocumentRequest[]> {
+  const rows = await getDb().select().from(documentRequests)
+    .where(and(eq(documentRequests.counsellorId, counsellorId), eq(documentRequests.status, "pending")));
+  return rows.map(toRequest).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 /* ── Upload lifecycle (presigned: request → PUT → confirm) ─────────────── */
@@ -306,6 +314,8 @@ export async function insertPendingDocument(input: {
   storageKey: string; storageBackend?: StorageBackend; uploadedBy: string | null;
   /** Session-attachment context (W6.2): link to the session + client, kept clinical. */
   sessionId?: string | null; clientId?: string | null; counsellorId?: string | null;
+  /** The document request this upload answers (batch 2z). */
+  requestId?: string | null;
   visibility?: "internal" | "clinical" | "client_visible"; sharedBy?: "org" | "counsellor" | "client";
 }): Promise<void> {
   await runForOrg(input.orgId, () => activeDb().insert(documents).values({
@@ -313,6 +323,7 @@ export async function insertPendingDocument(input: {
     kind: "upload", visibility: input.visibility ?? "internal", storageProvider: input.storageBackend ?? "supabase", storageKey: input.storageKey,
     contentType: input.contentType, bytes: 0, sizeLabel: "…", scanStatus: "pending",
     sessionId: input.sessionId ?? null, clientId: input.clientId ?? null, counsellorId: input.counsellorId ?? null,
+    requestId: input.requestId ?? null,
     uploadedBy: input.uploadedBy, sharedBy: input.sharedBy ?? "org", createdAt: new Date(),
   }));
 }

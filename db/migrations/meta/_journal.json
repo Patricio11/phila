@@ -512,6 +512,13 @@
       "when": 1786441603155,
       "tag": "0072_tired_punisher",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1786644225510,
+      "tag": "0073_luxuriant_black_queen",
+      "breakpoints": true
     }
   ]
 }

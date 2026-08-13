@@ -293,7 +293,9 @@ export interface Document {
 export interface DocumentRequest {
   id: string;
   orgId: string;
-  clientId: string;
+  /** Who the practice is asking - exactly one of these is set (batch 2z). */
+  clientId: string | null;
+  counsellorId?: string | null;
   requestedBy: string;
   title: string;
   note: string | null;

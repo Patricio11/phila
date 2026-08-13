@@ -122,3 +122,106 @@ export async function deleteMyLink(raw: { documentId: string }): Promise<{ ok: t
   revalidatePath("/hub/documents");
   return { ok: true };
 }
+
+/* ── A counsellor answers the practice's document request (batch 2z) ─────────
+ * Same presign → PUT → confirm shape as every other upload. The file lands in
+ * THEIR folder, the request is marked fulfilled, and the practice's bell rings.
+ */
+export async function requestFulfilUpload(raw: { requestId: string; name: string; contentType: string; bytes: number }): Promise<{ ok: true; uploadUrl: string; documentId: string } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg(["counsellor"]);
+  const provider = await getDataProvider();
+  const me = (await provider.listCounsellors(membership.orgId)).find((c) => c.userId === principal.userId);
+  if (!me) return { ok: false, error: "Not found." };
+
+  const requestId = String(raw?.requestId ?? "");
+  const name = String(raw?.name ?? "").trim().slice(0, 160);
+  const contentType = String(raw?.contentType ?? "").trim().slice(0, 120);
+  const bytes = Number(raw?.bytes ?? 0);
+  if (!requestId || !name || !contentType || !(bytes > 0)) return { ok: false, error: "Check the file." };
+
+  const { validateUpload } = await import("@/lib/documents/quota");
+  const v = validateUpload({ contentType, bytes, name });
+  if (!v.ok) return v;
+
+  // The request must be MINE and still open - a token guessed or stale is refused.
+  const { getRequestRow, currentStorageBytes, insertPendingDocument, ensureCounsellorFolderDb } = await import("@/db/queries/documents");
+  const req = await getRequestRow(requestId);
+  if (!req || req.orgId !== membership.orgId || req.counsellorId !== me.id) return { ok: false, error: "That request isn't yours." };
+  if (req.status !== "pending") return { ok: false, error: "That request has already been answered." };
+
+  const { getStorageProvider: getStore, activeStorageBackend: backend, objectKey } = await import("@/lib/storage");
+  const storage = await getStore();
+  if (storage.status !== "live") return { ok: false, error: "Phila Storage isn't switched on yet." };
+  const { orgStorageLimitBytes } = await import("@/db/queries/resources");
+  if ((await currentStorageBytes(membership.orgId)) + bytes > (await orgStorageLimitBytes(membership.orgId)))
+    return { ok: false, error: "Your practice has reached its storage. Ask an admin to make room." };
+
+  // The file lands in the counsellor's own folder - where their things live.
+  const { folderId } = await ensureCounsellorFolderDb(membership.orgId, me, "system");
+  const documentId = `doc_${crypto.randomUUID()}`;
+  const key = objectKey(membership.orgId, documentId, name);
+  let uploadUrl: string;
+  try {
+    ({ uploadUrl } = await storage.signedUploadUrl({ key, contentType }));
+  } catch {
+    return { ok: false, error: "Storage rejected the upload - check the Phila Storage configuration." };
+  }
+  await insertPendingDocument({
+    id: documentId, orgId: membership.orgId, folderId, name, contentType,
+    storageKey: key, storageBackend: await backend(), uploadedBy: me.id,
+    counsellorId: me.id, requestId, sharedBy: "counsellor",
+  });
+  await logAccess({
+    action: "file.access",
+    actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
+    orgId: membership.orgId,
+    target: `document:${documentId}`,
+    reason: "counsellor_request_upload",
+  });
+  return { ok: true, uploadUrl, documentId };
+}
+
+export async function confirmFulfilUpload(raw: { documentId: string; bytes: number }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg(["counsellor"]);
+  const provider = await getDataProvider();
+  const me = (await provider.listCounsellors(membership.orgId)).find((c) => c.userId === principal.userId);
+  if (!me) return { ok: false, error: "Not found." };
+  const documentId = String(raw?.documentId ?? "");
+  const bytes = Number(raw?.bytes ?? 0);
+  if (!documentId || !(bytes > 0)) return { ok: false, error: "Could not finalise the upload." };
+
+  const { getDocumentRow, finalizeDocument, addStorageUsage, fulfilRequestDb, folderNameDb } = await import("@/db/queries/documents");
+  const doc = await getDocumentRow(membership.orgId, documentId);
+  if (!doc || !doc.storageKey || doc.uploadedBy !== me.id) return { ok: false, error: "Upload not found." };
+
+  const { scanObject } = await import("@/lib/documents/scan");
+  const scan = await scanObject(doc.storageKey);
+  await finalizeDocument(membership.orgId, documentId, bytes, scan);
+  if (scan !== "clean") return { ok: false, error: "That file didn't pass the security scan." };
+  await addStorageUsage(membership.orgId, bytes);
+  if (doc.requestId) await fulfilRequestDb(doc.requestId, documentId);
+
+  // The practice hears the ask was answered, named and placed.
+  try {
+    const { notifyOrgAdmins } = await import("@/db/queries/notifications");
+    const where = doc.folderId ? await folderNameDb(membership.orgId, doc.folderId) : null;
+    await notifyOrgAdmins(membership.orgId, {
+      kind: "document_submitted",
+      title: `${me.name} uploaded a requested document`,
+      body: `"${doc.name}"${where ? ` in ${where}` : ""}. The request is fulfilled.`,
+      href: "/hub/documents",
+    });
+  } catch { /* the upload stands either way */ }
+
+  await logAccess({
+    action: "file.access",
+    actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
+    orgId: membership.orgId,
+    target: `document:${documentId}`,
+    reason: `counsellor_upload_${scan}`,
+  });
+  const { revalidatePath } = await import("next/cache");
+  revalidatePath("/app/documents");
+  revalidatePath("/hub/documents");
+  return { ok: true };
+}

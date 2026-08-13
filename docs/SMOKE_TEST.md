@@ -139,6 +139,12 @@ Sign in as **Thandeka**.
 - ☐ Wide tables (Clients, Invoicing, Team) scroll inside their own box; the page itself never does
 - ☐ **An unassigned client's record opens** (it used to 404): the dossier says "No counsellor assigned yet" and Reassign works from there
 
+**Request a document from a counsellor** (batch 2z)
+- ☐ `/hub/documents` → **Request** now opens with a toggle: **A client** / **A counsellor**, each with the searchable people-picker; the description says where the request will land
+- ☐ Requesting from a counsellor writes a request with `counsellor_id` (no client) and rings that counsellor's bell with the title + note
+- ☐ The counsellor's `/app/documents` shows a **"Your practice needs a document from you"** card with each pending ask and an **Upload** button; the upload lands in **their folder**, the request flips to fulfilled, and every org admin's bell rings
+- ☐ A failed upload (storage down, scan failed) says so plainly and leaves the request open for a retry; guessed or stale request ids are refused server-side ("That request isn't yours")
+
 **A folder per counsellor + document search** (batch 2r)
 - ☐ `/hub/documents` → **Counsellor folders** creates one folder per counsellor, named after them, under a single **Counsellors** folder, each already shared with its owner. Pressing it again says "Everyone already has a folder" and changes nothing
 - ☐ **Adding a counsellor creates their folder automatically** (invite one and look in Documents) - the button is for the team that joined before, and for restoring a deleted folder

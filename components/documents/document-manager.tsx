@@ -23,6 +23,7 @@ import {
   Link2,
   ExternalLink,
   Search,
+  UserRound,
   UsersRound,
 } from "lucide-react";
 import type { Document, DocumentFolder, DocumentRequest, StorageUsage } from "@/lib/domain/types";
@@ -35,6 +36,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { KebabMenu } from "@/components/ui/kebab-menu";
+import { SearchSelect } from "@/components/ui/search-select";
 import {
   addLinkDocument,
   assignToClient,
@@ -126,7 +128,11 @@ export function DocumentManager({
   const [renameDoc, setRenameDoc] = useState<Document | null>(null);
   const [renameDocName, setRenameDocName] = useState("");
   const [requestOpen, setRequestOpen] = useState(false);
+  // Batch 2z - a request can ask a client (their portal) or a counsellor
+  // (their Documents page, straight into their folder).
+  const [reqTarget, setReqTarget] = useState<"client" | "counsellor">("client");
   const [reqClient, setReqClient] = useState<string | null>(null);
+  const [reqCounsellor, setReqCounsellor] = useState<string | null>(null);
   const [reqTitle, setReqTitle] = useState("");
   const [reqNote, setReqNote] = useState("");
 
@@ -288,12 +294,21 @@ export function DocumentManager({
   }
 
   async function onRequest() {
-    if (!reqClient || reqTitle.trim().length < 2) return;
+    const who = reqTarget === "client" ? reqClient : reqCounsellor;
+    if (!who || reqTitle.trim().length < 2) return;
     setRequestOpen(false);
-    const res = await requestDocument({ clientId: reqClient, title: reqTitle.trim(), note: reqNote.trim() || undefined });
+    const res = await requestDocument({
+      target: reqTarget,
+      clientId: reqTarget === "client" ? reqClient ?? undefined : undefined,
+      counsellorId: reqTarget === "counsellor" ? reqCounsellor ?? undefined : undefined,
+      title: reqTitle.trim(),
+      note: reqNote.trim() || undefined,
+    });
     if (!res.ok) toast({ tone: "error", title: "Couldn't send request", description: res.error });
-    else toast({ tone: "success", title: "Document requested", description: `${clientName.get(reqClient) ?? "Client"} will see it in their portal` });
+    else if (reqTarget === "client") toast({ tone: "success", title: "Document requested", description: `${clientName.get(reqClient!) ?? "The client"} will see it in their portal.` });
+    else toast({ tone: "success", title: "Document requested", description: `${counsellors.find((c) => c.id === reqCounsellor)?.name ?? "The counsellor"} can upload it from their Documents page.` });
     setReqClient(null);
+    setReqCounsellor(null);
     setReqTitle("");
     setReqNote("");
     router.refresh();
@@ -805,18 +820,62 @@ export function DocumentManager({
         open={requestOpen}
         onClose={() => setRequestOpen(false)}
         title="Request a document"
-        description="The client sees this in their portal and uploads against it. No unsolicited uploads."
+        description={reqTarget === "client"
+          ? "The client sees this in their portal and uploads against it. No unsolicited uploads."
+          : "The counsellor sees this on their Documents page and uploads straight into their folder."}
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" size="sm" onClick={() => setRequestOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={onRequest} disabled={!reqClient || reqTitle.trim().length < 2}>Send request</Button>
+            <Button size="sm" onClick={onRequest} disabled={(reqTarget === "client" ? !reqClient : !reqCounsellor) || reqTitle.trim().length < 2}>Send request</Button>
           </div>
         }
       >
         <div className="space-y-3">
-          <Select value={reqClient} onChange={setReqClient} placeholder="Which client?" options={clients.map((c) => ({ value: c.id, label: c.name }))} />
-          <Input placeholder="What do you need? e.g. Copy of your ID" value={reqTitle} onChange={(e) => setReqTitle(e.target.value)} />
-          <Input placeholder="A short note (optional)" value={reqNote} onChange={(e) => setReqNote(e.target.value)} />
+          {/* Who is being asked - the toggle. */}
+          <div className="grid grid-cols-2 gap-1.5" role="radiogroup" aria-label="Request from">
+            {([
+              { key: "client" as const, label: "A client", icon: UserRound },
+              { key: "counsellor" as const, label: "A counsellor", icon: UsersRound },
+            ]).map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                type="button"
+                role="radio"
+                aria-checked={reqTarget === key}
+                onClick={() => setReqTarget(key)}
+                className={cn(
+                  "flex items-center justify-center gap-1.5 rounded-control border px-2 py-2 text-[12.5px] font-medium transition-colors",
+                  reqTarget === key ? "border-accent bg-accent-soft text-accent" : "border-border bg-surface text-text-2 hover:bg-surface-hover",
+                )}
+              >
+                <Icon className="size-3.5" strokeWidth={2} aria-hidden /> {label}
+              </button>
+            ))}
+          </div>
+
+          {reqTarget === "client" ? (
+            <SearchSelect
+              avatars
+              ariaLabel="Which client"
+              value={reqClient}
+              onChange={setReqClient}
+              placeholder="Which client?"
+              searchPlaceholder="Search clients…"
+              options={clients.map((c) => ({ value: c.id, label: c.name }))}
+            />
+          ) : (
+            <SearchSelect
+              avatars
+              ariaLabel="Which counsellor"
+              value={reqCounsellor}
+              onChange={setReqCounsellor}
+              placeholder="Which counsellor?"
+              searchPlaceholder="Search counsellors…"
+              options={counsellors.map((c) => ({ value: c.id, label: c.name }))}
+            />
+          )}
+          <Input aria-label="What do you need" placeholder={reqTarget === "client" ? "What do you need? e.g. Copy of your ID" : "What do you need? e.g. Signed supervision log"} value={reqTitle} onChange={(e) => setReqTitle(e.target.value)} />
+          <Input aria-label="Request note" placeholder="A short note (optional)" value={reqNote} onChange={(e) => setReqNote(e.target.value)} />
         </div>
       </Dialog>
     </div>

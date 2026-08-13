@@ -894,7 +894,9 @@ export const documents = pgTable("documents", {
 export const documentRequests = pgTable("document_requests", {
   id: text("id").primaryKey(),
   orgId: text("org_id").notNull().references(() => orgs.id),
-  clientId: text("client_id").notNull(),
+  /** Who the practice is asking. Exactly one of these is set (batch 2z). */
+  clientId: text("client_id"),
+  counsellorId: text("counsellor_id"),
   requestedBy: text("requested_by").notNull(),
   title: text("title").notNull(),
   note: text("note"),

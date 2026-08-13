@@ -1530,6 +1530,16 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   archived counsellor. `unassignCaseloadDb` now frees them for real - safe since 2s made an
   unassigned client a first-class record - and the archive summary says so.
 
+- [x] **Request a document from a counsellor** *(2026-08-12, batch 2z)*: the Request dialog
+  gained a toggle - **A client** (their portal, as before) or **A counsellor** - each with the
+  searchable people-picker. A counsellor request rings their bell, appears on their Documents page
+  as a "Your practice needs a document from you" card, and its **Upload** button runs the same
+  presign → PUT → confirm pipeline as everything else, landing the file in **their own folder**,
+  flipping the request to fulfilled and notifying the org admins by name. Server-side the request
+  must be theirs and still pending; storage quota and the malware scan apply; a failure leaves the
+  request open for a retry. Migration 0073 (`document_requests.counsellor_id`, `client_id` now
+  nullable) - a request targets exactly one of the two.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

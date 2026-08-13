@@ -14,6 +14,9 @@ import { PageHead } from "@/components/shell/page-head";
 import { ExportMenu } from "@/components/hub/export-menu";
 import { useToast } from "@/components/ui/toast";
 import { Select } from "@/components/ui/select";
+import { SearchSelect } from "@/components/ui/search-select";
+import { FORM_KIND_META } from "@/lib/forms/kind-icon";
+import type { FormKind } from "@/lib/domain/enums";
 import { CreateAppointmentModal, type SchedulingOptions } from "@/components/scheduling/create-appointment-modal";
 import { recordCompanyPayment, updateCompany } from "@/app/hub/companies/actions";
 import { cn } from "@/lib/utils";
@@ -31,7 +34,7 @@ export function CompanyDetailView({ detail, slug, orgName, nowISO, forms = [], e
   orgName: string;
   nowISO: string;
   /** Batch 2t - forms an employer intake can be chosen from. */
-  forms?: { id: string; title: string }[];
+  forms?: { id: string; title: string; kind?: string }[];
   /** Batch 2t - who is linked, for the PRACTICE only. Never shown to the employer. */
   employees?: CompanyEmployee[];
   scheduling?: SchedulingOptions;
@@ -335,11 +338,16 @@ export function CompanyDetailView({ detail, slug, orgName, nowISO, forms = [], e
             {eMode === "practice_books" && (
               <div className="space-y-1.5 pt-1">
                 <Label>Intake form</Label>
-                <Select
+                <SearchSelect
                   ariaLabel="Intake form"
-                  value={eFormId ?? ""}
+                  value={eFormId}
                   onChange={(v) => setEFormId(v || null)}
-                  options={[{ value: "", label: forms.length ? "Choose a form…" : "No forms yet - create one first" }, ...forms.map((f) => ({ value: f.id, label: f.title }))]}
+                  placeholder={forms.length ? "Choose a form…" : "No forms yet - create one first"}
+                  searchPlaceholder="Search forms…"
+                  options={forms.map((f) => {
+                    const meta = FORM_KIND_META[(f.kind as FormKind) ?? "custom"] ?? FORM_KIND_META.custom;
+                    return { value: f.id, label: f.title, hint: meta.label, icon: meta.icon };
+                  })}
                 />
               </div>
             )}

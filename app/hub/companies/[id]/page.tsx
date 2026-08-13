@@ -56,7 +56,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
       slug={org.slug}
       orgName={membership.orgName}
       nowISO={now}
-      forms={forms.filter((f) => f.status === "active").map((f) => ({ id: f.id, title: f.title }))}
+      forms={forms.filter((f) => f.status === "active").map((f) => ({ id: f.id, title: f.title, kind: f.kind }))}
       employees={employees}
       scheduling={scheduling}
     />

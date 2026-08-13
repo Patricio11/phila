@@ -28,7 +28,7 @@ export default async function HubCompaniesPage() {
   const forms = process.env.DATA_PROVIDER === "db"
     ? (await (await import("@/db/queries/forms")).listFormsDb(membership.orgId))
         .filter((f) => f.status === "active")
-        .map((f) => ({ id: f.id, title: f.title }))
+        .map((f) => ({ id: f.id, title: f.title, kind: f.kind }))
     : [];
 
   await logAccess({

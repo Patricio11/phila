@@ -12,7 +12,9 @@ import { Input, Label, FieldError, Textarea } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
-import { Select } from "@/components/ui/select";
+import { SearchSelect } from "@/components/ui/search-select";
+import { FORM_KIND_META } from "@/lib/forms/kind-icon";
+import type { FormKind } from "@/lib/domain/enums";
 import { createCompany } from "@/app/hub/companies/actions";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +25,7 @@ export function CompaniesBoard({ companies, slug, forms = [] }: {
   companies: CompanySummary[];
   slug: string;
   /** Batch 2t - the org's active forms, to choose an employer intake from. */
-  forms?: { id: string; title: string }[];
+  forms?: { id: string; title: string; kind?: string }[];
 }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -199,11 +201,16 @@ export function CompaniesBoard({ companies, slug, forms = [] }: {
             {mode === "practice_books" && (
               <div className="space-y-1.5 pt-1">
                 <Label>Intake form</Label>
-                <Select
+                <SearchSelect
                   ariaLabel="Intake form"
-                  value={intakeFormId ?? ""}
+                  value={intakeFormId}
                   onChange={(v) => setIntakeFormId(v || null)}
-                  options={[{ value: "", label: forms.length ? "Choose a form…" : "No forms yet - create one first" }, ...forms.map((f) => ({ value: f.id, label: f.title }))]}
+                  placeholder={forms.length ? "Choose a form…" : "No forms yet - create one first"}
+                  searchPlaceholder="Search forms…"
+                  options={forms.map((f) => {
+                    const meta = FORM_KIND_META[(f.kind as FormKind) ?? "custom"] ?? FORM_KIND_META.custom;
+                    return { value: f.id, label: f.title, hint: meta.label, icon: meta.icon };
+                  })}
                 />
                 {attempted && !intakeFormId ? <FieldError>Pick the form employees should fill.</FieldError> : null}
                 <p className="text-[11.5px] leading-relaxed text-text-3">

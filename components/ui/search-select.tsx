@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, ChevronDown, Search, Users } from "lucide-react";
+import { Check, ChevronDown, Search, Users, type LucideIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
@@ -9,6 +9,8 @@ export interface SearchOption {
   value: string;
   label: string;
   hint?: string;
+  /** Rendered in a soft tile beside the label (things, where `avatars` is people). */
+  icon?: LucideIcon;
 }
 
 /**
@@ -105,7 +107,7 @@ export function SearchSelect({
                     onClick={() => { onChange(o.value); setOpen(false); setQ(""); }}
                     className={cn(
                       "flex w-full items-center gap-2 px-3 text-left text-[13px] transition-colors hover:bg-surface-hover",
-                      avatars ? "gap-3 py-2.5" : "justify-between py-2",
+                      avatars || o.icon ? "gap-3 py-2.5" : "justify-between py-2",
                       o.value === value && "bg-accent-soft/40",
                     )}
                   >
@@ -116,7 +118,12 @@ export function SearchSelect({
                         <Avatar name={o.label} size="sm" />
                       )
                     )}
-                    {avatars ? (
+                    {!avatars && o.icon && (
+                      <span className="grid size-8 shrink-0 place-items-center rounded-control bg-accent-soft text-accent">
+                        <o.icon className="size-4" strokeWidth={1.9} aria-hidden />
+                      </span>
+                    )}
+                    {avatars || o.icon ? (
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[13.5px] font-[550] text-text">{o.label}</span>
                         {o.hint && <span className="block truncate text-[11.5px] text-text-3">{o.hint}</span>}
@@ -125,7 +132,7 @@ export function SearchSelect({
                       <span className="truncate text-text">{o.label}</span>
                     )}
                     <span className="flex shrink-0 items-center gap-2">
-                      {!avatars && o.hint && <span className="text-[11.5px] text-text-3">{o.hint}</span>}
+                      {!avatars && !o.icon && o.hint && <span className="text-[11.5px] text-text-3">{o.hint}</span>}
                       {o.value === value && <Check className="size-3.5 text-accent" strokeWidth={2.4} aria-hidden />}
                     </span>
                   </button>

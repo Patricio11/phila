@@ -275,9 +275,13 @@ export function CompanyDetailView({ detail, slug, orgName, nowISO, forms = [], e
                   <Link href={`/hub/clients/${e.clientId}`} className="min-w-0 flex-1 text-[13.5px] font-medium text-text hover:text-accent">
                     {e.name}
                   </Link>
-                  {e.waiting && <span className="rounded-chip bg-warn-soft px-2 py-0.5 text-[11px] font-semibold text-warn">Waiting</span>}
+                  {e.waiting ? (
+                    <span className="rounded-chip bg-warn-soft px-2 py-0.5 text-[11px] font-semibold text-warn">Waiting</span>
+                  ) : e.nextAt ? (
+                    <span className="rounded-chip bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent">Booked · {DAY(e.nextAt)}</span>
+                  ) : null}
                   <span className="text-[11.5px] tabular-nums text-text-3">
-                    {e.sessionsHeld} held{e.nextAt ? ` · next ${DAY(e.nextAt)}` : e.lastAt ? ` · last ${DAY(e.lastAt)}` : ""}
+                    {e.sessionsHeld} held{e.lastAt ? ` · last ${DAY(e.lastAt)}` : ""}
                   </span>
                   {scheduling && (
                     <Button size="sm" variant={e.waiting ? "primary" : "ghost"} onClick={() => setBooking(e)}>

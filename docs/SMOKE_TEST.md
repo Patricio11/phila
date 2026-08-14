@@ -264,6 +264,13 @@ Sign in as **Thandeka**.
 - ☐ Setting **company retainer** previews every service as **Free**, saves (DB `{"kind":"retainer"}`), and new bookings invoice at R0; Megan Pillay is the seeded example
 - ☐ A legacy sliding-scale client (e.g. Johan, pays 50%) still shows + bills their old arrangement until changed
 
+**The waitlist closes its loop** (batch 3d)
+- ☐ `/hub/waitlist` now has **Waiting / Booked** tabs (with counts), employer filter chips beside them, avatars on every row, and per-tab empty states
+- ☐ **Booking anywhere settles the wait**: book a waiting person from the waitlist page, the calendar modal, the company Employees tab, or even let them self-book - the server flips their entry to *placed* with a timestamp, no UI has to remember
+- ☐ The person moves from **Waiting** to **Booked** automatically; the Booked row shows *Booked <date>* and *Next session <when> · <counsellor>*; Book/remove only show on waiting rows
+- ☐ The **company profile's Employees** list agrees: the *Waiting* chip becomes **Booked · <date>** the moment a session exists
+- ☐ Booked entries stay visible for 90 days, then age out of the list (the client record keeps everything)
+
 **EAP: the practice books, from an intake form** (batch 2t)
 - ☐ Adding or editing a company asks **Who books the session?** - *Employees book themselves* (the original) or *The practice books*. Choosing the second asks for an **intake form**, and saving switches on that form's share link **and** the client waitlist, saying so in the toast
 - ☐ The employee link is unchanged (`/o/{slug}/book?c=…`): for a practice-books employer it **redirects to the intake form** carrying the company token, so a link already shared never goes stale. Submitting a booking with that token is refused server-side too

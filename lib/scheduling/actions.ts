@@ -198,6 +198,12 @@ export async function createAppointment(
         new Promise((resolve) => setTimeout(resolve, 4_000)),
       ]);
     }
+    // Batch 3d - a booking settles the wait, whoever made it and from wherever.
+    try {
+      const { placeWaitlistForClientDb } = await import("@/db/queries/waitlist");
+      await placeWaitlistForClientDb(data.orgId, data.clientId);
+    } catch { /* the booking stands; the list can be tidied by hand */ }
+
     // Batch 2l - form automations: "send this form when a booking is made".
     try {
       const { runFormAutomations } = await import("@/db/queries/form-automations");

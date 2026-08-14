@@ -253,7 +253,7 @@ export function CreateAppointmentModal({
           )}
         </Row>
         <Row label="Service" error={attempted ? errors.service : undefined}>
-          <Select value={serviceId} onChange={onService} invalid={Boolean(attempted && errors.service)} placeholder="Choose a service" options={options.services.map((s) => ({ value: s.id, label: s.name, hint: `${s.durationMin} min` }))} />
+          <Select ariaLabel="Service" value={serviceId} onChange={onService} invalid={Boolean(attempted && errors.service)} placeholder="Choose a service" options={options.services.map((s) => ({ value: s.id, label: s.name, hint: `${s.durationMin} min` }))} />
         </Row>
         <Row label="Counsellor" error={attempted ? errors.counsellor : undefined}>
           <SearchSelect avatars value={counsellorId} onChange={setCounsellorId} invalid={Boolean(attempted && errors.counsellor)} placeholder="Choose a counsellor" searchPlaceholder="Search counsellors…" ariaLabel="Counsellor" options={counsellorOptions.map((c) => ({ value: c.id, label: c.name, hint: speakerSet.has(c.id) && clientLanguageName ? `Speaks ${clientLanguageName}` : undefined }))} />

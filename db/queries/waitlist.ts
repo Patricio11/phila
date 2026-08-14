@@ -1,9 +1,9 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, or } from "drizzle-orm";
 import { runForOrg, activeDb } from "@/lib/db/scoped";
 import { getDb } from "@/db/client";
-import { waitlistEntries, clients, counsellors, companies, formAssignments } from "@/db/schema";
+import { waitlistEntries, clients, counsellors, companies, formAssignments, appointments } from "@/db/schema";
 
 /**
  * Waitlist (W7). Clients waiting for a slot; when a session is cancelled the matching
@@ -52,6 +52,21 @@ export async function listWaitlistDb(orgId: string): Promise<WaitlistItem[]> {
   });
 }
 
+/**
+ * Batch 3d - a client who just got a session is no longer waiting. Called from
+ * EVERY booking path (hub modal, waitlist page, company tab, self-booking), so
+ * no surface has to remember: booking anywhere settles the wait everywhere.
+ */
+export async function placeWaitlistForClientDb(orgId: string, clientId: string): Promise<number> {
+  return runForOrg(orgId, async () => {
+    const rows = await activeDb().update(waitlistEntries)
+      .set({ status: "placed", placedAt: new Date() })
+      .where(and(eq(waitlistEntries.orgId, orgId), eq(waitlistEntries.clientId, clientId), eq(waitlistEntries.status, "waiting")))
+      .returning({ id: waitlistEntries.id });
+    return rows.length;
+  });
+}
+
 export async function removeWaitlistDb(orgId: string, id: string): Promise<void> {
   await runForOrg(orgId, () => activeDb().update(waitlistEntries).set({ status: "removed" }).where(and(eq(waitlistEntries.id, id), eq(waitlistEntries.orgId, orgId))));
 }
@@ -95,36 +110,64 @@ export interface WaitlistDetail extends WaitlistItem {
   formToken: string | null;
   clientEmail: string | null;
   clientPhone: string | null;
+  /** Batch 3d - "waiting" or, once a session exists, "placed". */
+  status: "waiting" | "placed";
+  placedAt: string | null;
+  /** The booked session, for placed rows: when and with whom. */
+  nextAt: string | null;
+  nextCounsellorName: string | null;
 }
 
 /**
- * Everyone waiting, with the employer paying (if any) and the intake they
- * completed. One query: the page shows who, from where, how long, and why.
+ * The whole story: everyone waiting, plus everyone recently booked off the
+ * list (last 90 days), each with the employer paying (if any), the intake
+ * they completed, and - for the booked - when their session is and with whom.
  */
 export async function listWaitlistDetailedDb(orgId: string): Promise<WaitlistDetail[]> {
   return runForOrg(orgId, async () => {
     const db = activeDb();
+    const placedFloor = new Date(Date.now() - 90 * 86_400_000);
     const rows = await db.select({
       id: waitlistEntries.id, clientId: waitlistEntries.clientId, clientName: clients.name,
       clientEmail: clients.email, clientPhone: clients.phone, companyId: clients.companyId,
       counsellorId: waitlistEntries.counsellorId, counsellorName: counsellors.name,
       serviceId: waitlistEntries.serviceId, note: waitlistEntries.note,
       createdAt: waitlistEntries.createdAt, offeredAt: waitlistEntries.offeredAt,
+      status: waitlistEntries.status, placedAt: waitlistEntries.placedAt,
     })
       .from(waitlistEntries)
       .leftJoin(clients, eq(clients.id, waitlistEntries.clientId))
       .leftJoin(counsellors, eq(counsellors.id, waitlistEntries.counsellorId))
-      .where(and(eq(waitlistEntries.orgId, orgId), eq(waitlistEntries.status, "waiting")))
+      .where(and(
+        eq(waitlistEntries.orgId, orgId),
+        or(
+          eq(waitlistEntries.status, "waiting"),
+          and(eq(waitlistEntries.status, "placed"), gte(waitlistEntries.placedAt, placedFloor)),
+        ),
+      ))
       .orderBy(asc(waitlistEntries.createdAt));
     if (rows.length === 0) return [];
 
     const clientIds = rows.map((r) => r.clientId);
-    const [companyRows, responses] = await Promise.all([
+    const [companyRows, responses, upcoming] = await Promise.all([
       db.select({ id: companies.id, name: companies.name }).from(companies).where(eq(companies.orgId, orgId)),
       db.select({ clientId: formAssignments.clientId, token: formAssignments.token, snapshot: formAssignments.snapshot, submittedAt: formAssignments.submittedAt })
         .from(formAssignments)
         .where(and(eq(formAssignments.orgId, orgId), eq(formAssignments.status, "completed"), inArray(formAssignments.clientId, clientIds))),
+      // The booked session each placed person is heading to.
+      db.select({ clientId: appointments.clientId, startsAt: appointments.startsAt, counsellorName: counsellors.name })
+        .from(appointments)
+        .leftJoin(counsellors, eq(counsellors.id, appointments.counsellorId))
+        .where(and(
+          eq(appointments.orgId, orgId), eq(appointments.state, "scheduled"),
+          gte(appointments.startsAt, new Date()), inArray(appointments.clientId, clientIds),
+        )),
     ]);
+    const nextOf = new Map<string, { at: Date; counsellorName: string | null }>();
+    for (const u of upcoming) {
+      const cur = nextOf.get(u.clientId);
+      if (!cur || u.startsAt < cur.at) nextOf.set(u.clientId, { at: u.startsAt, counsellorName: u.counsellorName });
+    }
     const companyName = new Map(companyRows.map((c) => [c.id, c.name]));
     // The most recent completed response per person is the one worth reading.
     const latest = new Map<string, { token: string; title: string; at: number }>();
@@ -147,6 +190,10 @@ export async function listWaitlistDetailedDb(orgId: string): Promise<WaitlistDet
       formToken: latest.get(r.clientId)?.token ?? null,
       clientEmail: r.clientEmail ?? null,
       clientPhone: r.clientPhone ?? null,
+      status: (r.status === "placed" ? "placed" : "waiting") as "waiting" | "placed",
+      placedAt: r.placedAt?.toISOString() ?? null,
+      nextAt: nextOf.get(r.clientId)?.at.toISOString() ?? null,
+      nextCounsellorName: nextOf.get(r.clientId)?.counsellorName ?? null,
     }));
   });
 }

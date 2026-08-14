@@ -1569,6 +1569,18 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   state (first-class since 2s). Proven by DB assertion: a phone tweak leaves
   `primary_counsellor_id` untouched for both kinds of client.
 
+- [x] **The waitlist closes its loop** *(2026-08-12, batch 3d)*: booking someone off the waitlist
+  used to leave them marked "waiting" everywhere except the old Appointments card. Now
+  `placeWaitlistForClientDb` runs inside EVERY booking path - the hub modal (which the waitlist
+  page, calendar and company tab all share) and public self-booking - so a session anywhere flips
+  the entry to *placed* with a timestamp and no surface has to remember. The waitlist page grew
+  **Waiting / Booked** tabs with counts, avatars, employer chips, and richer rows: a booked person
+  shows *Booked <date>* plus *Next session <when> · <counsellor>* (Book/remove stay on waiting
+  rows only), and placed entries age out after 90 days. The company profile's Employees list
+  agrees the moment it happens: *Waiting* becomes **Booked · <date>**. Proven live end to end:
+  a waiting employee booked through the modal moved tabs, the DB entry read placed with a
+  timestamp, and the employer page swapped chips - all from one booking.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

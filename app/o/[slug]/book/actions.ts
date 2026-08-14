@@ -267,6 +267,8 @@ export async function submitBooking(
       // Auto-raise an invoice for the session (priced services only; org-toggleable) so
       // the client can pay online. Best-effort - never break a booking over billing.
       try { await createInvoiceForBookingDb({ orgId: config.org.id, appointmentId: res.appointmentId, clientId: res.clientId, serviceName: service.name, amountCents: companyId ? 0 : (service.priceCents ?? 0), issuedAt: new Date(clockNow()) }); } catch { /* never break booking */ }
+      // Batch 3d - self-booking settles the wait too.
+      try { await (await import("@/db/queries/waitlist")).placeWaitlistForClientDb(config.org.id, res.clientId); } catch { /* never break booking */ }
       // Batch 2l - form automations on a public booking (e.g. auto-send intake).
       try {
         const { runFormAutomations } = await import("@/db/queries/form-automations");

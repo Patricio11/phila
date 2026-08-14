@@ -264,6 +264,9 @@ Sign in as **Thandeka**.
 - ☐ Setting **company retainer** previews every service as **Free**, saves (DB `{"kind":"retainer"}`), and new bookings invoice at R0; Megan Pillay is the seeded example
 - ☐ A legacy sliding-scale client (e.g. Johan, pays 50%) still shows + bills their old arrangement until changed
 
+**One Create-folder dropdown** (batch 3h)
+- ☐ The Documents toolbar's three folder buttons (New folder / Client folder / Counsellor folders) collapsed into one **Create folder ▾** dropdown, styled like Export: **Empty folder** · **Client folder** (pick one, or create for all) · **Counsellor folders** - each opening its existing flow
+
 **Client folders on demand** (batch 3g)
 - ☐ Documents toolbar → **Client folder** opens a dialog: the searchable client picker, **Create folder** for one, or **Create for all N clients** in the footer
 - ☐ Creating for one client opens their new folder; asking again says **"<name> already has a folder"** and just opens it - never a duplicate

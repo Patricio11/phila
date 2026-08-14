@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import {
+  ChevronDown,
   ChevronRight,
   Download,
   FileText,
@@ -569,18 +570,15 @@ export function DocumentManager({
                 </button>
               )}
             </label>
-            <Button variant="ghost" size="sm" onClick={() => void makeCounsellorFolders()} loading={makingFolders}>
-              <UsersRound className="size-4" aria-hidden /> Counsellor folders
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setClientFolderOpen(true)}>
-              <UserRound className="size-4" aria-hidden /> Client folder
-            </Button>
             <Button variant="ghost" size="sm" onClick={() => setRequestOpen(true)}>
               <Inbox className="size-4" aria-hidden /> Request{openRequests ? ` (${openRequests})` : ""}
             </Button>
-            <Button variant="subtle" size="sm" onClick={() => setNewFolderOpen(true)}>
-              <FolderPlus className="size-4" aria-hidden /> New folder
-            </Button>
+            <CreateFolderMenu
+              busy={makingFolders}
+              onEmpty={() => setNewFolderOpen(true)}
+              onClient={() => setClientFolderOpen(true)}
+              onCounsellors={() => void makeCounsellorFolders()}
+            />
             <input
               ref={fileInput}
               type="file"
@@ -1172,5 +1170,94 @@ function ActionChip({ icon: Icon, label, onClick, disabled }: { icon: typeof Mov
     >
       <Icon className="size-4" aria-hidden /> {label}
     </button>
+  );
+}
+
+/**
+ * Batch 3h - one "Create folder" button instead of three. The dropdown offers
+ * an empty folder, a client's folder, or the whole counsellor set - the same
+ * portaled, edge-clamped menu the Export button uses.
+ */
+function CreateFolderMenu({ busy, onEmpty, onClient, onCounsellors }: {
+  busy: boolean;
+  onEmpty: () => void;
+  onClient: () => void;
+  onCounsellors: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [anchor, setAnchor] = useState<{ top?: number; bottom?: number; right: number } | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const toggle = () => {
+    if (!open && ref.current) {
+      const r = ref.current.getBoundingClientRect();
+      const MENU_W = 232;
+      const GAP = 8;
+      const right = Math.min(
+        Math.max(GAP, window.innerWidth - r.right),
+        Math.max(GAP, window.innerWidth - MENU_W - GAP),
+      );
+      const MENU_H = 152;
+      const below = window.innerHeight - r.bottom;
+      setAnchor(below < MENU_H + GAP && r.top > MENU_H
+        ? { bottom: window.innerHeight - r.top + 6, right }
+        : { top: r.bottom + 6, right });
+    }
+    setOpen((v) => !v);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (ref.current && !ref.current.contains(t) && menuRef.current && !menuRef.current.contains(t)) setOpen(false);
+    };
+    const onAway = () => setOpen(false);
+    document.addEventListener("mousedown", onDown);
+    window.addEventListener("scroll", onAway, true);
+    window.addEventListener("resize", onAway);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      window.removeEventListener("scroll", onAway, true);
+      window.removeEventListener("resize", onAway);
+    };
+  }, [open]);
+
+  const Item = ({ icon: Icon, label, hint, onClick }: { icon: typeof FolderPlus; label: string; hint: string; onClick: () => void }) => (
+    <button
+      type="button"
+      onClick={() => { setOpen(false); onClick(); }}
+      className="flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-surface-hover"
+    >
+      <Icon className="size-4 shrink-0 text-text-3" strokeWidth={2} aria-hidden />
+      <span className="min-w-0">
+        <span className="block text-[13px] font-medium text-text">{label}</span>
+        <span className="block text-[11px] text-text-3">{hint}</span>
+      </span>
+    </button>
+  );
+
+  return (
+    <div ref={ref} className="relative">
+      <Button variant="subtle" size="sm" onClick={toggle} aria-haspopup="menu" aria-expanded={open} loading={busy}>
+        <FolderPlus className="size-4" aria-hidden /> Create folder
+        <ChevronDown className="size-3.5 text-text-3" strokeWidth={2} aria-hidden />
+      </Button>
+      {open && anchor && createPortal(
+        <div
+          ref={menuRef}
+          role="menu"
+          aria-label="Create folder"
+          style={{ top: anchor.top, bottom: anchor.bottom, right: anchor.right }}
+          className="pop fixed z-[70] w-[232px] overflow-hidden rounded-card border border-border bg-surface py-1 shadow-[var(--shadow-card)]"
+        >
+          <Item icon={FolderPlus} label="Empty folder" hint="A plain folder, right here" onClick={onEmpty} />
+          <Item icon={UserRound} label="Client folder" hint="Pick one, or create for all" onClick={onClient} />
+          <Item icon={UsersRound} label="Counsellor folders" hint="One per counsellor, shared with them" onClick={onCounsellors} />
+        </div>,
+        document.body,
+      )}
+    </div>
   );
 }

@@ -1605,6 +1605,11 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   filing happens at insert time, before storage is even reached. Completes the trilogy:
   Clients / Companies / Counsellors, one pattern.
 
+- [x] **One Create-folder dropdown** *(2026-08-12, batch 3h)*: the Documents toolbar's three
+  folder buttons collapsed into a single **Create folder ▾** menu in the Export-button style -
+  Empty folder / Client folder / Counsellor folders, each with a one-line hint, portaled and
+  edge-clamped like every other menu.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

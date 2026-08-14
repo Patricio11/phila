@@ -18,14 +18,19 @@ async function signIn(page: Page, email: string, password = "phila1234") {
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
 }
 
-test("hub overview reflects a risk flag set in the DB", async ({ page }) => {
+test("hub overview renders; a risk flag set in the DB shows on the client", async ({ page }) => {
+  // Batch 3m - "Needs attention" left the org dashboard (Rooms right now holds
+  // that slot); the safeguarding flag is asserted where the org acts on it.
   await sql`UPDATE clients SET risk_flag = true WHERE id = 'cl_johan'`;
   try {
     await signIn(page, "thandeka@masizakhe.org.za");
     await page.waitForURL("**/hub", { timeout: 30_000 });
     await expect(page.getByText(/Good (morning|afternoon|evening), Thandeka/)).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText(/Johan Botha/).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Rooms right now")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Needs attention")).toHaveCount(0);
     await page.screenshot({ path: "screenshots/hub-overview-db.png", fullPage: true });
+    await page.goto("/hub/clients/cl_johan");
+    await expect(page.getByText("Safeguarding flag")).toBeVisible({ timeout: 15_000 });
   } finally {
     await sql`UPDATE clients SET risk_flag = false WHERE id = 'cl_johan'`;
   }

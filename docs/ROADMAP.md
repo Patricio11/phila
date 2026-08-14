@@ -1659,6 +1659,16 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   invoice's number. Proven live end to end; 7 new unit tests (reference derivation, forgiving
   parse, notification append).
 
+- [x] **Org dashboard: Rooms promoted, Needs attention retired** *(2026-08-14, batch 3m)*: the org
+  overview's "Needs attention" card came off - safeguarding flags and pending credentials are
+  acted on where they live (the client profile shows the flag; Team shows credentials), and the
+  dashboard reads calmer as a clean 2x2. **Rooms right now** took the fourth slot and got a
+  proper design: a segmented occupancy strip (one segment per room, lit in the room's colour
+  while a session is in it), bordered room rows naming the counsellor in the room, an
+  In session / Free chip with the until / next time, and a View all link to Rooms. The
+  dashboards e2e spec now asserts the flag on the client profile instead. The counsellor
+  dashboard's own attention card is untouched.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

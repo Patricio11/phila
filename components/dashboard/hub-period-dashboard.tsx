@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 import type { DashPeriod, HubDashboard, UpcomingRow, ActivityRow } from "@/db/queries/hub-dashboard";
-import type { AppointmentView, AttentionItem } from "@/lib/data-provider";
+import type { AppointmentView } from "@/lib/data-provider";
 import type { RoomNow } from "@/db/queries/room-assignments";
 import { DASH_PERIODS } from "@/lib/dashboard/periods";
 import { Card, CardHead } from "@/components/ui/card";
 import { HubDashboardStats } from "@/components/dashboard/hub-dashboard-stats";
 import { ComingUpNext } from "@/components/dashboard/coming-up-next";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
-import { AttentionList } from "@/components/dashboard/attention-list";
 import { RoomsRightNow } from "@/components/dashboard/rooms-right-now";
 import { TeamThisWeek, type TeamLoadRow } from "@/components/dashboard/team-this-week";
 import type { SchedulingOptions } from "@/components/scheduling/create-appointment-modal";
@@ -21,10 +20,8 @@ const WIDGET_H = "h-[380px]";
  * One period, one dashboard. The Today / This week / This month / Last month
  * filter now drives the stat tiles AND the widgets beneath them - each period's
  * slice is computed server-side up front, so switching is instant with no
- * refetch. "Needs attention" stays unfiltered on purpose: a safeguarding flag
- * or a pending credential is a standing state, not a thing that happened in a
- * window - hiding it behind a date filter would be dangerous, so the card says
- * so plainly.
+ * refetch. Batch 3m: "Needs attention" left this dashboard (the org acts on
+ * flags where they live); Rooms right now holds the fourth slot.
  */
 export function HubPeriodDashboard({
   data,
@@ -32,7 +29,6 @@ export function HubPeriodDashboard({
   upcomingByPeriod,
   activityByPeriod,
   teamByPeriod,
-  attention,
   rooms,
   apptDetails,
   scheduling,
@@ -42,7 +38,6 @@ export function HubPeriodDashboard({
   upcomingByPeriod: Record<DashPeriod, UpcomingRow[]>;
   activityByPeriod: Record<DashPeriod, ActivityRow[]>;
   teamByPeriod: Record<DashPeriod, TeamLoadRow[]>;
-  attention: AttentionItem[];
   rooms: RoomNow[];
   /** Full appointments behind the "Coming up next" rows, keyed by id. */
   apptDetails: Record<string, AppointmentView>;
@@ -69,17 +64,8 @@ export function HubPeriodDashboard({
 
         <TeamThisWeek rows={teamByPeriod[period]} className={WIDGET_H} periodLabel={periodLabel} />
 
-        <Card className={`flex flex-col ${WIDGET_H}`}>
-          <CardHead
-            title="Needs attention"
-            count={attention.length}
-            action={<span className="text-[11.5px] text-text-3">always current</span>}
-          />
-          <div className="min-h-0 flex-1 overflow-y-auto px-[17px] pb-[17px]">
-            <AttentionList items={attention} />
-          </div>
-        </Card>
-
+        {/* Batch 3m - "Needs attention" left the org dashboard (safeguarding
+            flags live where they're acted on); Rooms took its slot. */}
         <RoomsRightNow rooms={rooms} className={WIDGET_H} />
       </div>
     </>

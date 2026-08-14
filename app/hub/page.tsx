@@ -120,7 +120,6 @@ export default async function HubOverviewPage() {
         upcomingByPeriod={upcomingByPeriod}
         activityByPeriod={activityByPeriod}
         teamByPeriod={teamByPeriod}
-        attention={overview.attention}
         rooms={roomsNow}
         apptDetails={apptDetails}
         scheduling={{

@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Building2, CalendarCheck2, CalendarPlus, ExternalLink, Hourglass, Search, UserRound, X } from "lucide-react";
+import { Building2, CalendarCheck2, CalendarPlus, FileText, Hourglass, Search, UserRound, X } from "lucide-react";
 import type { WaitlistDetail } from "@/db/queries/waitlist";
 import { Card, CardHead } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { CreateAppointmentModal, type SchedulingOptions } from "@/components/scheduling/create-appointment-modal";
+import { Dialog } from "@/components/ui/dialog";
+import { ResponseView } from "@/components/forms/response-view";
+import type { FormField } from "@/lib/domain/types";
 import { removeFromWaitlist } from "@/app/hub/waitlist/actions";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +53,8 @@ export function WaitlistBoard({ rows, scheduling, nowISO }: {
   const [query, setQuery] = useState("");
   const [company, setCompany] = useState<string>("all");
   const [booking, setBooking] = useState<WaitlistRow | null>(null);
+  // Batch 3e - their intake answers, read right here before booking.
+  const [reading, setReading] = useState<WaitlistRow | null>(null);
 
   const waiting = rows.filter((r) => r.status === "waiting");
   const placed = rows
@@ -201,15 +206,14 @@ export function WaitlistBoard({ rows, scheduling, nowISO }: {
                   {r.status === "waiting" && r.note && <p className="mt-1 text-[11.5px] leading-snug text-text-2">{r.note}</p>}
                 </div>
 
-                {r.formToken && (
-                  <a
-                    href={`/f/${r.formToken}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                {r.formAnswers && (
+                  <button
+                    type="button"
+                    onClick={() => setReading(r)}
                     className="inline-flex items-center gap-1 text-[12px] font-medium text-accent hover:underline"
                   >
-                    <ExternalLink className="size-3.5" strokeWidth={2} aria-hidden /> {r.formTitle ?? "Their answers"}
-                  </a>
+                    <FileText className="size-3.5" strokeWidth={2} aria-hidden /> {r.formTitle ?? "Their answers"}
+                  </button>
                 )}
                 {r.status === "waiting" && (
                   <>
@@ -226,6 +230,28 @@ export function WaitlistBoard({ rows, scheduling, nowISO }: {
           </ul>
         )}
       </div>
+
+      {/* Their answers, in place - the fill page only tells a completed
+          response "already submitted", which helps nobody. */}
+      <Dialog
+        open={Boolean(reading)}
+        onClose={() => setReading(null)}
+        title={reading?.formTitle ?? "Their answers"}
+        description={reading ? `${reading.clientName}${reading.companyName ? ` · via ${reading.companyName}` : ""}` : undefined}
+        footer={
+          reading?.status === "waiting" ? (
+            <div className="flex justify-end">
+              <Button size="sm" onClick={() => { const r = reading; setReading(null); setBooking(r); }}>
+                <CalendarPlus className="size-3.5" strokeWidth={2} aria-hidden /> Book {reading.clientName.split(" ")[0]}
+              </Button>
+            </div>
+          ) : null
+        }
+      >
+        {reading?.formAnswers && (
+          <ResponseView fields={(reading.formFields ?? []) as FormField[]} answers={reading.formAnswers} />
+        )}
+      </Dialog>
 
       {booking && (
         <CreateAppointmentModal

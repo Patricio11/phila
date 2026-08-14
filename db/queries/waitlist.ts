@@ -105,9 +105,12 @@ export async function offerFreedSlotDb(orgId: string, counsellorId: string): Pro
 export interface WaitlistDetail extends WaitlistItem {
   companyId: string | null;
   companyName: string | null;
-  /** The intake they completed, so the practice can read it before booking. */
+  /** The intake they completed, so the practice can read it before booking.
+   *  The answers ride along: the public fill link only says "already
+   *  submitted" to a completed response, which helps nobody. */
   formTitle: string | null;
-  formToken: string | null;
+  formFields: unknown[] | null;
+  formAnswers: Record<string, string> | null;
   clientEmail: string | null;
   clientPhone: string | null;
   /** Batch 3d - "waiting" or, once a session exists, "placed". */
@@ -151,7 +154,7 @@ export async function listWaitlistDetailedDb(orgId: string): Promise<WaitlistDet
     const clientIds = rows.map((r) => r.clientId);
     const [companyRows, responses, upcoming] = await Promise.all([
       db.select({ id: companies.id, name: companies.name }).from(companies).where(eq(companies.orgId, orgId)),
-      db.select({ clientId: formAssignments.clientId, token: formAssignments.token, snapshot: formAssignments.snapshot, submittedAt: formAssignments.submittedAt })
+      db.select({ clientId: formAssignments.clientId, snapshot: formAssignments.snapshot, answers: formAssignments.answers, submittedAt: formAssignments.submittedAt })
         .from(formAssignments)
         .where(and(eq(formAssignments.orgId, orgId), eq(formAssignments.status, "completed"), inArray(formAssignments.clientId, clientIds))),
       // The booked session each placed person is heading to.
@@ -170,13 +173,20 @@ export async function listWaitlistDetailedDb(orgId: string): Promise<WaitlistDet
     }
     const companyName = new Map(companyRows.map((c) => [c.id, c.name]));
     // The most recent completed response per person is the one worth reading.
-    const latest = new Map<string, { token: string; title: string; at: number }>();
+    const latest = new Map<string, { title: string; fields: unknown[]; answers: Record<string, string>; at: number }>();
     for (const r of responses) {
       if (!r.clientId) continue;
-      const title = ((r.snapshot as { title?: string } | null)?.title) ?? "Intake form";
+      const snap = r.snapshot as { title?: string; fields?: unknown[] } | null;
       const at = r.submittedAt?.getTime() ?? 0;
       const cur = latest.get(r.clientId);
-      if (!cur || at > cur.at) latest.set(r.clientId, { token: r.token, title, at });
+      if (!cur || at > cur.at) {
+        latest.set(r.clientId, {
+          title: snap?.title ?? "Intake form",
+          fields: snap?.fields ?? [],
+          answers: (r.answers as Record<string, string> | null) ?? {},
+          at,
+        });
+      }
     }
 
     return rows.map((r): WaitlistDetail => ({
@@ -187,7 +197,8 @@ export async function listWaitlistDetailedDb(orgId: string): Promise<WaitlistDet
       companyId: r.companyId ?? null,
       companyName: r.companyId ? (companyName.get(r.companyId) ?? null) : null,
       formTitle: latest.get(r.clientId)?.title ?? null,
-      formToken: latest.get(r.clientId)?.token ?? null,
+      formFields: latest.get(r.clientId)?.fields ?? null,
+      formAnswers: latest.get(r.clientId)?.answers ?? null,
       clientEmail: r.clientEmail ?? null,
       clientPhone: r.clientPhone ?? null,
       status: (r.status === "placed" ? "placed" : "waiting") as "waiting" | "placed",

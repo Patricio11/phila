@@ -1581,6 +1581,13 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   a waiting employee booked through the modal moved tabs, the DB entry read placed with a
   timestamp, and the employer page swapped chips - all from one booking.
 
+- [x] **The waitlist shows the answers, in place** *(2026-08-12, batch 3e)*: clicking the intake
+  title on a waitlist row used to open the public fill link, which tells a completed response
+  "already submitted" - nothing useful. The row now opens their actual answers in a dialog
+  (the same ResponseView the dossier uses), with the person's name and employer in the header
+  and a **Book <name>** button in the footer, so read-then-book is one motion. The query carries
+  the latest completed response's fields + answers instead of a dead-end token.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

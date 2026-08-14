@@ -6,6 +6,7 @@ import { AlertTriangle, Pencil } from "lucide-react";
 import { PROVINCES, REFERRAL_SOURCES, REFERRAL_SOURCE_LABELS, type Province, type ReferralSource } from "@/lib/domain/enums";
 import { Dialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
+import { SearchSelect } from "@/components/ui/search-select";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
@@ -123,7 +124,7 @@ export function EditClientButton({
             </div>
             <div className="space-y-1.5">
               <Label>Primary counsellor</Label>
-              <Select value={counsellorId} onChange={setCounsellorId} placeholder="Assign" options={counsellors.map((c) => ({ value: c.id, label: c.name }))} invalid={Boolean(attempted && errors.counsellor)} />
+              <SearchSelect avatars ariaLabel="Primary counsellor" value={counsellorId} onChange={setCounsellorId} placeholder="Assign" searchPlaceholder="Search counsellors…" options={counsellors.map((c) => ({ value: c.id, label: c.name }))} invalid={Boolean(attempted && errors.counsellor)} />
               {attempted && errors.counsellor ? <FieldError>{errors.counsellor}</FieldError> : null}
             </div>
           </div>

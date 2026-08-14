@@ -708,7 +708,7 @@ export function DocumentManager({
           </div>
         }
       >
-        <Select value={assignClient} onChange={setAssignClient} placeholder="Choose a client…" options={clients.map((c) => ({ value: c.id, label: c.name }))} />
+        <SearchSelect avatars ariaLabel="Assign to client" value={assignClient} onChange={setAssignClient} placeholder="Choose a client…" searchPlaceholder="Search clients…" options={clients.map((c) => ({ value: c.id, label: c.name }))} />
       </Dialog>
 
       <Dialog

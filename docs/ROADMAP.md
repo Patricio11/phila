@@ -1540,6 +1540,13 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   request open for a retry. Migration 0073 (`document_requests.counsellor_id`, `client_id` now
   nullable) - a request targets exactly one of the two.
 
+- [x] **One people-picker everywhere** *(2026-08-12, batch 3a)*: a sweep found four dialogs still
+  using the plain dropdown for choosing a person - Documents' "Assign to client", Add client's and
+  Edit client's primary counsellor, and Add-to-waitlist's counsellor preference. All four now use
+  the shared searchable people-picker (avatars + search) that booking, sharing, offboarding and
+  the Request dialog already use. Sentinel options like "Any counsellor" wear the group icon
+  rather than pretending to be a person's initials.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

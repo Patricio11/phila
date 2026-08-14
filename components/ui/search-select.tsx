@@ -112,7 +112,7 @@ export function SearchSelect({
                     )}
                   >
                     {avatars && (
-                      o.value === "" ? (
+                      o.value === "" || o.value.startsWith("__") ? (
                         <span className="grid size-8 shrink-0 place-items-center rounded-full bg-surface-2 text-text-3"><Users className="size-4" strokeWidth={2} aria-hidden /></span>
                       ) : (
                         <Avatar name={o.label} size="sm" />

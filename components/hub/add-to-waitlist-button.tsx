@@ -5,7 +5,7 @@ import { ListPlus } from "lucide-react";
 import { addToWaitlist } from "@/app/hub/waitlist/actions";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { Select } from "@/components/ui/select";
+import { SearchSelect } from "@/components/ui/search-select";
 import { Textarea, Label } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 
@@ -46,7 +46,7 @@ export function AddToWaitlistButton({ clientId, clientName, counsellors }: { cli
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label>Preferred counsellor <span className="font-normal text-text-3">(optional)</span></Label>
-            <Select value={counsellorId} onChange={setCounsellorId} options={[{ value: ANY, label: "Any counsellor" }, ...counsellors.map((c) => ({ value: c.id, label: c.name }))]} />
+            <SearchSelect avatars ariaLabel="Counsellor preference" value={counsellorId} onChange={setCounsellorId} searchPlaceholder="Search counsellors…" options={[{ value: ANY, label: "Any counsellor" }, ...counsellors.map((c) => ({ value: c.id, label: c.name }))]} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="wl-note">Note <span className="font-normal text-text-3">(optional)</span></Label>

@@ -1,8 +1,14 @@
+"use client";
+
+import { useEffect } from "react";
+import { usePageHeadSetter } from "@/components/shell/page-head-context";
 import { cn } from "@/lib/utils";
 
 /**
- * Page head (DESIGN.md §5.3)  a greeting/title + one-line summary on the left,
- * primary actions on the right. Plain, warm, certain (§7).
+ * Page head (DESIGN.md §5.3, reworked in batch 3o). Inside the app shell the
+ * title + summary render in the TOP BAR (where the date line used to be) so
+ * the page never repeats its own name; only the action buttons stay in the
+ * body. Outside the shell (no provider) it renders in place as before.
  */
 export function PageHead({
   title,
@@ -15,6 +21,20 @@ export function PageHead({
   actions?: React.ReactNode;
   className?: string;
 }) {
+  const set = usePageHeadSetter();
+
+  useEffect(() => {
+    if (!set) return;
+    set({ title, summary });
+    return () => set(null);
+  }, [set, title, summary]);
+
+  if (set) {
+    return actions ? (
+      <div className={cn("flex flex-wrap items-center justify-end gap-2", className)}>{actions}</div>
+    ) : null;
+  }
+
   return (
     <div className={cn("flex flex-wrap items-start justify-between gap-4", className)}>
       <div className="min-w-0">

@@ -1677,6 +1677,16 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   than being permanently mutable. The dedupe strip was restructured so the X isn't a button
   nested inside a button.
 
+- [x] **One title, one place** *(2026-08-14, batch 3o)*: every page used to say its name twice -
+  once in the top bar (with the date) and again as a big heading in the body. Now the shell owns
+  a head slot: PageHead pushes its title + one-line description up into the top bar (the
+  description replaces the date line; the date shows only when a page has no description) and
+  keeps just its action buttons in the body. One mechanism covers all ~60 pages across hub /
+  app / admin / funder / me - dashboards' greetings, detail pages' avatar titles included -
+  with an in-place fallback for any page rendered outside the shell. Also fixed en route: the
+  funders-crud e2e had been failing since custom DatePickers replaced native date inputs
+  (2a6d729) - it now drives the real pickers.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

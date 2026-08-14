@@ -100,6 +100,10 @@ Cross-tenant / cross-role checks (signed in):
 
 ---
 
+**One title, one place** (batch 3o) - applies on every page, every role
+- ☐ The top bar shows the page title with its one-line description underneath (the date line only appears where a page has no description, e.g. pages without a PageHead); the body never repeats the page name as a second heading
+- ☐ Detail pages push their identity up too (e.g. a client page shows the avatar + name in the bar); action buttons stay in the body, right-aligned
+
 ## 4 · Hub (`/hub`)  the practice console
 
 Sign in as **Thandeka**.

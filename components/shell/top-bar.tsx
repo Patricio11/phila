@@ -16,12 +16,15 @@ import type { NavSection } from "@/components/shell/nav-config";
 export function TopBar({
   title,
   date,
+  subtitle = null,
   user,
   sections,
   settingsHref,
 }: {
-  title: string;
+  title: React.ReactNode;
   date: string;
+  /** Batch 3o - the page's one-line description; shown where the date was. */
+  subtitle?: React.ReactNode;
   user: { name: string; email: string; roleLabel: string; photoUrl?: string | null };
   sections: NavSection[];
   settingsHref?: string;
@@ -47,7 +50,7 @@ export function TopBar({
       <div className="mx-auto flex h-full w-full max-w-[1320px] items-center gap-3 px-4 sm:px-6">
       <div className="min-w-0">
         <h1 className="truncate text-[15px] font-[650] tracking-[-0.01em] text-text">{title}</h1>
-        <p className="truncate text-[12px] text-text-3">{date}</p>
+        <p className="truncate text-[12px] text-text-3">{subtitle ?? date}</p>
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">

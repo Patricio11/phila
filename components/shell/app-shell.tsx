@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/shell/sidebar";
 import { TopBar } from "@/components/shell/top-bar";
 import { BottomNav } from "@/components/shell/bottom-nav";
 import { TwoFactorBanner } from "@/components/shell/two-factor-banner";
 import { NAVS, type NavKey, type NavSection } from "@/components/shell/nav-config";
+import { PageHeadSetterContext, type HeadInfo } from "@/components/shell/page-head-context";
 import { getUnreadMessages } from "@/lib/messaging/unread-actions";
 
 const COLLAPSE_KEY = "phila-sidebar-collapsed";
@@ -118,7 +119,13 @@ export function AppShell({
   const title = useMemo(() => deriveTitle(sections, pathname), [sections, pathname]);
   const today = useMemo(() => formatToday(), []);
 
+  // Batch 3o - the page's PageHead pushes its title + summary up here, so the
+  // top bar carries the page identity once (summary where the date line was).
+  const [head, setHead] = useState<HeadInfo | null>(null);
+  const setHeadStable = useCallback((h: HeadInfo | null) => setHead(h), []);
+
   return (
+    <PageHeadSetterContext.Provider value={setHeadStable}>
     <div className="flex h-dvh overflow-hidden bg-bg">
       <a
         href="#main-content"
@@ -143,8 +150,9 @@ export function AppShell({
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar
-          title={title}
+          title={head?.title ?? title}
           date={today}
+          subtitle={head?.summary ?? null}
           user={user}
           sections={sections}
           settingsHref={settingsHref}
@@ -159,6 +167,7 @@ export function AppShell({
       {/* Mobile: a native floating tab bar + a "More" sheet (desktop uses the sidebar). */}
       <BottomNav sections={sections} settingsHref={settingsHref} />
     </div>
+    </PageHeadSetterContext.Provider>
   );
 }
 

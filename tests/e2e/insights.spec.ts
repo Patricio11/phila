@@ -28,7 +28,7 @@ test("Reporting is merged into Insights (not in the sidebar) and the old route r
 test("Insights shows both tabs with donut charts", async ({ page }) => {
   await signIn(page);
   await page.goto("/hub/insights");
-  await expect(page.getByRole("heading", { level: 2, name: "Insights" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Insights" })).toBeVisible();
 
   // Practice tab: session-mix donut + client-mix donuts.
   await expect(page.getByRole("tab", { name: "Practice" })).toHaveAttribute("aria-selected", "true");

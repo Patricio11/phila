@@ -42,7 +42,7 @@ test("upload a shuffled CSV, auto-map, re-arrange, and import  persisted to the 
   try {
     await signIn(page);
     await page.goto("/hub/clients");
-    await expect(page.getByRole("heading", { level: 2, name: "Clients" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Clients" })).toBeVisible();
 
     // Open the big import modal.
     await page.getByRole("button", { name: "Import", exact: true }).click();

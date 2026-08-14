@@ -39,7 +39,7 @@ test("the Funders & grants module is off until the org enables it", async ({ pag
 
     // Now it's reachable.
     await page.goto("/hub/funders");
-    await expect(page.getByRole("heading", { level: 2, name: "Funders & grants" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Funders & grants" })).toBeVisible();
     await page.screenshot({ path: "screenshots/funders-page.png", fullPage: true });
   } finally {
     await setFunders(true); // leave enabled for the rest of the suite/demo
@@ -54,7 +54,7 @@ test("create a funder + grant with a target, persisted to the DB", async ({ page
   try {
     await signIn(page);
     await page.goto("/hub/funders");
-    await expect(page.getByRole("heading", { level: 2, name: "Funders & grants" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Funders & grants" })).toBeVisible();
 
     // Add funder.
     await page.getByRole("button", { name: "Add funder", exact: true }).click();
@@ -69,8 +69,12 @@ test("create a funder + grant with a target, persisted to the DB", async ({ page
     await page.getByRole("button", { name: "New grant", exact: true }).click();
     await expect(dialog(page).filter({ hasText: "New grant" })).toBeVisible();
     await page.getByPlaceholder(/Community mental-health programme/).fill(grantTitle);
-    await page.locator('input[type="date"]').first().fill("2026-01-01");
-    await page.locator('input[type="date"]').nth(1).fill("2026-12-31");
+    // Custom DatePickers (no native date inputs since 2a6d729): open each and
+    // pick a day - the period only needs start < end.
+    await page.getByRole("button", { name: "Period start" }).click();
+    await page.getByRole("button", { name: /\b0?1 Aug 2026$/ }).click();
+    await page.getByRole("button", { name: "Period end" }).click();
+    await page.getByRole("button", { name: /\b28 Aug 2026$/ }).click();
     await page.getByRole("button", { name: /Add target/i }).click();
     await page.locator('input[type="number"]').last().fill("25");
     await dialog(page).getByRole("button", { name: "Create grant", exact: true }).click();

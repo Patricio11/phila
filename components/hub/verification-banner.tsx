@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, Clock, ShieldCheck, TriangleAlert } from "lucide-react";
+import { NoticeDismiss, useNoticeDismissed } from "@/components/ui/notice-dismiss";
 import { cn } from "@/lib/utils";
 
 /**
@@ -8,7 +11,8 @@ import { cn } from "@/lib/utils";
  * company-verification step that unlocks payouts + funder reporting.
  */
 export function VerificationBanner({ status }: { status: string }) {
-  if (status === "verified") return null;
+  const [dismissed, dismiss] = useNoticeDismissed(`verification_${status}`);
+  if (status === "verified" || dismissed) return null;
 
   const map: Record<string, { icon: typeof ShieldCheck; wrap: string; chip: string; title: string; body: string; cta: string }> = {
     not_started: {
@@ -54,6 +58,7 @@ export function VerificationBanner({ status }: { status: string }) {
       <span className="hidden shrink-0 items-center gap-1 text-[12.5px] font-medium text-accent group-hover:underline sm:inline-flex">
         {s.cta} <ArrowRight className="size-3.5" strokeWidth={2.2} aria-hidden />
       </span>
+      <NoticeDismiss onDismiss={dismiss} />
     </Link>
   );
 }

@@ -9,6 +9,7 @@ import { Tag } from "@/components/ui/tag";
 import { Avatar } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/toast";
 import { mergeClients } from "@/app/hub/clients/actions";
+import { NoticeDismiss, useNoticeDismissed } from "@/components/ui/notice-dismiss";
 import { cn } from "@/lib/utils";
 
 function shortDate(iso: string): string {
@@ -22,8 +23,9 @@ export function DedupeBanner({ groups: initial }: { groups: DuplicateGroup[] }) 
   const [keepBy, setKeepBy] = useState<Record<number, string>>(() => Object.fromEntries(initial.map((g, i) => [i, g.clients[0]?.id ?? ""])));
   const [pendingIdx, setPendingIdx] = useState<number | null>(null);
   const [, start] = useTransition();
+  const [dismissed, dismiss] = useNoticeDismissed("dedupe");
 
-  if (groups.length === 0) return null;
+  if (groups.length === 0 || dismissed) return null;
 
   const merge = (group: DuplicateGroup, idx: number) => {
     const keepId = keepBy[idx] ?? group.clients[0]!.id;
@@ -41,20 +43,19 @@ export function DedupeBanner({ groups: initial }: { groups: DuplicateGroup[] }) 
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="flex w-full items-center gap-3 rounded-card border border-warn/30 bg-warn-soft/50 px-4 py-3 text-left transition-colors hover:bg-warn-soft"
-      >
-        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-chip bg-warn-soft text-warn">
-          <Users2 className="size-[18px]" strokeWidth={2} aria-hidden />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="text-[13.5px] font-[600] text-text">{groups.length} possible duplicate{groups.length === 1 ? "" : "s"} to review</div>
-          <div className="text-[12px] text-text-2">Same person captured more than once  review and merge so reporting stays accurate.</div>
-        </div>
-        <span className="shrink-0 text-[12.5px] font-medium text-accent">Review</span>
-      </button>
+      <div className="flex w-full items-center gap-3 rounded-card border border-warn/30 bg-warn-soft/50 px-4 py-3 transition-colors hover:bg-warn-soft">
+        <button type="button" onClick={() => setOpen(true)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+          <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-chip bg-warn-soft text-warn">
+            <Users2 className="size-[18px]" strokeWidth={2} aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[13.5px] font-[600] text-text">{groups.length} possible duplicate{groups.length === 1 ? "" : "s"} to review</div>
+            <div className="text-[12px] text-text-2">Same person captured more than once  review and merge so reporting stays accurate.</div>
+          </div>
+          <span className="shrink-0 text-[12.5px] font-medium text-accent">Review</span>
+        </button>
+        <NoticeDismiss onDismiss={dismiss} />
+      </div>
 
       <Dialog open={open} onClose={() => setOpen(false)} title="Review duplicates" description="Choose the record to keep  its history is preserved and the others fold into it.">
         <div className="space-y-4">

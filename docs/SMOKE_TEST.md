@@ -218,6 +218,7 @@ Sign in as **Thandeka**.
 
 **Invoicing** (`/hub/invoicing`)
 - ☐ **Billing never slips** (batch 2): marking a session **Completed** auto-raises its invoice; the appointment detail modal shows the invoice inline (number · amount · status) or a **Generate invoice** button; the invoicing page banner lists completed-but-uninvoiced sessions with one-click **Generate N invoices**; **Bill to** in the builder is searchable
+- ☐ **Page notices dismiss** (batch 3n): the unbilled-sessions banner (and the verification nudge + duplicate-clients notice) has an **X** - closing it clears it for this browser session; it honestly returns next session because the underlying fact still stands
 - ☐ Invoice board shows outstanding / overdue / paid totals
 - ☐ **The board, by state** (batch 3k): status tab pills **All / Unpaid / Overdue / Paid / Cancelled** with live counts filter the table; totals always read the whole book, not the filtered tab; client rows carry avatars and an **Issued** column
 - ☐ **Every row has a ⋮ menu** (batch 3k): **View invoice** (A4 preview) on every row; unpaid rows add **Edit**, **Copy pay link** (gateway on), **Send reminder**, **Cancel invoice** (danger); cancelled rows offer **Reinstate**; paid rows offer only View - money has moved

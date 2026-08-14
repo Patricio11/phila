@@ -1669,6 +1669,14 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   dashboards e2e spec now asserts the flag on the client profile instead. The counsellor
   dashboard's own attention card is untouched.
 
+- [x] **Dismissible page notices** *(2026-08-14, batch 3n)*: the banner notices (unbilled
+  sessions on Invoicing, the verification nudge, the duplicate-clients review strip) each gained
+  an **X** via one shared pattern (`useNoticeDismissed` + `NoticeDismiss`). Dismissal is
+  session-scoped on purpose: these banners state standing facts - money unbilled, records to
+  merge - so closing one clears it for this browser session and it returns next visit rather
+  than being permanently mutable. The dedupe strip was restructured so the X isn't a button
+  nested inside a button.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

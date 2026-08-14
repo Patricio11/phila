@@ -7,6 +7,7 @@ import { ChevronDown, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { backfillInvoices } from "@/app/hub/invoicing/actions";
+import { NoticeDismiss, useNoticeDismissed } from "@/components/ui/notice-dismiss";
 import { cn } from "@/lib/utils";
 
 function day(iso: string): string {
@@ -22,7 +23,8 @@ export function UninvoicedBanner({ rows }: { rows: { appointmentId: string; clie
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
-  if (rows.length === 0) return null;
+  const [dismissed, dismiss] = useNoticeDismissed("uninvoiced");
+  if (rows.length === 0 || dismissed) return null;
 
   const totalR = Math.round(rows.reduce((s, r) => s + r.priceCents, 0) / 100);
 
@@ -50,6 +52,7 @@ export function UninvoicedBanner({ rows }: { rows: { appointmentId: string; clie
           {open ? "Hide" : "Review"} <ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} strokeWidth={2} aria-hidden />
         </button>
         <Button size="sm" onClick={run} loading={pending}>Generate {rows.length === 1 ? "invoice" : `${rows.length} invoices`}</Button>
+        <NoticeDismiss onDismiss={dismiss} />
       </div>
       {open && (
         <ul className="max-h-56 overflow-y-auto border-t border-warn/30 px-4 py-2.5">

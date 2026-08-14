@@ -1702,6 +1702,10 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   counted and audited, and eligibility is re-checked when the page is read so a deleted or
   reclassified file falls off an already-sent link. Migration 0076 (document_share_links).
 
+- [x] **Waitlist: "No employer" chip removed** *(2026-08-14, batch 3q)*: the employer filter row
+  now shows only Everyone + actual companies - people without an employer are simply part of
+  Everyone, which is what the chip's zero-value filter amounted to anyway.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

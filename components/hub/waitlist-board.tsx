@@ -71,7 +71,7 @@ export function WaitlistBoard({ rows, scheduling, nowISO }: {
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
     return pool
-      .filter((r) => (company === "all" ? true : company === "none" ? !r.companyId : r.companyId === company))
+      .filter((r) => (company === "all" ? true : r.companyId === company))
       .filter((r) => !q || r.clientName.toLowerCase().includes(q) || (r.companyName ?? "").toLowerCase().includes(q));
   }, [pool, query, company]);
 
@@ -86,7 +86,6 @@ export function WaitlistBoard({ rows, scheduling, nowISO }: {
   const COMPANY_CHIPS = [
     { key: "all", label: "Everyone", n: pool.length },
     ...companies.map((c) => ({ key: c.id, label: c.name, n: pool.filter((r) => r.companyId === c.id).length })),
-    { key: "none", label: "No employer", n: pool.filter((r) => !r.companyId).length },
   ].filter((c) => c.n > 0 || c.key === "all");
 
   return (

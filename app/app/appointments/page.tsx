@@ -8,7 +8,8 @@ import { now as clockNow } from "@/lib/clock";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Calendar" };
 
-export default async function CalendarPage() {
+export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ ref?: string }> }) {
+  const { ref } = await searchParams;
   const { principal, membership } = await requireOrg(["counsellor"]);
   const provider = await getDataProvider();
 
@@ -42,7 +43,7 @@ export default async function CalendarPage() {
   return (
     <div className="rise space-y-5">
       <PageHead title="Calendar" summary="Your week, day, month, or agenda  your own sessions only." />
-      <CalendarView events={events} businessHours={org.scheduling.businessHours} scheduling={scheduling} nowISO={now} canCreate={false} />
+      <CalendarView events={events} businessHours={org.scheduling.businessHours} scheduling={scheduling} nowISO={now} canCreate={false} openRef={ref ?? null} />
     </div>
   );
 }

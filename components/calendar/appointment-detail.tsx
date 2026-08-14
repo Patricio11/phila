@@ -5,7 +5,8 @@ import { za } from "@/lib/format";
 import { isRemote } from "@/lib/domain/enums";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ArrowLeft, CalendarDays, Check, ChevronRight, Clock, Copy, Hourglass, MapPin, MonitorSmartphone, NotebookPen, Pencil, Phone, Receipt, Repeat, Stethoscope, UserX, Video, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CalendarDays, Check, ChevronRight, Clock, Copy, Hash, Hourglass, MapPin, MonitorSmartphone, NotebookPen, Pencil, Phone, Receipt, Repeat, Stethoscope, UserX, Video, X } from "lucide-react";
+import { appointmentReference } from "@/lib/scheduling/reference";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
 import { Dialog } from "@/components/ui/dialog";
@@ -308,6 +309,27 @@ export function AppointmentDetail({
               label={appt.type === "online" ? "Online" : appt.type === "hybrid" ? "Hybrid" : "Location"}
               value={appt.type === "online" ? "Secure video room" : appt.type === "hybrid" ? `${appt.roomName ?? "Practice room"} · client joins online` : (appt.roomName ?? "In person")}
             />
+            {/* Batch 3l - the booking reference: on every message about this
+                session, printed on its invoice, and searchable from ⌘K. */}
+            <div>
+              <dt className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-text-3">
+                <Hash className="size-3.5" strokeWidth={2} aria-hidden /> Reference
+              </dt>
+              <dd className="mt-0.5">
+                <button
+                  type="button"
+                  title="Copy reference"
+                  onClick={() => {
+                    void navigator.clipboard?.writeText(appointmentReference(appt.id));
+                    toast({ tone: "success", title: "Reference copied", description: appointmentReference(appt.id) });
+                  }}
+                  className="inline-flex items-center gap-1.5 font-mono text-[13px] font-semibold tracking-wide text-text transition-colors hover:text-accent"
+                >
+                  {appointmentReference(appt.id)}
+                  <Copy className="size-3.5 text-text-3" strokeWidth={2} aria-hidden />
+                </button>
+              </dd>
+            </div>
             {appt.rescheduleNote && <Row icon={NotebookPen} label="Rescheduled  reason" value={appt.rescheduleNote} wide />}
             {appt.heldByPhone && (
               <Row

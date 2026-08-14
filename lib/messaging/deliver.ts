@@ -1,7 +1,8 @@
 import "server-only";
 import { now as clockNow } from "@/lib/clock";
 import { resolveChannel, withinQuietHours } from "@/lib/messaging/resolve";
-import { renderTemplate, EMAIL_SUBJECTS, type MessageTrigger, type RenderVars } from "@/lib/messaging/templates";
+import { renderTemplate, withReference, EMAIL_SUBJECTS, type MessageTrigger, type RenderVars } from "@/lib/messaging/templates";
+import { appointmentReference } from "@/lib/scheduling/reference";
 import { sendWhatsApp, sendWhatsAppTemplate, sendSms, sendEmail, type TransportResult } from "@/lib/messaging/transports";
 import { getMessagingSettings, getWhatsappCreds, getWhatsappTemplateName, getWhatsappLastInbound, getTemplateBody, getCreditBalances, isOptedOut, consumeCredit, logMessage } from "@/db/queries/messaging";
 import { whatsappWindowOpen, decideWhatsappSend, orderedTemplateParams } from "@/lib/messaging/whatsapp-window";
@@ -69,7 +70,15 @@ export async function deliver(input: DeliverInput): Promise<DeliverOutcome> {
     }
   }
 
-  const body = renderTemplate(await getTemplateBody(orgId, channel, trigger), vars);
+  // Batch 3l - appointment messages always carry the booking reference. `ref`
+  // is the appointment id on those triggers; templates may place {reference}
+  // themselves, and withReference() appends it when they don't.
+  const refHead = ref.split(":")[0]!; // metering refs may carry a suffix, e.g. "appt_x:email-fallback"
+  const reference = refHead.startsWith("appt_") ? appointmentReference(refHead) : undefined;
+  const body = withReference(
+    renderTemplate(await getTemplateBody(orgId, channel, trigger), { ...vars, reference }),
+    reference,
+  );
 
   // WhatsApp is window-aware: inside the client's free 24h window we send a free-form
   // message (free); outside it we can only use a Meta-approved template - and if none is
@@ -100,7 +109,7 @@ export async function deliver(input: DeliverInput): Promise<DeliverOutcome> {
   } else {
     // Email goes out branded (HTML shell + plain-text fallback); an online session
     // renders its join link as the button.
-    const subject = EMAIL_SUBJECTS[trigger];
+    const subject = reference ? `${EMAIL_SUBJECTS[trigger]} · ${reference}` : EMAIL_SUBJECTS[trigger];
     const text = vars.joinLink ? `${body}\n\nJoin your session online:\n${vars.joinLink}` : body;
     const html = railEmailHtml({
       subject,

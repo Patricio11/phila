@@ -26,8 +26,14 @@ export default async function NewInvoicePage() {
   const year = now.slice(0, 4);
   const invoiceNumber = `${invoiceSettings.invoicePrefix}-${year}-${String(invoices.length + 1).padStart(4, "0")}`;
 
+  // Batch 3l - the sessions this invoice can bill (unbilled, last 180 days + upcoming).
+  const linkableSessions = process.env.DATA_PROVIDER === "db"
+    ? await (await import("@/db/queries/invoices")).listLinkableSessionsDb(membership.orgId)
+    : [];
+
   return (
     <InvoiceBuilder
+      linkableSessions={linkableSessions}
       orgName={org.name}
       province={org.province}
       clients={clients.map((c) => ({ id: c.client.id, name: c.client.name }))}

@@ -12,8 +12,9 @@ import { now as clockNow } from "@/lib/clock";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Appointments" };
 
-export default async function HubCalendarsPage() {
+export default async function HubCalendarsPage({ searchParams }: { searchParams: Promise<{ ref?: string }> }) {
   const { membership } = await requireHub();
+  const { ref } = await searchParams;
   const provider = await getDataProvider();
 
   const [counsellors, org] = await Promise.all([
@@ -57,7 +58,7 @@ export default async function HubCalendarsPage() {
       />
       <ChangeRequestsCard initial={changeRequests} />
       {waitlistOn && <WaitlistCard initial={waitlist} options={scheduling} />}
-      <CalendarView events={events} businessHours={org.scheduling.businessHours} scheduling={scheduling} nowISO={now} openSessions={false} clientBasePath="/hub/clients" canEdit />
+      <CalendarView events={events} businessHours={org.scheduling.businessHours} scheduling={scheduling} nowISO={now} openSessions={false} clientBasePath="/hub/clients" canEdit openRef={ref ?? null} />
     </div>
   );
 }

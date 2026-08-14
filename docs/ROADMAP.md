@@ -1643,6 +1643,22 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   moved the row to the Cancelled tab, reinstate brought it back, mark-paid stripped the row down
   to view-only.
 
+- [x] **Appointment references + the invoice builder gets real** *(2026-08-14, batch 3l)*: every
+  session now answers to a short booking reference (`APT-3F9A2C`), derived from the appointment id
+  like a git short-sha - no migration, and every past session already has one. It shows on the
+  appointment modal (copyable), rides on every booked / rescheduled / cancelled / reminder /
+  no-show message (appended at the single deliver() chokepoint, or placed wherever a custom
+  template puts the new `{reference}` token; email subjects carry it too), and is searchable:
+  ⌘K recognises a typed ref and jumps straight to that session's open modal via
+  `/hub/appointments?ref=...` (works on the counsellor calendar too). On invoicing, the A4 sheet
+  finally has true A4 proportions (210x297 silhouette, footer pinned to the bottom), the builder's
+  **Create invoice** actually creates the invoice (server-allocated number, audited - the old
+  Send button only toasted), and a searchable **Link a session** picker attaches the session an
+  invoice bills: client aligns, the line prefills from the session's service, the ref prints on
+  the sheet and the board searches by it. Double-billing a session is refused with the existing
+  invoice's number. Proven live end to end; 7 new unit tests (reference derivation, forgiving
+  parse, notification append).
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

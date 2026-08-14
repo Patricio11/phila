@@ -18,12 +18,16 @@ import { Input, Label } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useRouter } from "next/navigation";
 import { InvoicePreview } from "@/components/hub/invoice-preview";
+import { appointmentReference } from "@/lib/scheduling/reference";
 import { cn } from "@/lib/utils";
 
 export interface InvoiceRow {
   invoice: Invoice;
   clientName: string;
 }
+
+/** Batch 3l - the session behind an invoice: when, with whom (for the A4 + search). */
+export type SessionRefMap = Record<string, { appointmentId: string; startsAt: string; counsellorName: string | null }>;
 
 const STATUS: Record<PaymentStatus, { label: string; cls: string }> = {
   paid: { label: "Paid", cls: "bg-accent-soft text-accent" },
@@ -39,7 +43,7 @@ function shortDate(iso: string): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "short" }).format(new Date(iso));
 }
 
-export function InvoiceBoard({ rows, nowISO, orgName, province, vatRatePercent, settings, paymentsEnabled }: { rows: InvoiceRow[]; nowISO: string; orgName: string; province: string; vatRatePercent: number; settings: InvoiceSettings; paymentsEnabled: boolean }) {
+export function InvoiceBoard({ rows, nowISO, orgName, province, vatRatePercent, settings, paymentsEnabled, sessionRefs = {} }: { rows: InvoiceRow[]; nowISO: string; orgName: string; province: string; vatRatePercent: number; settings: InvoiceSettings; paymentsEnabled: boolean; sessionRefs?: SessionRefMap }) {
   const { toast } = useToast();
   const router = useRouter();
   const nowMs = new Date(nowISO).getTime();
@@ -148,7 +152,14 @@ export function InvoiceBoard({ rows, nowISO, orgName, province, vatRatePercent, 
   };
 
   const columns: Column<InvoiceRow>[] = [
-    { key: "number", header: "Invoice", sortValue: (r) => r.invoice.number, render: (r) => <button type="button" onClick={() => setPreview(r)} className="font-medium tabular-nums text-text hover:text-accent hover:underline">{r.invoice.number}</button> },
+    { key: "number", header: "Invoice", sortValue: (r) => r.invoice.number, render: (r) => (
+      <button type="button" onClick={() => setPreview(r)} className="text-left">
+        <span className="block font-medium tabular-nums text-text hover:text-accent hover:underline">{r.invoice.number}</span>
+        {sessionRefs[r.invoice.id] && (
+          <span className="mt-0.5 block font-mono text-[10.5px] tracking-wide text-text-3">{appointmentReference(sessionRefs[r.invoice.id]!.appointmentId)}</span>
+        )}
+      </button>
+    ) },
     { key: "client", header: "Client", sortValue: (r) => r.clientName, render: (r) => (
       <span className="flex items-center gap-2"><Avatar name={r.clientName} size="sm" /><span className="text-text-2">{r.clientName}</span></span>
     ) },
@@ -252,7 +263,7 @@ export function InvoiceBoard({ rows, nowISO, orgName, province, vatRatePercent, 
         rows={view}
         columns={columns}
         rowKey={(r) => r.invoice.id}
-        search={{ placeholder: "Search invoices…", getText: (r) => `${r.invoice.number} ${r.clientName} ${r.invoice.serviceName}` }}
+        search={{ placeholder: "Search invoices, clients or APT refs…", getText: (r) => `${r.invoice.number} ${r.clientName} ${r.invoice.serviceName} ${sessionRefs[r.invoice.id] ? appointmentReference(sessionRefs[r.invoice.id]!.appointmentId) : ""}` }}
         toolbar={
           <Button asChild size="sm" className="ml-auto">
             <Link href="/hub/invoicing/new">
@@ -294,6 +305,7 @@ export function InvoiceBoard({ rows, nowISO, orgName, province, vatRatePercent, 
 
       {preview && (
         <InvoicePreview
+          sessionRef={sessionRefs[preview.invoice.id] ?? null}
           invoice={preview.invoice}
           clientName={preview.clientName}
           orgName={orgName}

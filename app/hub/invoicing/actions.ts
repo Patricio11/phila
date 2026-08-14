@@ -230,3 +230,43 @@ export async function setInvoiceCancelled(raw: { invoiceId: string; cancelled: b
   revalidatePath("/hub/invoicing");
   return { ok: true };
 }
+
+/**
+ * Batch 3l - the builder finally creates a REAL invoice. One serviceName line
+ * (the builder's lines joined), gross amount, optional linked session whose
+ * APT reference then prints on the A4. Number is allocated server-side.
+ */
+const createInput = z.object({
+  clientId: z.string().min(1),
+  appointmentId: z.string().min(1).nullable(),
+  serviceName: z.string().trim().min(2, "Describe what this invoice bills.").max(160),
+  amountRands: z.number().min(0.01, "The invoice total must be more than zero.").max(1_000_000),
+});
+export async function createInvoice(
+  raw: z.infer<typeof createInput>,
+): Promise<{ ok: true; id: string; number: string } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = createInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the invoice details." };
+  if (process.env.DATA_PROVIDER !== "db") return { ok: false, error: "Not available in demo mode." };
+  const d = parsed.data;
+  const { createManualInvoiceDb } = await import("@/db/queries/invoices");
+  const res = await createManualInvoiceDb({
+    orgId: membership.orgId,
+    clientId: d.clientId,
+    appointmentId: d.appointmentId,
+    serviceName: d.serviceName,
+    amountCents: Math.round(d.amountRands * 100),
+    issuedAt: new Date(),
+  });
+  if (!res.ok) return res;
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `invoice:${res.id}`,
+    reason: "create_invoice",
+  });
+  revalidatePath("/hub/invoicing");
+  return res;
+}

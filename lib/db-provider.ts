@@ -65,7 +65,7 @@ function toGrant(r: typeof grantsTable.$inferSelect): Grant {
 }
 
 function toInvoice(r: typeof invoicesTable.$inferSelect): Invoice {
-  return { id: r.id, clientId: r.clientId, orgId: r.orgId, number: r.number, serviceName: r.serviceName, amountCents: r.amountCents, status: r.status as PaymentStatus, issuedAt: r.issuedAt.toISOString(), dueAt: r.dueAt.toISOString() };
+  return { id: r.id, clientId: r.clientId, orgId: r.orgId, number: r.number, serviceName: r.serviceName, amountCents: r.amountCents, status: r.status as PaymentStatus, issuedAt: r.issuedAt.toISOString(), dueAt: r.dueAt.toISOString(), appointmentId: r.appointmentId };
 }
 
 type ApptRow = typeof appointmentsTable.$inferSelect;

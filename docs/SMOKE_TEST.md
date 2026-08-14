@@ -223,8 +223,16 @@ Sign in as **Thandeka**.
 - ☐ **Every row has a ⋮ menu** (batch 3k): **View invoice** (A4 preview) on every row; unpaid rows add **Edit**, **Copy pay link** (gateway on), **Send reminder**, **Cancel invoice** (danger); cancelled rows offer **Reinstate**; paid rows offer only View - money has moved
 - ☐ **Edit an unpaid invoice** (batch 3k): ⋮ → Edit → dialog with service name, amount (R) and due date → Save; the row and totals update; the change lands in the audit log (`edit_invoice`)
 - ☐ **Cancel, never delete** (batch 3k): cancelling keeps the invoice on the books under the Cancelled tab (HPCSA records rule); Reinstate returns it to Unpaid; a paid invoice refuses both edit and cancel with an honest message ("money has moved" / "refund through your gateway")
-- ☐ Open an invoice → A4 preview renders
+- ☐ Open an invoice → A4 preview renders **in true A4 proportions** (batch 3l): the sheet keeps the 210x297 silhouette even when short, with banking details + thank-you pinned to the bottom like a printed page
+- ☐ **Create invoice actually creates** (batch 3l): `/hub/invoicing/new` → **Create invoice** saves a real unpaid invoice (server-allocated number, audit-logged `create_invoice`) and returns to the board; the old button only showed a toast
+- ☐ **Link a session** (batch 3l): the builder's searchable "Link a session" picker offers every unbilled session (APT ref · date · client · service); picking one aligns the Bill-to client, prefills the line from the session's service, and prints "Session ref: APT-XXXXXX" + a session banner on the sheet; a second invoice for the same session is refused with the existing number
 - ☐ If the org gateway is connected (Settings → Payments), an unpaid invoice shows a **Pay link** button → copies a `/pay/<token>` URL
+
+**Appointment references** (batch 3l) - every session answers to a short code
+- ☐ The appointment detail modal shows **Reference** (e.g. `APT-3F9A2C`, derived from the id - every past session already has one); clicking it copies
+- ☐ **⌘K search**: typing a reference (`APT-3F9A2C`, or just `3f9a2c`) offers **Open session APT-XXXXXX** → lands on the calendar with that session's modal open (`/hub/appointments?ref=...` deep-links the same way; an unknown ref gets an honest "No session found" toast)
+- ☐ The invoice board's search matches APT refs; linked rows show the ref under the invoice number; the A4 preview prints the session line (date · counsellor · ref)
+- ☐ **Notifications carry the ref**: booked / rescheduled / cancelled / reminder / no-show messages append `Ref: APT-XXXXXX` (or place it wherever a custom template puts `{reference}`); email subjects carry it too - only Meta-approved WhatsApp templates can't (params fixed by Meta)
 
 **Messaging  WhatsApp-first** (Settings → **Messaging** → Manage messaging) (W7)
 - ☐ **WhatsApp** leads as the **primary channel** with the free-24h-window explainer; SMS/email are the metered backups

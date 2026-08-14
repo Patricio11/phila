@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { CornerDownLeft, Search } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { CalendarDays, CornerDownLeft, Search } from "lucide-react";
+import { parseAppointmentReference } from "@/lib/scheduling/reference";
 import { Dialog } from "@/components/ui/dialog";
 import type { NavSection } from "@/components/shell/nav-config";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,7 @@ export function CommandPalette({
   sections: NavSection[];
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -34,8 +36,23 @@ export function CommandPalette({
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return items;
-    return items.filter((i) => i.label.toLowerCase().includes(q) || i.group.toLowerCase().includes(q));
-  }, [items, query]);
+    const matched = items.filter((i) => i.label.toLowerCase().includes(q) || i.group.toLowerCase().includes(q));
+    // Batch 3l - a booking reference (APT-3F9A2C, or just the code) jumps
+    // straight to that session on the calendar.
+    const suffix = parseAppointmentReference(query);
+    if (suffix) {
+      const base = pathname?.startsWith("/hub") ? "/hub" : "/app";
+      const pretty = `APT-${suffix.toUpperCase()}`;
+      matched.unshift({
+        label: `Open session ${pretty}`,
+        group: "By reference",
+        href: `${base}/appointments?ref=${pretty}`,
+        icon: CalendarDays,
+        ready: true,
+      });
+    }
+    return matched;
+  }, [items, query, pathname]);
 
   useEffect(() => {
     if (!open) return;

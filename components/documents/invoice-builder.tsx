@@ -2,13 +2,26 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CreditCard, Plus, Printer, Send, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, CalendarDays, CreditCard, Plus, Printer, Save, Trash2 } from "lucide-react";
 import type { InvoiceSettings } from "@/lib/data-provider";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { SearchSelect } from "@/components/ui/search-select";
 import { useToast } from "@/components/ui/toast";
 import { computeVat } from "@/lib/domain/helpers";
+import { appointmentReference } from "@/lib/scheduling/reference";
+import { createInvoice } from "@/app/hub/invoicing/actions";
+
+/** Batch 3l - a session the invoice can bill (unbilled, recent or upcoming). */
+export interface LinkableSession {
+  id: string;
+  clientId: string;
+  startsAt: string;
+  serviceName: string | null;
+  counsellorName: string | null;
+  billed: boolean;
+}
 
 interface LineItem {
   id: number;
@@ -37,6 +50,7 @@ export function InvoiceBuilder({
   vatRatePercent,
   settings,
   paymentsEnabled,
+  linkableSessions = [],
 }: {
   orgName: string;
   province: string;
@@ -47,12 +61,55 @@ export function InvoiceBuilder({
   vatRatePercent: number;
   settings: InvoiceSettings;
   paymentsEnabled: boolean;
+  /** Batch 3l - sessions this invoice can bill; linking prints the APT ref on the sheet. */
+  linkableSessions?: LinkableSession[];
 }) {
   const { toast } = useToast();
+  const router = useRouter();
   const { vatRegistered, vatNumber, pricesIncludeVat } = settings;
   const [clientId, setClientId] = useState<string | null>(clients[0]?.id ?? null);
   const [items, setItems] = useState<LineItem[]>([{ id: 1, description: "Individual counselling", qty: 1, unitCents: 45000 }]);
   const [seq, setSeq] = useState(2);
+  // Batch 3l - the session this invoice bills. Linking one aligns the client
+  // and (until lines are hand-edited) the first line to that session's service.
+  const [appointmentId, setAppointmentId] = useState<string | null>(null);
+  const [itemsTouched, setItemsTouched] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const nameOf = new Map(clients.map((c) => [c.id, c.name]));
+  // Every unbilled session is offered (the label carries the client's name, so
+  // search covers it) - picking one aligns the Bill-to client automatically.
+  const openSessions = linkableSessions.filter((a) => !a.billed);
+  const linked = appointmentId ? linkableSessions.find((a) => a.id === appointmentId) ?? null : null;
+  const sessionLabel = (a: LinkableSession) =>
+    `${appointmentReference(a.id)} - ${new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(a.startsAt))} - ${nameOf.get(a.clientId) ?? "Client"}${a.serviceName ? ` - ${a.serviceName}` : ""}`;
+
+  const linkSession = (id: string | null) => {
+    setAppointmentId(id);
+    if (!id) return;
+    const a = linkableSessions.find((x) => x.id === id);
+    if (!a) return;
+    setClientId(a.clientId);
+    if (!itemsTouched && a.serviceName) {
+      const svc = services.find((sv) => sv.name === a.serviceName);
+      setItems([{ id: 1, description: a.serviceName, qty: 1, unitCents: svc?.priceCents ?? 0 }]);
+    }
+  };
+
+  const save = async () => {
+    if (!clientId) return toast({ tone: "error", title: "Choose a client to bill." });
+    const description = items.map((i) => i.description.trim()).filter(Boolean).join(" + ").slice(0, 160);
+    setSaving(true);
+    try {
+      const res = await createInvoice({ clientId, appointmentId, serviceName: description, amountRands: totalCents / 100 });
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      toast({ tone: "success", title: `${res.number} created`, description: linked ? `Billing session ${appointmentReference(linked.id)}.` : "It's on the board as unpaid." });
+      router.push(backHref);
+      router.refresh();
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const clientName = clients.find((c) => c.id === clientId)?.name ?? "";
   const lineSum = items.reduce((s, i) => s + i.qty * i.unitCents, 0);
@@ -65,8 +122,8 @@ export function InvoiceBuilder({
     setItems((prev) => [...prev, { id: seq, description: svc.name, qty: 1, unitCents: svc.priceCents ?? 0 }]);
     setSeq((n) => n + 1);
   };
-  const update = (id: number, patch: Partial<LineItem>) => setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
-  const remove = (id: number) => setItems((prev) => prev.filter((i) => i.id !== id));
+  const update = (id: number, patch: Partial<LineItem>) => { setItemsTouched(true); setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i))); };
+  const remove = (id: number) => { setItemsTouched(true); setItems((prev) => prev.filter((i) => i.id !== id)); };
 
   return (
     <div>
@@ -75,15 +132,27 @@ export function InvoiceBuilder({
         <Button asChild variant="ghost" size="sm">
           <Link href={backHref}><ArrowLeft className="size-4" strokeWidth={2} aria-hidden /> Back</Link>
         </Button>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          {openSessions.length > 0 && (
+            <div className="w-64">
+              <SearchSelect
+                value={appointmentId}
+                onChange={linkSession}
+                placeholder="Link a session (APT ref)…"
+                searchPlaceholder="Search by ref, client or date…"
+                ariaLabel="Link a session"
+                options={openSessions.map((a) => ({ value: a.id, label: sessionLabel(a) }))}
+              />
+            </div>
+          )}
           <div className="w-44">
             <Select value={null} onChange={addFromService} placeholder="Add a service…" options={services.map((s) => ({ value: s.id, label: s.name }))} />
           </div>
           <Button variant="ghost" size="sm" onClick={() => window.print()}>
             <Printer className="size-4" strokeWidth={2} aria-hidden /> Print
           </Button>
-          <Button size="sm" onClick={() => toast({ tone: "success", title: "Invoice sent", description: `${clientName} will receive it by email.` })}>
-            <Send className="size-4" strokeWidth={2} aria-hidden /> Send
+          <Button size="sm" onClick={() => void save()} loading={saving} disabled={totalCents <= 0}>
+            <Save className="size-4" strokeWidth={2} aria-hidden /> Create invoice
           </Button>
         </div>
       </div>
@@ -121,8 +190,21 @@ export function InvoiceBuilder({
           <div className="text-right text-[12px] text-[#5b635e]">
             <div>Issued: {new Intl.DateTimeFormat("en-ZA", { day: "numeric", month: "short", year: "numeric" }).format(new Date())}</div>
             <div className="mt-0.5">Due in {settings.paymentTermsDays} days</div>
+            {linked && (
+              <div className="mt-0.5">Session ref: <span className="font-mono font-semibold text-[#141916]">{appointmentReference(linked.id)}</span></div>
+            )}
           </div>
         </div>
+
+        {linked && (
+          <div className="no-print mt-4 flex items-center gap-2 rounded border border-[#e5e9e7] bg-[#f7f9f8] px-3 py-2 text-[12px] text-[#5b635e]">
+            <CalendarDays className="size-3.5 shrink-0" strokeWidth={2} aria-hidden />
+            <span>
+              For the session on {new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(linked.startsAt))}
+              {linked.counsellorName ? ` with ${linked.counsellorName}` : ""} - ref {appointmentReference(linked.id)}
+            </span>
+          </div>
+        )}
 
         {/* Line items */}
         <div className="mt-8 overflow-x-auto">
@@ -186,8 +268,9 @@ export function InvoiceBuilder({
           </div>
         )}
 
+        <div className="mt-auto pt-8">
         {settings.accountNumber ? (
-          <div className="mt-8 border-t border-[#e5e9e7] pt-4 text-[11.5px] text-[#5b635e]">
+          <div className="border-t border-[#e5e9e7] pt-4 text-[11.5px] text-[#5b635e]">
             <div className="font-semibold text-[#141916]">Banking details (EFT)</div>
             <div className="mt-1 flex flex-wrap gap-x-6 gap-y-0.5">
               {settings.bankName && <span>{settings.bankName}</span>}
@@ -199,9 +282,10 @@ export function InvoiceBuilder({
           </div>
         ) : null}
 
-        <p className="mt-8 text-[11px] text-[#8b938e]">
+        <p className="mt-6 text-[11px] text-[#8b938e]">
           Thank you. This is a system-generated {vatRegistered ? "tax invoice" : "invoice"}.
         </p>
+        </div>
       </div>
     </div>
   );

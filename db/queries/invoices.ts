@@ -2,7 +2,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { getDb } from "@/db/client";
-import { invoices, clients, appointments, services } from "@/db/schema";
+import { invoices, clients, appointments, services, counsellors } from "@/db/schema";
 import { getInvoiceSettingsDb } from "@/db/queries/settings";
 import { effectiveFeeCents, type FeePolicy } from "@/lib/billing/fees";
 
@@ -206,4 +206,98 @@ export async function setInvoiceCancelledDb(orgId: string, invoiceId: string, ca
   await db.update(invoices).set({ status: cancelled ? "cancelled" : "unpaid" })
     .where(and(eq(invoices.id, invoiceId), eq(invoices.orgId, orgId)));
   return { ok: true };
+}
+
+/**
+ * Batch 3l - the sessions behind the invoices, for printing the booking
+ * reference on the A4 and searching the board by APT code. One pass:
+ * invoiceId -> when the session is/was and with whom.
+ */
+export async function invoiceSessionRefsDb(
+  orgId: string,
+): Promise<Record<string, { appointmentId: string; startsAt: string; counsellorName: string | null }>> {
+  const db = getDb();
+  const rows = await db
+    .select({ invoiceId: invoices.id, appointmentId: appointments.id, startsAt: appointments.startsAt, counsellorName: counsellors.name })
+    .from(invoices)
+    .innerJoin(appointments, eq(invoices.appointmentId, appointments.id))
+    .leftJoin(counsellors, eq(appointments.counsellorId, counsellors.id))
+    .where(eq(invoices.orgId, orgId));
+  const out: Record<string, { appointmentId: string; startsAt: string; counsellorName: string | null }> = {};
+  for (const r of rows) out[r.invoiceId] = { appointmentId: r.appointmentId, startsAt: r.startsAt.toISOString(), counsellorName: r.counsellorName };
+  return out;
+}
+
+/**
+ * Batch 3l - the builder finally SAVES. A manual invoice: the org typed the
+ * lines, picked the client, maybe linked the session it bills. Number is
+ * allocated here (same series as the automatic paths) so two tabs can't
+ * collide on a page-computed one.
+ */
+export async function createManualInvoiceDb(input: {
+  orgId: string;
+  clientId: string;
+  appointmentId: string | null;
+  serviceName: string;
+  amountCents: number;
+  issuedAt: Date;
+}): Promise<{ ok: true; id: string; number: string } | { ok: false; error: string }> {
+  const db = getDb();
+  const [c] = await db.select({ id: clients.id }).from(clients)
+    .where(and(eq(clients.id, input.clientId), eq(clients.orgId, input.orgId))).limit(1);
+  if (!c) return { ok: false, error: "That client isn't in your practice." };
+
+  if (input.appointmentId) {
+    const [a] = await db.select({ id: appointments.id }).from(appointments)
+      .where(and(eq(appointments.id, input.appointmentId), eq(appointments.orgId, input.orgId))).limit(1);
+    if (!a) return { ok: false, error: "That session isn't in your practice." };
+    const dup = await db.select({ id: invoices.id, number: invoices.number }).from(invoices)
+      .where(eq(invoices.appointmentId, input.appointmentId)).limit(1);
+    if (dup.length) return { ok: false, error: `That session is already billed on ${dup[0]!.number}.` };
+  }
+
+  const settings = await getInvoiceSettingsDb(input.orgId);
+  const year = input.issuedAt.getFullYear();
+  const countRows = await db.select({ n: sql<number>`count(*)::int` }).from(invoices)
+    .where(and(eq(invoices.orgId, input.orgId), sql`extract(year from ${invoices.issuedAt}) = ${year}`));
+  const number = `${settings.invoicePrefix}-${year}-${String((countRows[0]?.n ?? 0) + 1).padStart(4, "0")}`;
+  const dueAt = new Date(input.issuedAt.getTime() + settings.paymentTermsDays * 86_400_000);
+
+  const id = `inv_${randomUUID()}`;
+  await db.insert(invoices).values({
+    id, clientId: input.clientId, orgId: input.orgId, number,
+    serviceName: input.serviceName, amountCents: input.amountCents,
+    status: "unpaid", issuedAt: input.issuedAt, dueAt, appointmentId: input.appointmentId,
+  });
+  return { ok: true, id, number };
+}
+
+/**
+ * Batch 3l - the sessions the builder can link an invoice to: this client's
+ * recent and upcoming appointments that aren't cancelled and aren't billed yet.
+ */
+export async function listLinkableSessionsDb(
+  orgId: string,
+): Promise<{ id: string; clientId: string; startsAt: string; serviceName: string | null; counsellorName: string | null; billed: boolean }[]> {
+  const db = getDb();
+  const since = new Date(Date.now() - 180 * 86_400_000);
+  const rows = await db
+    .select({
+      id: appointments.id, clientId: appointments.clientId, startsAt: appointments.startsAt,
+      serviceName: services.name, counsellorName: counsellors.name, invoiceId: invoices.id,
+    })
+    .from(appointments)
+    .leftJoin(services, eq(appointments.serviceId, services.id))
+    .leftJoin(counsellors, eq(appointments.counsellorId, counsellors.id))
+    .leftJoin(invoices, eq(invoices.appointmentId, appointments.id))
+    .where(and(
+      eq(appointments.orgId, orgId),
+      sql`${appointments.state} <> 'cancelled'`,
+      sql`${appointments.startsAt} >= ${since.toISOString()}`,
+    ))
+    .orderBy(sql`${appointments.startsAt} desc`);
+  return rows.map((r) => ({
+    id: r.id, clientId: r.clientId, startsAt: r.startsAt.toISOString(),
+    serviceName: r.serviceName, counsellorName: r.counsellorName, billed: Boolean(r.invoiceId),
+  }));
 }

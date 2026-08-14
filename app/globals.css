@@ -327,6 +327,12 @@
     color: #141916;
     box-shadow: var(--shadow-card);
     border-radius: 8px;
+    /* Batch 3l - a real page: A4 proportions (210 x 297). Content can still
+       grow past it; a short invoice keeps the full-page silhouette, and the
+       flex column lets the footer sit at the bottom like a printed sheet. */
+    aspect-ratio: 210 / 297;
+    display: flex;
+    flex-direction: column;
   }
 }
 

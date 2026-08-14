@@ -26,9 +26,14 @@ export default async function HubInvoicingPage() {
   const nameOf = new Map(clients.map((c) => [c.client.id, c.client.name]));
 
   // Completed sessions that never got billed - surfaced, never silent (batch 2).
-  const uninvoiced = process.env.DATA_PROVIDER === "db"
+  const isDb = process.env.DATA_PROVIDER === "db";
+  const uninvoiced = isDb
     ? await (await import("@/db/queries/invoices")).listUninvoicedCompletedDb(membership.orgId)
     : [];
+  // Batch 3l - the sessions behind the invoices: APT refs print on the A4 and are searchable.
+  const sessionRefs = isDb
+    ? await (await import("@/db/queries/invoices")).invoiceSessionRefsDb(membership.orgId)
+    : {};
   const rows: InvoiceRow[] = invoices.map((invoice) => ({ invoice, clientName: nameOf.get(invoice.clientId) ?? "Client" }));
 
   await logAccess({
@@ -55,6 +60,7 @@ export default async function HubInvoicingPage() {
         vatRatePercent={platform.vatRatePercent}
         settings={invoiceSettings}
         paymentsEnabled={gateway.enabled && gateway.configured}
+        sessionRefs={sessionRefs}
       />
     </div>
   );

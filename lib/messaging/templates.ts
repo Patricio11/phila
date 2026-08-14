@@ -31,6 +31,18 @@ export interface RenderVars {
   formLink?: string;
   /** Absolute join URL for an ONLINE session - emails render it as a button, texts as a link line. */
   joinLink?: string;
+  /** Batch 3l - the booking reference (e.g. "APT-3F9A2C"); org templates may place it with {reference}. */
+  reference?: string;
+}
+
+/**
+ * Batch 3l - guarantee the booking reference reaches the client whatever the
+ * template says: if the rendered body doesn't already carry it (a custom org
+ * template may place {reference} itself), append a quiet closing line.
+ */
+export function withReference(body: string, reference: string | null | undefined): string {
+  if (!reference || body.includes(reference)) return body;
+  return `${body}\n\nRef: ${reference}`;
 }
 
 export const DEFAULT_TEMPLATES: Record<Channel, Record<MessageTrigger, string>> = {

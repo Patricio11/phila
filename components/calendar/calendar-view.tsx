@@ -8,6 +8,7 @@ import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
 import type { BusinessHours } from "@/lib/domain/types";
 import { isoWeekday } from "@/lib/domain/helpers";
+import { matchesReference } from "@/lib/scheduling/reference";
 import { rescheduleAppointment } from "@/app/app/appointments/actions";
 import { CreateAppointmentModal, type CreateInitial, type SchedulingOptions } from "@/components/scheduling/create-appointment-modal";
 import { AppointmentDetail } from "@/components/calendar/appointment-detail";
@@ -81,6 +82,7 @@ export function CalendarView({
   openSessions = true,
   clientBasePath = "/app/clients",
   canCreate = true,
+  openRef = null,
 }: {
   events: AppointmentView[];
   businessHours: BusinessHours;
@@ -92,6 +94,8 @@ export function CalendarView({
   clientBasePath?: string;
   /** Off for the counsellor workspace - new bookings live with the practice (Hub). */
   canCreate?: boolean;
+  /** Batch 3l - a booking reference from ?ref= search: jump to that session and open it. */
+  openRef?: string | null;
 }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -129,6 +133,21 @@ export function CalendarView({
   const [filterType, setFilterType] = useState<"all" | "in_person" | "online" | "hybrid">("all");
   const [detail, setDetail] = useState<AppointmentView | null>(null);
   const [pending, setPending] = useState(false);
+
+  // Batch 3l - arriving via a reference search (?ref=APT-XXXXXX): jump the
+  // calendar to that session's date and open its detail. Honest miss otherwise.
+  const [refHandled, setRefHandled] = useState(false);
+  useEffect(() => {
+    if (!openRef || refHandled) return;
+    setRefHandled(true);
+    const hit = events.find((e) => matchesReference(e.id, openRef));
+    if (!hit) {
+      toast({ tone: "error", title: `No session found for ${openRef.toUpperCase()}`, description: "Check the reference - it looks like APT-3F9A2C." });
+      return;
+    }
+    setAnchor(sast(hit.startsAt).date);
+    setDetail(hit);
+  }, [openRef, refHandled, events, toast]);
 
   const openCreate = (date?: string, time?: string) => {
     if (!canCreate) return; // the counsellor workspace never books fresh sessions

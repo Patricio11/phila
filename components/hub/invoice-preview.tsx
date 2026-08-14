@@ -7,6 +7,7 @@ import type { InvoiceSettings } from "@/lib/data-provider";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { computeVat } from "@/lib/domain/helpers";
+import { appointmentReference } from "@/lib/scheduling/reference";
 import { cn } from "@/lib/utils";
 
 const STATUS: Record<PaymentStatus, { label: string; cls: string }> = {
@@ -33,6 +34,7 @@ export function InvoicePreview({
   vatRatePercent,
   settings,
   paymentsEnabled,
+  sessionRef = null,
   onClose,
 }: {
   invoice: Invoice;
@@ -43,6 +45,8 @@ export function InvoicePreview({
   vatRatePercent: number;
   settings: InvoiceSettings;
   paymentsEnabled: boolean;
+  /** Batch 3l - the session this invoice bills, so its APT reference prints on the sheet. */
+  sessionRef?: { appointmentId: string; startsAt: string; counsellorName: string | null } | null;
   onClose: () => void;
 }) {
   const { toast } = useToast();
@@ -88,8 +92,20 @@ export function InvoicePreview({
             <div className="text-right text-[12px] text-[#5b635e]">
               <div>Issued: {fullDate(invoice.issuedAt)}</div>
               <div className="mt-0.5">Due: {fullDate(invoice.dueAt)}</div>
+              {sessionRef && (
+                <div className="mt-0.5">
+                  Session ref: <span className="font-mono font-semibold text-[#141916]">{appointmentReference(sessionRef.appointmentId)}</span>
+                </div>
+              )}
             </div>
           </div>
+
+          {sessionRef && (
+            <div className="mt-4 rounded border border-[#e5e9e7] bg-[#f7f9f8] px-3 py-2 text-[12px] text-[#5b635e]">
+              For the session on {new Intl.DateTimeFormat("en-ZA", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Africa/Johannesburg" }).format(new Date(sessionRef.startsAt))}
+              {sessionRef.counsellorName ? ` with ${sessionRef.counsellorName}` : ""} · ref {appointmentReference(sessionRef.appointmentId)}
+            </div>
+          )}
 
           <div className="mt-8 overflow-x-auto">
             <table className="w-full min-w-[460px] text-[13px]">
@@ -133,8 +149,9 @@ export function InvoicePreview({
             </div>
           )}
 
+          <div className="mt-auto pt-8">
           {settings.accountNumber ? (
-            <div className="mt-8 border-t border-[#e5e9e7] pt-4 text-[11.5px] text-[#5b635e]">
+            <div className="border-t border-[#e5e9e7] pt-4 text-[11.5px] text-[#5b635e]">
               <div className="font-semibold text-[#141916]">Banking details (EFT)</div>
               <div className="mt-1 flex flex-wrap gap-x-6 gap-y-0.5">
                 {settings.bankName && <span>{settings.bankName}</span>}
@@ -146,9 +163,10 @@ export function InvoicePreview({
             </div>
           ) : null}
 
-          <p className="mt-8 text-[11px] text-[#8b938e]">
+          <p className="mt-6 text-[11px] text-[#8b938e]">
             Thank you. Payment via your practice&apos;s preferred method (PayShap / EFT). This is a system-generated {vatRegistered ? "tax invoice" : "invoice"}.
           </p>
+          </div>
         </div>
       </div>
     </div>

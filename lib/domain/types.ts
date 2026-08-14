@@ -336,6 +336,8 @@ export interface Invoice {
   status: import("@/lib/domain/enums").PaymentStatus;
   issuedAt: ISODateTime;
   dueAt: ISODateTime;
+  /** Batch 3l - the session this invoice bills, if any; its APT reference prints on the invoice. */
+  appointmentId?: string | null;
 }
 
 export interface OutcomeMeasure {

@@ -1619,6 +1619,16 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   the calendar and dashboard), counsellors keep reschedule/cancel/status marks, and the server
   refuses a counsellor's edit outright - defence in depth, not just a hidden button.
 
+- [x] **Submission emails, in the org's words** *(2026-08-12, batch 3j)*: every form gained an
+  **Emails** tab - a toggle, recipients (empty = every practice admin), and an editable subject +
+  body with `{name}` `{form}` `{practice}` `{date}` tokens rendered at send time (pure, unit
+  tested, defaults when blank, capped lengths). Every completion path runs through the public
+  submit action, which now sends via the existing Resend transport - best-effort, bounded at 4s,
+  never blocking the respondent's thank-you. The respondent's name resolves from the assigned
+  client, the share-response name, or the answers themselves. Migration 0075
+  (`forms.notify_on_submit`). Honest caveat: a real delivery needs the Resend integration live;
+  the transport is the same one booking confirmations already use.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

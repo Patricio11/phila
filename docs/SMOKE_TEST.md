@@ -264,6 +264,11 @@ Sign in as **Thandeka**.
 - ☐ Setting **company retainer** previews every service as **Free**, saves (DB `{"kind":"retainer"}`), and new bookings invoice at R0; Megan Pillay is the seeded example
 - ☐ A legacy sliding-scale client (e.g. Johan, pays 50%) still shows + bills their old arrangement until changed
 
+**Submission emails, in the org's words** (batch 3j)
+- ☐ A form's detail page has an **Emails** tab: a toggle ("Email the practice on every submission"), recipients (comma-separated; **empty = every practice admin**), and an editable **subject + message** with tokens `{name}` `{form}` `{practice}` `{date}` filled at send time
+- ☐ A bad address is refused naming the value; settings persist per form
+- ☐ Submitting the form (assignment link or share link) triggers the send through the practice's Resend rail - best-effort and **bounded at 4s**, so the person's thank-you screen never waits on a mail server
+
 **Real-intake template + Edit is org-only** (batch 3i)
 - ☐ The **Full intake** template now collects everything a real counselling intake asks: name + surname, contact number, email, **date of birth** (was a bare age number - the retention clock runs on DOB), **counsellor preference (language and/or religion)**, **how they'd like to meet (online / in person)**, and a free-text **"in your own words"** reason alongside the checklist
 - ☐ **Edit on an appointment is the practice's only**: the org sees the Edit chip on the calendar and dashboard; a counsellor sees Reschedule and the status marks but **no Edit**, and the server refuses a counsellor's edit regardless ("Editing a session's details is done by the practice")

@@ -403,6 +403,14 @@ export interface FormTheme {
  * builds a library of these; the active `kind: "intake"` form drives booking.
  * `fields` is stored as JSONB.
  */
+/** Batch 3j - per-form submission email. Empty recipients = every org admin. */
+export interface FormNotifySettings {
+  enabled: boolean;
+  recipients: string[];
+  subject: string;
+  body: string;
+}
+
 export interface Form {
   id: string;
   orgId: string;
@@ -418,6 +426,8 @@ export interface Form {
   shareEnabled?: boolean;
   /** Batch 2t - everyone who completes this form joins the waitlist as a client. */
   waitlistOnSubmit?: boolean;
+  /** Batch 3j - email the practice on every submission; the org edits the wording. */
+  notifyOnSubmit?: FormNotifySettings | null;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
 }

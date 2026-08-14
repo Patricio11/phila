@@ -3,7 +3,7 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { getDb } from "@/db/client";
 import { activeDb, runForOrg } from "@/lib/db/scoped";
-import { clients, counsellors, forms, formAssignments, orgs } from "@/db/schema";
+import { clients, counsellors, forms, formAssignments, orgs, orgMembers, user } from "@/db/schema";
 import type { Form, FormField, FormSnapshot, FormTheme } from "@/lib/domain/types";
 import type {
   ClientFormRow,
@@ -23,6 +23,7 @@ function toForm(r: typeof forms.$inferSelect): Form {
     intro: r.intro ?? undefined, fields: r.fields as FormField[], status: r.status as FormStatus,
     theme: (r.theme as FormTheme | null) ?? null, shareToken: r.shareToken, shareEnabled: r.shareEnabled,
     waitlistOnSubmit: r.waitlistOnSubmit,
+    notifyOnSubmit: (r.notifyOnSubmit as Form["notifyOnSubmit"]) ?? null,
     createdAt: r.createdAt.toISOString(), updatedAt: r.updatedAt.toISOString(),
   };
 }
@@ -127,6 +128,21 @@ export async function getFormByTokenDb(tok: string): Promise<FormTokenView | nul
     };
   }
   return null;
+}
+
+/** Batch 3j - save the submission-email settings for one form. */
+export async function setFormNotifyDb(orgId: string, formId: string, notify: NonNullable<Form["notifyOnSubmit"]>): Promise<void> {
+  await runForOrg(orgId, () => activeDb().update(forms).set({ notifyOnSubmit: notify })
+    .where(and(eq(forms.id, formId), eq(forms.orgId, orgId))));
+}
+
+/** The addresses that hear about a submission when none are configured. */
+export async function orgAdminEmailsDb(orgId: string): Promise<string[]> {
+  const rows = await getDb().select({ email: user.email })
+    .from(orgMembers)
+    .innerJoin(user, eq(orgMembers.userId, user.id))
+    .where(and(eq(orgMembers.orgId, orgId), eq(orgMembers.teamRole, "org_admin"), eq(orgMembers.status, "active")));
+  return rows.map((r) => r.email).filter(Boolean);
 }
 
 /** The open share token for one form (batch 2t - employer intake links). */

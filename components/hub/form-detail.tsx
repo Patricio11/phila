@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Eye, Inbox, ListChecks, Pencil, Send } from "lucide-react";
+import { ArrowLeft, Eye, Inbox, ListChecks, Pencil, Send , Mail } from "lucide-react";
 import type { Form, IntakeForm } from "@/lib/domain/types";
 import type { FormResponseRow } from "@/lib/data-provider";
 import { FORM_KIND_LABELS } from "@/lib/domain/enums";
@@ -13,6 +13,7 @@ import { FormFields } from "@/components/forms/form-fields";
 import { IntakeDetail } from "@/components/hub/intake-detail";
 import { SendFormModal, type SendClient } from "@/components/hub/send-form-modal";
 import { FormShare } from "@/components/hub/form-share";
+import { FormEmails } from "@/components/hub/form-emails";
 import { FormAutomations, type AutomationRow } from "@/components/hub/form-automations";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +25,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
   revoked: { label: "Revoked", cls: "bg-surface-2 text-text-3" },
 };
 
-type Tab = "responses" | "questions" | "preview";
+type Tab = "responses" | "questions" | "preview" | "emails";
 
 export function FormDetail({ form, responses, clients, automations = [], counsellors = [], sharedWithAll = false, sharedWith = [] }: {
   form: Form; responses: FormResponseRow[]; clients: SendClient[];
@@ -69,6 +70,7 @@ export function FormDetail({ form, responses, clients, automations = [], counsel
         <TabButton active={tab === "responses"} onClick={() => setTab("responses")} icon={Inbox}>Responses{responses.length ? ` (${responses.length})` : ""}</TabButton>
         <TabButton active={tab === "questions"} onClick={() => setTab("questions")} icon={ListChecks}>Questions</TabButton>
         <TabButton active={tab === "preview"} onClick={() => setTab("preview")} icon={Eye}>Preview</TabButton>
+        <TabButton active={tab === "emails"} onClick={() => setTab("emails")} icon={Mail}>Emails</TabButton>
       </div>
 
       {tab === "responses" ? (
@@ -132,6 +134,8 @@ export function FormDetail({ form, responses, clients, automations = [], counsel
             </li>
           ))}
         </ol>
+      ) : tab === "emails" ? (
+        <FormEmails formId={form.id} initial={form.notifyOnSubmit ?? null} />
       ) : (
         <div className="mx-auto max-w-xl rounded-card border border-border bg-surface p-5 sm:p-6">
           <div className="mb-4 border-b border-border pb-3">

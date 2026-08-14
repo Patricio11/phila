@@ -83,5 +83,63 @@ export async function submitForm(raw: { token: string; answers: Record<string, s
     }
   }
 
+  // Batch 3j - the practice hears by email, in its own words. Best-effort and
+  // bounded: the thank-you screen never waits on a mail server.
+  if (process.env.DATA_PROVIDER === "db") {
+    try {
+      await Promise.race([
+        sendSubmitNotification(view.orgId, view.formId, view.orgName, view.snapshot, answers, res.assignmentId),
+        new Promise((resolve) => setTimeout(resolve, 4_000)),
+      ]);
+    } catch { /* the submission stands */ }
+  }
+
   return { ok: true, waitlisted };
+}
+
+/** Email the configured recipients (or every org admin) about a submission. */
+async function sendSubmitNotification(
+  orgId: string,
+  formId: string,
+  orgName: string,
+  snapshot: { title: string; fields: { id: string; label?: string; type?: string }[] },
+  answers: Record<string, string>,
+  assignmentId: string,
+): Promise<void> {
+  const { getDb } = await import("@/db/client");
+  const { forms, formAssignments, clients } = await import("@/db/schema");
+  const { and, eq } = await import("drizzle-orm");
+  const db = getDb();
+  const [f] = await db.select({ notify: forms.notifyOnSubmit }).from(forms)
+    .where(and(eq(forms.id, formId), eq(forms.orgId, orgId))).limit(1);
+  const notify = f?.notify as { enabled: boolean; recipients: string[]; subject: string; body: string } | null;
+  if (!notify?.enabled) return;
+
+  // Whose response this is: the assigned client, else the name in the answers.
+  let name = "Someone";
+  const [a] = await db.select({ clientId: formAssignments.clientId, respondentName: formAssignments.respondentName })
+    .from(formAssignments).where(eq(formAssignments.id, assignmentId)).limit(1);
+  if (a?.clientId) {
+    const [c] = await db.select({ name: clients.name }).from(clients).where(eq(clients.id, a.clientId)).limit(1);
+    if (c?.name) name = c.name;
+  } else if (a?.respondentName) {
+    name = a.respondentName;
+  } else {
+    const { contactFromAnswers } = await import("@/db/queries/intake-waitlist");
+    name = contactFromAnswers(snapshot as never, answers).name ?? "Someone";
+  }
+
+  const { renderNotifyEmail } = await import("@/lib/forms/notify-email");
+  const date = new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date());
+  const { subject, body } = renderNotifyEmail(notify, { name, form: snapshot.title, practice: orgName, date });
+
+  let recipients = notify.recipients.filter(Boolean);
+  if (recipients.length === 0) {
+    const { orgAdminEmailsDb } = await import("@/db/queries/forms");
+    recipients = await orgAdminEmailsDb(orgId);
+  }
+  if (recipients.length === 0) return;
+
+  const { sendEmail } = await import("@/lib/messaging/transports");
+  await Promise.allSettled(recipients.slice(0, 10).map((to) => sendEmail(to, subject, body, orgName, null)));
 }

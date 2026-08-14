@@ -243,6 +243,35 @@ export async function setFormWaitlist(formId: string, on: boolean): Promise<{ ok
   return { ok: true };
 }
 
+/** Batch 3j - the Emails tab: who hears about a submission, and in what words. */
+const notifyInput = z.object({
+  formId: z.string().min(1),
+  enabled: z.boolean(),
+  recipients: z.array(z.string().trim().email("Check the email addresses.")).max(10),
+  subject: z.string().trim().max(160),
+  body: z.string().trim().max(2000),
+});
+export async function setFormNotify(raw: z.infer<typeof notifyInput>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = notifyInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the email settings." };
+  if (process.env.DATA_PROVIDER !== "db") return { ok: false, error: "Not available in demo mode." };
+  const d = parsed.data;
+  const { setFormNotifyDb } = await import("@/db/queries/forms");
+  await setFormNotifyDb(membership.orgId, d.formId, {
+    enabled: d.enabled, recipients: d.recipients, subject: d.subject, body: d.body,
+  });
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `form:${d.formId}`,
+    reason: d.enabled ? "form_notify_on" : "form_notify_off",
+  });
+  revalidatePath(`/hub/forms/${d.formId}`);
+  return { ok: true };
+}
+
 export async function setFormArchived(formId: string, archived: boolean): Promise<{ ok: true } | { ok: false; error: string }> {
   const { principal, membership } = await requireHub();
   const id = String(formId ?? "");

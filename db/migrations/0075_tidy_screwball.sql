@@ -1,0 +1,1 @@
+ALTER TABLE "forms" ADD COLUMN "notify_on_submit" jsonb;

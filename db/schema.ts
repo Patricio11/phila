@@ -997,6 +997,9 @@ export const forms = pgTable("forms", {
   shareEnabled: boolean("share_enabled").default(false).notNull(),
   /** Batch 2t - everyone who completes this form becomes a client on the waitlist. */
   waitlistOnSubmit: boolean("waitlist_on_submit").default(false).notNull(),
+  /** Batch 3j - email the practice when someone submits: { enabled, recipients,
+   *  subject, body }. Empty recipients = every org admin. */
+  notifyOnSubmit: jsonb("notify_on_submit").$type<{ enabled: boolean; recipients: string[]; subject: string; body: string } | null>(),
   /** Batch 2l - the org shares a form with counsellors, who then send it to
    *  their own clients. `all` = every counsellor; else the listed counsellor ids. */
   sharedWithAll: boolean("shared_with_all").default(false).notNull(),

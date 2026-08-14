@@ -224,12 +224,15 @@
   }
 
   .rise {
-    animation: phila-rise 0.5s var(--ease-out) both;
+    /* `backwards`, not `both`: a finished `both` fill keeps an identity
+       transform on the element forever, which silently turns descendants'
+       position:fixed into position:absolute (the selection bar bug). */
+    animation: phila-rise 0.5s var(--ease-out) backwards;
   }
 
   /* Children rise with a small, capped stagger. */
   .rise-stagger > * {
-    animation: phila-rise 0.5s var(--ease-out) both;
+    animation: phila-rise 0.5s var(--ease-out) backwards;
   }
   .rise-stagger > *:nth-child(1) {
     animation-delay: 0.02s;

@@ -1547,6 +1547,17 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   the Request dialog already use. Sentinel options like "Any counsellor" wear the group icon
   rather than pretending to be a person's initials.
 
+- [x] **The Documents selection bar pins to the screen** *(2026-08-12, batch 3b)*: selecting a
+  file showed the Assign / Download / Share / Delete bar at the bottom of the CONTENT, so on a
+  long page you had to scroll to find it. Root cause: the `rise` entrance animation's
+  `animation-fill-mode: both` left a computed identity transform on the page wrapper forever, and
+  any transform - identity included - silently turns descendants' `position: fixed` into
+  absolute. The fill mode is now `backwards` (same visuals: hidden during the stagger delay,
+  natural style after), which frees every fixed/sticky descendant app-wide, and the bar is also
+  portaled to `<body>` so no future ancestor effect can capture it again. It sits above the
+  mobile tab bar via a safe-area offset. Proven by measurement: bar bottom 700 of a 720px
+  viewport, unchanged after scrolling 600px.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

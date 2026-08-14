@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import {
   ChevronRight,
   Download,
@@ -663,9 +664,10 @@ export function DocumentManager({
         )}
       </section>
 
-      {/* ── Floating selection action bar ──────────────────────────────── */}
-      {selCount > 0 && (
-        <div className="rise fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
+      {/* ── Floating selection action bar - portaled to <body> so it pins to
+            the SCREEN, not to wherever the page has scrolled (batch 3b). ── */}
+      {selCount > 0 && typeof document !== "undefined" && createPortal(
+        <div className="pop fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] z-40 flex justify-center px-4 lg:bottom-5">
           <div className="flex items-center gap-1 rounded-full border border-border bg-surface px-2 py-1.5 shadow-[var(--shadow-card)]">
             <span className="px-2.5 text-[13px] font-medium text-text">{selCount} selected</span>
             <span className="mx-0.5 h-5 w-px bg-border" />
@@ -677,7 +679,8 @@ export function DocumentManager({
               <X className="size-4" aria-hidden />
             </button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* ── Dialogs ────────────────────────────────────────────────────── */}

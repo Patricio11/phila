@@ -533,6 +533,13 @@
       "when": 1786700534496,
       "tag": "0075_tidy_screwball",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1786734574335,
+      "tag": "0076_tidy_blonde_phantom",
+      "breakpoints": true
     }
   ]
 }

@@ -893,6 +893,30 @@ export const documents = pgTable("documents", {
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 }, (t) => [index("documents_org_idx").on(t.orgId), index("documents_client_idx").on(t.clientId)]);
 
+/**
+ * Batch 3p - an emailed download link: the org selects files (or a whole
+ * folder) and mails a tokenised public link; the recipient downloads each
+ * file, or the lot as one zip. Expiry enforced; every download counted.
+ */
+export const documentShareLinks = pgTable("document_share_links", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  token: text("token").notNull().unique(),
+  /** The shared documents (folder shares expand to the folder's files at send time). */
+  documentIds: jsonb("document_ids").$type<string[]>().default([]).notNull(),
+  /** Set when the share was a single folder - names the zip, groups the page. */
+  folderId: text("folder_id"),
+  companyId: text("company_id"),
+  recipientEmail: text("recipient_email").notNull(),
+  note: text("note"),
+  createdBy: text("created_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  downloadCount: integer("download_count").default(0).notNull(),
+  lastDownloadAt: timestamp("last_download_at", { withTimezone: true }),
+}, (t) => [index("share_links_org_idx").on(t.orgId)]);
+
 /** A document the org asked a client to upload  gates ALL client uploads. */
 export const documentRequests = pgTable("document_requests", {
   id: text("id").primaryKey(),

@@ -409,3 +409,64 @@ export async function renameDocument(raw: z.infer<typeof renameDocInput>): Promi
   revalidatePath("/hub/documents");
   return { ok: true };
 }
+
+/**
+ * Batch 3p - share files (or a whole folder) by EMAIL: mint a tokenised public
+ * download link and send it. The recipient downloads each file, or the lot as
+ * one zip. Clinical documents and unscanned files never qualify; the email is
+ * best-effort and the answer says honestly whether it went out.
+ */
+const shareEmailInput = z.object({
+  documentIds: z.array(z.string().min(1)).max(100).default([]),
+  folderId: z.string().min(1).nullable().default(null),
+  recipientEmail: z.string().trim().email("Check the recipient's email address."),
+  note: z.string().trim().max(500).optional(),
+  expiresDays: z.number().int().min(1).max(90).default(14),
+});
+export async function createShareEmailLink(
+  raw: z.infer<typeof shareEmailInput>,
+): Promise<{ ok: true; url: string; count: number; emailed: boolean } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = shareEmailInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the share details." };
+  if (process.env.DATA_PROVIDER !== "db") return { ok: false, error: "Not available in demo mode." };
+  const d = parsed.data;
+
+  const { createShareLinkDb } = await import("@/db/queries/share-links");
+  const res = await createShareLinkDb({
+    orgId: membership.orgId,
+    documentIds: d.documentIds,
+    folderId: d.folderId,
+    recipientEmail: d.recipientEmail,
+    note: d.note?.trim() || null,
+    expiresDays: d.expiresDays,
+    createdBy: principal.userId,
+  });
+  if (!res.ok) return res;
+
+  const base = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
+  const url = `${base}/share/${res.token}`;
+
+  await audit(membership.orgId, principal.userId, `share_link:${res.id}`, "share_link_created");
+
+  // The email itself - bounded so the dialog never hangs on a mail server.
+  let emailed = false;
+  try {
+    const { sendEmail } = await import("@/lib/messaging/transports");
+    const { railEmailHtml } = await import("@/lib/email/templates");
+    const what = res.folderName
+      ? `the "${res.folderName}" folder (${res.docs.length} file${res.docs.length === 1 ? "" : "s"})`
+      : `${res.docs.length} file${res.docs.length === 1 ? "" : "s"}`;
+    const expires = new Intl.DateTimeFormat("en-ZA", { day: "numeric", month: "long", year: "numeric" }).format(new Date(Date.now() + d.expiresDays * 86_400_000));
+    const subject = `${membership.orgName} shared ${res.folderName ? `"${res.folderName}"` : "files"} with you`;
+    const body = `${membership.orgName} has shared ${what} with you.${d.note?.trim() ? `\n\n"${d.note.trim()}"` : ""}\n\nDownload here:\n${url}\n\nThe link works until ${expires}.`;
+    const html = railEmailHtml({ subject, practiceName: membership.orgName, body, cta: { label: "Open the files", url } });
+    const outcome = await Promise.race([
+      sendEmail(d.recipientEmail, subject, body, membership.orgName, null, html),
+      new Promise<{ status: string }>((resolve) => setTimeout(() => resolve({ status: "timeout" }), 6_000)),
+    ]);
+    emailed = outcome.status === "sent";
+  } catch { /* the link still exists - the dialog offers Copy */ }
+
+  return { ok: true, url, count: res.docs.length, emailed };
+}

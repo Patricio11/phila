@@ -265,6 +265,7 @@ export function CompanyDetailView({ detail, slug, orgName, nowISO, forms = [], e
           folderId={documentsFolderId}
           docs={documents}
           storageEnabled={storageEnabled}
+          contactEmail={detail.contactEmail ?? null}
         />
       )}
 

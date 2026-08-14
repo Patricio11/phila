@@ -104,6 +104,12 @@ Cross-tenant / cross-role checks (signed in):
 - ☐ The top bar shows the page title with its one-line description underneath (the date line only appears where a page has no description, e.g. pages without a PageHead); the body never repeats the page name as a second heading
 - ☐ Detail pages push their identity up too (e.g. a client page shows the avatar + name in the bar); action buttons stay in the body, right-aligned
 
+**Share by email + folder zips** (batch 3p)
+- ☐ In Documents, select files or a folder -> **Email link** on the selection bar -> recipient, note, expiry -> the dialog shows the link (Copy) and says honestly whether the email went out
+- ☐ The company profile's Documents card has **Email to company** (prefilled with the company contact) - shares the whole folder as one link
+- ☐ The public /share/<token> page lists the files with per-file **Download** (signed URLs), **Open** for link documents, and **Download all as .zip** when there's more than one file; expiry shows and is enforced; a bad or expired token gets an honest notice
+- ☐ **Folders download as ONE zip** inside Documents too (selection bar Download with a folder or several files selected); clinical documents and unscanned files never travel on a share link; every download is counted and audited
+
 ## 4 · Hub (`/hub`)  the practice console
 
 Sign in as **Thandeka**.

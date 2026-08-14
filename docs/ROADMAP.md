@@ -1687,6 +1687,21 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   funders-crud e2e had been failing since custom DatePickers replaced native date inputs
   (2a6d729) - it now drives the real pickers.
 
+- [x] **Share files by email + folder zips** *(2026-08-14, batch 3p)*: documents (or a whole
+  folder) can now be EMAILED to a company - or anyone - as a tokenised download link. Select in
+  Documents -> "Email link" (or "Email to company" on the company profile's Documents card,
+  prefilled with their contact): recipient, note, expiry (7-90 days) -> the link goes out via
+  the platform email (best-effort, honest about whether it sent, always copyable). The public
+  page (/share/<token>) is branded and calm: the practice's name, the note, each file with a
+  Download button (links open, files redirect through short-TTL signed URLs), and "Download all
+  as .zip" packing everything into one archive. The zip comes from a ~100-line pure STORED-zip
+  writer (no dependency; CRC32 unit-tested; archives verified with Windows Expand-Archive), and
+  the same builder powers the Documents manager itself: downloading a folder or multi-selection
+  now yields ONE zip instead of a tab-per-file. Safety rails: clinical documents and unscanned
+  files never qualify (enforced at create AND at read), expiry is honest, every download is
+  counted and audited, and eligibility is re-checked when the page is read so a deleted or
+  reclassified file falls off an already-sent link. Migration 0076 (document_share_links).
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ExternalLink, FileText, FolderOpen, Link2, Upload } from "lucide-react";
+import { ExternalLink, FileText, FolderOpen, Link2, Mail, Upload } from "lucide-react";
 import type { Document } from "@/lib/domain/types";
 import { Card, CardHead } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Input, Label } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { requestUpload, confirmUpload, addLinkDocument, signDownload } from "@/app/hub/documents/actions";
 import { sizeLabel } from "@/lib/documents/quota";
+import { ShareEmailDialog } from "@/components/documents/share-email-dialog";
 
 const DAY = (iso: string) =>
   new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "short", year: "numeric" }).format(new Date(iso));
@@ -21,11 +22,13 @@ const DAY = (iso: string) =>
  * company's folder under Documents → Companies: upload here, add a link here,
  * and it shows there too - one folder, two doors.
  */
-export function CompanyDocumentsCard({ companyName, folderId, docs, storageEnabled }: {
+export function CompanyDocumentsCard({ companyName, folderId, docs, storageEnabled, contactEmail = null }: {
   companyName: string;
   folderId: string;
   docs: Document[];
   storageEnabled: boolean;
+  /** Batch 3p - prefills "Email to company"; the folder travels as one link. */
+  contactEmail?: string | null;
 }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -35,6 +38,7 @@ export function CompanyDocumentsCard({ companyName, folderId, docs, storageEnabl
   const [linkName, setLinkName] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
   const [addingLink, setAddingLink] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
 
   const upload = async (file: File) => {
     setUploading(true);
@@ -130,7 +134,22 @@ export function CompanyDocumentsCard({ companyName, folderId, docs, storageEnabl
           <Button size="sm" variant="ghost" onClick={() => setLinkOpen(true)}>
             <Link2 className="size-3.5" strokeWidth={2} aria-hidden /> Add link
           </Button>
+          {docs.length > 0 && (
+            <Button size="sm" variant="ghost" onClick={() => setEmailOpen(true)}>
+              <Mail className="size-3.5" strokeWidth={2} aria-hidden /> Email to company
+            </Button>
+          )}
         </div>
+        {emailOpen && (
+          <ShareEmailDialog
+            open={emailOpen}
+            onClose={() => setEmailOpen(false)}
+            documentIds={[]}
+            folderId={folderId}
+            what={`the "${companyName}" folder`}
+            defaultEmail={contactEmail}
+          />
+        )}
         <input
           ref={fileRef}
           type="file"

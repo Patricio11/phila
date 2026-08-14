@@ -28,6 +28,7 @@ import {
   UserRound,
   UsersRound,
   Building2,
+  Mail,
 } from "lucide-react";
 import type { Document, DocumentFolder, DocumentRequest, StorageUsage } from "@/lib/domain/types";
 import { sizeLabel } from "@/lib/documents/quota";
@@ -37,6 +38,7 @@ import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
+import { ShareEmailDialog } from "@/components/documents/share-email-dialog";
 import { cn } from "@/lib/utils";
 import { KebabMenu } from "@/components/ui/kebab-menu";
 import { SearchSelect } from "@/components/ui/search-select";
@@ -170,6 +172,18 @@ export function DocumentManager({
 
   const selectedDocIds = () => [...selected].filter((k) => k.startsWith("d:")).map((k) => k.slice(2));
   const selectedFolderIds = () => [...selected].filter((k) => k.startsWith("f:")).map((k) => k.slice(2));
+  // Batch 3p - share the selection by email (a tokenised public download link).
+  const [emailShareOpen, setEmailShareOpen] = useState(false);
+  const emailTarget = (() => {
+    const fids = selectedFolderIds();
+    const dids = new Set(selectedDocIds());
+    if (fids.length === 1 && dids.size === 0) {
+      const f = folders.find((x) => x.id === fids[0]);
+      return { folderId: fids[0]!, documentIds: [] as string[], what: `the "${f?.name ?? "selected"}" folder` };
+    }
+    for (const fid of fids) for (const d of docs) if (d.folderId === fid) dids.add(d.id);
+    return { folderId: null, documentIds: [...dids], what: `${dids.size} item${dids.size === 1 ? "" : "s"}` };
+  })();
   const clearSel = () => setSelected(new Set());
 
   function toggle(key: string, additive: boolean) {
@@ -365,17 +379,24 @@ export function DocumentManager({
     window.open(res.url, "_blank", "noopener");
   }
 
-  /** Batch 2k - download every FILE in the selection (incl. inside selected folders). */
+  /** Batch 2k - download the selection; batch 3p - folders and multi-selections come down as ONE zip. */
   async function downloadSelection() {
+    const fids = selectedFolderIds();
     const docIds = new Set(selectedDocIds());
-    for (const fid of selectedFolderIds()) for (const d of docs) if (d.folderId === fid) docIds.add(d.id);
+    for (const fid of fids) for (const d of docs) if (d.folderId === fid) docIds.add(d.id);
     const files = docs.filter((d) => docIds.has(d.id) && d.storageKey && d.scanStatus === "clean");
     if (!files.length) { toast({ tone: "default", title: "Nothing to download", description: "The selection holds links or unscanned files only." }); return; }
-    for (const d of files) {
-      const res = await signDownload({ documentId: d.id });
-      if (res.ok) window.open(res.url, "_blank", "noopener");
+    if (fids.length > 0 || files.length > 1) {
+      const qs = fids.length === 1 && selectedDocIds().length === 0
+        ? `folder=${encodeURIComponent(fids[0]!)}`
+        : `ids=${encodeURIComponent(files.map((d) => d.id).join(","))}`;
+      window.open(`/api/documents/zip?${qs}`, "_blank", "noopener");
+      toast({ tone: "success", title: "Zipping your download", description: `${files.length} file${files.length === 1 ? "" : "s"} in one archive.` });
+      return;
     }
-    toast({ tone: "success", title: `Opened ${files.length} file${files.length === 1 ? "" : "s"}` });
+    const res = await signDownload({ documentId: files[0]!.id });
+    if (res.ok) window.open(res.url, "_blank", "noopener");
+    else toast({ tone: "error", title: "Can't open this file", description: res.ok ? "" : res.error });
   }
 
   /* Batch 2k - the three-dots menu drives single-item actions. */
@@ -715,6 +736,7 @@ export function DocumentManager({
             <ActionChip icon={UserPlus} label="Assign" onClick={() => setAssignOpen(true)} disabled={selectedDocIds().length === 0} />
             <ActionChip icon={Download} label="Download" onClick={downloadSelection} />
             <ActionChip icon={Share2} label="Share" onClick={() => setShareOpen(true)} />
+            <ActionChip icon={Mail} label="Email link" onClick={() => setEmailShareOpen(true)} />
             <ActionChip icon={Trash2} label="Delete" onClick={onDelete} />
             <button type="button" onClick={clearSel} className="ml-1 inline-flex size-8 items-center justify-center rounded-full text-text-3 transition-colors hover:bg-surface-hover hover:text-text" aria-label="Clear selection">
               <X className="size-4" aria-hidden />
@@ -725,6 +747,16 @@ export function DocumentManager({
       )}
 
       {/* ── Dialogs ────────────────────────────────────────────────────── */}
+      {emailShareOpen && (
+        <ShareEmailDialog
+          open={emailShareOpen}
+          onClose={() => setEmailShareOpen(false)}
+          documentIds={emailTarget.documentIds}
+          folderId={emailTarget.folderId}
+          what={emailTarget.what}
+        />
+      )}
+
       <Dialog
         open={newFolderOpen}
         onClose={() => setNewFolderOpen(false)}

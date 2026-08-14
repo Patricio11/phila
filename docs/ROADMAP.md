@@ -1610,6 +1610,15 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   Empty folder / Client folder / Counsellor folders, each with a one-line hint, portaled and
   edge-clamped like every other menu.
 
+- [x] **Real-intake template + Edit is org-only** *(2026-08-12, batch 3i)*: checked the Full
+  intake template against a real counselling organisation's Google-Forms intake and closed the
+  gaps - **date of birth** (replacing a bare age number; retention runs on DOB), **counsellor
+  preference (language and/or religion)**, **session mode (online / in person)**, and a free-text
+  reason alongside the what-brings-you checklist. Separately, editing a session's substance is now
+  **org-only**: the Edit chip shows only on hub surfaces (a new `canEdit` flag threaded through
+  the calendar and dashboard), counsellors keep reschedule/cancel/status marks, and the server
+  refuses a counsellor's edit outright - defence in depth, not just a hidden button.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

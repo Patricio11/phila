@@ -57,7 +57,7 @@ export default async function HubCalendarsPage() {
       />
       <ChangeRequestsCard initial={changeRequests} />
       {waitlistOn && <WaitlistCard initial={waitlist} options={scheduling} />}
-      <CalendarView events={events} businessHours={org.scheduling.businessHours} scheduling={scheduling} nowISO={now} openSessions={false} clientBasePath="/hub/clients" />
+      <CalendarView events={events} businessHours={org.scheduling.businessHours} scheduling={scheduling} nowISO={now} openSessions={false} clientBasePath="/hub/clients" canEdit />
     </div>
   );
 }

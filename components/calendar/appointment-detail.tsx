@@ -62,6 +62,7 @@ export function AppointmentDetail({
   canManage = true,
   clientBasePath = "/app/clients",
   scheduling,
+  canEdit = false,
 }: {
   appt: AppointmentView | null;
   onClose: () => void;
@@ -72,6 +73,8 @@ export function AppointmentDetail({
   clientBasePath?: string;
   /** Batch 2v - with these, Edit can change service / counsellor / where / room / duration in place. */
   scheduling?: SchedulingOptions;
+  /** Batch 3i - Edit is org-only; counsellor surfaces leave this off. */
+  canEdit?: boolean;
 }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -251,7 +254,7 @@ export function AppointmentDetail({
         appt && canManage && !showEdit && !showReschedule && !showCancel ? (
           <div className="space-y-2">
             <div className="flex flex-wrap gap-2">
-              {scheduling && appt.state !== "cancelled" && (
+              {scheduling && canEdit && appt.state !== "cancelled" && (
                 <ActionChip icon={Pencil} label="Edit" onClick={openEditor} disabled={pending} />
               )}
               <ActionChip icon={CalendarDays} label="Reschedule" onClick={() => setShowReschedule(true)} disabled={pending} />

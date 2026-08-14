@@ -76,6 +76,7 @@ export function CalendarView({
   events: initialEvents,
   businessHours,
   scheduling,
+  canEdit = false,
   nowISO,
   openSessions = true,
   clientBasePath = "/app/clients",
@@ -84,6 +85,8 @@ export function CalendarView({
   events: AppointmentView[];
   businessHours: BusinessHours;
   scheduling: SchedulingOptions;
+  /** Batch 3i - whether the viewer may edit a session's substance (org-only). */
+  canEdit?: boolean;
   nowISO: string;
   openSessions?: boolean;
   clientBasePath?: string;
@@ -249,6 +252,7 @@ export function CalendarView({
         openSessions={openSessions}
         clientBasePath={clientBasePath}
         scheduling={scheduling}
+        canEdit={canEdit}
       />
 
       {confirm && (

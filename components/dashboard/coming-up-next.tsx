@@ -136,6 +136,7 @@ export function ComingUpNext({
         openSessions={false}
         clientBasePath="/hub/clients"
         scheduling={scheduling}
+        canEdit
       />
     </Card>
   );

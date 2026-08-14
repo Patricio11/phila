@@ -236,7 +236,7 @@ export async function updateAppointmentDetails(
   if (process.env.DATA_PROVIDER !== "db") return { ok: false, error: "Not available in demo mode." };
 
   const { getDb } = await import("@/db/client");
-  const { appointments, counsellors } = await import("@/db/schema");
+  const { appointments } = await import("@/db/schema");
   const { and, eq } = await import("drizzle-orm");
   const db = getDb();
   const [appt] = await db.select().from(appointments)
@@ -244,15 +244,11 @@ export async function updateAppointmentDetails(
   if (!appt) return { ok: false, error: "That session couldn't be found." };
   if (appt.state === "cancelled") return { ok: false, error: "A cancelled session can't be edited." };
 
-  // A counsellor may only edit their OWN session, and may not hand it to a
-  // colleague - moving work between counsellors is the practice's call.
+  // Editing what a session IS - service, counsellor, where, room, length -
+  // is the practice's call, full stop. Counsellors keep reschedule, cancel
+  // and the status marks; changing the substance goes through the hub.
   if (membership.teamRole === "counsellor") {
-    const [mine] = await db.select({ id: counsellors.id }).from(counsellors)
-      .where(and(eq(counsellors.orgId, membership.orgId), eq(counsellors.userId, principal.userId))).limit(1);
-    if (!mine || appt.counsellorId !== mine.id)
-      return { ok: false, error: "You can only edit your own sessions." };
-    if (d.counsellorId && d.counsellorId !== mine.id)
-      return { ok: false, error: "Reassigning a session to a colleague is done by the practice." };
+    return { ok: false, error: "Editing a session's details is done by the practice - ask your admin." };
   }
 
   const nextType = (d.type ?? appt.type) as import("@/lib/domain/enums").AppointmentType;

@@ -1,0 +1,1 @@
+ALTER TABLE "document_folders" ADD COLUMN "company_id" text;

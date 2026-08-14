@@ -1588,6 +1588,14 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   and a **Book <name>** button in the footer, so read-then-book is one motion. The query carries
   the latest completed response's fields + answers instead of a dead-end token.
 
+- [x] **Company documents: one folder, two doors** *(2026-08-12, batch 3f)*: every employer now
+  has a folder under **Documents → Companies**, created with the company, ensured (and healed)
+  on every profile visit, and renamed when the company is renamed. The company profile gained a
+  **Documents** card that IS that folder - the list, Upload and Add link filing straight into it -
+  and **Open in Documents** deep-links the manager already inside the folder via a new `?folder=`
+  parameter. Company folders wear the building icon in the tree, as counsellor folders wear the
+  people icon. Migration 0074 (`document_folders.company_id`).
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

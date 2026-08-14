@@ -73,6 +73,11 @@ export async function createCompany(
     waitlistTurnedOn = await ensureWaitlistOn(membership.orgId);
     await ensureFormShared(membership.orgId, d.intakeFormId, clockNow());
   }
+  // Batch 3f - their folder exists from day one (Documents -> Companies).
+  try {
+    const { ensureCompanyFolderDb } = await import("@/db/queries/documents");
+    await ensureCompanyFolderDb(membership.orgId, { id: res.id, name: d.name });
+  } catch { /* the profile visit heals a missing folder */ }
 
   await logAccess({
     action: "admin.action",
@@ -113,6 +118,12 @@ export async function updateCompany(
     waitlistTurnedOn = await ensureWaitlistOn(membership.orgId);
     await ensureFormShared(membership.orgId, d.intakeFormId, clockNow());
   }
+  // Batch 3f - the folder follows the company, name included.
+  try {
+    const { ensureCompanyFolderDb, renameFolderDb } = await import("@/db/queries/documents");
+    const folderId = await ensureCompanyFolderDb(membership.orgId, { id: d.companyId, name: d.name });
+    await renameFolderDb(membership.orgId, folderId, d.name);
+  } catch { /* the profile visit heals a missing folder */ }
 
   await logAccess({
     action: "admin.action",

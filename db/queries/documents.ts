@@ -43,7 +43,7 @@ function toDocument(r: typeof documents.$inferSelect): Document {
 function toFolder(r: typeof documentFolders.$inferSelect): DocumentFolder {
   return {
     id: r.id, orgId: r.orgId, parentId: r.parentId, name: r.name,
-    scope: r.scope as FolderScope, clientId: r.clientId, counsellorId: r.counsellorId ?? null,
+    scope: r.scope as FolderScope, clientId: r.clientId, counsellorId: r.counsellorId ?? null, companyId: r.companyId ?? null,
     note: r.note ?? null, submissionsPrivate: r.submissionsPrivate,
     createdAt: r.createdAt.toISOString(),
   };
@@ -238,6 +238,38 @@ export async function ensureCounsellorFolderDb(
     }).onConflictDoNothing();
     return { folderId, counsellorId: counsellor.id, created };
   });
+}
+
+/* ── Company folders (batch 3f) - one per employer, under "Companies" ────── */
+
+/**
+ * Find-or-create an employer's folder: "Companies" at the root, the company's
+ * folder inside, named after them. Idempotent - called when the company is
+ * created and again whenever its profile is opened, so it can never be missing
+ * and a deleted one heals on the next visit.
+ */
+export async function ensureCompanyFolderDb(orgId: string, company: { id: string; name: string }): Promise<string> {
+  return runForOrg(orgId, async () => {
+    const db = activeDb();
+    const rootId = await findOrCreateFolder(db, orgId, "Companies", null, "org", null);
+    const [existing] = await db.select({ id: documentFolders.id }).from(documentFolders)
+      .where(and(eq(documentFolders.orgId, orgId), eq(documentFolders.companyId, company.id), isNull(documentFolders.deletedAt)))
+      .limit(1);
+    if (existing) return existing.id;
+    const id = `fold_${randomUUID()}`;
+    await db.insert(documentFolders).values({
+      id, orgId, name: company.name, parentId: rootId, scope: "org",
+      clientId: null, companyId: company.id, createdBy: "system", createdAt: new Date(),
+    });
+    return id;
+  });
+}
+
+/** What lives in one folder (newest first) - the company card's list. */
+export async function folderDocumentsDb(orgId: string, folderId: string): Promise<Document[]> {
+  const rows = await getDb().select().from(documents)
+    .where(and(eq(documents.orgId, orgId), eq(documents.folderId, folderId), isNull(documents.deletedAt)));
+  return rows.map(toDocument).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 /** Give every counsellor in the practice a folder. Returns what actually changed. */

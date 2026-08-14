@@ -256,6 +256,8 @@ export interface DocumentFolder {
   clientId: string | null;
   /** Batch 2r - whose folder this is: every counsellor has exactly one. */
   counsellorId?: string | null;
+  /** Batch 3f - which employer's folder this is: one per company. */
+  companyId?: string | null;
   /** Batch 2k - the org's instruction note for counsellors this folder is shared with. */
   note?: string | null;
   /** Batch 2k - counsellors see only their OWN files in this folder. */

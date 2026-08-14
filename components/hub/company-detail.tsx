@@ -18,6 +18,8 @@ import { SearchSelect } from "@/components/ui/search-select";
 import { FORM_KIND_META } from "@/lib/forms/kind-icon";
 import type { FormKind } from "@/lib/domain/enums";
 import { CreateAppointmentModal, type SchedulingOptions } from "@/components/scheduling/create-appointment-modal";
+import { CompanyDocumentsCard } from "@/components/hub/company-documents-card";
+import type { Document } from "@/lib/domain/types";
 import { recordCompanyPayment, updateCompany } from "@/app/hub/companies/actions";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +30,7 @@ const DAY = (iso: string) =>
   new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "2-digit", month: "short", year: "numeric" }).format(new Date(iso));
 
 /** One EAP company - ledger, aggregate usage, employee link, aggregate-only export. */
-export function CompanyDetailView({ detail, slug, orgName, nowISO, forms = [], employees = [], scheduling }: {
+export function CompanyDetailView({ detail, slug, orgName, nowISO, forms = [], employees = [], scheduling, documentsFolderId, documents = [], storageEnabled = false }: {
   detail: CompanyDetail;
   slug: string;
   orgName: string;
@@ -38,6 +40,10 @@ export function CompanyDetailView({ detail, slug, orgName, nowISO, forms = [], e
   /** Batch 2t - who is linked, for the PRACTICE only. Never shown to the employer. */
   employees?: CompanyEmployee[];
   scheduling?: SchedulingOptions;
+  /** Batch 3f - the employer's folder under Documents -> Companies, and what's in it. */
+  documentsFolderId?: string;
+  documents?: Document[];
+  storageEnabled?: boolean;
 }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -252,6 +258,15 @@ export function CompanyDetailView({ detail, slug, orgName, nowISO, forms = [], e
           </div>
         </div>
       </Dialog>
+
+      {documentsFolderId && (
+        <CompanyDocumentsCard
+          companyName={detail.name}
+          folderId={documentsFolderId}
+          docs={documents}
+          storageEnabled={storageEnabled}
+        />
+      )}
 
       {/* Who is linked - the PRACTICE's view. The employer's own reporting
           stays aggregate: no name here ever reaches them. */}

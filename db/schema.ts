@@ -854,6 +854,9 @@ export const documentFolders = pgTable("document_folders", {
   /** Batch 2r - whose folder this is (scope "counsellor"): one per counsellor,
    *  auto-created and auto-shared, where everything sent to them gathers. */
   counsellorId: text("counsellor_id"),
+  /** Batch 3f - which employer this folder belongs to: one per company, where
+   *  contracts, SLAs and everything asked of them is kept together. */
+  companyId: text("company_id"),
   /** Batch 2k - the org's instruction note shown to counsellors the folder is shared with. */
   note: text("note"),
   /** Batch 2k - counsellors see ONLY their own files in this folder (submission privacy). */

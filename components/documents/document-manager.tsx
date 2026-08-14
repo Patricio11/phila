@@ -26,6 +26,7 @@ import {
   Search,
   UserRound,
   UsersRound,
+  Building2,
 } from "lucide-react";
 import type { Document, DocumentFolder, DocumentRequest, StorageUsage } from "@/lib/domain/types";
 import { sizeLabel } from "@/lib/documents/quota";
@@ -72,6 +73,7 @@ export function DocumentManager({
   requests,
   usage,
   storageEnabled,
+  initialFolderId = null,
 }: {
   folders: DocumentFolder[];
   documents: Document[];
@@ -80,6 +82,8 @@ export function DocumentManager({
   requests: DocumentRequest[];
   usage: StorageUsage;
   storageEnabled: boolean;
+  /** Batch 3f - open already inside this folder (?folder= deep links). */
+  initialFolderId?: string | null;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -98,7 +102,9 @@ export function DocumentManager({
   }
 
   const [view, setView] = useState<View>("folders");
-  const [cwd, setCwd] = useState<string | null>(null); // current folder; null = root
+  const [cwd, setCwd] = useState<string | null>(
+    initialFolderId && initialFolders.some((f) => f.id === initialFolderId) ? initialFolderId : null,
+  ); // current folder; null = root
   // Batch 2r - search across every folder at once. A practice's documents live
   // several folders deep; hunting for one by clicking down the tree is the
   // slowest way to find anything.
@@ -976,7 +982,9 @@ function FolderCard({ folder, count, selected, dropping, renaming, onOpen, onSel
     >
       {folder.counsellorId
         ? <UsersRound className="size-7 shrink-0 text-accent/80" strokeWidth={1.6} aria-hidden />
-        : <FolderClosed className="size-7 shrink-0 text-accent/80" strokeWidth={1.6} aria-hidden />}
+        : folder.companyId
+          ? <Building2 className="size-7 shrink-0 text-accent/80" strokeWidth={1.6} aria-hidden />
+          : <FolderClosed className="size-7 shrink-0 text-accent/80" strokeWidth={1.6} aria-hidden />}
       <div className="min-w-0 flex-1">
         {renaming !== null ? (
           <input

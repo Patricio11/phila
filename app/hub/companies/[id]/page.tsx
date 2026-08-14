@@ -31,6 +31,15 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
   ]);
   if (!detail || !org) notFound();
 
+  // Batch 3f - the employer's folder under Documents -> Companies. Ensured on
+  // every visit, so it can never be missing and a deleted one heals itself.
+  const { ensureCompanyFolderDb, folderDocumentsDb } = await import("@/db/queries/documents");
+  const folderId = await ensureCompanyFolderDb(membership.orgId, { id: detail.id, name: detail.name });
+  const [companyDocs, storageStatus] = await Promise.all([
+    folderDocumentsDb(membership.orgId, folderId),
+    (await import("@/lib/storage")).getStorageStatus(),
+  ]);
+
   // Everything the Book button needs, so an employer's list books in one step.
   const scheduling = {
     orgId: membership.orgId,
@@ -59,6 +68,9 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
       forms={forms.filter((f) => f.status === "active").map((f) => ({ id: f.id, title: f.title, kind: f.kind }))}
       employees={employees}
       scheduling={scheduling}
+      documentsFolderId={folderId}
+      documents={companyDocs}
+      storageEnabled={storageStatus.enabled && storageStatus.configured}
     />
   );
 }

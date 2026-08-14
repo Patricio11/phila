@@ -8,7 +8,8 @@ import { DocumentManager } from "@/components/documents/document-manager";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Documents" };
 
-export default async function HubDocumentsPage() {
+export default async function HubDocumentsPage({ searchParams }: { searchParams: Promise<{ folder?: string }> }) {
+  const { folder } = await searchParams;
   const { principal, membership } = await requireHub();
   const provider = await getDataProvider();
 
@@ -44,6 +45,7 @@ export default async function HubDocumentsPage() {
         requests={requests}
         usage={usage}
         storageEnabled={storage.enabled}
+        initialFolderId={folder ?? null}
       />
     </div>
   );

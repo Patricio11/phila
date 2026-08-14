@@ -264,6 +264,12 @@ Sign in as **Thandeka**.
 - ☐ Setting **company retainer** previews every service as **Free**, saves (DB `{"kind":"retainer"}`), and new bookings invoice at R0; Megan Pillay is the seeded example
 - ☐ A legacy sliding-scale client (e.g. Johan, pays 50%) still shows + bills their old arrangement until changed
 
+**Company documents, one folder, two doors** (batch 3f)
+- ☐ Every company has a folder under **Documents → Companies**, named after them - created with the company, ensured (and healed) whenever its profile is opened, renamed when the company is renamed
+- ☐ The **company profile** has a **Documents** card that IS that folder: the list (links + files, newest first, open in a click), **Upload** and **Add link** filing straight into it, and the toast says where it went
+- ☐ **Open in Documents** deep-links into the manager already inside the folder (`?folder=`), breadcrumb Home → Companies → <name>
+- ☐ In the Documents tree, company folders wear the **building icon** (as counsellor folders wear the people icon)
+
 **The waitlist closes its loop** (batch 3d)
 - ☐ `/hub/waitlist` now has **Waiting / Booked** tabs (with counts), employer filter chips beside them, avatars on every row, and per-tab empty states
 - ☐ **Booking anywhere settles the wait**: book a waiting person from the waitlist page, the calendar modal, the company Employees tab, or even let them self-book - the server flips their entry to *placed* with a timestamp, no UI has to remember

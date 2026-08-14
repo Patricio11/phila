@@ -177,3 +177,56 @@ export async function backfillInvoices(): Promise<{ ok: true; created: number; s
   revalidatePath("/hub/invoicing");
   return { ok: true, created, skipped };
 }
+
+/* ── Batch 3k - edit, cancel, reinstate ──────────────────────────────────── */
+
+const editInput = z.object({
+  invoiceId: z.string().min(1),
+  serviceName: z.string().trim().min(2, "Name the service.").max(160),
+  amountRands: z.number().min(0).max(1_000_000),
+  dueAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
+export async function updateInvoice(raw: z.infer<typeof editInput>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = editInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the invoice details." };
+  if (process.env.DATA_PROVIDER !== "db") return { ok: false, error: "Not available in demo mode." };
+  const d = parsed.data;
+  const { updateInvoiceDb } = await import("@/db/queries/invoices");
+  const res = await updateInvoiceDb(membership.orgId, d.invoiceId, {
+    serviceName: d.serviceName,
+    amountCents: Math.round(d.amountRands * 100),
+    dueAt: new Date(`${d.dueAt}T17:00:00+02:00`),
+  });
+  if (!res.ok) return res;
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `invoice:${d.invoiceId}`,
+    reason: "edit_invoice",
+  });
+  revalidatePath("/hub/invoicing");
+  return { ok: true };
+}
+
+export async function setInvoiceCancelled(raw: { invoiceId: string; cancelled: boolean }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const invoiceId = String(raw?.invoiceId ?? "");
+  const cancelled = Boolean(raw?.cancelled);
+  if (!invoiceId) return { ok: false, error: "Not found." };
+  if (process.env.DATA_PROVIDER !== "db") return { ok: false, error: "Not available in demo mode." };
+  const { setInvoiceCancelledDb } = await import("@/db/queries/invoices");
+  const res = await setInvoiceCancelledDb(membership.orgId, invoiceId, cancelled);
+  if (!res.ok) return res;
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" },
+    orgId: membership.orgId,
+    target: `invoice:${invoiceId}`,
+    reason: cancelled ? "cancel_invoice" : "reinstate_invoice",
+  });
+  revalidatePath("/hub/invoicing");
+  return { ok: true };
+}

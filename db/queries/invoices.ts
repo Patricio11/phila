@@ -164,3 +164,46 @@ export async function listUninvoicedCompletedDb(orgId: string): Promise<{ appoin
     }))
     .sort((a, b) => b.startsAt.localeCompare(a.startsAt));
 }
+
+/* ── Batch 3k - view, edit, cancel: the invoice board grows up ──────────── */
+
+/**
+ * Edit an UNPAID invoice: service name, amount, due date. A paid invoice is a
+ * settled fact - money moved against these numbers - so it refuses politely.
+ */
+export async function updateInvoiceDb(
+  orgId: string,
+  invoiceId: string,
+  patch: { serviceName?: string; amountCents?: number; dueAt?: Date },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const db = getDb();
+  const [inv] = await db.select({ status: invoices.status }).from(invoices)
+    .where(and(eq(invoices.id, invoiceId), eq(invoices.orgId, orgId))).limit(1);
+  if (!inv) return { ok: false, error: "That invoice couldn't be found." };
+  if (inv.status === "paid") return { ok: false, error: "A paid invoice can't be edited - money has moved against it." };
+  if (inv.status === "cancelled") return { ok: false, error: "Reinstate the invoice first, then edit it." };
+  const set: Record<string, unknown> = {};
+  if (patch.serviceName !== undefined) set.serviceName = patch.serviceName;
+  if (patch.amountCents !== undefined) set.amountCents = patch.amountCents;
+  if (patch.dueAt !== undefined) set.dueAt = patch.dueAt;
+  if (Object.keys(set).length === 0) return { ok: true };
+  await db.update(invoices).set(set).where(and(eq(invoices.id, invoiceId), eq(invoices.orgId, orgId)));
+  return { ok: true };
+}
+
+/**
+ * Cancel / reinstate. Never a delete: an invoice is a financial record, so a
+ * cancelled one stays on the books, visibly struck, and can come back.
+ */
+export async function setInvoiceCancelledDb(orgId: string, invoiceId: string, cancelled: boolean): Promise<{ ok: true } | { ok: false; error: string }> {
+  const db = getDb();
+  const [inv] = await db.select({ status: invoices.status }).from(invoices)
+    .where(and(eq(invoices.id, invoiceId), eq(invoices.orgId, orgId))).limit(1);
+  if (!inv) return { ok: false, error: "That invoice couldn't be found." };
+  if (cancelled && inv.status === "paid") return { ok: false, error: "A paid invoice can't be cancelled - refund it through your gateway instead." };
+  if (cancelled && inv.status === "cancelled") return { ok: true };
+  if (!cancelled && inv.status !== "cancelled") return { ok: true };
+  await db.update(invoices).set({ status: cancelled ? "cancelled" : "unpaid" })
+    .where(and(eq(invoices.id, invoiceId), eq(invoices.orgId, orgId)));
+  return { ok: true };
+}

@@ -219,6 +219,10 @@ Sign in as **Thandeka**.
 **Invoicing** (`/hub/invoicing`)
 - ☐ **Billing never slips** (batch 2): marking a session **Completed** auto-raises its invoice; the appointment detail modal shows the invoice inline (number · amount · status) or a **Generate invoice** button; the invoicing page banner lists completed-but-uninvoiced sessions with one-click **Generate N invoices**; **Bill to** in the builder is searchable
 - ☐ Invoice board shows outstanding / overdue / paid totals
+- ☐ **The board, by state** (batch 3k): status tab pills **All / Unpaid / Overdue / Paid / Cancelled** with live counts filter the table; totals always read the whole book, not the filtered tab; client rows carry avatars and an **Issued** column
+- ☐ **Every row has a ⋮ menu** (batch 3k): **View invoice** (A4 preview) on every row; unpaid rows add **Edit**, **Copy pay link** (gateway on), **Send reminder**, **Cancel invoice** (danger); cancelled rows offer **Reinstate**; paid rows offer only View - money has moved
+- ☐ **Edit an unpaid invoice** (batch 3k): ⋮ → Edit → dialog with service name, amount (R) and due date → Save; the row and totals update; the change lands in the audit log (`edit_invoice`)
+- ☐ **Cancel, never delete** (batch 3k): cancelling keeps the invoice on the books under the Cancelled tab (HPCSA records rule); Reinstate returns it to Unpaid; a paid invoice refuses both edit and cancel with an honest message ("money has moved" / "refund through your gateway")
 - ☐ Open an invoice → A4 preview renders
 - ☐ If the org gateway is connected (Settings → Payments), an unpaid invoice shows a **Pay link** button → copies a `/pay/<token>` URL
 

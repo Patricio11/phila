@@ -1629,6 +1629,20 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   (`forms.notify_on_submit`). Honest caveat: a real delivery needs the Resend integration live;
   the transport is the same one booking confirmations already use.
 
+- [x] **The invoice board grows up** *(2026-08-14, batch 3k)*: the invoicing page had totals and a
+  flat table - no way to view, edit or take an invoice off the books. Now: status tab pills
+  (**All / Unpaid / Overdue / Paid / Cancelled**) with live counts filter the table while the stat
+  tiles keep reading the whole book; client rows carry avatars and an Issued column; and every row
+  has a ⋮ menu - **View invoice** everywhere, plus **Edit** (service, amount, due date in a
+  dialog), **Copy pay link**, **Send reminder** and **Cancel invoice** on unpaid rows, and
+  **Reinstate** on cancelled ones. Deliberate rules, enforced server-side with honest refusals:
+  a paid invoice can be neither edited ("money has moved against it") nor cancelled ("refund it
+  through your gateway instead"), and delete does not exist - a cancelled invoice stays on the
+  books (HPCSA records rule) and can be reinstated any time. Edits, cancels and reinstates all
+  land in the audit log. Proven live end to end: edit changed service + amount in the DB, cancel
+  moved the row to the Cancelled tab, reinstate brought it back, mark-paid stripped the row down
+  to view-only.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

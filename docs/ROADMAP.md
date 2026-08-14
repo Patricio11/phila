@@ -1558,6 +1558,17 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   mobile tab bar via a safe-area offset. Proven by measurement: bar bottom 700 of a 720px
   viewport, unchanged after scrolling 600px.
 
+- [x] **Edit client no longer silently assigns the unassigned** *(2026-08-12, batch 3c)*:
+  chasing a reported "something went wrong" on a client edit (not reproducible - every one of the
+  43 dossiers opens clean, and edit → save → reopen passes on both an assigned and an unassigned
+  client; the likely cause was a dev-server restart mid-click), the probe caught a real bug in
+  that dialog: it seeded the counsellor field with `initial ?? counsellors[0]`, so saving ANY edit
+  on an unassigned client quietly handed them to whoever sorted first. The field now seeds with
+  what IS, offers an explicit **Unassigned** option (group icon), and the action + write accept
+  null. Creating a client still requires an assignment - only editing respects the unassigned
+  state (first-class since 2s). Proven by DB assertion: a phone tweak leaves
+  `primary_counsellor_id` untouched for both kinds of client.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

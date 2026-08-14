@@ -39,13 +39,16 @@ export function EditClientButton({
   const [phone, setPhone] = useState(initial.phone ?? "");
   const [email, setEmail] = useState(initial.email ?? "");
   const [province, setProvince] = useState<Province>(initial.province);
-  const [counsellorId, setCounsellorId] = useState<string | null>(initial.counsellorId ?? counsellors[0]?.id ?? null);
+  // Seed with what IS - never default an unassigned client onto whoever
+  // happens to be first in the list (saving a phone tweak used to silently
+  // hand the client to them).
+  const [counsellorId, setCounsellorId] = useState<string | null>(initial.counsellorId ?? null);
   const [riskFlag, setRiskFlag] = useState(initial.riskFlag);
   const [referralSource, setReferralSource] = useState<string>(initial.referralSource ?? "");
 
   const errors = {
     name: name.trim().length < 2 ? "Enter the client's full name." : "",
-    counsellor: !counsellorId ? "Assign a counsellor." : "",
+    counsellor: "", // unassigned is a real state (batch 2s) - allowed here too
     phone: phone && !/^(\+27|0)\d{9}$/.test(phone.replace(/\s/g, "")) ? "Use a SA number, e.g. 082 123 4567." : "",
     email: email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? "Enter a valid email." : "",
     contact: !phone.trim() && !email.trim() ? "Add a phone number or an email  either works." : "",
@@ -53,7 +56,7 @@ export function EditClientButton({
 
   const resetToInitial = () => {
     setName(initial.name); setPhone(initial.phone ?? ""); setEmail(initial.email ?? "");
-    setProvince(initial.province); setCounsellorId(initial.counsellorId ?? counsellors[0]?.id ?? null);
+    setProvince(initial.province); setCounsellorId(initial.counsellorId ?? null);
     setRiskFlag(initial.riskFlag); setReferralSource(initial.referralSource ?? ""); setAttempted(false);
   };
 
@@ -63,7 +66,7 @@ export function EditClientButton({
     setAttempted(true);
     if (errors.name || errors.counsellor || errors.phone || errors.email || errors.contact) return;
     start(async () => {
-      const res = await updateClient({ clientId, name: name.trim(), phone: phone.replace(/\s/g, ""), email, province, counsellorId: counsellorId!, riskFlag, ...(referralsOn ? { referralSource: (referralSource || undefined) as ReferralSource | undefined } : {}) });
+      const res = await updateClient({ clientId, name: name.trim(), phone: phone.replace(/\s/g, ""), email, province, counsellorId, riskFlag, ...(referralsOn ? { referralSource: (referralSource || undefined) as ReferralSource | undefined } : {}) });
       if (!res.ok) return toast({ tone: "error", title: res.error });
       toast({ tone: "success", title: "Profile updated", description: `${name.split(" ")[0]}'s details are saved.` });
       setOpen(false);
@@ -124,7 +127,7 @@ export function EditClientButton({
             </div>
             <div className="space-y-1.5">
               <Label>Primary counsellor</Label>
-              <SearchSelect avatars ariaLabel="Primary counsellor" value={counsellorId} onChange={setCounsellorId} placeholder="Assign" searchPlaceholder="Search counsellors…" options={counsellors.map((c) => ({ value: c.id, label: c.name }))} invalid={Boolean(attempted && errors.counsellor)} />
+              <SearchSelect avatars ariaLabel="Primary counsellor" value={counsellorId ?? "__unassigned"} onChange={(v) => setCounsellorId(v === "__unassigned" ? null : v)} placeholder="Assign" searchPlaceholder="Search counsellors…" options={[{ value: "__unassigned", label: "Unassigned", hint: "No counsellor yet" }, ...counsellors.map((c) => ({ value: c.id, label: c.name }))]} />
               {attempted && errors.counsellor ? <FieldError>{errors.counsellor}</FieldError> : null}
             </div>
           </div>

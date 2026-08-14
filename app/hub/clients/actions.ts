@@ -167,7 +167,8 @@ const updateInput = z
     name: z.string().min(2, "Enter the client's full name."),
     ...contactShape,
     province: z.enum(PROVINCES),
-    counsellorId: z.string().min(1, "Assign a counsellor."),
+    /** Null = unassigned, a real state since batch 2s. */
+    counsellorId: z.string().min(1).nullable(),
     riskFlag: z.boolean(),
     referralSource: z.enum(REFERRAL_SOURCES).optional(),
   })

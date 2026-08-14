@@ -31,7 +31,8 @@ export interface ClientWriteInput {
   phone?: string;
   email?: string;
   province: Province;
-  counsellorId: string;
+  /** Null = unassigned (a real state since batch 2s). */
+  counsellorId: string | null;
   riskFlag: boolean;
   /** How the client found the practice (W7); undefined = leave unchanged/unset. */
   referralSource?: string | null;

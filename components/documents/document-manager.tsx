@@ -53,6 +53,7 @@ import {
   shareWithCounsellors,
   signDownload,
   generateCounsellorFolders,
+  ensureClientFolders,
 } from "@/app/hub/documents/actions";
 
 type Named = { id: string; name: string };
@@ -110,6 +111,10 @@ export function DocumentManager({
   // slowest way to find anything.
   const [query, setQuery] = useState("");
   const [makingFolders, setMakingFolders] = useState(false);
+  // Batch 3g - a folder per client, on demand: one chosen client or everyone.
+  const [clientFolderOpen, setClientFolderOpen] = useState(false);
+  const [clientFolderPick, setClientFolderPick] = useState<string | null>(null);
+  const [makingClientFolder, setMakingClientFolder] = useState(false);
   // Guard against a second submit landing before the first returns - without it
   // a double-click on "Add link" creates the document twice.
   const [addingLink, setAddingLink] = useState(false);
@@ -427,6 +432,35 @@ export function DocumentManager({
     }
   };
 
+  const makeClientFolder = async (all: boolean) => {
+    if (!all && !clientFolderPick) return;
+    setMakingClientFolder(true);
+    try {
+      const res = await ensureClientFolders(all ? { all: true } : { clientIds: [clientFolderPick!] });
+      if (!res.ok) return toast({ tone: "error", title: res.error });
+      if (all) {
+        toast({
+          tone: "success",
+          title: res.created > 0 ? `${res.created} folder${res.created === 1 ? "" : "s"} created` : "Everyone already has a folder",
+          description: `${res.total} client${res.total === 1 ? "" : "s"} · ${res.existing} already had one. Client uploads file into these automatically.`,
+        });
+      } else {
+        const name = clientName.get(clientFolderPick!) ?? "The client";
+        toast({
+          tone: "success",
+          title: res.created > 0 ? "Folder created" : `${name} already has a folder`,
+          description: res.created > 0 ? `${name}'s uploads will file into it automatically.` : "Nothing to do - opening it.",
+        });
+        if (res.folderId) setCwd(res.folderId);
+      }
+      setClientFolderOpen(false);
+      setClientFolderPick(null);
+      router.refresh();
+    } finally {
+      setMakingClientFolder(false);
+    }
+  };
+
   // Search runs across everything, not just the folder you happen to be in.
   const q = query.trim().toLowerCase();
   const searching = q.length > 0;
@@ -537,6 +571,9 @@ export function DocumentManager({
             </label>
             <Button variant="ghost" size="sm" onClick={() => void makeCounsellorFolders()} loading={makingFolders}>
               <UsersRound className="size-4" aria-hidden /> Counsellor folders
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setClientFolderOpen(true)}>
+              <UserRound className="size-4" aria-hidden /> Client folder
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setRequestOpen(true)}>
               <Inbox className="size-4" aria-hidden /> Request{openRequests ? ` (${openRequests})` : ""}
@@ -826,6 +863,34 @@ export function DocumentManager({
       </Dialog>
 
       <Dialog
+        open={clientFolderOpen}
+        onClose={() => { setClientFolderOpen(false); setClientFolderPick(null); }}
+        title="Create a client folder"
+        description="One folder per client under Documents → Clients. Anything they upload files into it automatically. Already there? You'll just be told."
+        footer={
+          <div className="flex w-full items-center justify-between gap-2">
+            <Button variant="ghost" size="sm" onClick={() => void makeClientFolder(true)} loading={makingClientFolder}>
+              <UsersRound className="size-3.5" strokeWidth={2} aria-hidden /> Create for all {clients.length} clients
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={() => { setClientFolderOpen(false); setClientFolderPick(null); }}>Cancel</Button>
+              <Button size="sm" onClick={() => void makeClientFolder(false)} loading={makingClientFolder} disabled={!clientFolderPick || makingClientFolder}>Create folder</Button>
+            </div>
+          </div>
+        }
+      >
+        <SearchSelect
+          avatars
+          ariaLabel="Which client"
+          value={clientFolderPick}
+          onChange={setClientFolderPick}
+          placeholder="Which client?"
+          searchPlaceholder="Search clients…"
+          options={clients.map((c) => ({ value: c.id, label: c.name }))}
+        />
+      </Dialog>
+
+      <Dialog
         open={requestOpen}
         onClose={() => setRequestOpen(false)}
         title="Request a document"
@@ -984,7 +1049,9 @@ function FolderCard({ folder, count, selected, dropping, renaming, onOpen, onSel
         ? <UsersRound className="size-7 shrink-0 text-accent/80" strokeWidth={1.6} aria-hidden />
         : folder.companyId
           ? <Building2 className="size-7 shrink-0 text-accent/80" strokeWidth={1.6} aria-hidden />
-          : <FolderClosed className="size-7 shrink-0 text-accent/80" strokeWidth={1.6} aria-hidden />}
+          : folder.scope === "client" && folder.clientId
+            ? <UserRound className="size-7 shrink-0 text-accent/80" strokeWidth={1.6} aria-hidden />
+            : <FolderClosed className="size-7 shrink-0 text-accent/80" strokeWidth={1.6} aria-hidden />}
       <div className="min-w-0 flex-1">
         {renaming !== null ? (
           <input

@@ -240,6 +240,47 @@ export async function ensureCounsellorFolderDb(
   });
 }
 
+/* ── Client folders (batch 3g) - one per client, under "Clients" ─────────── */
+
+/**
+ * Find-or-create a client's folder: "Clients" at the root, theirs inside,
+ * named after them. Idempotent; `created` tells the caller whether anything
+ * actually happened, so the UI can say "already had one" honestly.
+ */
+export async function ensureClientFolderDb(orgId: string, client: { id: string; name: string }): Promise<{ folderId: string; created: boolean }> {
+  return runForOrg(orgId, async () => {
+    const db = activeDb();
+    const rootId = await findOrCreateFolder(db, orgId, "Clients", null, "org", null);
+    const [existing] = await db.select({ id: documentFolders.id }).from(documentFolders)
+      .where(and(
+        eq(documentFolders.orgId, orgId), eq(documentFolders.clientId, client.id),
+        eq(documentFolders.parentId, rootId), isNull(documentFolders.deletedAt),
+      ))
+      .limit(1);
+    if (existing) return { folderId: existing.id, created: false };
+    const id = `fold_${randomUUID()}`;
+    await db.insert(documentFolders).values({
+      id, orgId, name: client.name, parentId: rootId, scope: "client",
+      clientId: client.id, createdBy: "system", createdAt: new Date(),
+    });
+    return { folderId: id, created: true };
+  });
+}
+
+/** Folders for many clients (or the whole practice) in one go. */
+export async function ensureClientFoldersDb(orgId: string, clientIds: string[] | "all"): Promise<{ created: number; existing: number; total: number }> {
+  const rows = clientIds === "all"
+    ? await getDb().select({ id: clients.id, name: clients.name }).from(clients)
+        .where(and(eq(clients.orgId, orgId), isNull(clients.deletedAt)))
+    : await getDb().select({ id: clients.id, name: clients.name }).from(clients)
+        .where(and(eq(clients.orgId, orgId), inArray(clients.id, clientIds), isNull(clients.deletedAt)));
+  let created = 0;
+  for (const c of rows) {
+    if ((await ensureClientFolderDb(orgId, c)).created) created++;
+  }
+  return { created, existing: rows.length - created, total: rows.length };
+}
+
 /* ── Company folders (batch 3f) - one per employer, under "Companies" ────── */
 
 /**
@@ -540,8 +581,16 @@ export async function insertClientUpload(input: {
   id: string; orgId: string; clientId: string; requestId: string; name: string; contentType: string;
   storageKey: string; storageBackend?: StorageBackend; uploadedBy: string | null;
 }): Promise<void> {
+  // Batch 3g - a client's upload lands in THEIR folder (Documents -> Clients),
+  // not loose at the root. Find-or-create keeps this unconditional.
+  let folderId: string | null = null;
+  try {
+    const [c] = await getDb().select({ id: clients.id, name: clients.name }).from(clients)
+      .where(and(eq(clients.id, input.clientId), eq(clients.orgId, input.orgId))).limit(1);
+    if (c) folderId = (await ensureClientFolderDb(input.orgId, c)).folderId;
+  } catch { /* an unfiled upload is still an upload */ }
   await getDb().insert(documents).values({
-    id: input.id, orgId: input.orgId, clientId: input.clientId, requestId: input.requestId, name: input.name,
+    id: input.id, orgId: input.orgId, clientId: input.clientId, requestId: input.requestId, name: input.name, folderId,
     kind: "upload", visibility: "client_visible", storageProvider: input.storageBackend ?? "supabase", storageKey: input.storageKey,
     contentType: input.contentType, bytes: 0, sizeLabel: "…", scanStatus: "pending",
     uploadedBy: input.uploadedBy, sharedBy: "client", createdAt: new Date(),

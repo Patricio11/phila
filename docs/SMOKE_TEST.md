@@ -264,6 +264,12 @@ Sign in as **Thandeka**.
 - ☐ Setting **company retainer** previews every service as **Free**, saves (DB `{"kind":"retainer"}`), and new bookings invoice at R0; Megan Pillay is the seeded example
 - ☐ A legacy sliding-scale client (e.g. Johan, pays 50%) still shows + bills their old arrangement until changed
 
+**Client folders on demand** (batch 3g)
+- ☐ Documents toolbar → **Client folder** opens a dialog: the searchable client picker, **Create folder** for one, or **Create for all N clients** in the footer
+- ☐ Creating for one client opens their new folder; asking again says **"<name> already has a folder"** and just opens it - never a duplicate
+- ☐ Create-for-all reports honestly: "42 folders created · 43 clients · 1 already had one"
+- ☐ Client folders live under **Documents → Clients**, wear the person icon, and **a client's upload against a request files into their folder automatically** (covered by an integration test - the filing happens at insert, before storage is even reached)
+
 **Company documents, one folder, two doors** (batch 3f)
 - ☐ Every company has a folder under **Documents → Companies**, named after them - created with the company, ensured (and healed) whenever its profile is opened, renamed when the company is renamed
 - ☐ The **company profile** has a **Documents** card that IS that folder: the list (links + files, newest first, open in a click), **Upload** and **Add link** filing straight into it, and the toast says where it went

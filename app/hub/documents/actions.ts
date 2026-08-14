@@ -192,6 +192,38 @@ export async function shareWithCounsellors(raw: z.infer<typeof shareInput>): Pro
 }
 
 /**
+ * Batch 3g - a folder per client, on demand: one chosen client, or everyone.
+ * Idempotent, and honest about it - "already had one" is an answer, not an
+ * error. Client upload requests file into these automatically.
+ */
+export async function ensureClientFolders(raw: { clientIds?: string[]; all?: boolean }): Promise<{ ok: true; created: number; existing: number; total: number; folderId?: string } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  if (!isDb()) return { ok: false, error: "Folders need the database provider." };
+  const ids = Array.isArray(raw?.clientIds) ? raw.clientIds.filter((x) => typeof x === "string" && x).slice(0, 500) : [];
+  if (!raw?.all && ids.length === 0) return { ok: false, error: "Pick a client." };
+
+  const { ensureClientFoldersDb, ensureClientFolderDb } = await import("@/db/queries/documents");
+  let folderId: string | undefined;
+  let res: { created: number; existing: number; total: number };
+  if (!raw.all && ids.length === 1) {
+    const { getDb } = await import("@/db/client");
+    const { clients } = await import("@/db/schema");
+    const { and, eq } = await import("drizzle-orm");
+    const [c] = await getDb().select({ id: clients.id, name: clients.name }).from(clients)
+      .where(and(eq(clients.id, ids[0]!), eq(clients.orgId, membership.orgId))).limit(1);
+    if (!c) return { ok: false, error: "That client couldn't be found." };
+    const one = await ensureClientFolderDb(membership.orgId, c);
+    folderId = one.folderId;
+    res = { created: one.created ? 1 : 0, existing: one.created ? 0 : 1, total: 1 };
+  } else {
+    res = await ensureClientFoldersDb(membership.orgId, raw.all ? "all" : ids);
+  }
+  await audit(membership.orgId, principal.userId, `org:${membership.orgId}/documents`, "ensure_client_folders");
+  revalidatePath("/hub/documents");
+  return { ok: true, ...res, folderId };
+}
+
+/**
  * Batch 2r - give every counsellor a folder of their own (idempotent). New
  * counsellors get one automatically; this is the button for the ones who
  * joined before, and the way to restore a folder someone deleted.

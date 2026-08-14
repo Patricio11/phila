@@ -1596,6 +1596,15 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   parameter. Company folders wear the building icon in the tree, as counsellor folders wear the
   people icon. Migration 0074 (`document_folders.company_id`).
 
+- [x] **Client folders on demand** *(2026-08-12, batch 3g)*: the Documents toolbar gained
+  **Client folder** - a dialog with the searchable client picker, Create for one (opens the new
+  folder; a repeat says "already has a folder" and just opens it), or **Create for all** with an
+  honest count of created vs already-there. Folders live under **Documents → Clients**, wear the
+  person icon, and `insertClientUpload` now files a client's request-upload into their folder
+  automatically, creating it on the spot if missing - covered by an integration test, since the
+  filing happens at insert time, before storage is even reached. Completes the trilogy:
+  Clients / Companies / Counsellors, one pattern.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

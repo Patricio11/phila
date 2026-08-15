@@ -1706,6 +1706,16 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   now shows only Everyone + actual companies - people without an employer are simply part of
   Everyone, which is what the chip's zero-value filter amounted to anyway.
 
+- [x] **Availability: "Any session" is opt-in now** *(2026-08-15, batch 3r)*: the old editor
+  opened on "Any session", silently seeded it with the full practice week, and saved it along
+  with whatever the counsellor actually set - so someone who added in-person mornings still
+  looked bookable everywhere (exactly the trap the practice hit). Now **In person** and
+  **Online** lead the editor, and the any-session base pattern is an explicit toggle, OFF by
+  default: switching it on visibly copies the practice hours in (a chip appears, e.g. "Any
+  session 7") ready to trim; switching it off drops it from the save entirely. Proven live:
+  saving a single in-person Monday writes exactly one in_person row and nothing else. Toggles
+  gained aria-labels along the way.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

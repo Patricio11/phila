@@ -18,17 +18,25 @@ const DAYS: { n: DayNum; label: string }[] = [
   { n: 4, label: "Thursday" }, { n: 5, label: "Friday" }, { n: 6, label: "Saturday" }, { n: 7, label: "Sunday" },
 ];
 
+/**
+ * Batch 3r - In person and Online lead; "Any session" is an explicit opt-in.
+ * The old editor seeded a full-week any-session pattern from practice hours
+ * and saved it silently, so a counsellor who only set in-person mornings
+ * still looked bookable everywhere. Now the base pattern exists only when
+ * its toggle is ON - and switching it on visibly copies the practice hours
+ * in, ready to trim.
+ */
 const MODES: { key: AvailabilityMode; label: string; icon: typeof MapPin; blurb: string }[] = [
-  { key: "both", label: "Any session", icon: CalendarRange, blurb: "The base pattern - these hours can hold any kind of session." },
-  { key: "in_person", label: "In person", icon: MapPin, blurb: "Extra hours for room sessions only. Hybrid counts as in person (they hold a room)." },
-  { key: "online", label: "Online", icon: Video, blurb: "Extra hours for video sessions only - no room needed." },
+  { key: "in_person", label: "In person", icon: MapPin, blurb: "Hours for room sessions. Hybrid counts as in person (they hold a room)." },
+  { key: "online", label: "Online", icon: Video, blurb: "Hours for video sessions only - no room needed." },
+  { key: "both", label: "Any session", icon: CalendarRange, blurb: "The base pattern - these hours can hold any kind of session. Started from the practice hours; trim as needed." },
 ];
 
 type Grid = Record<AvailabilityMode, Record<DayNum, { start: string; end: string } | null>>;
 
-function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
+function Toggle({ on, onClick, label }: { on: boolean; onClick: () => void; label?: string }) {
   return (
-    <button type="button" onClick={onClick} aria-pressed={on} className={cn("inline-flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors", on ? "bg-accent" : "bg-surface-2")}>
+    <button type="button" onClick={onClick} aria-pressed={on} aria-label={label} className={cn("inline-flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors", on ? "bg-accent" : "bg-surface-2")}>
       <span className={cn("size-4 rounded-full bg-surface shadow-sm transition-transform", on && "translate-x-4")} />
     </button>
   );
@@ -57,22 +65,43 @@ export function AvailabilityEditor({ counsellorId, firstName, initial, orgHours,
   const { toast } = useToast();
   const [pending, start] = useTransition();
   const [custom, setCustom] = useState(initial.length > 0);
-  const [mode, setMode] = useState<AvailabilityMode>("both");
+  const [mode, setMode] = useState<AvailabilityMode>("in_person");
+  // The any-session base pattern is opt-in: on only when saved windows say so.
+  const [anyOn, setAnyOn] = useState(initial.some((w) => w.mode === "both"));
   const [grid, setGrid] = useState<Grid>(() => {
     const out = {} as Grid;
     for (const m of MODES) {
       const days = {} as Record<DayNum, { start: string; end: string } | null>;
       for (const { n } of DAYS) {
         const w = initial.find((x) => x.weekday === n && x.mode === m.key);
-        // Editing starts from the saved pattern; a fresh base pattern is seeded
-        // from the practice hours, the two narrower modes start empty.
-        const seed = m.key === "both" && initial.length === 0 ? orgHours[n] : null;
-        days[n] = w ? { start: w.start, end: w.end } : seed ? { start: seed.start, end: seed.end } : null;
+        days[n] = w ? { start: w.start, end: w.end } : null;
       }
       out[m.key] = days;
     }
     return out;
   });
+
+  // Switching the base pattern ON copies the practice hours in (visible,
+  // editable); switching it OFF steps the editor back to In person.
+  const toggleAny = () => {
+    if (anyOn) {
+      setAnyOn(false);
+      if (mode === "both") setMode("in_person");
+      return;
+    }
+    setAnyOn(true);
+    setGrid((prev) => {
+      const empty = DAYS.every(({ n }) => !prev.both[n]);
+      if (!empty) return prev;
+      const seeded = {} as Record<DayNum, { start: string; end: string } | null>;
+      for (const { n } of DAYS) {
+        const h = orgHours[n];
+        seeded[n] = h ? { start: h.start, end: h.end } : null;
+      }
+      return { ...prev, both: seeded };
+    });
+    setMode("both");
+  };
 
   const counts = useMemo(() => {
     const out = {} as Record<AvailabilityMode, number>;
@@ -92,8 +121,9 @@ export function AvailabilityEditor({ counsellorId, firstName, initial, orgHours,
       [mode]: { ...prev[mode], [n]: prev[mode][n] ? { ...prev[mode][n]!, [field]: value } : prev[mode][n] },
     }));
 
-  const invalid = MODES.some(({ key }) => DAYS.some(({ n }) => { const d = grid[key][n]; return d && d.end <= d.start; }));
-  const total = counts.both + counts.in_person + counts.online;
+  const invalid = MODES.filter(({ key }) => key !== "both" || anyOn)
+    .some(({ key }) => DAYS.some(({ n }) => { const d = grid[key][n]; return d && d.end <= d.start; }));
+  const total = (anyOn ? counts.both : 0) + counts.in_person + counts.online;
 
   const persist = (windows: Window[]) =>
     start(async () => {
@@ -117,7 +147,8 @@ export function AvailabilityEditor({ counsellorId, firstName, initial, orgHours,
 
   const saveCustom = () => {
     if (invalid) return toast({ tone: "error", title: "Each window must end after it starts." });
-    const windows = MODES.flatMap(({ key }) =>
+    // The base pattern only travels when its toggle is on.
+    const windows = MODES.filter(({ key }) => key !== "both" || anyOn).flatMap(({ key }) =>
       DAYS.flatMap(({ n }) => (grid[key][n] ? [{ weekday: n, start: grid[key][n]!.start, end: grid[key][n]!.end, mode: key }] : [])),
     );
     persist(windows);
@@ -142,9 +173,10 @@ export function AvailabilityEditor({ counsellorId, firstName, initial, orgHours,
 
   return (
     <div className="px-[17px] pb-[17px]">
-      {/* Which kind of session are we setting hours for? */}
+      {/* Which kind of session are we setting hours for? The base pattern's
+          chip only exists while its toggle (below) is on. */}
       <div className="flex flex-wrap gap-1.5">
-        {MODES.map(({ key, label, icon: Icon }) => (
+        {MODES.filter(({ key }) => key !== "both" || anyOn).map(({ key, label, icon: Icon }) => (
           <button
             key={key}
             type="button"
@@ -163,23 +195,41 @@ export function AvailabilityEditor({ counsellorId, firstName, initial, orgHours,
       </div>
       <p className="mt-2 text-[11.5px] leading-relaxed text-text-3">{active.blurb}</p>
 
+      {/* The any-session base pattern: an explicit choice, never a silent default. */}
+      <div className="mt-3 flex items-start justify-between gap-3 rounded-card border border-border bg-surface-2/40 px-3 py-2.5">
+        <div className="flex items-start gap-2">
+          <CalendarRange className="mt-0.5 size-4 shrink-0 text-text-3" strokeWidth={2} aria-hidden />
+          <div>
+            <div className="text-[12.5px] font-medium text-text">Any-session base pattern</div>
+            <p className="text-[11.5px] leading-relaxed text-text-3">
+              {anyOn
+                ? "On - these base hours can hold any kind of session, on top of the in-person and online hours."
+                : "Off - only the in-person and online hours above count. Switch on to start from the practice hours and trim."}
+            </p>
+          </div>
+        </div>
+        <span className="mt-0.5"><Toggle on={anyOn} onClick={toggleAny} label="Any-session base pattern" /></span>
+      </div>
+
       <ul className="mt-3 space-y-1.5">
         {DAYS.map(({ n, label }) => {
           const d = days[n];
           const on = Boolean(d);
           const bad = d ? d.end <= d.start : false;
           return (
-            <li key={n} className="flex items-center gap-2.5">
-              <Toggle on={on} onClick={() => toggleDay(n)} />
+            // Wraps in narrow cards: the time pair drops to its own right-aligned
+            // line instead of squeezing against the edge (batch 3r polish).
+            <li key={n} className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+              <Toggle on={on} onClick={() => toggleDay(n)} label={`${label} ${active.label}`} />
               <span className={cn("w-[4.5rem] shrink-0 text-[12.5px]", on ? "text-text" : "text-text-3")}>{label}</span>
               {on ? (
-                <div className="flex items-center gap-1">
+                <div className="ml-auto flex items-center gap-1">
                   <TimePicker compact minuteStep={15} className="w-[5.5rem]" value={d!.start} onChange={(v) => setTime(n, "start", v)} invalid={bad} ariaLabel={`${label} ${active.label} from`} />
-                  <span className="text-text-3">–</span>
+                  <span className="text-text-3">-</span>
                   <TimePicker compact minuteStep={15} className="w-[5.5rem]" value={d!.end} onChange={(v) => setTime(n, "end", v)} invalid={bad} ariaLabel={`${label} ${active.label} until`} />
                 </div>
               ) : (
-                <span className="text-[12px] text-text-3">Off</span>
+                <span className="ml-auto text-[12px] text-text-3">Off</span>
               )}
             </li>
           );

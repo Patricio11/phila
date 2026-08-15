@@ -9,7 +9,7 @@ import { orgs, services as servicesTable } from "@/db/schema";
 import { createAppointment as persistCreateAppointment } from "@/db/queries/appointments";
 import { createInvoiceForBookingDb } from "@/db/queries/invoices";
 import { createClientDb } from "@/db/queries/clients";
-import { isSlotTakenError, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
+import { isClientOverlapError, isSlotTakenError, CLIENT_BUSY_MESSAGE, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
 import { notifyAppointmentBooked } from "@/lib/messaging/notify";
 import { now as clockNow } from "@/lib/clock";
 import { needsRoom, APPOINTMENT_TYPES, type Province } from "@/lib/domain/enums";
@@ -185,6 +185,7 @@ export async function createAppointment(
         recurring: data.recurring, recurringCount: data.recurringCount ?? null,
       }));
     } catch (e) {
+      if (isClientOverlapError(e)) return { ok: false, error: CLIENT_BUSY_MESSAGE };
       if (isSlotTakenError(e)) return { ok: false, error: SLOT_TAKEN_MESSAGE };
       throw e;
     }

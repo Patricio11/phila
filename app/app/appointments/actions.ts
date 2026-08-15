@@ -8,7 +8,7 @@ import { getDb } from "@/db/client";
 import { appointments } from "@/db/schema";
 import { rescheduleAppointment as persistReschedule, cancelAppointment as persistCancel } from "@/db/queries/appointments";
 import { markNoShowFollowedUpDb } from "@/db/queries/no-shows";
-import { isSlotTakenError, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
+import { isClientOverlapError, isSlotTakenError, CLIENT_BUSY_MESSAGE, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
 import { notifyAppointment, offerFreedSlot } from "@/lib/messaging/notify";
 import { videoJoinPath } from "@/lib/video/livekit";
 import { APPOINTMENT_TYPES, needsRoom } from "@/lib/domain/enums";
@@ -122,7 +122,9 @@ export async function rescheduleAppointment(
     try {
       moved = await persistReschedule(membership.orgId, parsed.data.appointmentId, parsed.data.newStart, parsed.data.scope, parsed.data.note ?? null);
     } catch (e) {
-      if (isSlotTakenError(e)) return { ok: false, error: SLOT_TAKEN_MESSAGE };
+      if (isClientOverlapError(e)) return { ok: false, error: CLIENT_BUSY_MESSAGE };
+      if (isClientOverlapError(e)) return { ok: false, error: CLIENT_BUSY_MESSAGE };
+    if (isSlotTakenError(e)) return { ok: false, error: SLOT_TAKEN_MESSAGE };
       throw e;
     }
     if (moved === 0) return { ok: false, error: "That session couldn't be found." };
@@ -250,6 +252,7 @@ export async function extendSeries(
   try {
     res = await extendAppointmentSeries(membership.orgId, parsed.data.seriesId, parsed.data.addCount, { counsellorId: ownCounsellorId });
   } catch (e) {
+    if (isClientOverlapError(e)) return { ok: false, error: "One of the new weeks clashes with a session this client already has." };
     if (isSlotTakenError(e)) return { ok: false, error: "One of the new weeks clashes with another booking - ask your practice admin to fit it in." };
     throw e;
   }

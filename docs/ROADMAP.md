@@ -1727,6 +1727,18 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   surface posting a time off the offered list gets an honest refusal. Surfaces without practice
   hours fall back to the old pickers (now also guarded server-side).
 
+- [x] **Clients can't be double-booked** *(2026-08-15, batch 3t)*: the DB guaranteed a
+  counsellor and a room can't be in two sessions at once, but nothing said the same for the
+  CLIENT - so one person could hold overlapping sessions with two counsellors. A third GiST
+  exclusion constraint (appt_no_client_overlap) closes it at the database, so every booking
+  path - hub modal, public page, reschedule, series extension, two simultaneous requests - is
+  covered atomically. Scoped to SCHEDULED sessions only: historical rows (completed, no-show,
+  seeded demo history) are records, not reservations, and are never retroactively policed.
+  The violation maps to an honest message everywhere ("This client already has a session at
+  that time - move or cancel it first."; the public page says "You already have a session
+  booked at that time"). Applied with npm run db:constraints; the live DB had no scheduled
+  overlaps to clean.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

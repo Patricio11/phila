@@ -11,7 +11,7 @@ import { persistBooking } from "@/db/queries/booking";
 import { createInvoiceForBookingDb } from "@/db/queries/invoices";
 import { recordBookingIntakeDb } from "@/db/queries/forms";
 import { recordPageEvent } from "@/db/queries/public-page";
-import { isSlotTakenError, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
+import { isClientOverlapError, isSlotTakenError, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
 import { notifyAppointmentBooked } from "@/lib/messaging/notify";
 import { videoJoinPath } from "@/lib/video/livekit";
 
@@ -294,6 +294,7 @@ export async function submitBooking(
         });
       }
     } catch (e) {
+      if (isClientOverlapError(e)) return { ok: false, error: "You already have a session booked at that time - pick another slot." };
       if (isSlotTakenError(e)) return { ok: false, error: SLOT_TAKEN_MESSAGE };
       throw e;
     }

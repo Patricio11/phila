@@ -241,6 +241,10 @@ Sign in as **Thandeka**.
 - ☐ **Link a session** (batch 3l): the builder's searchable "Link a session" picker offers every unbilled session (APT ref · date · client · service); picking one aligns the Bill-to client, prefills the line from the session's service, and prints "Session ref: APT-XXXXXX" + a session banner on the sheet; a second invoice for the same session is refused with the existing number
 - ☐ If the org gateway is connected (Settings → Payments), an unpaid invoice shows a **Pay link** button → copies a `/pay/<token>` URL
 
+**No client double-booking** (batch 3t)
+- ☐ Book a client, then try to book (or reschedule) the SAME client into an overlapping time with a different counsellor: refused with "This client already has a session at that time - move or cancel it first." (public booking says "You already have a session booked at that time")
+- ☐ This is a DB exclusion constraint (appt_no_client_overlap, scheduled sessions only) - it holds even for two simultaneous requests, and history (completed / no-show) is never retroactively policed
+
 **Reschedule = real slots** (batch 3s)
 - ☐ In the appointment modal, **Reschedule** shows day chips for the practice's OPEN days only (close Saturday in Settings and no Saturday chip appears), then real open times for that counsellor + session type; picking one enables **Move session**
 - ☐ The times honour the counsellor's other bookings (gaps where they're busy) but the session being moved doesn't block its own slot

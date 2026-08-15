@@ -17,4 +17,19 @@ export function isSlotTakenError(e: unknown): boolean {
   return false;
 }
 
+/**
+ * Batch 3t - the appt_no_client_overlap guard fired: the CLIENT already has a
+ * session in that window. Checked before isSlotTakenError at every catch site
+ * so the person booking hears the real reason.
+ */
+export function isClientOverlapError(e: unknown): boolean {
+  for (let cur = e, depth = 0; cur && depth < 5; cur = (cur as { cause?: unknown }).cause, depth++) {
+    const msg = (cur as { message?: string })?.message ?? "";
+    if (/no_client_overlap/i.test(msg)) return true;
+  }
+  return false;
+}
+
+export const CLIENT_BUSY_MESSAGE = "This client already has a session at that time - move or cancel it first.";
+
 export { SLOT_TAKEN_MESSAGE } from "@/lib/scheduling/messages";

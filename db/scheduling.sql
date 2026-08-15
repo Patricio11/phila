@@ -28,3 +28,18 @@ alter table appointments add constraint appt_no_room_overlap
     appt_window(starts_at, duration_min) with &&
   ) where (room_id is not null and state <> 'cancelled')
   deferrable initially deferred;
+--##
+-- Batch 3t - a CLIENT can't be in two sessions at once either. Same race-free
+-- backbone as the counsellor/room guards: whatever surface books (hub modal,
+-- public page, reschedule, series), an overlapping booking for the same client
+-- is refused atomically. Scoped to SCHEDULED sessions only - historical rows
+-- (completed / no-show / seeded demo history) are records, not reservations,
+-- and are never retroactively policed.
+alter table appointments drop constraint if exists appt_no_client_overlap;
+--##
+alter table appointments add constraint appt_no_client_overlap
+  exclude using gist (
+    client_id with =,
+    appt_window(starts_at, duration_min) with &&
+  ) where (state = 'scheduled')
+  deferrable initially deferred;

@@ -12,7 +12,9 @@ import { isSlotTakenError, SLOT_TAKEN_MESSAGE } from "@/db/queries/errors";
 import { notifyAppointment, offerFreedSlot } from "@/lib/messaging/notify";
 import { videoJoinPath } from "@/lib/video/livekit";
 import { APPOINTMENT_TYPES, needsRoom } from "@/lib/domain/enums";
-import { isoWeekday } from "@/lib/domain/helpers";
+import { availableSlots, isoWeekday } from "@/lib/domain/helpers";
+import { getDataProvider } from "@/lib/data-provider";
+import { now as clockNow } from "@/lib/clock";
 
 /** A signed, in-org join link for an online session (Phase 17.2). */
 export async function getAppointmentJoinLink(
@@ -47,6 +49,58 @@ const rescheduleInput = z.object({
   note: z.string().trim().max(500).optional(),
 });
 
+/** SAST calendar date + wall-clock minute for an instant. */
+function sastParts(iso: string): { date: string; hhmm: string } {
+  const s = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).format(new Date(iso));
+  return { date: s.slice(0, 10), hhmm: s.slice(-5) };
+}
+
+/**
+ * Batch 3s - the REAL open times for moving one session: the org's hours for
+ * that day intersected with the counsellor's windows for this session's type,
+ * minus their other bookings (the session being moved doesn't block itself).
+ * One computation serves the reschedule panel AND the server-side guard, so
+ * what the UI offers and what the server accepts can never drift apart.
+ */
+async function computeRescheduleSlots(
+  orgId: string,
+  appointmentId: string,
+  date: string,
+): Promise<{ ok: true; slots: { start: string; label: string }[] } | { ok: false; error: string }> {
+  const [appt] = await getDb().select().from(appointments).where(eq(appointments.id, appointmentId)).limit(1);
+  if (!appt || appt.orgId !== orgId) return { ok: false, error: "Session not found." };
+
+  const provider = await getDataProvider();
+  const org = await provider.getOrg(orgId);
+  if (!org) return { ok: false, error: "Practice not found." };
+
+  const existingAll = await provider.listAppointmentsForCounsellor(appt.counsellorId, { from: date, to: date });
+  const existing = existingAll.filter((a) => a.id !== appt.id);
+
+  const { getOrgAvailabilityMapDb, windowsForType } = await import("@/db/queries/availability");
+  const availability = await getOrgAvailabilityMapDb(orgId);
+  const pattern = availability.get(appt.counsellorId);
+  const modality = appt.type === "online" ? ("online" as const) : ("in_person" as const);
+  const wd = isoWeekday(date);
+  const windows = pattern === undefined ? undefined : windowsForType(pattern, modality).filter((w) => w.weekday === wd);
+
+  const slots = availableSlots({ org, date, durationMin: appt.durationMin, existing, now: clockNow(), windows });
+  return { ok: true, slots: slots.map((sl) => ({ start: sl.start, label: sl.label })) };
+}
+
+/** The reschedule panel's day view: which times this session can move to. */
+export async function getRescheduleSlots(
+  raw: { appointmentId: string; date: string },
+): Promise<{ ok: true; slots: { start: string; label: string }[] } | { ok: false; error: string }> {
+  const { membership } = await requireOrg([...SCHEDULERS]);
+  const parsed = z.object({ appointmentId: z.string().min(1), date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid request" };
+  if (process.env.DATA_PROVIDER !== "db") return { ok: true, slots: [] };
+  return computeRescheduleSlots(membership.orgId, parsed.data.appointmentId, parsed.data.date);
+}
+
 export async function rescheduleAppointment(
   raw: z.input<typeof rescheduleInput>,
 ): Promise<{ ok: true; moved: number } | { ok: false; error: string }> {
@@ -55,6 +109,16 @@ export async function rescheduleAppointment(
   if (!parsed.success) return { ok: false, error: "Invalid request" };
   let moved = 1;
   if (process.env.DATA_PROVIDER === "db") {
+    // Batch 3s - the new time must be one the practice actually offers: org
+    // hours for that day, the counsellor's windows for this session type, no
+    // clashes. A closed Saturday picked off a little calendar no longer slips
+    // through, whatever surface posted it.
+    const { date: newDate, hhmm } = sastParts(parsed.data.newStart);
+    const offered = await computeRescheduleSlots(membership.orgId, parsed.data.appointmentId, newDate);
+    if (!offered.ok) return offered;
+    if (!offered.slots.some((sl) => sastParts(sl.start).hhmm === hhmm)) {
+      return { ok: false, error: "The practice isn't open then, or the counsellor doesn't work that way at that time - pick one of the offered times." };
+    }
     try {
       moved = await persistReschedule(membership.orgId, parsed.data.appointmentId, parsed.data.newStart, parsed.data.scope, parsed.data.note ?? null);
     } catch (e) {

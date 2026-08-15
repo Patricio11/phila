@@ -241,6 +241,11 @@ Sign in as **Thandeka**.
 - ☐ **Link a session** (batch 3l): the builder's searchable "Link a session" picker offers every unbilled session (APT ref · date · client · service); picking one aligns the Bill-to client, prefills the line from the session's service, and prints "Session ref: APT-XXXXXX" + a session banner on the sheet; a second invoice for the same session is refused with the existing number
 - ☐ If the org gateway is connected (Settings → Payments), an unpaid invoice shows a **Pay link** button → copies a `/pay/<token>` URL
 
+**Reschedule = real slots** (batch 3s)
+- ☐ In the appointment modal, **Reschedule** shows day chips for the practice's OPEN days only (close Saturday in Settings and no Saturday chip appears), then real open times for that counsellor + session type; picking one enables **Move session**
+- ☐ The times honour the counsellor's other bookings (gaps where they're busy) but the session being moved doesn't block its own slot
+- ☐ Server-enforced: posting a reschedule outside the offered times (stale tab, hand-crafted call) is refused with "The practice isn't open then..."
+
 **Appointment references** (batch 3l) - every session answers to a short code
 - ☐ The appointment detail modal shows **Reference** (e.g. `APT-3F9A2C`, derived from the id - every past session already has one); clicking it copies
 - ☐ **⌘K search**: typing a reference (`APT-3F9A2C`, or just `3f9a2c`) offers **Open session APT-XXXXXX** → lands on the calendar with that session's modal open (`/hub/appointments?ref=...` deep-links the same way; an unknown ref gets an honest "No session found" toast)

@@ -1716,6 +1716,17 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   saving a single in-person Monday writes exactly one in_person row and nothing else. Toggles
   gained aria-labels along the way.
 
+- [x] **Reschedule offers real slots** *(2026-08-15, batch 3s)*: moving a session used a bare
+  date + time picker, so a closed Saturday could be picked off the little calendar and the server
+  accepted it. The reschedule panel now works like PUBLIC BOOKING: day chips for the practice's
+  open days only (a closed Saturday simply isn't there), then a grid of the times that session
+  can actually move to - org hours for that day intersected with the counsellor's windows for
+  that session type, minus their other bookings (the session being moved doesn't block itself).
+  One computation (computeRescheduleSlots) serves the panel AND a new server-side guard on
+  rescheduleAppointment, so what the UI offers and what the server accepts can never drift: any
+  surface posting a time off the offered list gets an honest refusal. Surfaces without practice
+  hours fall back to the old pickers (now also guarded server-side).
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

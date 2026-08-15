@@ -1739,6 +1739,20 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   booked at that time"). Applied with npm run db:constraints; the live DB had no scheduled
   overlaps to clean.
 
+- [x] **Wednesday-leak investigation + org-hours backstop** *(2026-08-15, batch 3u)*: the
+  practice reported moving a session onto a counsellor's CLOSED Wednesday (any-session pattern
+  with Wednesday off). Reproduced against the current build with the same counsellor and
+  pattern: the reschedule panel offers no Wednesday times, and a calendar DRAG onto Wednesday
+  is refused server-side - the leaked sessions date from the minutes before the 3s slot guard
+  shipped (the audit log brackets them around the availability save). Two genuine gaps found in
+  the audit and closed: (1) creating a session for a counsellor with NO availability pattern
+  skipped every server check - a new pure helper (sessionWithinOrgHours, unit-tested: closed
+  days, before-open, past-close, across breaks) now backstops the create action so pattern-less
+  counsellors can't be booked outside practice hours from any surface; (2) the committed public
+  booking e2e had been failing since the Phase 32 language step reshaped the wizard - updated
+  and green, which also regression-proves the whole public path against this batch. Edit and
+  change-request approval paths audited: already guarded / never move sessions.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

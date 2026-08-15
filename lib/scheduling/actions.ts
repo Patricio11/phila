@@ -13,7 +13,8 @@ import { isClientOverlapError, isSlotTakenError, CLIENT_BUSY_MESSAGE, SLOT_TAKEN
 import { notifyAppointmentBooked } from "@/lib/messaging/notify";
 import { now as clockNow } from "@/lib/clock";
 import { needsRoom, APPOINTMENT_TYPES, type Province } from "@/lib/domain/enums";
-import { isoWeekday } from "@/lib/domain/helpers";
+import { isoWeekday, sessionWithinOrgHours } from "@/lib/domain/helpers";
+import { getDataProvider } from "@/lib/data-provider";
 
 const BOOKERS = ["counsellor", "org_admin", "front_desk"] as const;
 
@@ -162,6 +163,16 @@ export async function createAppointment(
   if (process.env.DATA_PROVIDER === "db") {
     const { getCounsellorAvailabilityDb, windowsForType } = await import("@/db/queries/availability");
     const pattern = await getCounsellorAvailabilityDb(data.orgId, data.counsellorId);
+    // Batch 3u - no pattern = the practice hours, ENFORCED (not just implied):
+    // a counsellor without their own windows can't be booked on a closed day
+    // or outside opening hours, whatever surface posted the request.
+    if (pattern.length === 0) {
+      const provider = await getDataProvider();
+      const org = await provider.getOrg(data.orgId);
+      if (org && !sessionWithinOrgHours(org.scheduling.businessHours, data.date, data.time, data.durationMin)) {
+        return { ok: false, error: "The practice isn't open at that time - pick a time inside working hours." };
+      }
+    }
     if (pattern.length > 0) {
       const wd = isoWeekday(data.date);
       const hm = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));

@@ -120,6 +120,27 @@ function minutesOfInstant(iso: string): number {
   return toMinutes(time);
 }
 
+/**
+ * Batch 3u - does a whole session sit inside the practice's hours for that day?
+ * The server-side backstop for counsellors with NO availability pattern: they
+ * inherit the org hours, so a booking outside them (or on a closed day) is
+ * refused even from a stale tab or a hand-rolled request.
+ */
+export function sessionWithinOrgHours(
+  businessHours: import("@/lib/domain/types").BusinessHours,
+  date: string,
+  time: string,
+  durationMin: number,
+): boolean {
+  const hours = businessHours[isoWeekday(date)];
+  if (!hours) return false; // closed that day
+  const from = toMinutes(time);
+  const to = from + durationMin;
+  if (from < toMinutes(hours.start) || to > toMinutes(hours.end)) return false;
+  // A session can't sit across a break either.
+  return !(hours.breaks ?? []).some((b) => from < toMinutes(b.end) && to > toMinutes(b.start));
+}
+
 /* ---- VAT ---------------------------------------------------------------- */
 
 export interface VatBreakdown {

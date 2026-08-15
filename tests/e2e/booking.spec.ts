@@ -14,25 +14,29 @@ test("public booking creates a real client + appointment in the DB", async ({ pa
   const name = `E2E Booker ${Date.now()}`;
   await page.goto("/o/masizakhe/book");
 
-  // Step 0  service + modality + counsellor.
+  // Step 0 - service + modality (the wizard auto-matches a counsellor;
+  // the separate counsellor step left with the Phase 32 language step).
   await page.getByRole("button", { name: /Individual counselling/ }).first().click();
   await page.getByRole("button", { name: "In person" }).click();
-  await page.getByRole("button", { name: /Any available/ }).click();
   await page.getByRole("button", { name: "Continue" }).click();
 
-  // Step 1  today is notice-filtered, so pick the 2nd open day, then a slot.
+  // Step 1 - session language (Phase 32.0). English, then on.
+  await page.getByRole("button", { name: /English/ }).first().click();
+  await page.getByRole("button", { name: "Continue" }).click();
+
+  // Step 2 - today is notice-filtered, so pick the 2nd open day, then a slot.
   await page.getByRole("button", { name: /^(mon|tue|wed|thu|fri)\s+\d+\s+\w+$/i }).nth(1).click();
   await page.getByRole("button", { name: /^\d{1,2}:\d{2}$/ }).first().click({ timeout: 20_000 });
   await page.getByRole("button", { name: "Continue" }).click();
 
-  // Step 2  intake (required fields).
+  // Step 3 - intake (required fields).
   await page.getByLabel(/Your full name/).fill(name);
   await page.getByLabel(/Mobile number/).fill("+27 82 000 0000");
   await page.getByLabel(/What would you like support with/).fill("E2E test booking.");
   await page.getByRole("radio", { name: "WhatsApp" }).click();
   await page.getByRole("button", { name: "Continue" }).click();
 
-  // Step 3  confirm: one Terms & Conditions acceptance (not a page of toggles), then book.
+  // Step 4 - confirm: one Terms & Conditions acceptance (not a page of toggles), then book.
   await page.getByRole("checkbox").check();
   await page.getByRole("button", { name: "Confirm booking" }).click();
   await expect(page.getByText(/You.?re booked/i)).toBeVisible({ timeout: 25_000 });

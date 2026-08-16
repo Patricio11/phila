@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowLeft, CalendarDays, Check, ChevronRight, Clock, Copy, Hash, Hourglass, MapPin, MonitorSmartphone, NotebookPen, Pencil, Phone, Receipt, Repeat, Stethoscope, UserX, Video, X } from "lucide-react";
 import { appointmentReference } from "@/lib/scheduling/reference";
+import { practiceGridTimes } from "@/lib/domain/helpers";
 import { getRescheduleSlots } from "@/app/app/appointments/actions";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
@@ -494,7 +495,24 @@ export function AppointmentDetail({
                   <div className="text-[12px] font-semibold text-text">Move {isSeries && scope === "following" ? "these sessions" : "this session"}</div>
                   <div className="grid grid-cols-2 gap-2">
                     <DatePicker value={date} onChange={(v) => { setDate(v); setOverride(false); setAvailWarn(null); }} ariaLabel="New date" />
-                    <TimePicker value={time} onChange={(v) => { setTime(v); setOverride(false); setAvailWarn(null); }} ariaLabel="New time" />
+                    {(() => {
+                      // Batch 3y - offer the practice's clock (hours + interval
+                      // + this session's length); free picker off-hours days.
+                      const grid = scheduling?.businessHours
+                        ? practiceGridTimes(scheduling.businessHours, date, appt.durationMin, scheduling.bufferMin ?? 10)
+                        : [];
+                      return grid.length > 0 ? (
+                        <Select
+                          ariaLabel="New time"
+                          value={grid.includes(time) ? time : null}
+                          onChange={(v) => { if (v) { setTime(v); setOverride(false); setAvailWarn(null); } }}
+                          placeholder="Pick a time"
+                          options={grid.map((t) => ({ value: t, label: t }))}
+                        />
+                      ) : (
+                        <TimePicker value={time} onChange={(v) => { setTime(v); setOverride(false); setAvailWarn(null); }} ariaLabel="New time" />
+                      );
+                    })()}
                   </div>
                   {isSeries && <ScopeToggle scope={scope} onChange={setScope} kind="move" />}
                   <Textarea value={moveNote} onChange={(e) => setMoveNote(e.target.value)} rows={2} placeholder="Reason (optional)  kept on the record" aria-label="Reschedule reason" />

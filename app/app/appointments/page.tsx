@@ -37,6 +37,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     counsellors: [{ id: me.id, name: me.name }],
     rooms: rooms.map((r) => ({ id: r.id, name: r.name })),
     defaultDurationMin: org.scheduling.defaultDurationMin,
+    bufferMin: org.scheduling.bufferMin,
     businessHours: org.scheduling.businessHours,
   };
 

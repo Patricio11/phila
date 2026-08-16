@@ -1791,6 +1791,14 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   fix: the pickers now prefill with the session's SAST wall-clock (the raw UTC slice used to
   show a 09:00 session as 07:00).
 
+- [x] **Times sit on the practice's clock** *(2026-08-16, batch 3y)*: the org sets hours, a
+  session length per SERVICE, and an interval - so the pickable times are the grid those
+  settings imply (Monday 08:00-17:00, 50 min + 10 min interval -> 08:00, 09:00, ... 16:00). A
+  pure helper (practiceGridTimes, unit-tested: stepping, fit-before-close, closed days) powers
+  BOTH the New-appointment modal and the reschedule panel; the grid re-steps when the service
+  changes (Couples at 90 min -> 100-minute spacing), and days without practice hours fall back
+  to the free time picker. SchedulingOptions carries bufferMin from the org.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

@@ -11,7 +11,7 @@ import { Input, Label, Textarea, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { createAppointment, createClientForBooking, getAvailableCounsellors } from "@/lib/scheduling/actions";
-import { isoWeekday } from "@/lib/domain/helpers";
+import { isoWeekday, practiceGridTimes } from "@/lib/domain/helpers";
 import type { BusinessHours } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
 import { languageName } from "@/lib/domain/languages";
@@ -27,6 +27,8 @@ export interface SchedulingOptions {
   defaultDurationMin?: number;
   /** When present, the booking is validated against the practice's working hours. */
   businessHours?: BusinessHours;
+  /** Batch 3y - minutes between sessions; with the duration it defines the practice's time grid. */
+  bufferMin?: number;
 }
 
 function hm(t: string): number { return Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)); }
@@ -290,7 +292,26 @@ export function CreateAppointmentModal({
             />
           </Row>
           <Row label="Time" error={attempted ? errors.time : undefined}>
-            <TimePicker value={time} onChange={setTime} invalid={Boolean(attempted && errors.time)} />
+            {(() => {
+              // Batch 3y - the org sets hours + interval + duration, so the
+              // pickable times are the grid those imply (e.g. hourly for
+              // 50 min + 10 min). Closed day or no hours = the free picker.
+              const grid = options.businessHours && date
+                ? practiceGridTimes(options.businessHours, date, durationMin, options.bufferMin ?? 10)
+                : [];
+              return grid.length > 0 ? (
+                <Select
+                  ariaLabel="Time"
+                  value={grid.includes(time) ? time : null}
+                  onChange={(v) => v && setTime(v)}
+                  placeholder="Pick a time"
+                  invalid={Boolean(attempted && errors.time)}
+                  options={grid.map((t) => ({ value: t, label: t }))}
+                />
+              ) : (
+                <TimePicker value={time} onChange={setTime} invalid={Boolean(attempted && errors.time)} />
+              );
+            })()}
           </Row>
         </div>
 

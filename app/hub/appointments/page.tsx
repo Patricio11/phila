@@ -47,6 +47,7 @@ export default async function HubCalendarsPage({ searchParams }: { searchParams:
     counsellors: counsellors.map((c) => ({ id: c.id, name: c.name })),
     rooms: rooms.map((r) => ({ id: r.id, name: r.name })),
     defaultDurationMin: org.scheduling.defaultDurationMin,
+    bufferMin: org.scheduling.bufferMin,
     businessHours: org.scheduling.businessHours,
   };
 

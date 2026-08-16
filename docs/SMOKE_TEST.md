@@ -245,6 +245,10 @@ Sign in as **Thandeka**.
 - ☐ Book a client, then try to book (or reschedule) the SAME client into an overlapping time with a different counsellor: refused with "This client already has a session at that time - move or cancel it first." (public booking says "You already have a session booked at that time")
 - ☐ This is a DB exclusion constraint (appt_no_client_overlap, scheduled sessions only) - it holds even for two simultaneous requests, and history (completed / no-show) is never retroactively policed
 
+**Times on the practice's clock** (batch 3y)
+- ☐ In **New appointment**, the Time field is a dropdown of the practice's grid: opening hour stepping by service duration + interval (50 min + 10 min = on the hour); switching to a longer service re-steps the grid; a closed day falls back to the free picker
+- ☐ **Reschedule** offers the same grid for the session's own duration
+
 **Reschedule = free pickers + honest warning** (batch 3s slots, reverted by the practice in 3x)
 - ☐ **Reschedule** uses the free date + time pickers, prefilled with the session's ACCURATE SAST time (a 09:00 session shows 09:00, not the raw UTC 07:00)
 - ☐ Picking a time outside the practice hours or that counsellor's availability warns on the first click ("Outside the practice hours or this counsellor's availability for that day. You can still move it.") - the second click, **Move anyway**, proceeds: the practice decides, informed

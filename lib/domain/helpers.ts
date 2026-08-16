@@ -141,6 +141,29 @@ export function sessionWithinOrgHours(
   return !(hours.breaks ?? []).some((b) => from < toMinutes(b.end) && to > toMinutes(b.start));
 }
 
+/**
+ * Batch 3y - the practice's own clock. The org sets hours, a session length
+ * and an interval (buffer) - so the times a scheduler may pick are the grid
+ * those settings imply: 08:00-17:00, 50 min + 10 min interval -> 08:00,
+ * 09:00, ... 16:00. Used by the reschedule panel and the New-appointment
+ * modal so picked times always sit on the practice's clock.
+ */
+export function practiceGridTimes(
+  businessHours: import("@/lib/domain/types").BusinessHours,
+  date: string,
+  durationMin: number,
+  bufferMin: number,
+): string[] {
+  const hours = businessHours[isoWeekday(date)];
+  if (!hours) return []; // closed that day
+  const step = Math.max(5, durationMin + Math.max(0, bufferMin));
+  const out: string[] = [];
+  for (let t = toMinutes(hours.start); t + durationMin <= toMinutes(hours.end); t += step) {
+    out.push(fromMinutes(t));
+  }
+  return out;
+}
+
 /* ---- VAT ---------------------------------------------------------------- */
 
 export interface VatBreakdown {

@@ -793,19 +793,6 @@ export const mockProvider: DataProvider = {
     });
   },
 
-  listConversations: (counsellorId): Promise<Conversation[]> =>
-    ok(
-      (conversations[counsellorId] ?? [])
-        .map((c) => ({
-          clientId: c.clientId,
-          clientName: c.clientName,
-          unread: c.unread,
-          lastAt: c.messages[c.messages.length - 1]?.at ?? "",
-          messages: c.messages,
-        }))
-        .sort((a, b) => b.lastAt.localeCompare(a.lastAt)),
-    ),
-
   listTeamThreads: (userId): Promise<TeamThread[]> =>
     ok(
       teamThreads
@@ -847,15 +834,6 @@ export const mockProvider: DataProvider = {
         };
       });
     return ok({ assignments, bookings });
-  },
-
-  listCounsellorInvoices: (counsellorId) => {
-    const counsellor = allCounsellors.find((c) => c.id === counsellorId);
-    if (!counsellor) return ok([]);
-    const clientIds = new Set(
-      allClients.filter((c) => c.primaryCounsellorId === counsellorId).map((c) => c.id),
-    );
-    return ok(orgInvoicesFor(counsellor.orgId).filter((i) => clientIds.has(i.clientId)));
   },
 
   getSupervisionQueue: (_orgId, supervisorId, now) => {
@@ -1294,44 +1272,6 @@ export const mockProvider: DataProvider = {
         .filter((a) => weekDates.some((d) => a.startsAt.startsWith(d)))
         .sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
     });
-  },
-
-  listIntakeStatus: (orgId, now): Promise<IntakeStatusRow[]> => {
-    const counsellors = allCounsellors.filter((c) => c.orgId === orgId);
-    const clients = liveOnly(allClients.filter((c) => c.orgId === orgId));
-    return ok(
-      clients.map((client) => {
-        const appts = clientAppointments(client.id, now);
-        const hasCompleted = appts.some((a) => a.state === "completed" || a.state === "discharged");
-        const status: IntakeStatusRow["status"] = hasCompleted ? "completed" : appts.length > 0 ? "sent" : "not_sent";
-        return {
-          client,
-          counsellorName: counsellors.find((c) => c.id === client.primaryCounsellorId)?.name ?? "Unassigned",
-          status,
-          sentAt: appts.length > 0 ? client.createdAt : null,
-        };
-      }),
-    );
-  },
-
-  getIntakeBoard: (orgId, now): Promise<IntakeBoard> => {
-    const counsellors = allCounsellors.filter((c) => c.orgId === orgId);
-    const clients = liveOnly(allClients.filter((c) => c.orgId === orgId));
-    const nowMs = new Date(now).getTime();
-    const rows = clients.map((client) => {
-      const response = intakeResponses[client.id] ?? null;
-      const appts = clientAppointments(client.id, now);
-      const status: IntakeReviewRow["status"] = response ? "completed" : appts.length > 0 ? "sent" : "not_sent";
-      return {
-        client,
-        counsellorName: counsellors.find((c) => c.id === client.primaryCounsellorId)?.name ?? "Unassigned",
-        status,
-        sentAt: appts.length > 0 || response ? client.createdAt : null,
-        submittedAt: response ? new Date(nowMs - response.submittedDaysAgo * 86_400_000).toISOString() : null,
-        answers: response?.answers ?? null,
-      };
-    });
-    return ok({ form: intakeForms[orgId] ?? null, rows });
   },
 
   getIntakeForm: (orgId) => ok(intakeForms[orgId] ?? null),

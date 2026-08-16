@@ -56,7 +56,7 @@ export default async function BookPage({
       <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-6 text-center">
         <h1 className="text-[20px] font-semibold text-text">Booking isn&apos;t open online</h1>
         <p className="mt-2 text-[14px] leading-relaxed text-text-2">
-          {config.org.name} arranges sessions directly. Please contact the practice and they&apos;ll set up your first appointment.
+          {config.org.name}{" "}arranges sessions directly. Please contact the practice and they&apos;ll set up your first appointment.
         </p>
       </main>
     );

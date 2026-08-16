@@ -1753,6 +1753,25 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   and green, which also regression-proves the whole public path against this batch. Edit and
   change-request approval paths audited: already guarded / never move sessions.
 
+- [x] **Go-live: the mock is gone from the live path** *(2026-08-16, batch 3v)*: the first
+  fully-new org (Bophilo) exposed the last of the hybrid era - getBookingConfig was mock-FIRST,
+  so any org without a demo fixture got a 404 on its public booking link (and the employer
+  ?c= link with it). Now: (1) booking config is built from the DATABASE for every org - real
+  services and counsellors filtered by the org's booking settings; (2) the standard public
+  intake fields moved out of mock fixtures into lib/domain/intake as a product default (the
+  booking submit depends on their well-known ids; an org's own intake forms drive the
+  /f/<token> road, as before); (3) getIntakeForm lost its mock fallback (DB or null - never
+  another org's fixture); (4) the four dead, mock-only DataProvider members (listConversations,
+  listCounsellorInvoices, listIntakeStatus, getIntakeBoard) were deleted from the interface and
+  the mock; and (5) the `...mockProvider` spread base itself is GONE - the compiler now proves
+  every provider method has a real DB implementation. Proven live both ways: Bophilo's employer
+  link redirects to their own MUNA intake form (practice-books mode), their micro-site renders,
+  their direct booking page shows the org's honest "isn't open online" notice (their setting) -
+  AND the seeded org's full public booking e2e (service -> language -> slot -> intake ->
+  confirm -> DB rows) stays green. Also fixed en route: a JSX whitespace bug rendered
+  "Bophiloarranges" on the booking-closed notice. NOTE: philasa.com runs an older build - these
+  fixes reach it on the next deployment.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

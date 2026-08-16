@@ -843,10 +843,8 @@ export interface DataProvider {
   getSession(orgId: string, appointmentId: string, now: string): Promise<SessionEditorData | null>;
   getSupervisionQueue(orgId: string, supervisorId: string, now: string): Promise<SupervisionItem[]>;
   getSupervisionOverview(orgId: string, supervisorId: string, now: string): Promise<SupervisionOverview>;
-  listConversations(counsellorId: string): Promise<Conversation[]>;
   listTeamThreads(userId: string, orgId: string): Promise<TeamThread[]>;
   getCounsellorRooms(counsellorId: string, now: string): Promise<CounsellorRoomsView>;
-  listCounsellorInvoices(counsellorId: string): Promise<Invoice[]>;
   /** A counsellor's documents: their own clients' files + anything shared with them  Phase 18. */
   listCounsellorDocuments(counsellorId: string): Promise<{
     own: Document[];
@@ -883,8 +881,6 @@ export interface DataProvider {
   getRoomsOverview(orgId: string, now: string): Promise<RoomView[]>;
   getRoomDetail(orgId: string, roomId: string, now: string): Promise<RoomDetail | null>;
   listSites(orgId: string): Promise<Site[]>;
-  listIntakeStatus(orgId: string, now: string): Promise<IntakeStatusRow[]>;
-  getIntakeBoard(orgId: string, now: string): Promise<IntakeBoard>;
   getIntakeForm(orgId: string): Promise<import("@/lib/domain/types").IntakeForm | null>;
 
   // Forms library (Phase 18.6)  the org's forms + sends + responses

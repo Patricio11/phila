@@ -1,10 +1,8 @@
 /**
  * dbProvider  the Part-B implementation of the `dataProvider` seam, backed by
- * Neon Postgres. It is built as a **hybrid migration layer**: it spreads
- * `mockProvider` as the base, then overrides one method at a time with a real DB
- * read/write. Methods not yet migrated fall back to the mock  and because the DB
- * is seeded from the same fixtures, mock-fallback and real reads return identical
- * data, so the app stays whole while it goes real (Phase 9 → Phase 17).
+ * Neon Postgres. Batch 3v (go-live): fully DB-native - the old hybrid
+ * mock-base is gone, every method reads and writes the real database, and a
+ * brand-new org works end to end with no fixture behind it.
  *
  * Identity is already real: the session/guards resolve the principal from
  * `org_members` + `user` (lib/auth/session.ts). RLS becomes the tenant boundary
@@ -36,7 +34,7 @@ import { desc, inArray } from "drizzle-orm";
 import type { Appointment, CarePlan, Client, ClientDocument, ConsentRecord, Counsellor, Demographics, Funder, Grant, Invoice, Org, OutcomeMeasure, Room, Service, Site } from "@/lib/domain/types";
 import type { PaymentProvider, PaymentStatus } from "@/lib/domain/enums";
 import type { AppointmentState, AppointmentType, ConsentPurpose, ConsentState, CredentialBody, CredentialStatus, Province, RoomStatus } from "@/lib/domain/enums";
-import { mockProvider } from "@/lib/mock/provider";
+import { PUBLIC_INTAKE_FIELDS, PUBLIC_INTAKE_TITLE, PUBLIC_INTAKE_INTRO } from "@/lib/domain/intake";
 import { getDb } from "@/db/client";
 import { runForOrg, runForClient, activeDb } from "@/lib/db/scoped";
 import {
@@ -217,7 +215,6 @@ function toRoom(r: typeof roomsTable.$inferSelect): Room {
 }
 
 export const dbProvider: DataProvider = {
-  ...mockProvider,
 
   // ── Real (DB-backed) ──────────────────────────────────────────────────
   getOrg: async (orgId: string): Promise<Org | null> => {
@@ -324,30 +321,46 @@ export const dbProvider: DataProvider = {
   getFormByToken: (tok) => getFormByTokenDb(tok),
   submitFormResponse: (tok, answers, now) => submitFormResponseDb(tok, answers, now),
   listClientForms: (clientId) => runForClient(clientId, [], () => listClientFormsDb(clientId)),
-  getIntakeForm: async (orgId) => (await getActiveIntakeFormDb(orgId)) ?? mockProvider.getIntakeForm(orgId),
+  getIntakeForm: async (orgId) => (await getActiveIntakeFormDb(orgId)) ?? null,
 
   // The public booking config keeps its mock-sourced service/counsellor visibility +
   // intake form, but swaps in the REAL org AND the org's SAVED booking policy (Hub →
   // Booking): the horizon, minimum notice, slot interval, deposit, and master switch
   // the practice actually configured - not the mock seed. So changing the booking
   // period on the settings page now takes effect on the public calendar.
+  // Batch 3v - fully DB-native (go-live): NO mock in the public booking path.
+  // Every org's config - the seeded demo included - is built from its own DB
+  // rows: services and counsellors filtered by the org's booking settings, and
+  // the standard public intake (a product default, lib/domain/intake).
   getBookingConfig: async (slug: string) => {
-    const base = await mockProvider.getBookingConfig(slug);
-    if (!base) return null;
     const [row] = await getDb().select().from(orgsTable).where(eq(orgsTable.slug, slug)).limit(1);
-    if (!row || row.deletedAt) return base;
-    const saved = (row.bookingSettings as {
-      publicBookingEnabled?: boolean; minNoticeHours?: number; maxDaysAhead?: number;
-      slotIntervalMin?: number; requireDeposit?: boolean; depositCents?: number;
-    } | null) ?? {};
+    if (!row || row.deletedAt) return null;
+    const settings = await getBookingSettingsDb(row.id);
+    const [svcRows, cnsRows] = await Promise.all([
+      getDb().select().from(servicesTable).where(eq(servicesTable.orgId, row.id)),
+      getDb().select().from(counsellorsTable).where(eq(counsellorsTable.orgId, row.id)),
+    ]);
+    const bookableSvc = new Set(settings.services.filter((x) => x.publiclyBookable).map((x) => x.serviceId));
+    const bookableCns = new Set(settings.counsellors.filter((x) => x.publiclyBookable).map((x) => x.counsellorId));
     return {
-      ...base,
       org: toOrg(row),
-      enabled: saved.publicBookingEnabled ?? base.enabled,
-      minNoticeHours: saved.minNoticeHours ?? base.minNoticeHours,
-      maxDaysAhead: saved.maxDaysAhead ?? base.maxDaysAhead,
-      slotIntervalMin: saved.slotIntervalMin ?? base.slotIntervalMin,
-      deposit: { required: saved.requireDeposit ?? base.deposit.required, cents: saved.depositCents ?? base.deposit.cents },
+      services: svcRows.filter((x) => bookableSvc.has(x.id)).map((x) => ({ id: x.id, orgId: x.orgId, name: x.name, durationMin: x.durationMin, priceCents: x.priceCents, colour: x.colour ?? null })),
+      counsellors: cnsRows.filter((x) => bookableCns.has(x.id)).map(toCounsellor),
+      intakeForm: {
+        id: `form_intake_${row.id}`,
+        orgId: row.id,
+        title: PUBLIC_INTAKE_TITLE,
+        intro: PUBLIC_INTAKE_INTRO,
+        fields: PUBLIC_INTAKE_FIELDS,
+      },
+      enabled: settings.publicBookingEnabled,
+      minNoticeHours: settings.minNoticeHours,
+      maxDaysAhead: settings.maxDaysAhead,
+      slotIntervalMin: settings.slotIntervalMin,
+      serviceModalities: Object.fromEntries(
+        settings.services.filter((x) => bookableSvc.has(x.serviceId)).map((x) => [x.serviceId, { inPerson: x.inPerson, online: x.online }]),
+      ),
+      deposit: { required: settings.requireDeposit, cents: settings.depositCents },
     };
   },
 

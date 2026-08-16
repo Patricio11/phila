@@ -796,14 +796,9 @@ export const supervisionTemplates: {
 
 type FormFieldFx = import("@/lib/domain/types").FormField;
 
-const INTAKE_FIELDS: FormFieldFx[] = [
-  { id: "full_name", label: "Your full name", type: "text", required: true, sensitive: true, placeholder: "e.g. Lerato Mahlangu" },
-  { id: "phone", label: "Mobile number", type: "tel", required: true, sensitive: true, placeholder: "+27 …", help: "We'll use this to confirm your session." },
-  { id: "email", label: "Email (optional)", type: "email", required: false, sensitive: true, placeholder: "you@example.co.za" },
-  { id: "reason", label: "What would you like support with?", type: "textarea", required: true, placeholder: "A sentence or two is plenty  only your counsellor will read this.", help: "There's no right answer. Share as much or as little as you like." },
-  { id: "preferred_contact", label: "How should we reach you?", type: "radio", required: true, options: ["WhatsApp", "Phone call", "Email"] },
-  { id: "first_time", label: "Have you had counselling before?", type: "radio", required: false, options: ["This is my first time", "Yes, before", "I'd rather not say"] },
-];
+export { PUBLIC_INTAKE_FIELDS as INTAKE_FIELDS } from "@/lib/domain/intake";
+import { PUBLIC_INTAKE_FIELDS } from "@/lib/domain/intake";
+const INTAKE_FIELDS = PUBLIC_INTAKE_FIELDS as FormFieldFx[];
 
 const FEEDBACK_FIELDS: FormFieldFx[] = [
   { id: "helpful", label: "How helpful was your session?", type: "radio", required: true, options: ["Very helpful", "Helpful", "Neutral", "Not helpful"] },

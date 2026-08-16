@@ -157,8 +157,11 @@ export function practiceGridTimes(
   const hours = businessHours[isoWeekday(date)];
   if (!hours) return []; // closed that day
   const step = Math.max(5, durationMin + Math.max(0, bufferMin));
+  const breaks = (hours.breaks ?? []).map((b) => ({ start: toMinutes(b.start), end: toMinutes(b.end) }));
   const out: string[] = [];
   for (let t = toMinutes(hours.start); t + durationMin <= toMinutes(hours.end); t += step) {
+    // A session never sits across the practice's break either.
+    if (breaks.some((b) => t < b.end && t + durationMin > b.start)) continue;
     out.push(fromMinutes(t));
   }
   return out;

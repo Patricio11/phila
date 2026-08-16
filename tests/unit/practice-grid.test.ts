@@ -18,6 +18,14 @@ describe("practiceGridTimes (batch 3y)", () => {
     expect(times[times.length - 1]).toBe("15:30"); // 15:30 + 90 = 17:00 exactly
   });
 
+  it("skips times that would sit across a break", () => {
+    const withBreak = { 1: { start: "08:00", end: "17:00", breaks: [{ start: "13:00", end: "14:00" }] } } as BusinessHours;
+    const times = practiceGridTimes(withBreak, "2026-08-17", 50, 10);
+    expect(times).not.toContain("13:00");
+    expect(times).toContain("12:00"); // ends 12:50, before the break
+    expect(times).toContain("14:00"); // right after it
+  });
+
   it("returns nothing on a closed day", () => {
     expect(practiceGridTimes(HOURS, "2026-08-22", 50, 10)).toEqual([]); // Saturday
   });

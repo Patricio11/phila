@@ -49,14 +49,6 @@ const rescheduleInput = z.object({
   note: z.string().trim().max(500).optional(),
 });
 
-/** SAST calendar date + wall-clock minute for an instant. */
-function sastParts(iso: string): { date: string; hhmm: string } {
-  const s = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false,
-  }).format(new Date(iso));
-  return { date: s.slice(0, 10), hhmm: s.slice(-5) };
-}
-
 /**
  * Batch 3s - the REAL open times for moving one session: the org's hours for
  * that day intersected with the counsellor's windows for this session's type,
@@ -109,16 +101,10 @@ export async function rescheduleAppointment(
   if (!parsed.success) return { ok: false, error: "Invalid request" };
   let moved = 1;
   if (process.env.DATA_PROVIDER === "db") {
-    // Batch 3s - the new time must be one the practice actually offers: org
-    // hours for that day, the counsellor's windows for this session type, no
-    // clashes. A closed Saturday picked off a little calendar no longer slips
-    // through, whatever surface posted it.
-    const { date: newDate, hhmm } = sastParts(parsed.data.newStart);
-    const offered = await computeRescheduleSlots(membership.orgId, parsed.data.appointmentId, newDate);
-    if (!offered.ok) return offered;
-    if (!offered.slots.some((sl) => sastParts(sl.start).hhmm === hhmm)) {
-      return { ok: false, error: "The practice isn't open then, or the counsellor doesn't work that way at that time - pick one of the offered times." };
-    }
+    // Batch 3x - the practice chose freedom over the hard slot guard: the UI
+    // warns honestly (via getRescheduleSlots) and "Move anyway" is theirs to
+    // click. The DB exclusion constraints (counsellor / room / client overlap)
+    // still make an impossible move impossible.
     try {
       moved = await persistReschedule(membership.orgId, parsed.data.appointmentId, parsed.data.newStart, parsed.data.scope, parsed.data.note ?? null);
     } catch (e) {

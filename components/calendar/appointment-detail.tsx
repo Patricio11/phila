@@ -7,7 +7,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowLeft, CalendarDays, Check, ChevronRight, Clock, Copy, Hash, Hourglass, MapPin, MonitorSmartphone, NotebookPen, Pencil, Phone, Receipt, Repeat, Stethoscope, UserX, Video, X } from "lucide-react";
 import { appointmentReference } from "@/lib/scheduling/reference";
-import { isoWeekday } from "@/lib/domain/helpers";
 import { getRescheduleSlots } from "@/app/app/appointments/actions";
 import type { AppointmentView } from "@/lib/data-provider";
 import type { AppointmentState } from "@/lib/domain/enums";
@@ -93,15 +92,19 @@ export function AppointmentDetail({
   const [eRoom, setERoom] = useState<string | null>(null);
   const [eDuration, setEDuration] = useState<number>(50);
   const [eAvail, setEAvail] = useState<string[] | null>(null);
-  const [date, setDate] = useState(appt?.startsAt.slice(0, 10) ?? "");
-  const [time, setTime] = useState(appt?.startsAt.slice(11, 16) ?? "");
+  // Batch 3x - prefill with the session's SAST wall-clock (the raw ISO is
+  // UTC, so slicing it showed a 09:00 session as 07:00).
+  const sastAt = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(iso));
+  const [date, setDate] = useState(appt ? sastAt(appt.startsAt).slice(0, 10) : "");
+  const [time, setTime] = useState(appt ? sastAt(appt.startsAt).slice(-5) : "");
   const [override, setOverride] = useState(false);
   const [scope, setScope] = useState<EditScope>("this");
-  // Batch 3s - the reschedule panel offers REAL slots (like public booking):
-  // days the practice opens, times the counsellor actually works for this
-  // session type. No more picking a closed Saturday off a little calendar.
-  const [slotOpts, setSlotOpts] = useState<{ start: string; label: string }[] | null>(null);
-  const [slotsBusy, setSlotsBusy] = useState(false);
+  // Batch 3x - the practice asked for the free pickers back: the slot grid
+  // limited them. The pickers are unrestricted again; an out-of-hours or
+  // off-pattern time gets an honest WARNING on first click, and "Move anyway"
+  // proceeds - the practice decides, informed.
+  const [availWarn, setAvailWarn] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
   const [reason, setReason] = useState("");
   const [join, setJoin] = useState<{ id: string; url: string } | null>(null);
   // Feedback batch 2 - the session's invoice, inline (billing never slips out of view).
@@ -210,33 +213,6 @@ export function AppointmentDetail({
   const proposedStart = date && time ? `${date}T${time}:00+02:00` : null;
   const conflict = appt && proposedStart && conflictFor ? conflictFor(appt, proposedStart) : null;
 
-  const hours = scheduling?.businessHours ?? null;
-  // The next open practice days (skips closed weekdays entirely).
-  const openDays = useMemo(() => {
-    if (!hours) return [];
-    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-    const out: string[] = [];
-    for (let i = 0; i < 45 && out.length < 14; i++) {
-      const d = new Date(`${today}T12:00:00Z`);
-      d.setUTCDate(d.getUTCDate() + i);
-      const iso = d.toISOString().slice(0, 10);
-      if (hours[isoWeekday(iso)]) out.push(iso);
-    }
-    return out;
-  }, [hours]);
-
-  useEffect(() => {
-    if (!showReschedule || !appt || !hours || !date) return;
-    let live = true;
-    setSlotsBusy(true);
-    getRescheduleSlots({ appointmentId: appt.id, date }).then((res) => {
-      if (!live) return;
-      setSlotsBusy(false);
-      setSlotOpts(res.ok ? res.slots : []);
-    }).catch(() => { if (live) { setSlotsBusy(false); setSlotOpts([]); } });
-    return () => { live = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showReschedule, appt?.id, date, Boolean(hours)]);
 
   const mark = (next: AppointmentState) => {
     if (!appt) return;
@@ -248,9 +224,26 @@ export function AppointmentDetail({
     });
   };
 
-  const doReschedule = () => {
+  const doReschedule = async () => {
     if (!appt || !proposedStart) return;
-    if (conflict && !override) { setOverride(true); return; } // first click warns, second proceeds
+    if ((conflict || availWarn) && !override) { setOverride(true); return; } // first click warns, second proceeds
+    if (!override) {
+      // Honest check, never a wall: outside practice hours or the counsellor's
+      // pattern -> warn once; "Move anyway" is always available.
+      setChecking(true);
+      try {
+        const res = await getRescheduleSlots({ appointmentId: appt.id, date });
+        if (res.ok) {
+          const offered = res.slots.some((sl) => sl.label === time);
+          if (!offered) {
+            setAvailWarn("Outside the practice hours or this counsellor's availability for that day. You can still move it.");
+            setOverride(true);
+            return;
+          }
+        }
+      } catch { /* check unavailable - proceed, the move itself is safe */ }
+      finally { setChecking(false); }
+    }
     const newStart = proposedStart;
     const useScope: EditScope = isSeries ? scope : "this";
     start(async () => {
@@ -499,73 +492,22 @@ export function AppointmentDetail({
               ) : showReschedule ? (
                 <div className="space-y-2.5 rounded-control border border-border bg-surface-2/40 p-3">
                   <div className="text-[12px] font-semibold text-text">Move {isSeries && scope === "following" ? "these sessions" : "this session"}</div>
-                  {hours ? (
-                    <>
-                      {/* Open practice days only - a closed Saturday simply isn't here. */}
-                      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
-                        {openDays.map((d: string) => {
-                          const dd = new Date(`${d}T12:00:00Z`);
-                          const selected = date === d;
-                          return (
-                            <button
-                              key={d}
-                              type="button"
-                              onClick={() => { setDate(d); setTime(""); setOverride(false); }}
-                              aria-pressed={selected}
-                              className={cn(
-                                "flex min-w-[52px] shrink-0 flex-col items-center rounded-control border px-2 py-1.5 transition-colors",
-                                selected ? "border-accent bg-accent-soft text-accent" : "border-border bg-surface text-text-2 hover:bg-surface-hover",
-                              )}
-                            >
-                              <span className="text-[10px] font-medium uppercase tracking-wide">{new Intl.DateTimeFormat("en-ZA", { timeZone: "UTC", weekday: "short" }).format(dd)}</span>
-                              <span className="text-[15px] font-bold tabular-nums leading-tight">{new Intl.DateTimeFormat("en-ZA", { timeZone: "UTC", day: "numeric" }).format(dd)}</span>
-                              <span className="text-[9.5px] text-text-3">{new Intl.DateTimeFormat("en-ZA", { timeZone: "UTC", month: "short" }).format(dd)}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                      {/* The times this counsellor really has for this kind of session. */}
-                      {slotsBusy ? (
-                        <p className="py-3 text-center text-[12px] text-text-3">Finding open times…</p>
-                      ) : (slotOpts ?? []).length === 0 ? (
-                        <p className="py-3 text-center text-[12px] text-text-3">No open times this day - try another.</p>
-                      ) : (
-                        <div className="grid grid-cols-4 gap-1.5">
-                          {(slotOpts ?? []).map((sl) => (
-                            <button
-                              key={sl.start}
-                              type="button"
-                              onClick={() => { setTime(sl.label); setOverride(false); }}
-                              aria-pressed={time === sl.label}
-                              className={cn(
-                                "h-8 rounded-control border text-[12.5px] font-medium tabular-nums transition-colors",
-                                time === sl.label ? "border-accent bg-accent text-accent-ink" : "border-border bg-surface text-text hover:border-accent/50 hover:bg-accent-soft/40",
-                              )}
-                            >
-                              {sl.label}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-2">
-                      <DatePicker value={date} onChange={(v) => { setDate(v); setOverride(false); }} ariaLabel="New date" />
-                      <TimePicker value={time} onChange={(v) => { setTime(v); setOverride(false); }} ariaLabel="New time" />
-                    </div>
-                  )}
+                  <div className="grid grid-cols-2 gap-2">
+                    <DatePicker value={date} onChange={(v) => { setDate(v); setOverride(false); setAvailWarn(null); }} ariaLabel="New date" />
+                    <TimePicker value={time} onChange={(v) => { setTime(v); setOverride(false); setAvailWarn(null); }} ariaLabel="New time" />
+                  </div>
                   {isSeries && <ScopeToggle scope={scope} onChange={setScope} kind="move" />}
                   <Textarea value={moveNote} onChange={(e) => setMoveNote(e.target.value)} rows={2} placeholder="Reason (optional)  kept on the record" aria-label="Reschedule reason" />
-                  {conflict && (
+                  {(conflict || availWarn) && (
                     <div className="flex items-start gap-2 rounded-control border border-warn/30 bg-warn-soft px-2.5 py-2 text-[12px] text-warn">
-                      <AlertTriangle className="mt-0.5 size-3.5 shrink-0" strokeWidth={2} aria-hidden /> {conflict}
+                      <AlertTriangle className="mt-0.5 size-3.5 shrink-0" strokeWidth={2} aria-hidden /> {conflict ?? availWarn}
                     </div>
                   )}
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => { setShowReschedule(false); setOverride(false); setScope("this"); setMoveNote(""); }} disabled={pending}>
+                    <Button variant="ghost" size="sm" onClick={() => { setShowReschedule(false); setOverride(false); setAvailWarn(null); setScope("this"); setMoveNote(""); }} disabled={pending}>
                       <ArrowLeft className="size-3.5" strokeWidth={2} aria-hidden /> Back
                     </Button>
-                    <Button size="sm" onClick={doReschedule} loading={pending} disabled={!proposedStart}>{conflict ? (override ? "Move anyway" : "Check & move") : "Move session"}</Button>
+                    <Button size="sm" onClick={doReschedule} loading={pending || checking}>{(conflict || availWarn) ? (override ? "Move anyway" : "Check & move") : "Move session"}</Button>
                   </div>
                 </div>
               ) : showCancel ? (

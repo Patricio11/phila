@@ -1781,6 +1781,16 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   completed forms (each row gains a PDF button; completed rows now travel with their questions
   + answers). POPIA footer on every document.
 
+- [x] **Reschedule: back to free pickers, with an honest warning** *(2026-08-16, batch 3x)*: the
+  practice lived with the 3s slot grid and asked for the old flow back - it limited them (a
+  counsellor's day off sometimes IS the right day, by agreement). Reverted the panel to the
+  free date + time pickers and removed the hard server guard; kept the lesson as a WARNING:
+  the first click on an out-of-hours / off-pattern time says so plainly and the second click
+  ("Move anyway") proceeds - the practice decides, informed. The DB exclusion constraints
+  (counsellor / room / client overlap) still make impossible moves impossible. Bonus accuracy
+  fix: the pickers now prefill with the session's SAST wall-clock (the raw UTC slice used to
+  show a 09:00 session as 07:00).
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

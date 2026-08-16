@@ -245,10 +245,10 @@ Sign in as **Thandeka**.
 - ☐ Book a client, then try to book (or reschedule) the SAME client into an overlapping time with a different counsellor: refused with "This client already has a session at that time - move or cancel it first." (public booking says "You already have a session booked at that time")
 - ☐ This is a DB exclusion constraint (appt_no_client_overlap, scheduled sessions only) - it holds even for two simultaneous requests, and history (completed / no-show) is never retroactively policed
 
-**Reschedule = real slots** (batch 3s)
-- ☐ In the appointment modal, **Reschedule** shows day chips for the practice's OPEN days only (close Saturday in Settings and no Saturday chip appears), then real open times for that counsellor + session type; picking one enables **Move session**
-- ☐ The times honour the counsellor's other bookings (gaps where they're busy) but the session being moved doesn't block its own slot
-- ☐ Server-enforced: posting a reschedule outside the offered times (stale tab, hand-crafted call) is refused with "The practice isn't open then..."
+**Reschedule = free pickers + honest warning** (batch 3s slots, reverted by the practice in 3x)
+- ☐ **Reschedule** uses the free date + time pickers, prefilled with the session's ACCURATE SAST time (a 09:00 session shows 09:00, not the raw UTC 07:00)
+- ☐ Picking a time outside the practice hours or that counsellor's availability warns on the first click ("Outside the practice hours or this counsellor's availability for that day. You can still move it.") - the second click, **Move anyway**, proceeds: the practice decides, informed
+- ☐ The DB exclusion constraints still hold whatever is picked: a move that double-books the counsellor, the room, or the CLIENT is refused with its honest message
 
 **Appointment references** (batch 3l) - every session answers to a short code
 - ☐ The appointment detail modal shows **Reference** (e.g. `APT-3F9A2C`, derived from the id - every past session already has one); clicking it copies

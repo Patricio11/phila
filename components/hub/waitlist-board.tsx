@@ -15,6 +15,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { ResponseView } from "@/components/forms/response-view";
 import type { FormField } from "@/lib/domain/types";
 import { removeFromWaitlist } from "@/app/hub/waitlist/actions";
+import { downloadResponsePdf } from "@/lib/export/response-pdf";
 import { cn } from "@/lib/utils";
 
 export type WaitlistRow = WaitlistDetail;
@@ -238,13 +239,22 @@ export function WaitlistBoard({ rows, scheduling, nowISO }: {
         title={reading?.formTitle ?? "Their answers"}
         description={reading ? `${reading.clientName}${reading.companyName ? ` · via ${reading.companyName}` : ""}` : undefined}
         footer={
-          reading?.status === "waiting" ? (
-            <div className="flex justify-end">
+          <div className="flex items-center justify-end gap-2">
+            {reading?.formAnswers && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => downloadResponsePdf({ formTitle: reading.formTitle ?? "Form answers", respondent: reading.clientName, fields: (reading.formFields ?? []) as FormField[], answers: reading.formAnswers ?? {} })}
+              >
+                Download PDF
+              </Button>
+            )}
+            {reading?.status === "waiting" && (
               <Button size="sm" onClick={() => { const r = reading; setReading(null); setBooking(r); }}>
                 <CalendarPlus className="size-3.5" strokeWidth={2} aria-hidden /> Book {reading.clientName.split(" ")[0]}
               </Button>
-            </div>
-          ) : null
+            )}
+          </div>
         }
       >
         {reading?.formAnswers && (

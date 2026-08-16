@@ -1772,6 +1772,15 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   "Bophiloarranges" on the booking-closed notice. NOTE: philasa.com runs an older build - these
   fixes reach it on the next deployment.
 
+- [x] **Form responses download as PDF** *(2026-08-16, batch 3w)*: a completed form is now a
+  document both sides can keep. One pure builder (lib/export/response-pdf, unit-tested for
+  escaping, sections-as-headers, statements-never-print, quiet dashes for unanswered) renders
+  the Q&A as a print-styled A4 - the same zero-dependency pattern as the table exports (the OS
+  print dialog saves the PDF). Wired in three places: the org's form-response dialog
+  (**Download PDF** next to Close), the waitlist answers dialog, and the client portal's
+  completed forms (each row gains a PDF button; completed rows now travel with their questions
+  + answers). POPIA footer on every document.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

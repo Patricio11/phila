@@ -171,7 +171,15 @@ export async function listClientFormsDb(clientId: string): Promise<ClientFormRow
     .filter((a) => a.status !== "revoked")
     .map((a): ClientFormRow => {
       const snap = toSnapshot(a.snapshot);
-      return { assignmentId: a.id, token: a.token, formTitle: snap.title, kind: snap.kind, status: a.status as FormAssignmentStatus, sentAt: a.sentAt.toISOString(), submittedAt: a.submittedAt ? a.submittedAt.toISOString() : null };
+      return {
+        assignmentId: a.id, token: a.token, formTitle: snap.title, kind: snap.kind,
+        status: a.status as FormAssignmentStatus, sentAt: a.sentAt.toISOString(),
+        submittedAt: a.submittedAt ? a.submittedAt.toISOString() : null,
+        // Batch 3w - a completed form travels with its questions + answers so
+        // the client can download their own copy as a PDF.
+        fields: a.status === "completed" ? snap.fields : undefined,
+        answers: a.status === "completed" ? ((a.answers as Record<string, string> | null) ?? null) : undefined,
+      };
     })
     .sort((x, y) => y.sentAt.localeCompare(x.sentAt));
 }

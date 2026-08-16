@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, ClipboardList } from "lucide-react";
+import { ArrowRight, CheckCircle2, ClipboardList, FileDown } from "lucide-react";
+import { downloadResponsePdf } from "@/lib/export/response-pdf";
 import type { ClientFormRow } from "@/lib/data-provider";
 import { Tag } from "@/components/ui/tag";
 
@@ -45,6 +48,15 @@ export function ClientForms({ forms }: { forms: ClientFormRow[] }) {
                 <div className="truncate text-[14px] font-[620] text-text">{f.formTitle}</div>
                 <div className="text-[12px] text-text-3">Submitted  thank you.</div>
               </div>
+              {f.fields && f.answers && (
+                <button
+                  type="button"
+                  onClick={() => downloadResponsePdf({ formTitle: f.formTitle, submittedAt: f.submittedAt, fields: f.fields!, answers: f.answers ?? {} })}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-control border border-border px-2.5 py-1.5 text-[12px] font-medium text-text-2 transition-colors hover:bg-surface-hover hover:text-text"
+                >
+                  <FileDown className="size-3.5" strokeWidth={2} aria-hidden /> PDF
+                </button>
+              )}
               <Tag tone="accent">Done</Tag>
             </div>
           ))}

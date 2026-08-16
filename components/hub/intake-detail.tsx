@@ -1,10 +1,11 @@
 "use client";
 
-import { CheckCircle2, Send } from "lucide-react";
+import { CheckCircle2, FileDown, Send } from "lucide-react";
 import type { IntakeForm } from "@/lib/domain/types";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FormFields } from "@/components/forms/form-fields";
+import { downloadResponsePdf } from "@/lib/export/response-pdf";
 import { cn } from "@/lib/utils";
 
 function fullDate(iso: string): string {
@@ -55,7 +56,17 @@ export function IntakeDetail({
             </Button>
           </div>
         ) : (
-          <div className="flex justify-end"><Button variant="ghost" onClick={onClose}>Close</Button></div>
+          <div className="flex items-center justify-end gap-2">
+            {completed && form && (
+              <Button
+                variant="ghost"
+                onClick={() => downloadResponsePdf({ formTitle: form.title, respondent: clientName ?? null, submittedAt: submittedAt ?? null, fields: form.fields, answers: answers ?? {} })}
+              >
+                <FileDown className="size-4" strokeWidth={2} aria-hidden /> Download PDF
+              </Button>
+            )}
+            <Button variant="ghost" onClick={onClose}>Close</Button>
+          </div>
         )
       }
     >

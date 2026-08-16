@@ -501,6 +501,9 @@ export interface ClientFormRow {
   status: FormAssignmentStatus;
   sentAt: string;
   submittedAt: string | null;
+  /** Batch 3w - present on completed rows so the client can download their answers as a PDF. */
+  fields?: import("@/lib/domain/types").FormField[];
+  answers?: Record<string, string> | null;
 }
 
 /** A form definition as submitted by the builder. */

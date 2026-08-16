@@ -96,7 +96,37 @@ export default async function HubRoomsPage() {
     provider.getOrg(membership.orgId),
     provider.listSites(membership.orgId),
   ]);
-  if (rooms.length === 0 || !org) notFound();
+  if (!org) notFound();
+
+  // Batch 3z - a NEW practice has no rooms yet: that is an empty state, not a
+  // 404. The page must render so they can create their first site + room.
+  if (rooms.length === 0) {
+    return (
+      <div className="rise space-y-6">
+        <PageHead
+          title="Rooms"
+          summary="Your practice's physical rooms - who is in them, and when they're free."
+          actions={
+            <div className="flex items-center gap-2">
+              <ManageSitesButton sites={sites.map((x) => ({ id: x.id, name: x.name, province: x.province }))} roomCounts={{}} />
+              <CreateRoomButton sites={sites.map((x) => ({ id: x.id, name: x.name }))} />
+            </div>
+          }
+        />
+        <div className="flex flex-col items-center justify-center rounded-card border border-dashed border-border bg-surface-2/30 px-6 py-16 text-center">
+          <span className="flex size-12 items-center justify-center rounded-full bg-accent-soft text-accent">
+            <DoorOpen className="size-5" strokeWidth={1.9} aria-hidden />
+          </span>
+          <h3 className="mt-3 text-[15px] font-[640] text-text">No rooms yet</h3>
+          <p className="mt-1 max-w-md text-[13px] leading-relaxed text-text-2">
+            {sites.length === 0
+              ? "Start with a site (your practice's location), then add the rooms inside it. In-person sessions book into these rooms."
+              : "Add your first room and in-person sessions can book into it."}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const bh = org.scheduling.businessHours;
   const today = sastToday();

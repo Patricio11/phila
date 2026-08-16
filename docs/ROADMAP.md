@@ -1799,6 +1799,14 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   changes (Couples at 90 min -> 100-minute spacing), and days without practice hours fall back
   to the free time picker. SchedulingOptions carries bufferMin from the org.
 
+- [x] **Rooms: empty state instead of a 404** *(2026-08-16, batch 3z)*: /hub/rooms had
+  `if (rooms.length === 0) notFound()` - so a NEW practice literally could not open the page
+  whose job is to create the first room (the seeded orgs always had rooms, hiding it). Zero
+  rooms now renders the page with a calm empty state ("No rooms yet - start with a site, then
+  add the rooms inside it") and the Manage sites + Add room buttons in the header, so a new
+  org bootstraps itself. Proven live with Thrive (zero rooms, zero sites); the full page for
+  orgs WITH rooms is unchanged.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

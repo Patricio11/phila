@@ -1908,6 +1908,9 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
     the panel showed "7m 10s · billed 8 min" + total, the header wore "Held by phone · 8 min",
     zero balance disabled Call again with the top-up reason, and Billing showed 750 min + the
     R800 bundle. 292 unit tests green. Per-org dedicated number (33.8) stays deferred.
+    *Polish (same day, practice feedback)*: the minute balance is org-admin-only - a counsellor
+    sees just "Phone the client on the practice number." + the button (the out-of-minutes reason
+    tells them to ask their admin); the panel wraps cleanly at 360 px, no horizontal scroll.
     Original scope line: bridged counsellor-to-client phone calls on a shared masked number,
   system-measured minutes as the FOURTH credit channel (`voice` beside sms/email/video), Twilio
   first behind a swappable adapter so other providers can be switched on/off later; includes the

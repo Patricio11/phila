@@ -26,7 +26,9 @@ export interface CallPanelState {
   railOn: boolean;
   /** null = a call can be placed; otherwise the honest reason it can't. */
   blocked: string | null;
-  balanceMin: number;
+  /** The org's minute balance - shown to org admins only (they do the
+   *  topping up); a counsellor just sees the call button. */
+  balanceMin: number | null;
   legs: VoiceLegView[];
   /** Sum of connected seconds across completed legs - the session's total. */
   totalSec: number;
@@ -34,16 +36,16 @@ export interface CallPanelState {
   activeLegId: string | null;
 }
 
-async function panelState(orgId: string, appointmentId: string): Promise<CallPanelState> {
+async function panelState(orgId: string, appointmentId: string, isAdmin: boolean): Promise<CallPanelState> {
   const cfg = await getVoiceConfig();
-  if (!cfg) return { railOn: false, blocked: "Voice calls aren't switched on.", balanceMin: 0, legs: [], totalSec: 0, activeLegId: null };
+  if (!cfg) return { railOn: false, blocked: "Voice calls aren't switched on.", balanceMin: null, legs: [], totalSec: 0, activeLegId: null };
 
   const db = getDb();
   const [appt] = await db.select({ id: appointments.id, clientId: appointments.clientId, counsellorId: appointments.counsellorId })
     .from(appointments)
     .where(and(eq(appointments.id, appointmentId), eq(appointments.orgId, orgId)))
     .limit(1);
-  if (!appt) return { railOn: true, blocked: "Session not found.", balanceMin: 0, legs: [], totalSec: 0, activeLegId: null };
+  if (!appt) return { railOn: true, blocked: "Session not found.", balanceMin: null, legs: [], totalSec: 0, activeLegId: null };
 
   const [legs, balances, [client], [couns]] = await Promise.all([
     legsForAppointmentDb(orgId, appointmentId),
@@ -55,7 +57,9 @@ async function panelState(orgId: string, appointmentId: string): Promise<CallPan
   const active = legs.find((l) => legActive(l.status));
   let blocked: string | null = null;
   if (!toE164(client?.phone)) blocked = "The client has no dialable phone number on file.";
-  else if (balances.voice < 1) blocked = "This practice is out of call minutes - top up under Billing & usage.";
+  else if (balances.voice < 1) blocked = isAdmin
+    ? "This practice is out of call minutes - top up under Billing & usage."
+    : "This practice is out of call minutes - ask your practice admin to top up.";
   else if (couns) {
     const [profile] = await db.select({ phone: teamProfiles.phone }).from(teamProfiles)
       .where(and(eq(teamProfiles.orgId, orgId), eq(teamProfiles.userId, couns.userId))).limit(1);
@@ -65,7 +69,7 @@ async function panelState(orgId: string, appointmentId: string): Promise<CallPan
   return {
     railOn: true,
     blocked,
-    balanceMin: balances.voice,
+    balanceMin: isAdmin ? balances.voice : null,
     legs,
     totalSec: legs.filter((l) => l.status === "completed").reduce((s, l) => s + l.durationSec, 0),
     activeLegId: active?.id ?? null,
@@ -79,7 +83,7 @@ export async function getCallPanel(
   const { membership } = await requireOrg([...CALLERS]);
   const parsed = z.object({ appointmentId: z.string().min(1) }).safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid request" };
-  return { ok: true, state: await panelState(membership.orgId, parsed.data.appointmentId) };
+  return { ok: true, state: await panelState(membership.orgId, parsed.data.appointmentId, membership.teamRole === "org_admin") };
 }
 
 /**
@@ -124,7 +128,12 @@ export async function startClientCall(
 
   // The hard stop (33.5): a call won't place on an empty balance.
   const balances = await getCreditBalances(membership.orgId);
-  if (balances.voice < 1) return { ok: false, error: "This practice is out of call minutes - top up under Billing & usage." };
+  if (balances.voice < 1) return {
+    ok: false,
+    error: membership.teamRole === "org_admin"
+      ? "This practice is out of call minutes - top up under Billing & usage."
+      : "This practice is out of call minutes - ask your practice admin to top up.",
+  };
 
   const base = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
   const placed = await adapterFor(cfg).placeBridgedCall({
@@ -151,5 +160,5 @@ export async function startClientCall(
     reason: "voice_call_placed",
   });
 
-  return { ok: true, state: await panelState(membership.orgId, appointmentId) };
+  return { ok: true, state: await panelState(membership.orgId, appointmentId, membership.teamRole === "org_admin") };
 }

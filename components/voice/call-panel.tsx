@@ -84,17 +84,19 @@ export function CallPanel({ appointmentId }: { appointmentId: string }) {
       <div className="flex flex-wrap items-center gap-2">
         <PhoneCall className={cn("size-4 shrink-0", active ? "text-accent" : "text-text-3")} strokeWidth={2} aria-hidden />
         {active ? (
-          <span className="flex min-w-0 flex-1 items-center gap-2 text-[12.5px] font-medium text-text">
+          <span className="flex min-w-0 flex-1 basis-40 items-center gap-2 text-[12.5px] font-medium text-text">
             <span className={cn("size-2 shrink-0 rounded-full", active.status === "answered" ? "animate-pulse bg-accent" : "bg-warn")} aria-hidden />
             {STATUS_LABEL[active.status] ?? active.status}
           </span>
         ) : (
-          <span className="min-w-0 flex-1 text-[12.5px] text-text-2">
-            {state.blocked ?? `Phone the client on the practice number - ${state.balanceMin.toLocaleString("en-ZA")} min available.`}
+          <span className="min-w-0 flex-1 basis-40 text-[12.5px] text-text-2">
+            {state.blocked ?? (state.balanceMin !== null
+              ? `Phone the client on the practice number - ${state.balanceMin.toLocaleString("en-ZA")} min available.`
+              : "Phone the client on the practice number.")}
           </span>
         )}
         {!active && (
-          <Button size="sm" variant={redial ? "ghost" : "primary"} onClick={call} loading={placing} disabled={Boolean(state.blocked)}>
+          <Button size="sm" variant={redial ? "ghost" : "primary"} className="shrink-0" onClick={call} loading={placing} disabled={Boolean(state.blocked)}>
             <PhoneCall className="size-3.5" strokeWidth={2} aria-hidden /> {redial ? "Call again" : "Call client"}
           </Button>
         )}
@@ -103,14 +105,14 @@ export function CallPanel({ appointmentId }: { appointmentId: string }) {
       {(attempts.length > 0 || state.totalSec > 0) && (
         <div className="space-y-1 border-t border-border pt-2">
           {attempts.map((l) => (
-            <div key={l.id} className="flex items-center gap-2 text-[12px] text-text-2">
+            <div key={l.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-text-2">
               {l.status === "completed"
                 ? <PhoneCall className="size-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
                 : <PhoneOff className="size-3.5 shrink-0 text-text-3" strokeWidth={2} aria-hidden />}
-              <span className="tabular-nums text-text-3">{sastTime(l.startedAt)}</span>
-              <span>{STATUS_LABEL[l.status] ?? l.status}</span>
+              <span className="shrink-0 tabular-nums text-text-3">{sastTime(l.startedAt)}</span>
+              <span className="min-w-0">{STATUS_LABEL[l.status] ?? l.status}</span>
               {l.status === "completed" && (
-                <span className="ml-auto tabular-nums">{fmtSec(l.durationSec)} · billed {l.billedMin} min</span>
+                <span className="ml-auto shrink-0 tabular-nums">{fmtSec(l.durationSec)} · billed {l.billedMin} min</span>
               )}
             </div>
           ))}

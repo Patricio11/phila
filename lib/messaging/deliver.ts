@@ -125,6 +125,10 @@ export async function deliver(input: DeliverInput): Promise<DeliverOutcome> {
   if (result.status === "sent" && metered) {
     const c = await consumeCredit(orgId, channel, `${ref}:${channel}:${trigger}`, ref);
     cost = c.ok ? 1 : 0;
+    if (c.ok) {
+      const { notifyIfLowCredit } = await import("@/lib/messaging/low-credit");
+      await notifyIfLowCredit(orgId, channel, c.balanceAfter + 1, c.balanceAfter);
+    }
   }
   await logMessage({ orgId, channel, to, templateKey: trigger, trigger, status: result.status, detail: result.detail ?? waNote, providerMessageId: result.providerMessageId, costCredits: cost });
   return { channel, status: result.status };

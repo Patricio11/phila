@@ -216,6 +216,22 @@ export async function markProgress(
           }
         }
       } catch { /* an automation never blocks the clinical action */ }
+      // Batch 4d - LivePhila metering: a COMPLETED online/hybrid session
+      // consumes its booked minutes (idempotent per appointment). Care is
+      // never blocked - the balance floors at zero, and the low / empty
+      // crossings notify the practice to top up.
+      try {
+        const [v] = await getDb().select({ type: appointments.type, durationMin: appointments.durationMin })
+          .from(appointments).where(and(eq(appointments.id, parsed.data.appointmentId), eq(appointments.orgId, membership.orgId))).limit(1);
+        if (v && (v.type === "online" || v.type === "hybrid")) {
+          const { consumeVideoMinutes } = await import("@/db/queries/messaging");
+          const used = await consumeVideoMinutes(membership.orgId, parsed.data.appointmentId, v.durationMin);
+          if (used) {
+            const { notifyIfLowCredit } = await import("@/lib/messaging/low-credit");
+            await notifyIfLowCredit(membership.orgId, "video", used.before, used.after);
+          }
+        }
+      } catch { /* metering is best-effort; the session record is the truth */ }
     }
   }
   await logAccess({

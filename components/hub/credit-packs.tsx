@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import type { CreditPack } from "@/lib/payments/packs";
+import { CREDIT_UNIT, type CreditPack } from "@/lib/payments/packs";
 import { useToast } from "@/components/ui/toast";
 import { startCreditPurchase } from "@/app/hub/billing/actions";
 import { cn } from "@/lib/utils";
@@ -28,7 +28,7 @@ export function CreditPacks({ packs }: { packs: CreditPack[] }) {
         >
           {p.popular && <span className="absolute right-2 top-2 rounded-full bg-accent px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wide text-white">Popular</span>}
           <div className="text-[18px] font-[720] tabular-nums text-text">{p.credits.toLocaleString()}</div>
-          <div className="text-[10.5px] uppercase tracking-wide text-text-3">credits</div>
+          <div className="text-[10.5px] uppercase tracking-wide text-text-3">{CREDIT_UNIT[p.channel]}</div>
           <div className="mt-2 text-[13.5px] font-[660] text-text">R{(p.priceCents / 100).toLocaleString()}</div>
         </button>
       ))}

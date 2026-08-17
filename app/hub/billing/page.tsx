@@ -1,4 +1,4 @@
-import { CheckCircle2, AlertTriangle, Mail, Smartphone, Wallet } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Mail, Smartphone, Wallet, Video } from "lucide-react";
 import { requireHub } from "@/lib/auth/guard";
 import { PageHead } from "@/components/shell/page-head";
 import { Card, CardHead } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { settlePayment } from "@/db/queries/payments";
 import { getDataProvider } from "@/lib/data-provider";
 import { trialDaysLeft } from "@/lib/billing/plans";
 import { now as clockNow } from "@/lib/clock";
-import { CREDIT_PACKS, LOW_CREDIT_THRESHOLD } from "@/lib/payments/packs";
+import { CREDIT_PACKS, LOW_THRESHOLDS, CREDIT_UNIT, CHANNEL_LABEL, type CreditChannel as CreditChannelKey } from "@/lib/payments/packs";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Billing & usage" };
@@ -40,7 +40,10 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
     provider.getOrgSubscription(membership.orgId, clockNow()),
   ]);
 
-  const low = (["sms", "email"] as const).filter((c) => credits[c] < LOW_CREDIT_THRESHOLD);
+  const low = (["sms", "email", "video"] as const).filter((c) => credits[c] < LOW_THRESHOLDS[c]);
+  // Batch 4d - LivePhila usage: total minutes ever consumed by completed sessions.
+  const { videoMinutesUsedDb } = await import("@/db/queries/messaging");
+  const videoUsed = await videoMinutesUsedDb(membership.orgId);
   const aiPct = aiSettings.monthlyCapCents > 0 ? Math.min(100, Math.round((aiSpent / aiSettings.monthlyCapCents) * 100)) : 0;
 
   return (
@@ -54,7 +57,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
       )}
       {low.length > 0 && !justCredited && (
         <Banner tone="warn" icon={AlertTriangle}>
-          You&apos;re running low on <b>{low.join(" & ")}</b> credits. Top up below so messages keep going out.
+          You&apos;re running low on <b>{low.map((c) => CHANNEL_LABEL[c]).join(" & ")}</b>. Top up below so nothing is interrupted.
         </Banner>
       )}
 
@@ -70,8 +73,9 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
 
       {/* Credit balances + packs */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <CreditChannel icon={Smartphone} label="SMS" balance={credits.sms} packs={CREDIT_PACKS.filter((p) => p.channel === "sms")} />
-        <CreditChannel icon={Mail} label="Email" balance={credits.email} packs={CREDIT_PACKS.filter((p) => p.channel === "email")} />
+        <CreditChannel channel="sms" icon={Smartphone} label="SMS" balance={credits.sms} packs={CREDIT_PACKS.filter((p) => p.channel === "sms")} />
+        <CreditChannel channel="email" icon={Mail} label="Email" balance={credits.email} packs={CREDIT_PACKS.filter((p) => p.channel === "email")} />
+        <CreditChannel channel="video" icon={Video} label="LivePhila" balance={credits.video} used={videoUsed} packs={CREDIT_PACKS.filter((p) => p.channel === "video")} note="Secure video minutes. A completed online or hybrid session uses its booked length." />
       </div>
 
       {/* AI spend */}
@@ -137,17 +141,19 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
   );
 }
 
-function CreditChannel({ icon: Icon, label, balance, packs }: { icon: typeof Mail; label: string; balance: number; packs: typeof CREDIT_PACKS }) {
-  const low = balance < LOW_CREDIT_THRESHOLD;
+function CreditChannel({ channel, icon: Icon, label, balance, used, packs, note }: { channel: CreditChannelKey; icon: typeof Mail; label: string; balance: number; used?: number; packs: typeof CREDIT_PACKS; note?: string }) {
+  const low = balance < LOW_THRESHOLDS[channel];
+  const unit = CREDIT_UNIT[channel];
   return (
     <Card>
-      <CardHead title={`${label} credits`} action={<Icon className="size-4 text-text-3" strokeWidth={2} aria-hidden />} />
+      <CardHead title={channel === "video" ? label : `${label} credits`} action={<Icon className="size-4 text-text-3" strokeWidth={2} aria-hidden />} />
       <div className="space-y-3 px-[17px] pb-[17px]">
         <div className="flex items-baseline gap-2">
           <span className={`text-[30px] font-[740] tabular-nums ${low ? "text-warn" : "text-text"}`}>{balance.toLocaleString()}</span>
-          <span className="text-[12px] text-text-3">credits left</span>
+          <span className="text-[12px] text-text-3">{unit} left{typeof used === "number" ? ` · ${used.toLocaleString()} used` : ""}</span>
           {low && <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-warn-soft px-2 py-0.5 text-[11px] font-medium text-warn"><AlertTriangle className="size-3" strokeWidth={2} aria-hidden /> Low</span>}
         </div>
+        {note && <p className="text-[11.5px] leading-relaxed text-text-3">{note}</p>}
         <div className="text-[11px] font-medium uppercase tracking-wide text-text-3">Top up</div>
         <CreditPacks packs={packs} />
       </div>

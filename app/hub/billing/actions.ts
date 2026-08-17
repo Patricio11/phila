@@ -37,7 +37,7 @@ export async function startCreditPurchase(
 }
 
 /** Verify + settle on the redirect back from Paystack (the webhook is the backstop). */
-export async function confirmCreditPurchase(reference: string): Promise<{ credited: number; channel: "sms" | "email" | null }> {
+export async function confirmCreditPurchase(reference: string): Promise<{ credited: number; channel: "sms" | "email" | "video" | null }> {
   await requireHub();
   if (!(await paystackConfigured())) return { credited: 0, channel: null };
   if ((await verifyTransaction(reference)) !== "success") return { credited: 0, channel: null };

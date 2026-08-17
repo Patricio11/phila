@@ -1836,6 +1836,20 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   renderer serves the public fill page, the booking intake and the hub preview, so all three
   gained it at once. Helpers unit-tested (spelling variants, detail extraction, round-trip).
 
+- [x] **LivePhila minutes - the third credit rail** *(2026-08-17, batch 4d)*: video joins SMS
+  and Email as a metered channel, with MINUTES as the unit. One pack: R950 for 26,500 minutes,
+  bought through the same Paystack flow, settled to the same ledger. Metering moment: marking
+  an ONLINE or HYBRID session COMPLETED consumes its booked length - idempotent per appointment
+  (re-marking never double-charges), floors at zero, and never blocks care. Billing grew a
+  LivePhila card (minutes left · minutes used · Low chip · the pack) and the low-balance banner
+  now covers all three channels. NEW low-balance rail for everyone: crossing the channel's
+  threshold (25 messages; 2,650 minutes = ~10% of the pack) raises a bell notification to every
+  org admin exactly once, and hitting zero raises an urgent one - wired into the send chokepoint
+  (sms/email) and the completion hook (video). Proven live: 2,680 -> complete a 50-min online
+  session -> ledger -50, balance 2,630, "LivePhila minutes running low" bell, banner on Billing,
+  re-mark charged nothing. NOTE: plan cards advertise included video minutes - granting those
+  monthly via applyCredit is a natural follow-up when subscriptions go live.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

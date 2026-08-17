@@ -69,14 +69,14 @@ export async function saveWhatsappConnection(orgId: string, input: { phoneNumber
   await db.insert(whatsappConnections).values(values).onConflictDoUpdate({ target: whatsappConnections.orgId, set: { phoneNumberId: values.phoneNumberId, wabaId: values.wabaId, accessTokenEnc, appSecretEnc, verifyToken: values.verifyToken, status: values.status, updatedAt: values.updatedAt } });
 }
 
-export async function getCreditBalances(orgId: string): Promise<{ sms: number; email: number }> {
+export async function getCreditBalances(orgId: string): Promise<{ sms: number; email: number; video: number }> {
   const rows = await getDb().select().from(creditBalances).where(eq(creditBalances.orgId, orgId));
   const by = (c: string) => rows.find((r) => r.channel === c)?.balance ?? 0;
-  return { sms: by("sms"), email: by("email") };
+  return { sms: by("sms"), email: by("email"), video: by("video") };
 }
 
 /** Idempotent credit movement (+grant/purchase, −send). Returns the new balance. */
-export async function applyCredit(orgId: string, channel: "sms" | "email", delta: number, reason: string, ref: string, idempotencyKey: string): Promise<number> {
+export async function applyCredit(orgId: string, channel: "sms" | "email" | "video", delta: number, reason: string, ref: string, idempotencyKey: string): Promise<number> {
   const db = getDb();
   const [seen] = await db.select().from(creditLedger).where(eq(creditLedger.idempotencyKey, idempotencyKey)).limit(1);
   if (seen) return seen.balanceAfter; // already applied  no double-count
@@ -255,4 +255,33 @@ export async function listRecentMessages(orgId: string, limit = 20): Promise<{ c
 export async function getMessageOrg(providerMessageId: string): Promise<string | null> {
   const [row] = await getDb().select({ orgId: messageLog.orgId }).from(messageLog).where(eq(messageLog.providerMessageId, providerMessageId)).limit(1);
   return row?.orgId ?? null;
+}
+
+/**
+ * Batch 4d - LivePhila metering: a completed online/hybrid session consumes
+ * its booked minutes. Idempotent per appointment (re-marking never
+ * double-charges); the balance floors at 0 like every credit write, and the
+ * true spend lives in the ledger. Returns before/after for the low-balance
+ * rail, and null when this appointment was already charged.
+ */
+export async function consumeVideoMinutes(
+  orgId: string,
+  appointmentId: string,
+  minutes: number,
+): Promise<{ before: number; after: number } | null> {
+  const db = getDb();
+  const key = `video_session_${appointmentId}`;
+  const [seen] = await db.select().from(creditLedger).where(eq(creditLedger.idempotencyKey, key)).limit(1);
+  if (seen) return null;
+  const [bal] = await db.select().from(creditBalances).where(and(eq(creditBalances.orgId, orgId), eq(creditBalances.channel, "video"))).limit(1);
+  const before = bal?.balance ?? 0;
+  const after = await applyCredit(orgId, "video", -Math.max(1, Math.round(minutes)), "session", `appointment:${appointmentId}`, key);
+  return { before, after };
+}
+
+/** Total LivePhila minutes ever consumed (the "used" figure on Billing). */
+export async function videoMinutesUsedDb(orgId: string): Promise<number> {
+  const rows = await getDb().select({ delta: creditLedger.delta }).from(creditLedger)
+    .where(and(eq(creditLedger.orgId, orgId), eq(creditLedger.channel, "video")));
+  return rows.filter((r) => r.delta < 0).reduce((s, r) => s - r.delta, 0);
 }

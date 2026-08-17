@@ -601,7 +601,7 @@ export interface AiRailConfig {
 export interface IntegrationCatalogItem {
   key: string;
   name: string;
-  category: "messaging" | "video" | "payments" | "platform";
+  category: "messaging" | "video" | "voice" | "payments" | "platform";
   status: "off" | "mock" | "live";
   description: string;
 }

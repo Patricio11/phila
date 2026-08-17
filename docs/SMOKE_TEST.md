@@ -459,6 +459,8 @@ Sign in as **ops@philasa.com**.
 - ☐ **Feature control** (W3): turn a feature **off across the whole platform** (kill-switch) → it's disabled for every org regardless of plan; turn it back on. On an org detail page, a **force-on / force-off** per-org override wins over the plan.
 - ☐ **Integrations** shows the **Phila platform gateways**: **Paystack** (key + Test connection + switch) and **Video · LiveKit** (Demo/Live mode toggle, ws URL/key/secret, **Test connection**, switch  seeded in Demo with `ws://localhost:7880`)
 - ☐ **LiveKit Test connection** → "Connected" when the Docker server is up; a clear error when it's down
+- ☐ **VoicePhila · Twilio** (33.2/33.3): the platform tab shows a **VoicePhila · Twilio** card (VOICE); its config page takes Account SID / auth token (write-only), the **shared caller number**, and mode **Off / Mock / Live**; **Test connection** in Mock answers "calls simulate instantly", in Live it pings the Twilio account. Off = fully dormant, no org sees any voice surface
+- ☐ **Voice webhook meters exactly once** (33.3): a completed leg posted to `/api/webhooks/voice` with a valid signature bills **ceil(seconds/60)** minutes off the org's voice balance (e.g. 500 s → 9 min), a webhook **retry does not double-charge** (ledger key `voice_leg_<id>`), a wrong signature gets **403**, and crossing the low threshold (100 min) rings the org-admin bell + email
 - ☐ **AI rail** lets you configure Claude **or** OpenAI (key + model) and switch one on
 - ☐ **Audit** shows recent cross-org/PII actions (every reporting read, export, payment, edit is logged)
 

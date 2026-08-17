@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, CreditCard, HardDrive, Mail, MessageSquare, Video } from "lucide-react";
+import { ChevronRight, CreditCard, HardDrive, Mail, MessageSquare, PhoneCall, Video } from "lucide-react";
 import type { IntegrationCatalogItem } from "@/lib/domain/types";
 import { PLATFORM_INTEGRATIONS, type PlatformIntegrationSlug } from "@/lib/admin/platform-integrations";
 import { IntegrationsCatalogue } from "@/components/admin/integrations-catalogue";
 import { cn } from "@/lib/utils";
 
 const ICON: Record<PlatformIntegrationSlug, typeof CreditCard> = {
-  paystack: CreditCard, livekit: Video, storage: HardDrive, bulksms: MessageSquare, resend: Mail,
+  paystack: CreditCard, livekit: Video, voice: PhoneCall, storage: HardDrive, bulksms: MessageSquare, resend: Mail,
 };
 
 type Status = { enabled: boolean; configured: boolean };

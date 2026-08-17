@@ -36,39 +36,39 @@ a per-org number is a later paid add-on.*
 *The foundation: prices live in one admin-managed place, not in code. Today ALL packs (including
 LivePhila's R950 / 26,500 min) are constants in `lib/payments/packs.ts` - this task moves the lot
 into an admin-managed catalogue.*
-- [ ] A super-admin **credit catalogue** under **Integrations → Billing / Credit plans**: per credit
+- [x] A super-admin **credit catalogue** under **Integrations → Billing / Credit plans**: per credit
   **type** (`sms` / `email` / `video` / `voice`), define bundles - name, **quantity**, **price (ZAR)**, active flag.
   Voice bundles are in **minutes**. **Seed the starting voice bundle: `1000 minutes = R800`** (fully
   editable - this is a data row, not a constant).
-- [ ] **Retrofit SMS + Email + LivePhila** to render their purchase options **from this catalogue** too, so
+- [x] **Retrofit SMS + Email + LivePhila** to render their purchase options **from this catalogue** too, so
   nothing is hardcoded anywhere. The existing org-side credit UI (Billing & usage) now reads the catalogue.
-- [ ] Super-admin can **add / edit / deactivate** bundles and **change prices**; changes reflect to orgs
+- [x] Super-admin can **add / edit / deactivate** bundles and **change prices**; changes reflect to orgs
   immediately (single source of truth, same discipline as the `plans` table). Every change **audited**.
 
 **Done when:** SMS, Email, and Voice bundles + prices are all defined and edited by the super-admin with
-**zero hardcoded prices**, and every org sees exactly what the admin publishes.
+**zero hardcoded prices**, and every org sees exactly what the admin publishes. ✅ *(2026-08-17 - `credit_bundles` table + Plans & billing manager, org Billing reads the catalogue)*
 
 ## Task 33.2: Voice provider integration (super-admin Integrations) - configure + enable
 *Beside SMS / Email / WhatsApp / video in the switchboard - same pattern.*
-- [ ] A **Voice** rail: provider (**Twilio** first) + credentials, the **shared platform caller number**,
+- [x] A **Voice** rail: provider (**Twilio** first) + credentials, the **shared platform caller number**,
   **off / mock / live** + a **Test call**, and the per-org entitlement/cap hooks. **Dormant by default**  - 
   no voice surfaces appear for any org until voice is enabled *and* a voice bundle exists (#5).
-- [ ] **Platform-keyed** (Phila's provider account; orgs do **not** BYO a voice provider) - like the AI
+- [x] **Platform-keyed** (Phila's provider account; orgs do **not** BYO a voice provider) - like the AI
   rail. Orgs simply consume minutes.
 
 **Done when:** the super-admin can configure the provider, set the shared number, run a test call, and
-turn voice on/off platform-wide.
+turn voice on/off platform-wide. ✅ *(2026-08-17 - VoicePhila · Twilio card on the platform tab, config page with off/mock/live + Test connection; per-org caps ride the credit balances)*
 
 ## Task 33.3: The `voice` adapter seam
 *So the provider is swappable once you compare SA rates - mirrors the WhatsApp/SMS adapter.*
-- [ ] `lib/voice/` interface: `placeBridgedCall(counsellorNo, clientNo, ctx)`, `getStatus(callId)`,
+- [x] `lib/voice/` interface: `placeBridgedCall(counsellorNo, clientNo, ctx)`, `getStatus(callId)`,
   `endCall(callId)`, and a **webhook handler** for call lifecycle + final duration. A **mock impl**
   (deterministic, dev) + the **Twilio impl** behind the same interface, chosen by config.
-- [ ] A **signature-verified, fail-safe webhook endpoint** receives events (ringing / answered /
+- [x] A **signature-verified, fail-safe webhook endpoint** receives events (ringing / answered /
   completed / failed / no-answer) and the authoritative **duration** per leg.
 
 **Done when:** a call runs end-to-end through the mock adapter in dev, and through the real adapter behind
-the identical interface in staging.
+the identical interface in staging. ✅ *(2026-08-17 - `lib/voice/` adapter + `voice_call_legs` + `/api/webhooks/voice`; mock leg proven billed 500 s → 9 min, idempotent, 403 on bad signature; live Twilio staging call awaits real credentials)*
 
 ## Task 33.4: Bridged call engine - counsellor → client, shared number, masked
 *The core. One direction, shared caller-ID, redial-friendly, system-measured.*

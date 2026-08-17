@@ -69,14 +69,14 @@ export async function saveWhatsappConnection(orgId: string, input: { phoneNumber
   await db.insert(whatsappConnections).values(values).onConflictDoUpdate({ target: whatsappConnections.orgId, set: { phoneNumberId: values.phoneNumberId, wabaId: values.wabaId, accessTokenEnc, appSecretEnc, verifyToken: values.verifyToken, status: values.status, updatedAt: values.updatedAt } });
 }
 
-export async function getCreditBalances(orgId: string): Promise<{ sms: number; email: number; video: number }> {
+export async function getCreditBalances(orgId: string): Promise<{ sms: number; email: number; video: number; voice: number }> {
   const rows = await getDb().select().from(creditBalances).where(eq(creditBalances.orgId, orgId));
   const by = (c: string) => rows.find((r) => r.channel === c)?.balance ?? 0;
-  return { sms: by("sms"), email: by("email"), video: by("video") };
+  return { sms: by("sms"), email: by("email"), video: by("video"), voice: by("voice") };
 }
 
 /** Idempotent credit movement (+grant/purchase, −send). Returns the new balance. */
-export async function applyCredit(orgId: string, channel: "sms" | "email" | "video", delta: number, reason: string, ref: string, idempotencyKey: string): Promise<number> {
+export async function applyCredit(orgId: string, channel: "sms" | "email" | "video" | "voice", delta: number, reason: string, ref: string, idempotencyKey: string): Promise<number> {
   const db = getDb();
   const [seen] = await db.select().from(creditLedger).where(eq(creditLedger.idempotencyKey, idempotencyKey)).limit(1);
   if (seen) return seen.balanceAfter; // already applied  no double-count

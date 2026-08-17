@@ -13,11 +13,12 @@ const STATUSES: Status[] = ["off", "mock", "live"];
 const CATEGORY_LABEL: Record<IntegrationCatalogItem["category"], string> = {
   messaging: "Messaging",
   video: "Video",
+  voice: "Voice",
   payments: "Payment providers",
   platform: "Platform",
 };
 
-const ORDER: IntegrationCatalogItem["category"][] = ["messaging", "video", "payments", "platform"];
+const ORDER: IntegrationCatalogItem["category"][] = ["messaging", "video", "voice", "payments", "platform"];
 
 export function IntegrationsCatalogue({ initial }: { initial: IntegrationCatalogItem[] }) {
   const { toast } = useToast();

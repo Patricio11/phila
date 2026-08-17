@@ -182,17 +182,19 @@ const INTEGRATION_CATALOGUE: Omit<IntegrationCatalogItem, "status">[] = [
   { key: "whatsapp", name: "WhatsApp (Meta Cloud API)", category: "messaging", description: "Booking, reminder, and follow-up messages  WhatsApp-first (org BYO)." },
   { key: "sms", name: "SMS (BulkSMS)", category: "messaging", description: "Phila-provided SMS credits  reminders + notices for clients without WhatsApp." },
   { key: "email", name: "Email (Resend)", category: "messaging", description: "Transactional email  confirmations, reminders, receipts." },
-  { key: "livekit", name: "LiveKit video", category: "video", description: "Self-hosted, in-region video rooms for online sessions." },
+  { key: "livekit", name: "LivePhila video (LiveKit)", category: "video", description: "Self-hosted, in-region video rooms for online sessions." },
+  { key: "voice", name: "VoicePhila (Twilio)", category: "voice", description: "Bridged counsellor-to-client phone calls on a shared masked number - system-measured minutes." },
   { key: "paystack", name: "Paystack", category: "payments", description: "Card payments  orgs connect their own account." },
   { key: "platform_psp", name: "Phila platform billing", category: "platform", description: "Phila's own PSP  how orgs pay their subscription." },
 ];
 
 export async function listIntegrationsDb(): Promise<IntegrationCatalogItem[]> {
-  const [paystack, livekit, sms, email] = await Promise.all([
+  const [paystack, livekit, sms, email, voice] = await Promise.all([
     getPlatformIntegration("paystack"),
     getPlatformIntegration("livekit"),
     getPlatformIntegration("bulksms"),
     getPlatformIntegration("resend"),
+    getPlatformIntegration("voice"),
   ]);
   const statusOf = (it: { enabled: boolean; creds: Record<string, string> } | null, liveWhenDemo = false): IntegrationCatalogItem["status"] => {
     if (!it) return "off";
@@ -204,6 +206,7 @@ export async function listIntegrationsDb(): Promise<IntegrationCatalogItem[]> {
     sms: statusOf(sms),
     email: statusOf(email),
     livekit: statusOf(livekit),
+    voice: !voice || !voice.enabled ? (voice && Object.keys(voice.creds).length > 0 ? "mock" : "off") : voice.creds.mode === "mock" ? "mock" : "live",
     paystack: "off",
     platform_psp: statusOf(paystack, true),
   };

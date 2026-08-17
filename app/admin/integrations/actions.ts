@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { requireSuperAdmin } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 import { getPlatformIntegration, savePlatformIntegration } from "@/db/queries/platform-integrations";
@@ -254,4 +255,54 @@ export async function testResendConnection(raw: { apiKey: string; from: string }
   } catch (e) {
     return { ok: false, detail: e instanceof Error ? e.message : "Could not reach Resend." };
   }
+}
+
+/**
+ * Phase 33.2 - the VoicePhila rail (Twilio first, provider-swappable).
+ * Mock mode needs no carrier credentials; live mode requires the full set.
+ */
+const voiceInput = z.object({
+  accountSid: z.string().trim().max(64).default(""),
+  authToken: z.string().trim().max(128).default(""),
+  callerNumber: z.string().trim().max(20).default(""),
+  mode: z.enum(["off", "mock", "live"]),
+});
+export async function saveVoiceConfig(raw: z.infer<typeof voiceInput>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const principal = await requireSuperAdmin();
+  const parsed = voiceInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Check the voice settings." };
+  const d = parsed.data;
+
+  const existing = (await getPlatformIntegration("voice"))?.creds ?? {};
+  const creds: Record<string, string> = {
+    provider: "twilio",
+    mode: d.mode,
+    accountSid: d.accountSid || existing.accountSid || "",
+    authToken: d.authToken || existing.authToken || (d.mode === "mock" ? existing.authToken || "mock-secret" : ""),
+    callerNumber: d.callerNumber || existing.callerNumber || "",
+  };
+  if (d.mode === "live" && (!creds.accountSid || !creds.authToken || !creds.callerNumber)) {
+    return { ok: false, error: "Live mode needs the Account SID, auth token and the shared caller number." };
+  }
+  await savePlatformIntegration("voice", creds, d.mode !== "off");
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null },
+    orgId: null,
+    target: "integration:voice",
+    reason: `voice_${d.mode}`,
+  });
+  revalidatePath("/admin/integrations");
+  return { ok: true };
+}
+
+export async function testVoiceConnection(raw: { accountSid: string; authToken: string; mode: "off" | "mock" | "live" }): Promise<{ ok: boolean; detail: string }> {
+  await requireSuperAdmin();
+  if (raw.mode === "mock") return { ok: true, detail: "Mock mode - calls simulate instantly, nothing dials out." };
+  const existing = (await getPlatformIntegration("voice"))?.creds ?? {};
+  const sid = raw.accountSid || existing.accountSid || "";
+  const token = raw.authToken || existing.authToken || "";
+  if (!sid || !token) return { ok: false, detail: "Enter the Twilio Account SID and auth token first." };
+  const { twilioAdapter } = await import("@/lib/voice/twilio");
+  return twilioAdapter({ provider: "twilio", mode: "live", accountSid: sid, authToken: token, callerNumber: "" }).testConnection();
 }

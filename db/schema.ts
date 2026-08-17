@@ -772,6 +772,24 @@ export const creditBundles = pgTable("credit_bundles", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+/**
+ * Phase 33.3/33.4 - VoicePhila call legs. Every dial attempt is its own row:
+ * the provider's call id is the primary key, the webhook writes the
+ * authoritative status + duration, and metering charges each completed leg
+ * exactly once (idempotency key = the leg id). No audio is ever stored.
+ */
+export const voiceCallLegs = pgTable("voice_call_legs", {
+  id: text("id").primaryKey(), // provider call sid (or mock_...)
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  appointmentId: text("appointment_id").notNull(),
+  placedBy: text("placed_by").notNull(), // user id of the counsellor/admin
+  status: text("status").default("initiated").notNull(), // initiated | ringing | answered | completed | failed | no_answer | busy | canceled
+  durationSec: integer("duration_sec").default(0).notNull(),
+  billedMin: integer("billed_min").default(0).notNull(),
+  startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
+  endedAt: timestamp("ended_at", { withTimezone: true }),
+}, (t) => [index("voice_legs_appt_idx").on(t.appointmentId), index("voice_legs_org_idx").on(t.orgId)]);
+
 export const platformIntegrations = pgTable("platform_integrations", {
   key: text("key").primaryKey(), // paystack
   credentialsEnc: text("credentials_enc"),

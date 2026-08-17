@@ -9,6 +9,7 @@ import { PlatformPspCard } from "@/components/admin/platform-psp-card";
 import { PlatformVideoCard } from "@/components/admin/platform-video-card";
 import { PlatformStorageCard } from "@/components/admin/platform-storage-card";
 import { PlatformSmsCard } from "@/components/admin/platform-sms-card";
+import { PlatformVoiceCard } from "@/components/admin/platform-voice-card";
 import { PlatformEmailCard } from "@/components/admin/platform-email-card";
 
 export const dynamic = "force-dynamic";
@@ -68,6 +69,10 @@ export default async function IntegrationConfigPage({ params }: { params: Promis
         }}
       />
     );
+  } else if (slug === "voice") {
+    const raw = await getPlatformIntegration("voice");
+    const mode = raw?.enabled ? (raw.creds.mode === "live" ? "live" as const : "mock" as const) : "off" as const;
+    card = <PlatformVoiceCard initial={{ mode, configured: Boolean(raw?.creds.accountSid || raw?.creds.mode === "mock"), callerNumber: raw?.creds.callerNumber ?? "" }} />;
   } else if (slug === "bulksms") {
     card = <PlatformSmsCard initial={await getPlatformIntegrationStatus("bulksms")} />;
   } else if (slug === "resend") {

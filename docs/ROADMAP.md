@@ -1877,7 +1877,21 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
     seeds the old constants plus the VoicePhila starter (1,000 min = R800, editable data).
     VoicePhila bundles stay hidden from orgs until the voice rail ships. Proven live: admin
     edited LivePhila R950 -> R990, org Billing showed R990 immediately, change audited, price
-    restored. Original scope line: bridged counsellor-to-client phone calls on a shared masked number,
+    restored.
+  - [x] **33.2/33.3 Admin rail + adapter seam + metered webhook** *(2026-08-17)*: VoicePhila ·
+    Twilio joined the super-admin Phila-platform integration cards (slug `voice`, config page
+    with Account SID / auth token write-only, shared caller number, mode Off / Mock / Live, Test
+    connection) - platform-keyed, orgs never BYO a voice provider. `lib/voice/` is the
+    provider-swappable seam: `VoiceAdapter` (placeBridgedCall / parseWebhook / testConnection),
+    a Twilio implementation (bridged call = one call to the counsellor whose TwiML dials the
+    client, both legs masked by the shared number; X-Twilio-Signature HMAC-SHA1 verified), and a
+    deterministic mock adapter for dev. `voice_call_legs` (migration 0078) records every leg;
+    `/api/webhooks/voice` updates leg lifecycle and on COMPLETED bills ceil-per-minute against
+    the org's voice balance exactly once (ledger idempotency key `voice_leg_<id>`), fires the
+    low-credit bell + email, and audits as `system:voice`. Proven live: mock-mode config saved
+    on the admin page; a 500-second completed leg billed 9 minutes (1000 -> 991), a webhook
+    RETRY did not double-charge, and a wrong signature got 403. Dormant by default - no org
+    surface exists until 33.7. Original scope line: bridged counsellor-to-client phone calls on a shared masked number,
   system-measured minutes as the FOURTH credit channel (`voice` beside sms/email/video), Twilio
   first behind a swappable adapter so other providers can be switched on/off later; includes the
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).

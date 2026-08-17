@@ -1828,6 +1828,14 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   membership query never filtered status, so ARCHIVED members' memberships still resolved at
   sign-in - archived and removed memberships now grant no access.
 
+- [x] **Forms: "Other" invites the client's own words** *(2026-08-17, batch 4c)*: any choice
+  option named "Other" (or "Other (please specify)", any case) now grows a "Please specify..."
+  input the moment it's picked - on single choice, dropdown AND multi-select. The answer stays
+  one flat string ("Other: Sepedi"), so responses, the waitlist dialog, exports and the PDF all
+  read naturally with no schema change; multi-select details sanitise the "; " separator. One
+  renderer serves the public fill page, the booking intake and the hub preview, so all three
+  gained it at once. Helpers unit-tested (spelling variants, detail extraction, round-trip).
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

@@ -24,6 +24,20 @@ export const MULTI_SEP = "; ";
 export const splitMulti = (v: string): string[] => (v ? v.split(MULTI_SEP).filter(Boolean) : []);
 export const joinMulti = (list: string[]): string => list.join(MULTI_SEP);
 
+/**
+ * Batch 4c - an option named "Other" (or "Other (please specify)", any case)
+ * invites the client to say what, in their own words. The answer stays one
+ * flat string - "Other: Sepedi" - so responses, exports and the PDF all read
+ * naturally with no schema change.
+ */
+export const isOtherOption = (opt: string): boolean => /^other\b/i.test(opt.trim());
+/** The typed detail, when `value` is "<opt>: <detail>". */
+export const otherDetailOf = (opt: string, value: string): string =>
+  value.startsWith(`${opt}:`) ? value.slice(opt.length + 1).trimStart() : "";
+/** Which option a stored value answers (exact, or "<opt>: ..." for Other). */
+const optionOf = (options: string[], value: string): string | null =>
+  options.find((o) => value === o || (isOtherOption(o) && value.startsWith(`${o}:`))) ?? null;
+
 export function FormFields({
   fields,
   values,
@@ -80,22 +94,54 @@ export function FormFields({
                 onChange={onChange ? (e) => onChange(field.id, e.target.value) : undefined}
               />
             ) : field.type === "radio" ? (
-              <RadioGroup
-                options={field.options ?? []}
-                value={value}
-                readOnly={readOnly}
-                invalid={Boolean(error)}
-                onChange={(v) => onChange?.(field.id, v)}
-              />
+              (() => {
+                const opts = field.options ?? [];
+                const picked = optionOf(opts, value);
+                return (
+                  <div className="space-y-1.5">
+                    <RadioGroup
+                      options={opts}
+                      value={picked ?? value}
+                      readOnly={readOnly}
+                      invalid={Boolean(error)}
+                      onChange={(v) => onChange?.(field.id, v)}
+                    />
+                    {picked && isOtherOption(picked) && !readOnly && (
+                      <Input
+                        aria-label={`${field.label} - please specify`}
+                        placeholder="Please specify..."
+                        value={otherDetailOf(picked, value)}
+                        onChange={(e) => onChange?.(field.id, e.target.value.trim() ? `${picked}: ${e.target.value}` : picked)}
+                      />
+                    )}
+                  </div>
+                );
+              })()
             ) : field.type === "select" ? (
-              <Select
-                id={id}
-                value={value || null}
-                options={(field.options ?? []).map((o) => ({ value: o, label: o }))}
-                placeholder={field.placeholder || "Choose one"}
-                invalid={Boolean(error)}
-                onChange={(v) => onChange?.(field.id, v)}
-              />
+              (() => {
+                const opts = field.options ?? [];
+                const picked = optionOf(opts, value);
+                return (
+                  <div className="space-y-1.5">
+                    <Select
+                      id={id}
+                      value={picked ?? (value || null)}
+                      options={opts.map((o) => ({ value: o, label: o }))}
+                      placeholder={field.placeholder || "Choose one"}
+                      invalid={Boolean(error)}
+                      onChange={(v) => onChange?.(field.id, v)}
+                    />
+                    {picked && isOtherOption(picked) && !readOnly && (
+                      <Input
+                        aria-label={`${field.label} - please specify`}
+                        placeholder="Please specify..."
+                        value={otherDetailOf(picked, value)}
+                        onChange={(e) => onChange?.(field.id, e.target.value.trim() ? `${picked}: ${e.target.value}` : picked)}
+                      />
+                    )}
+                  </div>
+                );
+              })()
             ) : field.type === "checkbox" ? (
               <CheckboxGroup
                 options={field.options ?? []}
@@ -149,16 +195,27 @@ function CheckboxGroup({ options, value, onChange, readOnly, maxChoices }: {
   options: string[]; value: string; onChange: (v: string) => void; readOnly?: boolean; maxChoices?: number;
 }) {
   const picked = splitMulti(value);
+  const entryFor = (opt: string) => picked.find((p) => p === opt || (isOtherOption(opt) && p.startsWith(`${opt}:`)));
   const atCap = Boolean(maxChoices && maxChoices > 0 && picked.length >= maxChoices);
   const toggle = (opt: string) => {
     if (readOnly) return;
-    const next = picked.includes(opt) ? picked.filter((o) => o !== opt) : [...picked, opt];
+    const entry = entryFor(opt);
+    const next = entry ? picked.filter((p) => p !== entry) : [...picked, opt];
     onChange(joinMulti(next));
+  };
+  const setOtherDetail = (opt: string, text: string) => {
+    const entry = entryFor(opt);
+    if (!entry) return;
+    // The separator can't appear inside the detail - it would split the answer.
+    const clean = text.replace(/;/g, ",");
+    const nextEntry = clean.trim() ? `${opt}: ${clean}` : opt;
+    onChange(joinMulti(picked.map((p) => (p === entry ? nextEntry : p))));
   };
   return (
     <div className="space-y-1.5">
       {options.map((opt) => {
-        const on = picked.includes(opt);
+        const entry = entryFor(opt);
+        const on = Boolean(entry);
         return (
           <label
             key={opt}
@@ -175,7 +232,19 @@ function CheckboxGroup({ options, value, onChange, readOnly, maxChoices }: {
               onChange={() => toggle(opt)}
               className="mt-0.5 size-4 shrink-0"
             />
-            <span className="leading-snug">{opt}</span>
+            <span className="min-w-0 flex-1 leading-snug">
+              {opt}
+              {on && isOtherOption(opt) && !readOnly && (
+                <Input
+                  aria-label={`${opt} - please specify`}
+                  placeholder="Please specify..."
+                  className="mt-1.5"
+                  value={entry ? otherDetailOf(opt, entry) : ""}
+                  onClick={(e) => e.preventDefault()}
+                  onChange={(e) => setOtherDetail(opt, e.target.value)}
+                />
+              )}
+            </span>
           </label>
         );
       })}

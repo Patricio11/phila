@@ -14,7 +14,7 @@ function features(p: Plan): string[] {
     p.seats === null ? "Unlimited team seats" : `${p.seats} team seats`,
     p.rooms === null ? "Unlimited rooms" : `${p.rooms} consulting rooms`,
     p.aiTokens > 0 ? "AI scribe included" : "AI scribe as an add-on",
-    p.videoMinutes > 0 ? `${p.videoMinutes} video minutes / month` : "Bring your own video link",
+    "LivePhila secure video - minutes by top-up",
     p.messaging ? "WhatsApp + SMS reminders" : "Email reminders",
   ];
 }

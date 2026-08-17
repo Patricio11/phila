@@ -13,7 +13,7 @@ function includes(p: Plan): string[] {
     p.seats === null ? "Unlimited seats" : `${p.seats} team seats`,
     p.rooms === null ? "Unlimited rooms" : `${p.rooms} rooms`,
     p.messaging ? "WhatsApp & SMS" : null,
-    p.videoMinutes ? `${p.videoMinutes} video min / mo` : null,
+    "LivePhila minutes by top-up",
     p.aiTokens ? "AI assist" : null,
   ].filter(Boolean) as string[];
 }

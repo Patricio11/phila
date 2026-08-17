@@ -52,6 +52,7 @@ export interface OrgResourceMeters {
   planName: string;
   planId: string;
   smsCredits: number;
+  videoCredits: number;
   emailCredits: number;
   storage: { usedBytes: number; limitBytes: number; overridden: boolean };
   ai: { spentCents: number; capCents: number };
@@ -75,6 +76,7 @@ export async function getOrgResourceMetersDb(orgId: string): Promise<OrgResource
     planName: plan?.name ?? "",
     planId: sub?.planId ?? "p_community",
     smsCredits: credits.sms,
+    videoCredits: credits.video,
     emailCredits: credits.email,
     storage: { usedBytes, limitBytes: storageGb * BYTES_PER_GB, overridden: rl.storageGb !== undefined },
     ai: { spentCents, capCents: aiSettings.monthlyCapCents },

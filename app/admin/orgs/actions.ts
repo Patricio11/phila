@@ -25,8 +25,8 @@ const appUrl = () => process.env.BETTER_AUTH_URL ?? "https://philasa.com";
  */
 const grantInput = z.object({
   orgId: z.string().min(1),
-  channel: z.enum(["sms", "email"]),
-  amount: z.number().int().min(1).max(100000),
+  channel: z.enum(["sms", "email", "video"]),
+  amount: z.number().int().min(1).max(1000000),
 });
 
 export async function grantMessagingCredits(
@@ -38,6 +38,18 @@ export async function grantMessagingCredits(
   const { orgId, channel, amount } = parsed.data;
   const balance = await applyCredit(orgId, channel, amount, "grant", `admin:${principal.userId}`, `grant_${crypto.randomUUID()}`);
   await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId, target: `org:${orgId}/credits:${channel}`, reason: `grant_${amount}` });
+  // Batch 4f - the practice hears about the top-up (cash/EFT paid outside the
+  // system lands here); best-effort, the grant itself already stands.
+  try {
+    const { CHANNEL_LABEL, CREDIT_UNIT } = await import("@/lib/payments/packs");
+    const { notifyOrgAdmins } = await import("@/db/queries/notifications");
+    await notifyOrgAdmins(orgId, {
+      kind: "credit_granted",
+      title: `${amount.toLocaleString()} ${CHANNEL_LABEL[channel]} ${CREDIT_UNIT[channel]} added`,
+      body: `Phila added ${amount.toLocaleString()} ${CREDIT_UNIT[channel]} to your ${CHANNEL_LABEL[channel]} balance. New balance: ${balance.toLocaleString()}.`,
+      href: "/hub/billing",
+    });
+  } catch { /* the ledger is the truth */ }
   return { ok: true, balance };
 }
 

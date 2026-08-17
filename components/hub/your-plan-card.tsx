@@ -34,7 +34,7 @@ export function YourPlanCard({ subscription, daysLeft }: { subscription: OrgSubs
     `${plan.seats} team seats`,
     `${plan.rooms} rooms`,
     plan.messaging ? "WhatsApp & SMS" : null,
-    plan.videoMinutes ? `${plan.videoMinutes} video min / mo` : null,
+    "LivePhila minutes by top-up",
     plan.aiTokens ? "AI assist" : null,
   ].filter(Boolean) as string[];
 

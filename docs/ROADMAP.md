@@ -1860,6 +1860,15 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   nothing grants them monthly yet - a subscription-cycle applyCredit grant is the natural
   follow-up.
 
+- [x] **No promised minutes + admin cash-payment grants** *(2026-08-17, batch 4f)*: the plan
+  cards' "N video min / mo" promise came OFF every surface (marketing pricing, plan picker,
+  your-plan card, admin plan control) - LivePhila is strictly what the org buys, worded as
+  "LivePhila minutes by top-up". The existing super-admin credit granter (Resources & quotas on
+  the admin org page) gained a THIRD meter: LivePhila minutes - for cash/EFT paid outside the
+  system - through the same ledger (reason "grant", audited), and every grant now notifies the
+  org's admins ("500 LivePhila minutes added - new balance ..."). Pricing work parked by
+  agreement: 17-day free trial + two more packages to be designed with the practice.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

@@ -28,7 +28,7 @@ export function OrgPlanControl({ orgId, planId, plans }: { orgId: string; planId
     `${plan.storageGb} GB storage`,
     `${plan.rooms ?? "Unlimited"} rooms`,
     plan.aiTokens ? `${(plan.aiTokens / 1000).toLocaleString()}k AI tokens/mo` : "No AI",
-    plan.videoMinutes ? `${plan.videoMinutes} video min/mo` : "No video",
+    "LivePhila by minute packs",
     plan.messaging ? "WhatsApp & SMS" : "No messaging",
   ];
 

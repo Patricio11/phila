@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { za } from "@/lib/format";
 import { useRouter } from "next/navigation";
-import { Smartphone, Mail, HardDrive, Bot, Plus, Check } from "lucide-react";
+import { Smartphone, Mail, HardDrive, Bot, Plus, Check, Video } from "lucide-react";
 import type { OrgResourceMeters } from "@/db/queries/resources";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ export function OrgResourceMeters({ orgId, meters }: { orgId: string; meters: Or
     <div className="space-y-3">
       <CreditMeter orgId={orgId} channel="sms" icon={Smartphone} label="SMS credits" balance={meters.smsCredits} />
       <CreditMeter orgId={orgId} channel="email" icon={Mail} label="Email credits" balance={meters.emailCredits} />
+      <CreditMeter orgId={orgId} channel="video" icon={Video} label="LivePhila minutes" balance={meters.videoCredits} />
       <StorageMeter orgId={orgId} used={meters.storage.usedBytes} limit={meters.storage.limitBytes} overridden={meters.storage.overridden} />
       <AiMeter orgId={orgId} spent={meters.ai.spentCents} cap={meters.ai.capCents} />
     </div>
@@ -47,7 +48,7 @@ function Shell({ icon: Icon, label, right, children }: { icon: typeof Bot; label
   );
 }
 
-function CreditMeter({ orgId, channel, icon, label, balance }: { orgId: string; channel: "sms" | "email"; icon: typeof Bot; label: string; balance: number }) {
+function CreditMeter({ orgId, channel, icon, label, balance }: { orgId: string; channel: "sms" | "email" | "video"; icon: typeof Bot; label: string; balance: number }) {
   const { toast } = useToast();
   const router = useRouter();
   const [amount, setAmount] = useState("");
@@ -59,7 +60,7 @@ function CreditMeter({ orgId, channel, icon, label, balance }: { orgId: string; 
     const res = await grantMessagingCredits({ orgId, channel, amount: n });
     if (!res.ok) return toast({ tone: "error", title: res.error });
     setAmount("");
-    toast({ tone: "success", title: `Granted ${n} ${channel} credits`, description: `New balance: ${res.balance.toLocaleString()}` });
+    toast({ tone: "success", title: `Granted ${n.toLocaleString()} ${channel === "video" ? "LivePhila minutes" : `${channel} credits`}`, description: `New balance: ${res.balance.toLocaleString()}` });
     router.refresh();
   });
 

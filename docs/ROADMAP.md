@@ -1869,6 +1869,12 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   org's admins ("500 LivePhila minutes added - new balance ..."). Pricing work parked by
   agreement: 17-day free trial + two more packages to be designed with the practice.
 
+- [ ] **Phase 33 - VoicePhila** *(planned, `docs/PHASE_33_VOICE_CALLS_PLAN.md` - renumbered from
+  32 and synced 2026-08-17)*: bridged counsellor-to-client phone calls on a shared masked number,
+  system-measured minutes as the FOURTH credit channel (`voice` beside sms/email/video), Twilio
+  first behind a swappable adapter so other providers can be switched on/off later; includes the
+  admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

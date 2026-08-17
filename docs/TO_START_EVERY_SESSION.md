@@ -276,6 +276,24 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
     "you've reached this month's limit / upgrade," **never a silent failure**. Phila never subsidises
     a tenant's variable cost.
 
+- **Feedback batch era (2m-4f)** - ongoing, one proven batch per item - ✅ through **2026-08-17**.
+  Highlights since Phase 31: per-session-type counsellor availability with the OPT-IN any-session
+  base pattern; appointment references (APT-XXXXXX) on the modal / search / notifications /
+  invoices; invoice board rebuilt (tabs, edit, cancel-not-delete) + the builder actually creates
+  invoices with linked sessions on a true-A4 sheet; page titles live once in the top bar; emailed
+  document share links + folders download as zips; client double-booking impossible (DB exclusion
+  constraint); reschedule = free pickers + honest availability warning; appointment times sit on
+  each org's own clock (hours + interval + service duration, breaks honoured); **go-live de-mock**
+  (the db provider satisfies the whole interface with no mock base - a brand-new org works end to
+  end); one practice per email + team soft delete; forms: "Other" grows a please-specify input +
+  responses download as PDF; **LivePhila** - video minutes as the third credit rail (R950/26,500
+  min pack, completion-metered, low/empty crossings bell + EMAIL org admins, super-admin cash
+  grants, no plan-promised minutes). Every batch proven live on a production build; 284 unit tests.
+- **Phase 32** (languages) - in progress per `PHASE_32_LANGUAGE_PLAN.md` (32.0 shipped: booking
+  language step + counsellor spoken languages).
+- **Phase 33** (**VoicePhila** - bridged voice calls, credit-metered) - ⏳ planned:
+  `PHASE_33_VOICE_CALLS_PLAN.md` (renumbered from 32; Twilio first behind a swappable adapter).
+
 ---
 
 # CRITICAL UX RULES
@@ -305,4 +323,4 @@ the Care-Confidentiality Rule, the AI-Honesty Rule, or the Safeguarding Rule  **
 time.** Prioritise correctness, POPIA compliance, tenant isolation, performance, and accessibility
 over visual flourish  then make it genuinely beautiful within those limits.
 
-*Last updated: 2026-07-21 · Phila · philasa.com · Stack: Next.js · Neon · Better Auth · Supabase Storage · LiveKit*
+*Last updated: 2026-08-17 · Phila · philasa.com · Stack: Next.js · Neon · Better Auth · Supabase Storage / S3 · LiveKit (LivePhila)*

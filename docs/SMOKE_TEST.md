@@ -302,6 +302,26 @@ Sign in as **Thandeka**.
 - ☐ Setting **company retainer** previews every service as **Free**, saves (DB `{"kind":"retainer"}`), and new bookings invoice at R0; Megan Pillay is the seeded example
 - ☐ A legacy sliding-scale client (e.g. Johan, pays 50%) still shows + bills their old arrangement until changed
 
+**Form responses as PDF** (batch 3w)
+- ☐ A completed response's dialog (org side) and the waitlist answers dialog have **Download PDF** - a print-styled A4 of the Q&A (sections as headers, quiet dash for unanswered, POPIA footer); the client portal's completed forms each carry a **PDF** button too
+- ☐ The browser's print dialog saves it - same zero-dependency pattern as table exports and the invoice sheet
+
+**"Other" with an input** (batch 4c)
+- ☐ On any choice field (single choice, dropdown, multi-select), an option named **Other** / "Other (please specify)" reveals a "Please specify..." input when picked; the answer stores as one string ("Other: Sepedi") and reads naturally in responses, exports and the PDF
+
+**One practice per email + team soft delete** (batches 4a-4b)
+- ☐ Inviting an email that's an ACTIVE (or invited) member of ANOTHER practice is refused: "They must be archived or removed there before this email can be used here." - archiving/removing at the other practice frees the email
+- ☐ An **archived** member's ⋯ menu offers **Delete member** (soft): the record stays (status `removed`), access stays revoked, the email frees up; a **Removed** tab (appears when non-empty) lists them with **Restore member**; deleting an ACTIVE member is refused (archive-first hands the workload over)
+- ☐ Archived and removed memberships grant NO access at sign-in
+
+**LivePhila - video minutes** (batches 4d-4f)
+- ☐ Billing & usage shows a **LivePhila** card: minutes **left**, minutes **used**, Low chip, and the **R950 / 26,500 minutes** pack (units say "minutes", not "credits")
+- ☐ Marking an **online or hybrid** session **Completed** consumes its booked length - once (re-marking never double-charges); the ledger keeps every charge against the appointment
+- ☐ Crossing the low mark (2,650 min) or hitting zero raises a **bell to every org admin AND an email** - once per crossing; SMS/Email crossings do the same (25 credits)
+- ☐ Zero minutes never blocks care: sessions still run and complete; the org is told loudly instead
+- ☐ Admin → org → **Resources & quotas** has a **LivePhila minutes** meter: grant any amount (cash/EFT paid outside the system) - ledgered as "grant", audited, and the org's admins get a bell with the new balance
+- ☐ **No plan promises minutes**: every plan surface says "LivePhila minutes by top-up" - the balance only changes by purchase or admin grant
+
 **Submission emails, in the org's words** (batch 3j)
 - ☐ A form's detail page has an **Emails** tab: a toggle ("Email the practice on every submission"), recipients (comma-separated; **empty = every practice admin**), and an editable **subject + message** with tokens `{name}` `{form}` `{practice}` `{date}` filled at send time
 - ☐ A bad address is refused naming the value; settings persist per form

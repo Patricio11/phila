@@ -1850,6 +1850,16 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   re-mark charged nothing. NOTE: plan cards advertise included video minutes - granting those
   monthly via applyCredit is a natural follow-up when subscriptions go live.
 
+- [x] **Low-credit notices email the practice too** *(2026-08-17, batch 4e)*: the low/empty
+  crossings for all three rails (SMS, Email, LivePhila) now send an EMAIL to every org admin
+  alongside the bell - same once-per-crossing discipline, bounded and best-effort via the
+  platform transport. Pure composer (lowCreditEmail) unit-tested: names the channel, unit and
+  remaining amount; the empty notice for video says plainly that sessions still run (care is
+  never cut off), while sms/email say honestly that messages stop. Flagged, awaiting the
+  practice's call: plan cards ADVERTISE included video minutes (e.g. "300 video min / mo") but
+  nothing grants them monthly yet - a subscription-cycle applyCredit grant is the natural
+  follow-up.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

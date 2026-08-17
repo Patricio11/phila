@@ -26,6 +26,7 @@ import { useToast } from "@/components/ui/toast";
 import { Avatar } from "@/components/ui/avatar";
 import { SafeguardingPanel } from "@/components/workspace/safeguarding-panel";
 import { OutcomeCaptureButton } from "@/components/outcomes/outcome-capture";
+import { CallPanel } from "@/components/voice/call-panel";
 import { cn } from "@/lib/utils";
 import {
   generateAiDraft,
@@ -417,6 +418,10 @@ export function SessionEditor({
               </Button>
             </Card>
           )}
+
+          {/* 33.7 - VoicePhila: bridge a call to the client from the session.
+              Renders nothing while the platform voice rail is off. */}
+          <CallPanel key={appt.id} appointmentId={appt.id} />
 
           {/* Held by phone - the after-the-fact honest record (feedback #6) */}
           <Card className="p-4">

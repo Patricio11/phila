@@ -1,4 +1,4 @@
-import { CheckCircle2, AlertTriangle, Mail, Smartphone, Wallet, Video } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Mail, PhoneCall, Smartphone, Wallet, Video } from "lucide-react";
 import { requireHub } from "@/lib/auth/guard";
 import { PageHead } from "@/components/shell/page-head";
 import { Card, CardHead } from "@/components/ui/card";
@@ -40,14 +40,21 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
     provider.getOrgSubscription(membership.orgId, clockNow()),
   ]);
 
-  const low = (["sms", "email", "video"] as const).filter((c) => credits[c] < LOW_THRESHOLDS[c]);
+  // 33.6 - VoicePhila surfaces (card + bundles + low nudge) appear only once
+  // the platform voice rail is on. Dormant-by-default, like every rail.
+  const { voiceConfigured } = await import("@/lib/voice");
+  const voiceOn = await voiceConfigured();
+  const lowChannels = voiceOn ? (["sms", "email", "video", "voice"] as const) : (["sms", "email", "video"] as const);
+  const low = lowChannels.filter((c) => credits[c] < LOW_THRESHOLDS[c]);
   // Phase 33.1 - bundles come from the admin catalogue, never constants.
-  // VoicePhila bundles stay hidden from orgs until the voice rail ships.
   const { listActiveBundlesDb } = await import("@/db/queries/credit-bundles");
-  const bundles = (await listActiveBundlesDb()).filter((b) => b.channel !== "voice");
+  const bundles = (await listActiveBundlesDb()).filter((b) => voiceOn || b.channel !== "voice");
   // Batch 4d - LivePhila usage: total minutes ever consumed by completed sessions.
   const { videoMinutesUsedDb } = await import("@/db/queries/messaging");
   const videoUsed = await videoMinutesUsedDb(membership.orgId);
+  // 33.6 - VoicePhila usage: total minutes billed across every call leg.
+  const { voiceMinutesUsedDb } = await import("@/db/queries/voice");
+  const voiceUsed = voiceOn ? await voiceMinutesUsedDb(membership.orgId) : 0;
   const aiPct = aiSettings.monthlyCapCents > 0 ? Math.min(100, Math.round((aiSpent / aiSettings.monthlyCapCents) * 100)) : 0;
 
   return (
@@ -80,6 +87,9 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
         <CreditChannel channel="sms" icon={Smartphone} label="SMS" balance={credits.sms} packs={bundles.filter((p) => p.channel === "sms")} />
         <CreditChannel channel="email" icon={Mail} label="Email" balance={credits.email} packs={bundles.filter((p) => p.channel === "email")} />
         <CreditChannel channel="video" icon={Video} label="LivePhila" balance={credits.video} used={videoUsed} packs={bundles.filter((p) => p.channel === "video")} note="Secure video minutes. A completed online or hybrid session uses its booked length." />
+        {voiceOn && (
+          <CreditChannel channel="voice" icon={PhoneCall} label="VoicePhila" balance={credits.voice} used={voiceUsed} packs={bundles.filter((p) => p.channel === "voice")} note="Phone-call minutes. A bridged call to a client is measured by the carrier and billed per started minute." />
+        )}
       </div>
 
       {/* AI spend */}
@@ -150,7 +160,7 @@ function CreditChannel({ channel, icon: Icon, label, balance, used, packs, note 
   const unit = CREDIT_UNIT[channel];
   return (
     <Card>
-      <CardHead title={channel === "video" ? label : `${label} credits`} action={<Icon className="size-4 text-text-3" strokeWidth={2} aria-hidden />} />
+      <CardHead title={channel === "video" || channel === "voice" ? label : `${label} credits`} action={<Icon className="size-4 text-text-3" strokeWidth={2} aria-hidden />} />
       <div className="space-y-3 px-[17px] pb-[17px]">
         <div className="flex items-baseline gap-2">
           <span className={`text-[30px] font-[740] tabular-nums ${low ? "text-warn" : "text-text"}`}>{balance.toLocaleString()}</span>

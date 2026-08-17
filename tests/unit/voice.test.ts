@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { billedMinutes } from "@/lib/voice/billing";
+import { toE164 } from "@/lib/voice/phone";
 import { createHmac } from "node:crypto";
 import { twilioSignature } from "@/lib/voice/twilio";
 
@@ -21,6 +22,29 @@ describe("billedMinutes (Phase 33.5)", () => {
   it("honours a custom increment", () => {
     expect(billedMinutes(10, 30)).toBe(0.5); // 30s increment
     expect(billedMinutes(31, 30)).toBe(1);
+  });
+});
+
+describe("toE164 (Phase 33.4)", () => {
+  it("normalises SA national numbers the way people type them", () => {
+    expect(toE164("082 123 4567")).toBe("+27821234567");
+    expect(toE164("0821234567")).toBe("+27821234567");
+    expect(toE164("011-555-0100")).toBe("+27115550100");
+  });
+
+  it("passes through international formats", () => {
+    expect(toE164("+27 82 123 4567")).toBe("+27821234567");
+    expect(toE164("+44 20 7946 0958")).toBe("+442079460958");
+    expect(toE164("0027821234567")).toBe("+27821234567");
+  });
+
+  it("refuses what can't be dialled - the caller shows an honest reason", () => {
+    expect(toE164(null)).toBeNull();
+    expect(toE164(undefined)).toBeNull();
+    expect(toE164("")).toBeNull();
+    expect(toE164("ask reception")).toBeNull();
+    expect(toE164("12345")).toBeNull();
+    expect(toE164("082 123")).toBeNull(); // too short to be an SA number
   });
 });
 

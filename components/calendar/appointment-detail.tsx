@@ -26,6 +26,7 @@ import { SearchSelect } from "@/components/ui/search-select";
 import type { SchedulingOptions } from "@/components/scheduling/create-appointment-modal";
 import { getAppointmentInvoice, generateAppointmentInvoice } from "@/app/hub/invoicing/actions";
 import { markProgress } from "@/app/app/sessions/[id]/actions";
+import { CallPanel } from "@/components/voice/call-panel";
 import { cn } from "@/lib/utils";
 
 type EditScope = "this" | "following";
@@ -410,6 +411,10 @@ export function AppointmentDetail({
               </Button>
             </div>
           )}
+
+          {/* 33.7 - VoicePhila: call the client on the shared masked number.
+              Renders nothing while the platform voice rail is off. */}
+          {canManage && appt.state !== "cancelled" && <CallPanel key={appt.id} appointmentId={appt.id} />}
 
           {/* Manage */}
           {canManage && (showEdit || showReschedule || showCancel) && (

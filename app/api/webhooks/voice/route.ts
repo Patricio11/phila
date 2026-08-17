@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { getDb } from "@/db/client";
-import { voiceCallLegs } from "@/db/schema";
+import { appointments, voiceCallLegs } from "@/db/schema";
 import { getVoiceConfig, adapterFor } from "@/lib/voice";
 import { billedMinutes } from "@/lib/voice/billing";
 import { logAccess } from "@/lib/audit";
@@ -61,6 +61,17 @@ export async function POST(req: Request) {
       target: `voice_leg:${leg.id}`,
       reason: `call_billed_${mins}min`,
     });
+
+    // 33.7 - a VoicePhila call auto-records the "Held by phone" marker with
+    // the SYSTEM-measured total (every completed leg summed). The manual entry
+    // stays for calls made outside the platform; this one is authoritative.
+    const [{ total } = { total: 0 }] = await db
+      .select({ total: sql<number>`coalesce(sum(${voiceCallLegs.billedMin}), 0)::int` })
+      .from(voiceCallLegs)
+      .where(and(eq(voiceCallLegs.appointmentId, leg.appointmentId), eq(voiceCallLegs.orgId, leg.orgId), eq(voiceCallLegs.status, "completed")));
+    await db.update(appointments)
+      .set({ heldByPhone: true, callDurationMin: total })
+      .where(and(eq(appointments.id, leg.appointmentId), eq(appointments.orgId, leg.orgId)));
   }
 
   return NextResponse.json({ ok: true });

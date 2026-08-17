@@ -72,58 +72,58 @@ the identical interface in staging. ✅ *(2026-08-17 - `lib/voice/` adapter + `v
 
 ## Task 33.4: Bridged call engine - counsellor → client, shared number, masked
 *The core. One direction, shared caller-ID, redial-friendly, system-measured.*
-- [ ] From the session, **"Call client"** dials the **counsellor first**; on answer, dials the **client**;
+- [x] From the session, **"Call client"** dials the **counsellor first**; on answer, dials the **client**;
   **bridges** them. Both see the **shared platform number** (number masking - client never sees the
   counsellor's real number, and vice-versa; ties to Rule #1).
-- [ ] **Drop & redial:** if a call drops mid-conversation, the counsellor can **call again**; **each
+- [x] **Drop & redial:** if a call drops mid-conversation, the counsellor can **call again**; **each
   attempt is its own logged leg** with its own duration and status. The session keeps the **list of
   attempts** + a **running total connected time**.
-- [ ] Each leg's **CDR** (initiated, answered, ended, duration, status) is captured from the webhook and
+- [x] Each leg's **CDR** (initiated, answered, ended, duration, status) is captured from the webhook and
   stored against the **session** - the authoritative, system-measured record (never self-reported).
-- [ ] **No audio recording** - durations and attempt metadata only.
+- [x] **No audio recording** - durations and attempt metadata only.
 
 **Done when:** a counsellor bridges to a client on the shared number; a dropped call can be redialled;
-and the session shows every attempt plus an authoritative **total minutes**.
+and the session shows every attempt plus an authoritative **total minutes**. ✅ *(2026-08-17 - startClientCall + the call panel; proven end-to-end through the mock adapter)*
 
 ## Task 33.5: Metering - minutes credit, decremented, hard-capped
 *Voice credit = minutes. Never a silent failure (Cost rule #11).*
-- [ ] Each **completed leg** decrements the org's **minute balance** by its billed duration, **rounded up
+- [x] Each **completed leg** decrements the org's **minute balance** by its billed duration, **rounded up
   to the next 60 seconds** by default (telephony standard; the increment is an admin setting).
-- [ ] **Balance + low-balance nudge + hard stop:** a call **won't place** with a zero/insufficient balance
+- [x] **Balance + low-balance nudge + hard stop:** a call **won't place** with a zero/insufficient balance
   - the counsellor sees an honest "this org is out of call minutes - top up," never a broken call.
   Reuse `notifyIfLowCredit` (bell + email, once per crossing) with a `voice` threshold - the rail
   exists; VoicePhila only registers its channel.
-- [ ] **Idempotent ledger** - one ledger entry per leg keyed off the call/leg id, so a webhook retry can't
+- [x] **Idempotent ledger** - one ledger entry per leg keyed off the call/leg id, so a webhook retry can't
   double-charge. Platform-fronted variable cost; the **USD-provider → ZAR-bundle forex spread** is built
   into the bundle price at 33.1.
 
 **Done when:** calls decrement minutes correctly (rounded), the balance blocks at zero with an honest
-nudge, and no webhook retry ever double-charges.
+nudge, and no webhook retry ever double-charges. ✅ *(2026-08-17 - 430 s -> 8 min billed, zero balance refuses before dialling, idempotent ledger proven)*
 
 ## Task 33.6: Org side - buy & manage voice minutes (where SMS/Email credit lives)
 *Same place, same pattern the org already knows.*
-- [ ] In the org billing area next to SMS/Email credit: a **Voice minutes** card - current **balance**,
+- [x] In the org billing area next to SMS/Email credit: a **Voice minutes** card - current **balance**,
   **buy a bundle** (rendered from the 33.1 catalogue, e.g. "1000 minutes - R800"), **usage history**, and
   the low-balance nudge. Priced from the catalogue, never hardcoded.
-- [ ] Purchase flows through the org's existing **platform-billing** path (org → Phila), like SMS/Email top-ups.
+- [x] Purchase flows through the org's existing **platform-billing** path (org → Phila), like SMS/Email top-ups.
 
 **Done when:** an org sees its voice-minute balance and buys a bundle **at the admin-set price**, right
-alongside SMS and Email.
+alongside SMS and Email. ✅ *(2026-08-17 - the VoicePhila card + catalogue bundles on Billing & usage, visible only while the rail is on)*
 
 ## Task 33.7: In-session call experience
 *Calm, obvious, one tap - and the totals land on the record.*
-- [ ] A **"Call client"** action on the session with a call panel showing state - **dialling counsellor →
+- [x] A **"Call client"** action on the session with a call panel showing state - **dialling counsellor →
   dialling client → connected (live timer) → ended** - plus **redial**, and the running **attempts +
   total** for this session. A **blocked** state names the reason (no minutes / voice disabled / no client
   number).
-- [ ] The session's **total call time** appears on the session record and feeds billing + reporting
+- [x] The session's **total call time** appears on the session record and feeds billing + reporting
   (the same authoritative number, everywhere).
-- [ ] **Ties into "Held by phone" (feedback #6):** a VoicePhila call auto-records the phone marker
+- [x] **Ties into "Held by phone" (feedback #6):** a VoicePhila call auto-records the phone marker
   with the SYSTEM-measured duration - the manual after-the-fact entry stays for calls made outside
   the platform.
 
 **Done when:** a counsellor runs a full call from the session, sees live state + timer, redials on a drop,
-and the totals land on the session automatically.
+and the totals land on the session automatically. ✅ *(2026-08-17 - panel on the session editor + appointment modal; Held by phone auto-recorded with the system-measured minutes)*
 
 ## Task 33.8: Per-org dedicated number - paid add-on (modelled, deferred)
 *Shared number ships now; a per-org line is the next increment.*

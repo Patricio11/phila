@@ -1891,7 +1891,24 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
     low-credit bell + email, and audits as `system:voice`. Proven live: mock-mode config saved
     on the admin page; a 500-second completed leg billed 9 minutes (1000 -> 991), a webhook
     RETRY did not double-charge, and a wrong signature got 403. Dormant by default - no org
-    surface exists until 33.7. Original scope line: bridged counsellor-to-client phone calls on a shared masked number,
+    surface exists until 33.7.
+  - [x] **33.4-33.7 Bridged call engine + in-session panel + org Voice card** *(2026-08-17)*:
+    "Call client" now lives on the session (session editor + the appointment modal on every
+    calendar/dashboard surface) - it dials the COUNSELLOR first, then bridges the client, both
+    masked by the shared number; each attempt is its own logged leg with redial after a drop,
+    and the panel shows live state (dialling / ringing / connected), the attempts list, and the
+    system-measured running total. Honest hard stop BEFORE dialling: no dialable client number,
+    no counsellor number on the profile, or a zero minute balance names its reason - a broken
+    call can never place (`toE164` normalises SA numbers; garbage refuses). A completed call
+    AUTO-records "Held by phone" on the appointment with the carrier-measured total minutes -
+    the manual entry stays for calls made outside the platform. Org Billing gained the fourth
+    card: VoicePhila minutes (balance, used, low nudge) with bundles from the admin catalogue -
+    all of it appearing only once the platform voice rail is on. Proven live: Nomsa placed a
+    mock call from her session, the webhook completed it at 430 s -> billed 8 min (1000 -> 992),
+    the panel showed "7m 10s · billed 8 min" + total, the header wore "Held by phone · 8 min",
+    zero balance disabled Call again with the top-up reason, and Billing showed 750 min + the
+    R800 bundle. 292 unit tests green. Per-org dedicated number (33.8) stays deferred.
+    Original scope line: bridged counsellor-to-client phone calls on a shared masked number,
   system-measured minutes as the FOURTH credit channel (`voice` beside sms/email/video), Twilio
   first behind a swappable adapter so other providers can be switched on/off later; includes the
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).

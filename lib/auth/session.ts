@@ -1,6 +1,6 @@
 import "server-only";
 import { headers } from "next/headers";
-import { eq } from "drizzle-orm";
+import { and, eq, notInArray } from "drizzle-orm";
 import type { PlatformRole, TeamRole } from "@/lib/domain/enums";
 import { auth } from "@/lib/auth/better-auth";
 import { getDb } from "@/db/client";
@@ -58,7 +58,8 @@ export async function getCurrentPrincipal(): Promise<Principal | null> {
     })
     .from(orgMembers)
     .innerJoin(orgs, eq(orgMembers.orgId, orgs.id))
-    .where(eq(orgMembers.userId, u.id));
+    // Batch 4b - archived and (soft-)removed memberships grant no access.
+    .where(and(eq(orgMembers.userId, u.id), notInArray(orgMembers.status, ["archived", "removed"])));
 
   const memberships: OrgMembership[] = rows.map((r) => ({
     orgId: r.orgId,

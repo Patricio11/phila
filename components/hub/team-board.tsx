@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import {
-  UserPlus, Search, MoreHorizontal, SlidersHorizontal, Archive, ArchiveRestore,
+  UserPlus, Search, MoreHorizontal, SlidersHorizontal, Archive, ArchiveRestore, Trash2,
   Send, ArrowUpRight, Users,
 } from "lucide-react";
 import type { TeamMemberView, MemberStatus } from "@/lib/data-provider";
@@ -26,7 +26,7 @@ function joined(iso: string): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", month: "short", year: "numeric" }).format(new Date(iso));
 }
 
-type Tab = "active" | "invited" | "archived";
+type Tab = "active" | "invited" | "archived" | "removed";
 
 export function TeamBoard({ members, photoUserIds = [] }: {
   members: TeamMemberView[];
@@ -42,6 +42,7 @@ export function TeamBoard({ members, photoUserIds = [] }: {
     active: members.filter((m) => m.status === "active").length,
     invited: members.filter((m) => m.status === "invited").length,
     archived: members.filter((m) => m.status === "archived").length,
+    removed: members.filter((m) => m.status === "removed").length,
   }), [members]);
 
   // Supervisors available to assign, for the quick-manage dialog.
@@ -70,6 +71,7 @@ export function TeamBoard({ members, photoUserIds = [] }: {
     { key: "active", label: "Active", count: counts.active },
     { key: "invited", label: "Invited", count: counts.invited },
     { key: "archived", label: "Archived", count: counts.archived },
+    ...(counts.removed > 0 ? [{ key: "removed" as Tab, label: "Removed", count: counts.removed }] : []),
   ];
 
   return (
@@ -190,6 +192,7 @@ function StatusChip({ status }: { status: MemberStatus }) {
     active: { label: "Active", cls: "text-accent", dot: "bg-accent" },
     invited: { label: "Invited", cls: "text-warn", dot: "bg-warn" },
     archived: { label: "Archived", cls: "text-text-3", dot: "bg-text-3" },
+    removed: { label: "Removed", cls: "text-text-3", dot: "bg-danger" },
   };
   const s = map[status];
   return (
@@ -247,6 +250,16 @@ function RowMenu({ member: m, onManage, counsellorOptions }: { member: TeamMembe
     toast({ tone: "success", title: `${m.name.split(" ")[0]} restored`, description: "They can sign in again." });
   });
 
+  // Batch 4b - soft delete: the record stays (HPCSA), access stays revoked,
+  // the email frees up for another practice. Offered only AFTER archiving,
+  // because offboarding is where sessions and clients get handed over.
+  const softDelete = () => start(async () => {
+    const res = await setMemberStatus({ userId: m.userId, status: "removed" });
+    setOpen(false);
+    if (!res.ok) return toast({ tone: "error", title: res.error });
+    toast({ tone: "success", title: `${m.name.split(" ")[0]} removed`, description: "Their record is kept; restore any time from the Removed tab." });
+  });
+
   const resend = () => start(async () => {
     const res = await sendSetupLink({ userId: m.userId });
     setOpen(false);
@@ -274,8 +287,13 @@ function RowMenu({ member: m, onManage, counsellorOptions }: { member: TeamMembe
             <MenuButton icon={Send} onClick={resend} disabled={pending}>Resend invite</MenuButton>
           )}
           <div className="my-1 h-px bg-border" />
-          {m.status === "archived" ? (
-            <MenuButton icon={ArchiveRestore} onClick={restore} disabled={pending}>Restore access</MenuButton>
+          {m.status === "removed" ? (
+            <MenuButton icon={ArchiveRestore} onClick={restore} disabled={pending}>Restore member</MenuButton>
+          ) : m.status === "archived" ? (
+            <>
+              <MenuButton icon={ArchiveRestore} onClick={restore} disabled={pending}>Restore access</MenuButton>
+              <MenuButton icon={Trash2} onClick={softDelete} disabled={pending} tone="danger">Delete member</MenuButton>
+            </>
           ) : (
             <MenuButton icon={Archive} onClick={archive} disabled={pending} tone="danger">
               {m.status === "invited" ? "Revoke invite" : "Archive member"}
@@ -326,6 +344,7 @@ function EmptyTab({ tab, onInvite }: { tab: Tab; onInvite: () => void }) {
     active: { title: "No active members", body: "Invite your first colleague to get started." },
     invited: { title: "No pending invites", body: "Everyone you've invited has joined." },
     archived: { title: "No archived members", body: "People you archive will appear here  their history stays intact." },
+    removed: { title: "Nobody removed", body: "Soft-deleted members land here - their records stay, and you can restore them." },
   };
   const c = copy[tab];
   return (

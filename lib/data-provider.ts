@@ -355,7 +355,7 @@ export interface OrgClientRow {
   status: CaseloadStatus;
 }
 
-export type MemberStatus = "active" | "invited" | "archived";
+export type MemberStatus = "active" | "invited" | "archived" | "removed";
 export interface TeamMemberView {
   userId: string;
   name: string;

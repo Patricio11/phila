@@ -76,12 +76,21 @@ export async function saveTeamMember(
 
 /** Archive (revoke access) or restore a member  access is gated on membership status. */
 export async function setMemberStatus(
-  raw: { userId: string; status: "active" | "archived" },
+  raw: { userId: string; status: "active" | "archived" | "removed" },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { principal, membership } = await requireHub();
   if (!raw.userId) return { ok: false, error: "Invalid member." };
   if (raw.userId === principal.userId) return { ok: false, error: "You can't change your own access here." };
-  if (raw.status !== "active" && raw.status !== "archived") return { ok: false, error: "Invalid status." };
+  if (raw.status !== "active" && raw.status !== "archived" && raw.status !== "removed") return { ok: false, error: "Invalid status." };
+  // Batch 4b - soft delete goes THROUGH archive: offboarding (workload
+  // transfer) happens there, so removal never strands sessions or clients.
+  if (raw.status === "removed") {
+    const provider0 = await getDataProvider();
+    const team = await provider0.listTeam(membership.orgId);
+    const target = team.find((t) => t.userId === raw.userId);
+    if (!target) return { ok: false, error: "That member could not be found." };
+    if (target.status !== "archived") return { ok: false, error: "Archive the member first - offboarding hands their sessions and clients over properly. Then delete." };
+  }
 
   const provider = await getDataProvider();
   const res = await provider.setMemberStatus(membership.orgId, raw.userId, raw.status);

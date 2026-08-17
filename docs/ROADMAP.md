@@ -1818,6 +1818,16 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   membership rows by design, which is exactly what made the first version of the guard blind.
   Two pre-existing duplicates surfaced to the practice to resolve by archiving.
 
+- [x] **Team members: soft delete** *(2026-08-17, batch 4b)*: archived members gain a
+  **Delete member** action - a SOFT delete: the org_members row stays (status "removed",
+  HPCSA records intact), access stays revoked, and the email frees up for another practice
+  (the 4a rule reads active/invited only). Deletion is deliberately offered only AFTER
+  archiving, because offboarding is where sessions and clients get handed over - deleting an
+  active member outright is refused with that explanation. A **Removed** tab (appears only
+  when non-empty) lists them with **Restore member**. Also closed en route: the session's
+  membership query never filtered status, so ARCHIVED members' memberships still resolved at
+  sign-in - archived and removed memberships now grant no access.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

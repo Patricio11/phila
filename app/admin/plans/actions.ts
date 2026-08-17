@@ -59,3 +59,51 @@ export async function savePlan(raw: z.infer<typeof planInput>): Promise<{ ok: tr
   revalidatePath("/"); // landing pricing
   return { ok: true };
 }
+
+/**
+ * Phase 33.1 - the credit catalogue: bundle prices are DATA, edited here by
+ * the super-admin, never constants. Every change audited.
+ */
+const bundleInput = z.object({
+  id: z.string().trim().min(2).max(60).regex(/^[a-z0-9_]+$/, "Lowercase letters, digits and underscores."),
+  channel: z.enum(["sms", "email", "video", "voice"]),
+  name: z.string().trim().min(2).max(60),
+  credits: z.number().int().min(1).max(10_000_000),
+  priceCents: z.number().int().min(100).max(100_000_000),
+  popular: z.boolean().default(false),
+  sort: z.number().int().min(0).max(999).default(0),
+});
+export async function saveCreditBundle(raw: z.infer<typeof bundleInput>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const principal = await requireSuperAdmin();
+  const parsed = bundleInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the bundle." };
+  const { saveBundleDb } = await import("@/db/queries/credit-bundles");
+  await saveBundleDb(parsed.data);
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null },
+    orgId: null,
+    target: `credit_bundle:${parsed.data.id}`,
+    reason: `bundle_saved_${parsed.data.credits}@${parsed.data.priceCents}`,
+  });
+  revalidatePath("/admin/plans");
+  revalidatePath("/hub/billing");
+  return { ok: true };
+}
+
+export async function setCreditBundleActive(raw: { id: string; active: boolean }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const principal = await requireSuperAdmin();
+  if (!raw?.id) return { ok: false, error: "Invalid bundle." };
+  const { setBundleActiveDb } = await import("@/db/queries/credit-bundles");
+  await setBundleActiveDb(raw.id, Boolean(raw.active));
+  await logAccess({
+    action: "admin.action",
+    actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null },
+    orgId: null,
+    target: `credit_bundle:${raw.id}`,
+    reason: raw.active ? "bundle_activated" : "bundle_deactivated",
+  });
+  revalidatePath("/admin/plans");
+  revalidatePath("/hub/billing");
+  return { ok: true };
+}

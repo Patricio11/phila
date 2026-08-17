@@ -12,7 +12,7 @@ import { settlePayment } from "@/db/queries/payments";
 import { getDataProvider } from "@/lib/data-provider";
 import { trialDaysLeft } from "@/lib/billing/plans";
 import { now as clockNow } from "@/lib/clock";
-import { CREDIT_PACKS, LOW_THRESHOLDS, CREDIT_UNIT, CHANNEL_LABEL, type CreditChannel as CreditChannelKey } from "@/lib/payments/packs";
+import { LOW_THRESHOLDS, CREDIT_UNIT, CHANNEL_LABEL, type CreditPack, type CreditChannel as CreditChannelKey } from "@/lib/payments/packs";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Billing & usage" };
@@ -41,6 +41,10 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
   ]);
 
   const low = (["sms", "email", "video"] as const).filter((c) => credits[c] < LOW_THRESHOLDS[c]);
+  // Phase 33.1 - bundles come from the admin catalogue, never constants.
+  // VoicePhila bundles stay hidden from orgs until the voice rail ships.
+  const { listActiveBundlesDb } = await import("@/db/queries/credit-bundles");
+  const bundles = (await listActiveBundlesDb()).filter((b) => b.channel !== "voice");
   // Batch 4d - LivePhila usage: total minutes ever consumed by completed sessions.
   const { videoMinutesUsedDb } = await import("@/db/queries/messaging");
   const videoUsed = await videoMinutesUsedDb(membership.orgId);
@@ -73,9 +77,9 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
 
       {/* Credit balances + packs */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <CreditChannel channel="sms" icon={Smartphone} label="SMS" balance={credits.sms} packs={CREDIT_PACKS.filter((p) => p.channel === "sms")} />
-        <CreditChannel channel="email" icon={Mail} label="Email" balance={credits.email} packs={CREDIT_PACKS.filter((p) => p.channel === "email")} />
-        <CreditChannel channel="video" icon={Video} label="LivePhila" balance={credits.video} used={videoUsed} packs={CREDIT_PACKS.filter((p) => p.channel === "video")} note="Secure video minutes. A completed online or hybrid session uses its booked length." />
+        <CreditChannel channel="sms" icon={Smartphone} label="SMS" balance={credits.sms} packs={bundles.filter((p) => p.channel === "sms")} />
+        <CreditChannel channel="email" icon={Mail} label="Email" balance={credits.email} packs={bundles.filter((p) => p.channel === "email")} />
+        <CreditChannel channel="video" icon={Video} label="LivePhila" balance={credits.video} used={videoUsed} packs={bundles.filter((p) => p.channel === "video")} note="Secure video minutes. A completed online or hybrid session uses its booked length." />
       </div>
 
       {/* AI spend */}
@@ -141,7 +145,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
   );
 }
 
-function CreditChannel({ channel, icon: Icon, label, balance, used, packs, note }: { channel: CreditChannelKey; icon: typeof Mail; label: string; balance: number; used?: number; packs: typeof CREDIT_PACKS; note?: string }) {
+function CreditChannel({ channel, icon: Icon, label, balance, used, packs, note }: { channel: CreditChannelKey; icon: typeof Mail; label: string; balance: number; used?: number; packs: CreditPack[]; note?: string }) {
   const low = balance < LOW_THRESHOLDS[channel];
   const unit = CREDIT_UNIT[channel];
   return (

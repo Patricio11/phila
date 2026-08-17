@@ -540,6 +540,13 @@
       "when": 1786734574335,
       "tag": "0076_tidy_blonde_phantom",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1786961976901,
+      "tag": "0077_sleepy_mister_sinister",
+      "breakpoints": true
     }
   ]
 }

@@ -1869,8 +1869,15 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   org's admins ("500 LivePhila minutes added - new balance ..."). Pricing work parked by
   agreement: 17-day free trial + two more packages to be designed with the practice.
 
-- [ ] **Phase 33 - VoicePhila** *(planned, `docs/PHASE_33_VOICE_CALLS_PLAN.md` - renumbered from
-  32 and synced 2026-08-17)*: bridged counsellor-to-client phone calls on a shared masked number,
+- [ ] **Phase 33 - VoicePhila** *(in progress - `docs/PHASE_33_VOICE_CALLS_PLAN.md`)*:
+  - [x] **33.1 Credit catalogue** *(2026-08-17)*: every purchasable bundle (SMS / Email /
+    LivePhila / VoicePhila) is now a DB row the super-admin edits on Plans & billing - name,
+    quantity, price, active/withdrawn, popular - with zero hardcoded prices anywhere. Org
+    Billing and the purchase authority (startCreditPurchase) read the catalogue; migration 0077
+    seeds the old constants plus the VoicePhila starter (1,000 min = R800, editable data).
+    VoicePhila bundles stay hidden from orgs until the voice rail ships. Proven live: admin
+    edited LivePhila R950 -> R990, org Billing showed R990 immediately, change audited, price
+    restored. Original scope line: bridged counsellor-to-client phone calls on a shared masked number,
   system-measured minutes as the FOURTH credit channel (`voice` beside sms/email/video), Twilio
   first behind a swappable adapter so other providers can be switched on/off later; includes the
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).

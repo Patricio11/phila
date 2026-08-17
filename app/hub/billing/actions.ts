@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
 import { packById } from "@/lib/payments/packs";
+import { activeBundleByIdDb } from "@/db/queries/credit-bundles";
 import { paystackConfigured, initTransaction, verifyTransaction } from "@/lib/payments/paystack";
 import { createPayment, settlePayment } from "@/db/queries/payments";
 
@@ -22,7 +23,11 @@ export async function startCreditPurchase(
   const { principal, membership } = await requireHub();
   const parsed = z.object({ packId: z.string().min(1) }).safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid request" };
-  const pack = packById(parsed.data.packId);
+  // Phase 33.1 - the DB catalogue is the authority; the constant survives
+  // only for mock mode.
+  const pack = process.env.DATA_PROVIDER === "db"
+    ? await activeBundleByIdDb(parsed.data.packId)
+    : packById(parsed.data.packId);
   if (!pack) return { ok: false, error: "That pack isn't available." };
   if (!(await paystackConfigured())) return { ok: false, error: "Self-serve top-up isn't switched on yet  Phila can add credits for you in the meantime." };
 

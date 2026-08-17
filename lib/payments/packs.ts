@@ -1,9 +1,11 @@
 /**
- * Credit packs (Phase 15.1; LivePhila minutes in batch 4d). Prices in ZAR
- * cents. "Credits" are messages for sms/email and MINUTES for video - one
- * ledger, one purchase flow, one low-balance rail for all three.
+ * Credit channels (Phase 15.1; LivePhila 4d; VoicePhila Phase 33). "Credits"
+ * are messages for sms/email and MINUTES for video/voice - one ledger, one
+ * purchase flow, one low-balance rail for all four. Since Phase 33.1 the
+ * purchasable bundles + prices live in the DB catalogue (credit_bundles);
+ * CREDIT_PACKS below is only the historical seed (migration 0077).
  */
-export type CreditChannel = "sms" | "email" | "video";
+export type CreditChannel = "sms" | "email" | "video" | "voice";
 
 export interface CreditPack {
   id: string;
@@ -29,12 +31,12 @@ export const CREDIT_PACKS: CreditPack[] = [
 export const LOW_CREDIT_THRESHOLD = 25;
 
 /** Per-channel low mark: 25 messages, or ~10% of the LivePhila pack. */
-export const LOW_THRESHOLDS: Record<CreditChannel, number> = { sms: 25, email: 25, video: 2650 };
+export const LOW_THRESHOLDS: Record<CreditChannel, number> = { sms: 25, email: 25, video: 2650, voice: 100 };
 
 /** The human unit for a channel's credits. */
-export const CREDIT_UNIT: Record<CreditChannel, string> = { sms: "credits", email: "credits", video: "minutes" };
+export const CREDIT_UNIT: Record<CreditChannel, string> = { sms: "credits", email: "credits", video: "minutes", voice: "minutes" };
 
-export const CHANNEL_LABEL: Record<CreditChannel, string> = { sms: "SMS", email: "Email", video: "LivePhila" };
+export const CHANNEL_LABEL: Record<CreditChannel, string> = { sms: "SMS", email: "Email", video: "LivePhila", voice: "VoicePhila" };
 
 export function packById(id: string): CreditPack | undefined {
   return CREDIT_PACKS.find((p) => p.id === id);

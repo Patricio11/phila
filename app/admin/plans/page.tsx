@@ -2,6 +2,8 @@ import { requireSuperAdmin } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { getPlatformIntegrationStatus } from "@/db/queries/platform-integrations";
 import { PageHead } from "@/components/shell/page-head";
+import { CreditBundlesManager } from "@/components/admin/credit-bundles-manager";
+import { listAllBundlesDb } from "@/db/queries/credit-bundles";
 import { PlansManager } from "@/components/admin/plans-manager";
 import { LandingPricingToggle } from "@/components/admin/landing-pricing-toggle";
 
@@ -20,6 +22,7 @@ export default async function AdminPlansPage() {
     getPlatformIntegrationStatus("landing_pricing"),
   ]);
 
+  const bundles = await listAllBundlesDb();
   const mrr = plans.reduce((s, p) => s + p.mrrCents, 0);
   const subscribers = plans.reduce((s, p) => s + p.subscribers, 0);
 
@@ -44,6 +47,8 @@ export default async function AdminPlansPage() {
       <LandingPricingToggle initial={landingPricing.enabled} />
 
       <PlansManager initial={plans} />
+
+      <CreditBundlesManager initial={bundles} />
     </div>
   );
 }

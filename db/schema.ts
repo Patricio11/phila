@@ -754,6 +754,24 @@ export const orgAiSettings = pgTable("org_ai_settings", {
  * Phila's own Paystack for credit/subscription billing). Credentials are an
  * encrypted JSON blob. No org_id: platform-only, configured in /admin/integrations.
  */
+/**
+ * Phase 33.1 - the admin-managed credit catalogue. Every purchasable bundle
+ * (SMS / Email / LivePhila video / VoicePhila voice) is a ROW here - name,
+ * quantity, price - edited by the super-admin, never a constant in code.
+ * The old lib/payments/packs.ts CREDIT_PACKS list survives only as the seed.
+ */
+export const creditBundles = pgTable("credit_bundles", {
+  id: text("id").primaryKey(),
+  channel: text("channel").notNull(), // sms | email | video | voice
+  name: text("name").notNull(),
+  credits: integer("credits").notNull(), // messages, or minutes for video/voice
+  priceCents: integer("price_cents").notNull(),
+  active: boolean("active").default(true).notNull(),
+  popular: boolean("popular").default(false).notNull(),
+  sort: integer("sort").default(0).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const platformIntegrations = pgTable("platform_integrations", {
   key: text("key").primaryKey(), // paystack
   credentialsEnc: text("credentials_enc"),

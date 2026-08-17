@@ -135,11 +135,19 @@ export async function inviteMember(
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the details." };
 
   const provider = await getDataProvider();
-  const { existing } = await provider.inviteTeamMember(
-    membership.orgId,
-    { name: parsed.data.name, email: parsed.data.email, teamRole: parsed.data.teamRole },
-    new Date().toISOString(),
-  );
+  let existing: boolean;
+  try {
+    ({ existing } = await provider.inviteTeamMember(
+      membership.orgId,
+      { name: parsed.data.name, email: parsed.data.email, teamRole: parsed.data.teamRole },
+      new Date().toISOString(),
+    ));
+  } catch (e) {
+    if (e instanceof Error && /EMAIL_ACTIVE_ELSEWHERE/.test(e.message)) {
+      return { ok: false, error: "That email already belongs to an active team member at another practice. They must be archived or removed there before this email can be used here." };
+    }
+    throw e;
+  }
 
   // Email the new member their set-password / activation link straight away.
   await emailSetupLink(parsed.data.email);

@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, gte, isNull, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, ne, sql } from "drizzle-orm";
 import { hashPassword } from "better-auth/crypto";
 import { activeDb, runForOrg } from "@/lib/db/scoped";
 import { getDb } from "@/db/client";
@@ -105,6 +105,17 @@ export async function inviteMemberDb(
     const db = activeDb();
     // user + account are not RLS-scoped, so these read/writes work under phila_app.
     const [found] = await db.select({ id: user.id }).from(user).where(eq(user.email, input.email)).limit(1);
+    // Batch 4a - one practice at a time. An email that already belongs to an
+    // ACTIVE (or invited) member of ANOTHER practice is refused - otherwise the
+    // same login quietly serves two orgs and lands in whichever came first.
+    // Archive/remove them at the other practice and the email frees up.
+    if (found) {
+      // Owner connection on purpose: RLS scopes activeDb() to THIS org, which
+      // would hide exactly the other-org membership this check must see.
+      const [elsewhere] = await getDb().select({ orgId: orgMembers.orgId }).from(orgMembers)
+        .where(and(eq(orgMembers.userId, found.id), ne(orgMembers.orgId, orgId), inArray(orgMembers.status, ["active", "invited"]))).limit(1);
+      if (elsewhere) throw new Error("EMAIL_ACTIVE_ELSEWHERE");
+    }
     const userId = found?.id ?? rid("user");
     if (!found) {
       // Email is treated as verified: the admin vouches for them, and the invite link

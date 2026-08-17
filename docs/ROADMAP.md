@@ -1807,6 +1807,17 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   org bootstraps itself. Proven live with Thrive (zero rooms, zero sites); the full page for
   orgs WITH rooms is unchanged.
 
+- [x] **One practice per email** *(2026-08-17, batch 4a)*: inviting a team member whose email
+  already had an account silently LINKED that existing login - so the same person became an
+  active counsellor at two practices at once, and signing in landed them in whichever org came
+  first (the practice hit this creating Bophilo counsellors with emails already used at the
+  first org). The invite path now refuses an email that belongs to an ACTIVE or invited member
+  of another practice - "They must be archived or removed there before this email can be used
+  here." - and archiving at the old practice frees the email. Subtle implementation note: the
+  cross-org lookup must run on the OWNER connection - the RLS-scoped one can't see other orgs'
+  membership rows by design, which is exactly what made the first version of the guard blind.
+  Two pre-existing duplicates surfaced to the practice to resolve by archiving.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

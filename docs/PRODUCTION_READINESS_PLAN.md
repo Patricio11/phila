@@ -313,7 +313,9 @@ shown on signup (no picker on the form  too much friction). Plan catalogue is **
       verifies before sign-in, with a branded email + resend.
 - [x] **WhatsApp webhook signature.** POST now reads the raw body, routes by `phone_number_id`, and verifies
       Meta's `X-Hub-Signature-256` HMAC-SHA256 against the org's app secret (constant-time) before acting;
-      rejects with 401 otherwise (`app/api/webhooks/whatsapp/route.ts`).
+      rejects with 401 otherwise (`app/api/webhooks/whatsapp/route.ts`). *Phase 34.3 (2026-08-18):* health
+      events routed by display phone; `processed_events` idempotency; delivery states never regress;
+      Meta error reasons captured; a handler failure now answers 500 so Meta retries.
 - [x] **Video join links** (W2 batch 3). `signJoin`/`verifyJoin`/`videoJoinPath` now bind the token to the
       appointment's **start time**  which is both the anti-forgery signature and a **nonce**: a reschedule
       changes `startsAt` and invalidates every old link. `verifyJoin` also enforces an **expiry window**

@@ -101,3 +101,32 @@ number is a named constant - an advisor correction is a one-line change):
   its clock or under hold, and every destruction is fail-strict audited (`dsar.erase`).
 - **DSAR exports and erasures are fail-strict audited** - if the audit line cannot be
   written, the action is refused (same guarantee as clinical-note reads).
+
+## Messaging - two kinds of principal (Phase 34.1)
+
+The team-chat actions (`app/app/messages/actions.ts`) resolve their caller through
+`lib/messaging/principal.ts`, which returns either a **staff** principal (an org membership - the
+usual `requireOrg` shape) or a **client** principal (`platformRole = client` + the linked
+`user.client_id`, scoped to that client's org). The client rules live there and in the queries, never
+only in the UI: a client may only send into THEIR practice thread (`message_threads.kind = "client"`,
+`client_id = me`), never start a thread, never address a person, never attach; a direct staff thread
+refuses a client login; opening the client's Messages page logs `pii.read`. Practice-side membership
+of a client thread is derived by role / caseload (`ensureClientThreadMembershipsDb`) and self-heals -
+a removed team member simply stops qualifying.
+
+## RLS - tables added since Phase 31
+
+Org-scoped (policy `org_isolation` on `org_id`, applied by `npm run db:rls`): `credit_bundles` is
+platform-wide (no org), `voice_call_legs` (org), `team_message_reactions` (org),
+`whatsapp_number_health` (org), `dead_letters` (org). `processed_events` (webhook idempotency) and
+`user_presence` (heartbeat) carry no org id and are read / written only through the owner connection
+by webhooks and server actions.
+
+## Webhooks - hardening notes (Phase 33 / 34)
+
+- `/api/webhooks/voice` (VoicePhila): X-Twilio-Signature (HMAC-SHA1) verified per request; unknown
+  legs acknowledged and ignored; billing is idempotent per leg (`voice_leg_<id>` ledger key).
+- `/api/webhooks/whatsapp`: raw-body HMAC-SHA256 against the org's app secret (routed by
+  `phone_number_id`, or by display phone for Meta's health events); every message / status / health
+  event is claimed once in `processed_events` before acting; delivery states never regress; a real
+  handler failure answers **500** (Meta retries; idempotency makes the retry safe).

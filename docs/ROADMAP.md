@@ -1886,7 +1886,7 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   on Nomsa's header live ("you, Thandeka, Aisha"), Nomsa left, DB + audit matched; the picker
   fits at 360 px.
 
-- [ ] **Phase 33 - VoicePhila** *(in progress - `docs/PHASE_33_VOICE_CALLS_PLAN.md`)*:
+- [x] **Phase 33 - VoicePhila** ✅ *(2026-08-18 - 33.1-33.7 shipped, 33.8 per-org number deferred; `docs/completed/PHASE_33_COMPLETE.md`, plan `docs/PHASE_33_VOICE_CALLS_PLAN.md`)*:
   - [x] **33.1 Credit catalogue** *(2026-08-17)*: every purchasable bundle (SMS / Email /
     LivePhila / VoicePhila) is now a DB row the super-admin edits on Plans & billing - name,
     quantity, price, active/withdrawn, popular - with zero hardcoded prices anywhere. Org
@@ -1957,7 +1957,8 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   into wrapping pills (all six sections visible at once, a status dot per pill) and the sub-tabs
   wrap too - nothing to swipe for, nothing scrolls sideways at page level (proven at 360 + 390 px). Old `SettingsTabs` removed.
 
-- [ ] **Phase 34 - Client messaging + the WhatsApp nudge + WhatsApp rail v2** *(planned 2026-08-18 -
+- [x] **Phase 34 - Client messaging + the WhatsApp nudge + WhatsApp rail v2** ✅ core *(2026-08-18 - 34.1-34.5
+  shipped; deferred bits listed in the plan; `docs/completed/PHASE_34_COMPLETE.md`, plan
   `docs/PHASE_34_CLIENT_MESSAGING_WHATSAPP_PLAN.md`)*: practice ↔ client conversations inside Phila
   (the practice speaks first; the client's Messages menu appears only then; reply but never start;
   text + emoji only), a presence-aware "X sent you a message on Phila - open it" nudge over the org's

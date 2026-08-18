@@ -36,6 +36,21 @@ data, never Masizakhe's.
   **`/f/s_feedback_masizakhe`** (a two-pane themed page). Per-client fill links look like `/f/<token>`; a signed-in
   client sees their assigned forms at **`/me/forms`**.
 
+## Messages (batches 4g / 4i · Phase 34)
+- **Team chat** (`/hub/messages`, `/app/messages`): emoji picker, reactions, reply-to, group profile (members,
+  rename / add / remove / leave - the creator or an org admin manages), a **full-page** toggle on the list and
+  thread headers. Two seeded groups: "The Counseller" (Thabo created it) and "June Interns 2026" (Thandeka).
+- **Client conversations**: as **Thandeka** open **Lerato Mahlangu** → **Message**; Lerato's `/me` then grows a
+  **Messages** menu (she can reply, never start). Nomsa (her counsellor) and Lindiwe (front desk) see the same
+  thread. Anyone offline gets ONE "X sent you a message on Phila" alert on their preferred channel (honestly
+  `Dormant` on Billing → Recent messages while BulkSMS isn't configured); online = bell only.
+
+## VoicePhila (Phase 33)
+- The voice rail sits in **mock** mode (super admin → Integrations → VoicePhila · Twilio). On any scheduled
+  session (session editor or the appointment modal) **Call client** places a mock leg; a webhook POST to
+  `/api/webhooks/voice` with `x-twilio-signature: mock-secret` completes it and bills the minutes. Nomsa's
+  team profile carries a dialable number; give a client an SA number to see the button arm.
+
 ## Notes
 - These are **development credentials** for the seeded demo org. They are not for production; real users set
   their own passwords via sign-up / invite activation.

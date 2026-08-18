@@ -92,6 +92,16 @@ everything **seeded** (no mock at runtime). Per-phase records live in `docs/comp
   print-to-PDF funder report pack, waitlist auto-fill, **WhatsApp-first comms** (the free 24-hour service
   window  free-form in-window, approved template out-of-window; BYO Meta creds), and the client portal's
   reschedule/cancel + pay-via-pay-link. See `docs/PRODUCTION_READINESS_PLAN.md`.
+- ✅ **Feedback batches 2m-4i + Phases 31-34 (Jul-Aug 2026).** Compliance & DSAR (31); booking languages
+  (32.0); **LivePhila** video minutes as a credit rail (batch 4d-4f) and the super-admin **credit catalogue**
+  (zero hardcoded prices); **VoicePhila** (33) - bridged, credit-metered phone calls from the session over a
+  swappable Twilio adapter (mock/live), auto "Held by phone"; the **Messages upgrade** (4g: emoji, reactions,
+  replies, group profile) + **client conversations** and the presence-aware "you have a message on Phila"
+  alert (34.1-34.2); **WhatsApp rail v2** (number health → throttle/pause/banner, retry + dead letters,
+  webhook idempotency, never-regress statuses) + Settings → Integrations (34.3-34.5); the **settings shell**
+  (4h) and **full page** on Messages / calendar / Documents (4i). Migrations through 0082; 308 unit tests.
+  Every batch proven live on a production build - see `docs/ROADMAP.md`, `docs/SMOKE_TEST.md`,
+  `docs/completed/PHASE_33_COMPLETE.md`, `docs/completed/PHASE_34_COMPLETE.md`.
 
 ## Getting started
 
@@ -117,6 +127,8 @@ under `/admin/integrations`  encrypted at rest, with Test-connection buttons; ne
 | `npm run lint` | ESLint. |
 | `npm run format` | Prettier. |
 | `npm run db:*` | Drizzle Kit (`generate` / `migrate` / `push` / `studio`)  **Part B / Phase 10**. |
+| `npm run db:rls` / `npm run db:constraints` | Re-apply the RLS policies (`db/rls.sql`) / the scheduling exclusion constraints (`db/scheduling.sql`) after a new org-scoped table or constraint lands. |
+| `npx vitest run` | The unit / integration suite (308 at 2026-08-18). |
 
 ## Environment
 

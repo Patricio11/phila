@@ -511,7 +511,7 @@ Sign in as **ops@philasa.com**.
 
 - ☐ `npx tsc --noEmit` clean
 - ☐ `npm run lint` clean
-- ☐ `npx vitest run`  all green (202 unit/integration)
+- ☐ `npx vitest run`  all green (**308** unit/integration at 2026-08-18)
 - ☐ `npm run build` clean, then `npm run start`  the paths above still work on the production build
 - ☐ Dark mode looks right across Hub, the public site, and the funder portal
 - ☐ Mobile (360 px): no horizontal scroll on `/o/masizakhe`, `/hub/insights`, `/funder`

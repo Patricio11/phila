@@ -7,7 +7,10 @@ self-reported). Sold to orgs as **prepaid minute credit**, configured by the sup
 prices)**, dormant-by-default, and provider-swappable behind an adapter. Start on a **shared number**;
 a per-org number is a later paid add-on.*
 
-> **Status:** ⏳ not started. Plan doc. (Renumbered from 32 - the language plan holds Phase 32.)
+> **Status:** ✅ **shipped 2026-08-18** - 33.1-33.7 delivered and proven live (see
+> `docs/completed/PHASE_33_COMPLETE.md`); 33.8 (per-org dedicated number) deferred as a later paid
+> add-on. The rail sits in **mock** on the shared DB until live Twilio credentials are pasted in.
+> (Renumbered from 32 - the language plan holds Phase 32.)
 > **Name:** **VoicePhila** - voice sibling of **LivePhila** (video). One product family:
 > LivePhila carries the session by video, VoicePhila carries it by phone.
 > **Reuses what you already have (updated 2026-08-17):** the credit model now carries THREE

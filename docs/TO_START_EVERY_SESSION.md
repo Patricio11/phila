@@ -288,11 +288,41 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
   end); one practice per email + team soft delete; forms: "Other" grows a please-specify input +
   responses download as PDF; **LivePhila** - video minutes as the third credit rail (R950/26,500
   min pack, completion-metered, low/empty crossings bell + EMAIL org admins, super-admin cash
-  grants, no plan-promised minutes). Every batch proven live on a production build; 284 unit tests.
+  grants, no plan-promised minutes). Every batch proven live on a production build.
+- **Feedback batch era (4g-4i)** - ✅ **2026-08-18**. **4g Messages upgrade**: built-in emoji picker
+  (no library), reactions (live chips), reply-to quotes, the group profile panel (members, rename,
+  add / remove, leave; creator or org admin manage; live `thread_updated` / `thread_removed`
+  broadcasts). **4h the settings shell**: `/hub/settings` is a two-level surface - a left rail of six
+  sections with live status chips + underlined sub-tabs, `?tab=&sub=` deep links, every panel kept
+  mounted; on a phone the pills wrap so every section is visible (no sideways swipe). **4i full page**:
+  a reusable `FullPage` layer (z-70, shell covered, dialogs/toasts still on top, Esc/Exit restores)
+  on Messages (hub / app / client space), the calendar and Documents.
 - **Phase 32** (languages) - in progress per `PHASE_32_LANGUAGE_PLAN.md` (32.0 shipped: booking
   language step + counsellor spoken languages).
-- **Phase 33** (**VoicePhila** - bridged voice calls, credit-metered) - ⏳ planned:
-  `PHASE_33_VOICE_CALLS_PLAN.md` (renumbered from 32; Twilio first behind a swappable adapter).
+- **Phase 33** (**VoicePhila** - bridged voice calls, credit-metered) - ✅ **2026-08-18** (33.1-33.7;
+  33.8 per-org number deferred). `docs/completed/PHASE_33_COMPLETE.md`. Credit catalogue (`credit_bundles`,
+  zero hardcoded prices), the admin Twilio rail (off / mock / live) behind `lib/voice/` (swappable
+  adapter), `voice_call_legs` + the signature-verified, idempotent metering webhook, "Call client" on
+  the session + appointment modal (counsellor dialled first, bridged, masked, redial, honest hard stop,
+  minutes admin-only), auto "Held by phone", the org VoicePhila card. Rail currently in **mock** on the
+  shared DB - live Twilio creds still to be pasted.
+- **Phase 34** (**client messaging + the WhatsApp nudge + WhatsApp rail v2**) - ✅ core **2026-08-18**
+  (34.1-34.5). `docs/completed/PHASE_34_COMPLETE.md` · plan `PHASE_34_CLIENT_MESSAGING_WHATSAPP_PLAN.md`.
+  Practice ↔ client conversations (the practice speaks first; the client's Messages menu appears only
+  then; reply but never start / attach / manage; `message_threads.kind = "client"`), server-side
+  presence (heartbeat, online < 2 min) + the "X sent you a message on Phila - open it" alert (bell once
+  per thread until read; ONE external nudge only when offline, via `deliver()` - the org's WhatsApp
+  number / SMS / email, never the body; Settings → Notifications → Message alerts), the WhatsApp rail
+  hardened with the Thola lessons (number health → throttle / pause / banner, jittered retry + masked
+  dead letters, `processed_events` idempotency, never-regress delivery states, 500-on-failure so Meta
+  retries) and Settings → Integrations → **Your connections**; ops sees every org's number health.
+  Deferred honestly in the plan: Clients tab door, DSAR inclusion of client threads, Meta template
+  modelling, inbound media labels, mirrored inbox (34.6), Embedded Signup (34.7).
+- **Numbers at 2026-08-18:** migrations through **0082**; **308** unit tests; every batch / task
+  proven live on `npm run build && npm run start` with screenshots.
+- **The messaging shell rule (34.1):** `lib/messaging/principal.ts` - messaging actions accept a
+  STAFF (org membership) or a CLIENT (their linked `user.client_id`) principal; the client rules are
+  enforced there, never in the UI alone.
 
 ---
 

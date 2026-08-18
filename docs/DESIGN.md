@@ -209,6 +209,22 @@ Every component below is in the approved prototype or is its direct extension, i
 - **EmptyState** (an invitation to act) · **Skeleton** (matches final dimensions) · **Toast** (calm,
   honest delivery states) · **Blocked state** (names the reason  consent missing / feature off / over
   cost-cap  and the next step).
+- **SettingsShell / SettingsPane** (batch 4h) - the two-level settings surface: a left rail of sections
+  (icon · label · one-line blurb · a live status chip · a sliding active marker) and, on the right, the
+  section header + underlined sub-tabs (hint line, optional badge). `?tab=&sub=` kept via replaceState;
+  every panel stays mounted (form state survives); the incoming panel rises. On a phone the rail becomes
+  wrapping pills (every section visible, a status dot each) and the sub-tabs wrap - nothing to swipe for.
+- **FullPage / FullPageToggle** (batch 4i) - a working surface that takes the whole viewport (portalled,
+  `z-70`: above the shell's nav 40 / sheet 50, below Dialog 80 / Toast 100): a slim bar (icon · title ·
+  live subtitle · Exit full page / Esc), body scroll locked, the sidebar / top bar / mobile tab bar simply
+  covered, the shell exactly restored on close. On Messages, the calendar and Documents; any surface can
+  grow into it. **Layer order (fixed):** mobile tab bar 40 · More sheet 50 · full page 70 · Dialog 80 ·
+  in-calendar move-confirm 90 · Toast 100.
+- **Messages** (batch 4g / Phase 34) - the two-pane chat: emoji picker (native glyphs, no library),
+  hover actions (react · reply · edit · delete), reaction chips under the bubble, reply quotes (tap to
+  jump), the thread profile behind the header (members, rename / add / remove / leave), the **Client**
+  chip + "can read this conversation" banner on practice ↔ client threads; the client's own view is the
+  single conversation, full width, reply-only, no attach.
 
 ---
 

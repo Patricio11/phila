@@ -25,7 +25,7 @@ export default async function MessagesPage() {
   return (
     <div className="rise space-y-5">
       <PageHead title="Messages" summary="Private messages with your team  the hub and your colleagues." />
-      <TeamMessagesView threads={threads} teammates={teammates} realtime={realtime} myUserId={principal.userId} orgId={membership.orgId} />
+      <TeamMessagesView threads={threads} teammates={teammates} realtime={realtime} myUserId={principal.userId} orgId={membership.orgId} myRole={membership.teamRole} myName={principal.name} />
     </div>
   );
 }

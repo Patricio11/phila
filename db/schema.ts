@@ -1032,7 +1032,22 @@ export const teamMessages = pgTable("team_messages", {
   attachmentName: text("attachment_name"),
   attachmentType: text("attachment_type"),
   attachmentBytes: bigint("attachment_bytes", { mode: "number" }),
+  /** Batch 4g - the message this one replies to (quoted above the bubble). */
+  replyToId: text("reply_to_id"),
 }, (t) => [index("team_msgs_thread_idx").on(t.threadId, t.createdAt)]);
+
+/** Batch 4g - emoji reactions on team messages; one row per (message, user, emoji). */
+export const teamMessageReactions = pgTable("team_message_reactions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  messageId: text("message_id").notNull(),
+  userId: text("user_id").notNull(),
+  emoji: text("emoji").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex("team_msg_reaction_uq").on(t.messageId, t.userId, t.emoji),
+  index("team_msg_reactions_msg_idx").on(t.messageId),
+]);
 
 /** Last-seen heartbeat for online presence (global per user, not org-scoped). */
 export const userPresence = pgTable("user_presence", {

@@ -4,9 +4,9 @@ import { z } from "zod";
 import { requireOrg } from "@/lib/auth/guard";
 import { getDataProvider, type TeamThread } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
-import { sendTeamMessageDb, sendToThreadDb, createGroupThreadDb, markThreadReadDb, getUserName, editMessageDb, deleteMessageDb, getAttachmentAccess, listMemberThreadIds } from "@/db/queries/messages";
+import { sendTeamMessageDb, sendToThreadDb, createGroupThreadDb, markThreadReadDb, getUserName, editMessageDb, deleteMessageDb, getAttachmentAccess, listMemberThreadIds, quotedMessageDb, toggleReactionDb, canManageGroupDb, renameGroupDb, addGroupMembersDb, removeGroupMemberDb, threadMembersDb, groupMembershipDb } from "@/db/queries/messages";
 import { currentStorageBytes, addStorageUsage } from "@/db/queries/documents";
-import { broadcastToThread, broadcastThreadAdded, broadcastMessageUpdate, getRealtimeAuthSecret, signRealtimeToken } from "@/lib/messaging/realtime";
+import { broadcastToThread, broadcastThreadAdded, broadcastMessageUpdate, broadcastReaction, broadcastThreadUpdated, broadcastThreadRemoved, getRealtimeAuthSecret, signRealtimeToken } from "@/lib/messaging/realtime";
 import { getStorageProvider, activeStorageBackend, objectKey } from "@/lib/storage";
 import { validateUpload } from "@/lib/documents/quota";
 import { orgStorageLimitBytes } from "@/db/queries/resources";
@@ -33,6 +33,8 @@ const input = z
     toUserId: z.string().min(1).optional(),
     text: z.string().trim().max(4000).default(""),
     attachment: attachmentInput.optional(),
+    /** Batch 4g - quote a message from the same thread. */
+    replyToId: z.string().min(1).optional(),
   })
   .refine((d) => d.threadId || d.toUserId, { message: "Pick a conversation." })
   .refine((d) => d.text.trim().length > 0 || d.attachment, { message: "Write a message or attach a file." });
@@ -53,10 +55,10 @@ export async function sendTeamMessage(
   if (isDb()) {
     let sent;
     if (d.threadId && !d.threadId.startsWith("local_")) {
-      sent = await sendToThreadDb(membership.orgId, principal.userId, d.threadId, d.text, attachment);
+      sent = await sendToThreadDb(membership.orgId, principal.userId, d.threadId, d.text, attachment, d.replyToId);
       if (!sent) return { ok: false, error: "You're not in that conversation." };
     } else if (d.toUserId) {
-      sent = await sendTeamMessageDb(membership.orgId, principal.userId, d.toUserId, d.text, attachment);
+      sent = await sendTeamMessageDb(membership.orgId, principal.userId, d.toUserId, d.text, attachment, d.replyToId);
     } else {
       return { ok: false, error: "Pick a conversation." };
     }
@@ -66,9 +68,11 @@ export async function sendTeamMessage(
     if (attachment) await addStorageUsage(membership.orgId, attachment.bytes);
     // Live delivery (Supabase Realtime)  best-effort, dormant if not configured.
     const senderName = await getUserName(principal.userId);
+    const replyTo = d.replyToId ? await quotedMessageDb(d.replyToId) : null;
     const msgPayload = {
       threadId: sent.threadId, id: sent.messageId, senderId: principal.userId, text: d.text, at: sent.createdAt, senderName,
       attachment: attachment ? { name: attachment.name, contentType: attachment.contentType, bytes: attachment.bytes } : undefined,
+      replyTo,
     };
     await broadcastToThread(sent.threadId, msgPayload);
     // A brand-new direct thread: the recipient isn't subscribed to its channel yet,
@@ -221,4 +225,87 @@ export async function refreshThreads(): Promise<{ ok: true; threads: TeamThread[
   const provider = await getDataProvider();
   const threads = await provider.listTeamThreads(principal.userId, membership.orgId);
   return { ok: true, threads };
+}
+
+/* ── Batch 4g - reactions + group management ────────────────────────────── */
+
+const reactionInput = z.object({ messageId: z.string().min(1), emoji: z.string().min(1).max(16) });
+/** Toggle my emoji reaction on a message (members only). Live for the thread. */
+export async function toggleReaction(raw: z.infer<typeof reactionInput>): Promise<{ ok: true; added: boolean } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg();
+  const parsed = reactionInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid reaction." };
+  if (!isDb() || parsed.data.messageId.startsWith("local_")) return { ok: true, added: true };
+  const res = await toggleReactionDb(membership.orgId, principal.userId, parsed.data.messageId, parsed.data.emoji);
+  if (!res) return { ok: false, error: "That message isn't available." };
+  await broadcastReaction(res.threadId, { messageId: parsed.data.messageId, emoji: parsed.data.emoji, userId: principal.userId, added: res.added });
+  return { ok: true, added: res.added };
+}
+
+const renameInput = z.object({ threadId: z.string().min(1), title: z.string().trim().min(2, "Give the group a name.").max(60) });
+/** Rename a group - its creator or an org admin. Live for every member; audited. */
+export async function renameGroup(raw: z.infer<typeof renameInput>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg();
+  const parsed = renameInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the name." };
+  if (!isDb()) return { ok: false, error: "Groups need the database." };
+  const can = await canManageGroupDb(membership.orgId, parsed.data.threadId, principal.userId, membership.teamRole);
+  if (!can.ok) return can;
+  await renameGroupDb(parsed.data.threadId, parsed.data.title);
+  await broadcastThreadUpdated(parsed.data.threadId, { title: parsed.data.title });
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole }, orgId: membership.orgId, target: `team_group:${parsed.data.threadId}`, reason: "rename_group" });
+  return { ok: true };
+}
+
+const addInput = z.object({ threadId: z.string().min(1), memberUserIds: z.array(z.string().min(1)).min(1, "Pick at least one teammate.") });
+/** Add teammates to a group - creator or org admin. New members get the thread live. */
+export async function addGroupMembers(raw: z.infer<typeof addInput>): Promise<{ ok: true; members: { userId: string; name: string; role: string }[] } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg();
+  const parsed = addInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the members." };
+  if (!isDb()) return { ok: false, error: "Groups need the database." };
+  const can = await canManageGroupDb(membership.orgId, parsed.data.threadId, principal.userId, membership.teamRole);
+  if (!can.ok) return can;
+  const added = await addGroupMembersDb(membership.orgId, parsed.data.threadId, parsed.data.memberUserIds);
+  const members = await threadMembersDb(membership.orgId, parsed.data.threadId);
+  if (added.length > 0) {
+    await broadcastThreadAdded(added, { id: parsed.data.threadId, kind: "group", title: can.title, memberCount: members.length });
+    await broadcastThreadUpdated(parsed.data.threadId, { members, memberCount: members.length });
+    await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole }, orgId: membership.orgId, target: `team_group:${parsed.data.threadId}`, reason: `add_members_${added.length}` });
+  }
+  return { ok: true, members };
+}
+
+const removeInput = z.object({ threadId: z.string().min(1), userId: z.string().min(1) });
+/** Remove a member - creator or org admin (the creator can't be removed; they leave). */
+export async function removeGroupMember(raw: z.infer<typeof removeInput>): Promise<{ ok: true; members: { userId: string; name: string; role: string }[] } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg();
+  const parsed = removeInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid request." };
+  if (!isDb()) return { ok: false, error: "Groups need the database." };
+  if (parsed.data.userId === principal.userId) return { ok: false, error: "Use Leave group to remove yourself." };
+  const can = await canManageGroupDb(membership.orgId, parsed.data.threadId, principal.userId, membership.teamRole);
+  if (!can.ok) return can;
+  const removed = await removeGroupMemberDb(membership.orgId, parsed.data.threadId, parsed.data.userId);
+  const members = await threadMembersDb(membership.orgId, parsed.data.threadId);
+  if (removed) {
+    await broadcastThreadRemoved([parsed.data.userId], parsed.data.threadId);
+    await broadcastThreadUpdated(parsed.data.threadId, { members, memberCount: members.length });
+    await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole }, orgId: membership.orgId, target: `team_group:${parsed.data.threadId}`, reason: "remove_member" });
+  }
+  return { ok: true, members };
+}
+
+/** Leave a group I'm in. Anyone can leave; the group lives on for the others. */
+export async function leaveGroup(raw: { threadId: string }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg();
+  const threadId = String(raw?.threadId ?? "");
+  if (!threadId) return { ok: false, error: "Invalid request." };
+  if (!isDb()) return { ok: false, error: "Groups need the database." };
+  if (!(await groupMembershipDb(membership.orgId, threadId, principal.userId))) return { ok: false, error: "You're not in that group." };
+  await removeGroupMemberDb(membership.orgId, threadId, principal.userId);
+  const members = await threadMembersDb(membership.orgId, threadId);
+  await broadcastThreadUpdated(threadId, { members, memberCount: members.length });
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole }, orgId: membership.orgId, target: `team_group:${threadId}`, reason: "leave_group" });
+  return { ok: true };
 }

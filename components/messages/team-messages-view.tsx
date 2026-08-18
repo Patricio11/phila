@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient, type RealtimeChannel } from "@supabase/supabase-js";
-import { ArrowLeft, Check, Download, FileText, Lock, MessagesSquare, Paperclip, Pencil, PenSquare, Search, Send, Trash2, UsersRound, X } from "lucide-react";
+import { ArrowLeft, Check, CornerUpLeft, Download, FileText, Info, Lock, MessagesSquare, Paperclip, Pencil, PenSquare, Search, Send, SmilePlus, Trash2, UsersRound, X } from "lucide-react";
 import type { TeamThread } from "@/lib/data-provider";
 import { TEAM_ROLE_LABELS, type TeamRole } from "@/lib/domain/enums";
 import { Avatar } from "@/components/ui/avatar";
@@ -11,7 +11,9 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { createGroup, deleteMessage, editMessage, getRealtimeToken, markThreadRead, refreshThreads, requestChatUpload, sendTeamMessage, signChatAttachment } from "@/app/app/messages/actions";
+import { createGroup, deleteMessage, editMessage, getRealtimeToken, markThreadRead, refreshThreads, requestChatUpload, sendTeamMessage, signChatAttachment, toggleReaction } from "@/app/app/messages/actions";
+import { EmojiPicker, QUICK_REACTIONS } from "@/components/messages/emoji-picker";
+import { ThreadInfo } from "@/components/messages/thread-info";
 import { sizeLabel } from "@/lib/documents/quota";
 import { cn } from "@/lib/utils";
 
@@ -31,12 +33,17 @@ export function TeamMessagesView({
   realtime = null,
   myUserId = "",
   orgId = "",
+  myRole = "counsellor",
+  myName = "You",
 }: {
   threads: TeamThread[];
   teammates?: Teammate[];
   realtime?: RealtimeConfig;
   myUserId?: string;
   orgId?: string;
+  /** Batch 4g - who may manage a group (creator or org admin). */
+  myRole?: TeamRole;
+  myName?: string;
 }) {
   const { toast } = useToast();
   const [threads, setThreads] = useState(initial);
@@ -65,6 +72,13 @@ export function TeamMessagesView({
   const [groupQuery, setGroupQuery] = useState("");
   const [groupMembers, setGroupMembers] = useState<Set<string>>(new Set());
   const [creating, setCreating] = useState(false);
+  // Batch 4g - reply, reactions, emoji, thread info.
+  const [replyTo, setReplyTo] = useState<{ id: string; senderName: string; text: string } | null>(null);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [reactFor, setReactFor] = useState<string | null>(null);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [flashId, setFlashId] = useState<string | null>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
 
   const active = threads.find((t) => t.id === activeId) ?? null;
   const visible = useMemo(
@@ -126,6 +140,11 @@ export function TeamMessagesView({
     // or a brand-new DM whose first message I'd otherwise miss (I'm not subscribed
     // to its channel yet). A direct payload carries that first message inline.
     const userCh = supabase.channel(`user:${myUserId}`, chanConfig);
+    userCh.on("broadcast", { event: "thread_removed" }, ({ payload }) => {
+      const gone = (payload as { id: string }).id;
+      setThreads((prev) => prev.filter((t) => t.id !== gone));
+      if (activeIdRef.current === gone) { setActiveId(null); setInfoOpen(false); }
+    });
     userCh.on("broadcast", { event: "thread_added" }, ({ payload }) => {
       const p = payload as {
         id: string; kind?: "direct" | "group"; title?: string; otherUserId?: string; otherName?: string; otherRole?: TeamRole; memberCount?: number;
@@ -161,11 +180,11 @@ export function TeamMessagesView({
     const chans = ids.map((id) => {
       const ch = supabase.channel(`thread:${id}`, chanConfig);
       ch.on("broadcast", { event: "message" }, ({ payload }) => {
-        const p = payload as { threadId: string; id: string; senderId: string; text: string; at: string; senderName?: string; attachment?: { name: string; contentType: string; bytes: number } };
+        const p = payload as { threadId: string; id: string; senderId: string; text: string; at: string; senderName?: string; attachment?: { name: string; contentType: string; bytes: number }; replyTo?: { id: string; senderId: string; senderName: string; text: string } | null };
         if (p.senderId === myUserId) return; // our own message is already shown optimistically
         setThreads((prev) => prev.map((t) => {
           if (t.id !== p.threadId || t.messages.some((m) => m.id === p.id)) return t;
-          const msg = { id: p.id, from: "them" as const, text: p.text, at: p.at, senderName: p.senderName, attachment: p.attachment };
+          const msg = { id: p.id, from: "them" as const, text: p.text, at: p.at, senderName: p.senderName, senderId: p.senderId, attachment: p.attachment, replyTo: p.replyTo ? { id: p.replyTo.id, senderName: p.replyTo.senderId === myUserId ? "You" : p.replyTo.senderName, text: p.replyTo.text } : null };
           return { ...t, messages: [...t.messages, msg], lastAt: p.at, unread: activeIdRef.current === p.threadId ? 0 : t.unread + 1 };
         }));
         if (activeIdRef.current === p.threadId) void markThreadRead(p.threadId);
@@ -182,6 +201,22 @@ export function TeamMessagesView({
       ch.on("broadcast", { event: "update" }, ({ payload }) => {
         const u = payload as { messageId: string; text: string; edited: boolean; deleted: boolean };
         setThreads((prev) => prev.map((t) => (t.id !== id ? t : { ...t, messages: t.messages.map((m) => (m.id === u.messageId ? { ...m, text: u.deleted ? "" : u.text, edited: u.edited, deleted: u.deleted } : m)) })));
+      });
+      // Batch 4g - someone reacted (or un-reacted); their own toggle is already applied locally.
+      ch.on("broadcast", { event: "reaction" }, ({ payload }) => {
+        const r = payload as { messageId: string; emoji: string; userId: string; added: boolean };
+        if (r.userId === myUserId) return;
+        setThreads((prev) => prev.map((t) => (t.id !== id ? t : { ...t, messages: t.messages.map((m) => (m.id === r.messageId ? { ...m, reactions: applyReaction(m.reactions, r.emoji, r.userId, r.added) } : m)) })));
+      });
+      // Batch 4g - the group was renamed or its members changed.
+      ch.on("broadcast", { event: "thread_updated" }, ({ payload }) => {
+        const u = payload as { title?: string; members?: { userId: string; name: string; role: TeamRole }[]; memberCount?: number };
+        setThreads((prev) => prev.map((t) => (t.id !== id ? t : {
+          ...t,
+          otherName: u.title ?? t.otherName,
+          members: u.members ?? t.members,
+          memberCount: u.memberCount ?? (u.members ? u.members.length : t.memberCount),
+        })));
       });
       ch.subscribe();
       channels.set(id, ch);
@@ -214,19 +249,29 @@ export function TeamMessagesView({
           if (!local) return server;
           const seen = new Set(local.messages.map((m) => m.id));
           const fresh = server.messages.filter((m) => !seen.has(m.id));
-          if (fresh.length === 0) return local;
           const isOpen = activeIdRef.current === server.id;
-          if (isOpen) void markThreadRead(server.id);
+          if (fresh.length > 0 && isOpen) void markThreadRead(server.id);
+          // Batch 4g - reactions / edits on messages we already show, and the
+          // group's name + members, follow the server too (no realtime needed).
+          const byId = new Map(server.messages.map((m) => [m.id, m]));
+          const merged = local.messages.map((m) => {
+            const sv = byId.get(m.id);
+            return sv ? { ...m, reactions: sv.reactions, text: sv.deleted ? "" : sv.text, edited: sv.edited, deleted: sv.deleted } : m;
+          });
           return {
             ...local,
-            messages: [...local.messages, ...fresh],
-            lastAt: server.lastAt,
+            otherName: server.otherName,
+            members: server.members ?? local.members,
+            memberCount: server.memberCount ?? local.memberCount,
+            messages: fresh.length > 0 ? [...merged, ...fresh] : merged,
+            lastAt: fresh.length > 0 ? server.lastAt : local.lastAt,
             unread: isOpen ? 0 : local.unread + fresh.filter((m) => m.from === "them").length,
           };
         });
         // Threads that only exist locally (an optimistic DM not yet persisted).
+        // A thread the server no longer lists (removed / left) drops away.
         const serverIds = new Set(res.threads.map((t) => t.id));
-        return [...next, ...prev.filter((t) => !serverIds.has(t.id))].sort((a, b) => b.lastAt.localeCompare(a.lastAt));
+        return [...next, ...prev.filter((t) => !serverIds.has(t.id) && t.id.startsWith("local_"))].sort((a, b) => b.lastAt.localeCompare(a.lastAt));
       });
     };
     const id = setInterval(() => void tick(), 5000);
@@ -236,6 +281,8 @@ export function TeamMessagesView({
 
   const openThread = (id: string) => {
     setActiveId(id);
+    setReplyTo(null);
+    setEmojiOpen(false);
     setMobileThread(true);
     setThreads((prev) => prev.map((t) => (t.id === id ? { ...t, unread: 0 } : t)));
     void markThreadRead(id);
@@ -288,13 +335,16 @@ export function TeamMessagesView({
     if (!active || (!text && !attachment)) return;
     const wasThreadId = active.id;
     const localId = `local_${(localSeq.current += 1)}`;
-    const optimistic = { id: localId, from: "me" as const, text, at: new Date().toISOString(), attachment: attachment ? { name: attachment.name, contentType: attachment.contentType, bytes: attachment.bytes } : undefined };
+    const quoted = replyTo;
+    setReplyTo(null);
+    const optimistic = { id: localId, from: "me" as const, text, at: new Date().toISOString(), senderId: myUserId, attachment: attachment ? { name: attachment.name, contentType: attachment.contentType, bytes: attachment.bytes } : undefined, replyTo: quoted };
     setThreads((prev) => prev.map((t) => (t.id === wasThreadId ? { ...t, messages: [...t.messages, optimistic], lastAt: optimistic.at } : t)));
     void sendTeamMessage({
       threadId: wasThreadId.startsWith("local_") ? undefined : wasThreadId,
       toUserId: active.otherUserId || undefined,
       text,
       attachment,
+      replyToId: quoted && !quoted.id.startsWith("local_") ? quoted.id : undefined,
     }).then((res) => {
       if (!res.ok) return toast({ tone: "error", title: res.error });
       const realThreadId = res.threadId;
@@ -345,6 +395,36 @@ export function TeamMessagesView({
       return next;
     });
 
+  // Batch 4g - toggle my reaction (optimistic; the server broadcasts to everyone else).
+  const react = (messageId: string, emoji: string) => {
+    if (!active || messageId.startsWith("local_")) return;
+    const has = active.messages.find((m) => m.id === messageId)?.reactions?.some((r) => r.emoji === emoji && r.userIds.includes(myUserId)) ?? false;
+    setThreads((prev) => prev.map((t) => (t.id !== active.id ? t : { ...t, messages: t.messages.map((m) => (m.id === messageId ? { ...m, reactions: applyReaction(m.reactions, emoji, myUserId, !has) } : m)) })));
+    setReactFor(null);
+    void toggleReaction({ messageId, emoji }).then((res) => { if (!res.ok) toast({ tone: "error", title: res.error }); });
+  };
+
+  // Insert an emoji at the composer's caret.
+  const insertEmoji = (emoji: string) => {
+    const el = composerRef.current;
+    const start = el?.selectionStart ?? draft.length;
+    const end = el?.selectionEnd ?? draft.length;
+    const next = draft.slice(0, start) + emoji + draft.slice(end);
+    setDraft(next);
+    requestAnimationFrame(() => { if (el) { el.focus(); el.setSelectionRange(start + emoji.length, start + emoji.length); } });
+  };
+
+  // Jump to a quoted message and flash it.
+  const jumpTo = (messageId: string) => {
+    const el = document.getElementById(`msg-${messageId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setFlashId(messageId);
+    setTimeout(() => setFlashId(null), 1400);
+  };
+
+  const nameOf = (userId: string) => userId === myUserId ? "You" : (active?.members?.find((m) => m.userId === userId)?.name ?? teammates.find((m) => m.userId === userId)?.name ?? "Someone");
+
   const createGroupNow = () => {
     const title = groupTitle.trim();
     const memberUserIds = [...groupMembers];
@@ -353,9 +433,11 @@ export function TeamMessagesView({
     void createGroup({ title, memberUserIds }).then((res) => {
       setCreating(false);
       if (!res.ok) return toast({ tone: "error", title: res.error });
+      const picked = teammates.filter((m) => memberUserIds.includes(m.userId)).map((m) => ({ userId: m.userId, name: m.name, role: m.role }));
       const thread: TeamThread = {
         id: res.threadId, kind: "group", otherUserId: "", otherName: title, otherRole: "counsellor",
         memberCount: memberUserIds.length + 1, unread: 0, lastAt: new Date().toISOString(), messages: [],
+        members: [{ userId: myUserId, name: myName, role: myRole }, ...picked], createdBy: myUserId, createdAt: new Date().toISOString(),
       };
       setThreads((prev) => [thread, ...prev]);
       setActiveId(res.threadId);
@@ -429,21 +511,33 @@ export function TeamMessagesView({
             <>
               <div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
                 <button type="button" onClick={() => setMobileThread(false)} className="lg:hidden" aria-label="Back to conversations"><ArrowLeft className="size-5 text-text-2" aria-hidden /></button>
-                <ThreadAvatar thread={active} size="sm" online={active.kind === "direct" && online.has(active.otherUserId)} />
-                <div className="min-w-0">
-                  <div className="text-[14px] font-[600] leading-tight text-text">{active.otherName}</div>
-                  <div className="text-[11px] text-text-3">
-                    {typing?.threadId === active.id ? (
-                      <span className="text-accent">{active.kind === "group" ? `${typing.name} is typing…` : "typing…"}</span>
-                    ) : active.kind === "group" ? (
-                      `${active.memberCount ?? 0} members`
-                    ) : online.has(active.otherUserId) ? (
-                      <span className="text-emerald-600">Active now</span>
-                    ) : (
-                      TEAM_ROLE_LABELS[active.otherRole]
-                    )}
+                <button type="button" onClick={() => !active.id.startsWith("local_") && setInfoOpen(true)} className="flex min-w-0 flex-1 items-center gap-2.5 rounded-control text-left transition-colors hover:bg-surface-hover -mx-1 px-1 py-0.5" aria-label={active.kind === "group" ? "Group info" : "Conversation info"} data-testid="thread-header">
+                  <ThreadAvatar thread={active} size="sm" online={active.kind === "direct" && online.has(active.otherUserId)} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[14px] font-[600] leading-tight text-text">{active.otherName}</div>
+                    <div className="truncate text-[11px] text-text-3">
+                      {typing?.threadId === active.id ? (
+                        <span className="text-accent">{active.kind === "group" ? `${typing.name} is typing…` : "typing…"}</span>
+                      ) : active.kind === "group" ? (
+                        `${active.memberCount ?? active.members?.length ?? 0} members${active.members && active.members.length > 0 ? ` · ${active.members.slice(0, 3).map((m) => (m.userId === myUserId ? "you" : m.name.split(" ")[0])).join(", ")}${active.members.length > 3 ? ` +${active.members.length - 3}` : ""}` : ""}`
+                      ) : online.has(active.otherUserId) ? (
+                        <span className="text-emerald-600">Active now</span>
+                      ) : (
+                        TEAM_ROLE_LABELS[active.otherRole]
+                      )}
+                    </div>
                   </div>
-                </div>
+                  {active.kind === "group" && active.members && active.members.length > 0 && (
+                    <span className="hidden items-center -space-x-1.5 sm:flex" aria-hidden>
+                      {active.members.slice(0, 4).map((m) => <span key={m.userId} className="rounded-full ring-2 ring-surface"><Avatar name={m.name} size="sm" /></span>)}
+                    </span>
+                  )}
+                </button>
+                {!active.id.startsWith("local_") && (
+                  <button type="button" onClick={() => setInfoOpen(true)} aria-label="Thread details" title={active.kind === "group" ? "Group info" : "Conversation info"} className="inline-flex size-8 shrink-0 items-center justify-center rounded-control text-text-2 transition-colors hover:bg-surface-hover hover:text-text">
+                    <Info className="size-4" strokeWidth={2} aria-hidden />
+                  </button>
+                )}
               </div>
 
               <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto bg-surface-2/40 p-4">
@@ -451,9 +545,9 @@ export function TeamMessagesView({
                 {active.messages.map((m, i) => {
                   const showDay = i === 0 || dayOf(m.at) !== dayOf(active.messages[i - 1]!.at);
                   return (
-                    <div key={m.id}>
+                    <div key={m.id} id={`msg-${m.id}`} className={cn("rounded-2xl transition-colors", flashId === m.id && "bg-accent/10")}>
                       {showDay && <div className="my-2 text-center text-[11px] text-text-3">{dayOf(m.at)}</div>}
-                      <div className={cn("group flex items-end gap-1.5", m.from === "me" ? "justify-end" : "justify-start")}>
+                      <div className={cn("group relative flex items-end gap-1.5", m.from === "me" ? "justify-end" : "justify-start", !m.deleted && m.reactions && m.reactions.length > 0 && "mb-3.5")}>
                         {editingId === m.id ? (
                           <div className="flex w-full max-w-[80%] items-end justify-end gap-1.5">
                             <textarea
@@ -469,14 +563,34 @@ export function TeamMessagesView({
                           </div>
                         ) : (
                           <>
-                            {m.from === "me" && !m.deleted && !m.id.startsWith("local_") && (
-                              <div className="mb-1 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                                <button type="button" onClick={() => { setEditingId(m.id); setEditDraft(m.text); }} aria-label="Edit message" className="inline-flex size-7 items-center justify-center rounded-control text-text-3 hover:bg-surface-hover hover:text-text"><Pencil className="size-3.5" aria-hidden /></button>
-                                <button type="button" onClick={() => doDelete(m.id)} aria-label="Delete message" className="inline-flex size-7 items-center justify-center rounded-control text-text-3 hover:bg-surface-hover hover:text-danger"><Trash2 className="size-3.5" aria-hidden /></button>
+                            {/* Hover actions - mine: react · reply · edit · delete; theirs: react · reply (after the bubble). */}
+                            {!m.deleted && !m.id.startsWith("local_") && (
+                              <div className={cn("relative mb-1 flex items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100", m.from === "them" && "order-2")}>
+                                <button type="button" onClick={() => setReactFor(reactFor === m.id ? null : m.id)} aria-label="React" title="React" className="inline-flex size-7 items-center justify-center rounded-control text-text-3 hover:bg-surface-hover hover:text-text"><SmilePlus className="size-3.5" aria-hidden /></button>
+                                <button type="button" onClick={() => { setReplyTo({ id: m.id, senderName: m.from === "me" ? "You" : (m.senderName ?? active.otherName), text: m.text || (m.attachment ? `📎 ${m.attachment.name}` : "") }); composerRef.current?.focus(); }} aria-label="Reply" title="Reply" className="inline-flex size-7 items-center justify-center rounded-control text-text-3 hover:bg-surface-hover hover:text-text"><CornerUpLeft className="size-3.5" aria-hidden /></button>
+                                {m.from === "me" && (
+                                  <>
+                                    <button type="button" onClick={() => { setEditingId(m.id); setEditDraft(m.text); }} aria-label="Edit message" className="inline-flex size-7 items-center justify-center rounded-control text-text-3 hover:bg-surface-hover hover:text-text"><Pencil className="size-3.5" aria-hidden /></button>
+                                    <button type="button" onClick={() => doDelete(m.id)} aria-label="Delete message" className="inline-flex size-7 items-center justify-center rounded-control text-text-3 hover:bg-surface-hover hover:text-danger"><Trash2 className="size-3.5" aria-hidden /></button>
+                                  </>
+                                )}
+                                {reactFor === m.id && (
+                                  <div className={cn("absolute bottom-full z-20 mb-1 flex items-center gap-0.5 rounded-full border border-border bg-surface p-1 shadow-[var(--shadow-card)]", m.from === "me" ? "right-0" : "left-0")} role="group" aria-label="Quick reactions">
+                                    {QUICK_REACTIONS.map((e) => (
+                                      <button key={e} type="button" onClick={() => react(m.id, e)} aria-label={`React ${e}`} className="flex size-8 items-center justify-center rounded-full text-[18px] leading-none transition-transform hover:scale-125 hover:bg-surface-hover">{e}</button>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             )}
-                            <div className={cn("max-w-[78%] rounded-2xl px-3.5 py-2 text-[13.5px] leading-relaxed", m.deleted ? "bg-surface-2 italic text-text-3" : m.from === "me" ? "bg-accent text-accent-ink" : "bg-surface text-text shadow-sm")}>
+                            <div data-testid="bubble" className={cn("relative max-w-[78%] rounded-2xl px-3.5 py-2 text-[13.5px] leading-relaxed", m.deleted ? "bg-surface-2 italic text-text-3" : m.from === "me" ? "bg-accent text-accent-ink" : "bg-surface text-text shadow-sm", m.from === "them" && "order-1")}>
                               {m.from === "them" && m.senderName && !m.deleted && <div className="mb-0.5 text-[11px] font-semibold text-accent">{m.senderName}</div>}
+                              {!m.deleted && m.replyTo && (
+                                <button type="button" onClick={() => jumpTo(m.replyTo!.id)} className={cn("mb-1.5 block w-full rounded-lg border-l-2 px-2.5 py-1.5 text-left", m.from === "me" ? "border-accent-ink/60 bg-white/15 hover:bg-white/25" : "border-accent bg-surface-2 hover:bg-surface-hover")}>
+                                  <span className={cn("block text-[11px] font-semibold", m.from === "me" ? "text-accent-ink/90" : "text-accent")}>{m.replyTo.senderName}</span>
+                                  <span className={cn("block truncate text-[12px]", m.from === "me" ? "text-accent-ink/80" : "text-text-2")}>{m.replyTo.text || "Message"}</span>
+                                </button>
+                              )}
                               {!m.deleted && m.attachment && (
                                 <button
                                   type="button"
@@ -493,10 +607,22 @@ export function TeamMessagesView({
                                   <Download className={cn("size-4 shrink-0", m.from === "me" ? "text-accent-ink/80" : "text-text-3")} aria-hidden />
                                 </button>
                               )}
-                              {m.deleted ? "This message was deleted" : m.text}
+                              {m.deleted ? "This message was deleted" : <span className="whitespace-pre-wrap break-words">{m.text}</span>}
                               {!m.deleted && (
                                 <div className={cn("mt-1 flex items-center gap-1 text-[10px]", m.from === "me" ? "text-accent-ink/70" : "text-text-3")}>
                                   {timeOf(m.at)}{m.edited && <span>· edited</span>}
+                                </div>
+                              )}
+                              {!m.deleted && m.reactions && m.reactions.length > 0 && (
+                                <div className={cn("absolute -bottom-3 flex flex-wrap gap-1", m.from === "me" ? "right-2" : "left-2")}>
+                                  {m.reactions.map((r) => {
+                                    const mine = r.userIds.includes(myUserId);
+                                    return (
+                                      <button key={r.emoji} type="button" onClick={() => react(m.id, r.emoji)} title={r.userIds.map(nameOf).join(", ")} aria-label={`${r.emoji} ${r.userIds.length}`} className={cn("inline-flex h-6 items-center gap-1 rounded-full border px-1.5 text-[12px] leading-none shadow-sm transition-colors", mine ? "border-accent bg-accent-soft text-accent" : "border-border bg-surface text-text-2 hover:bg-surface-hover")}>
+                                        <span>{r.emoji}</span><span className="text-[11px] font-semibold tabular-nums">{r.userIds.length}</span>
+                                      </button>
+                                    );
+                                  })}
                                 </div>
                               )}
                             </div>
@@ -509,11 +635,26 @@ export function TeamMessagesView({
                 <div ref={messagesEndRef} />
               </div>
 
-              <div className="border-t border-border p-3">
+              <div className="relative border-t border-border p-3">
                 <div className="mb-2 flex items-center gap-1.5 text-[11.5px] text-text-3">
                   <Lock className="size-3.5 shrink-0" strokeWidth={2} aria-hidden /> Internal  private to your team. Client reminders go out by SMS/WhatsApp, not here.
                 </div>
-                <div className="flex items-end gap-2">
+                {replyTo && (
+                  <div className="mb-2 flex items-center gap-2 rounded-control border-l-2 border-accent bg-surface-2 px-2.5 py-1.5" data-testid="reply-bar">
+                    <CornerUpLeft className="size-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[11px] font-semibold text-accent">Replying to {replyTo.senderName}</span>
+                      <span className="block truncate text-[12px] text-text-2">{replyTo.text || "Message"}</span>
+                    </span>
+                    <button type="button" onClick={() => setReplyTo(null)} aria-label="Cancel reply" className="inline-flex size-6 shrink-0 items-center justify-center rounded-control text-text-3 hover:bg-surface-hover hover:text-text"><X className="size-3.5" aria-hidden /></button>
+                  </div>
+                )}
+                {emojiOpen && (
+                  <div className="absolute bottom-full left-3 z-30 mb-1">
+                    <EmojiPicker onPick={(e) => { insertEmoji(e); }} onClose={() => setEmojiOpen(false)} />
+                  </div>
+                )}
+                <div className="flex items-end gap-1.5 sm:gap-2">
                   <input ref={attachInput} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadAndSend(f); e.target.value = ""; }} aria-hidden />
                   <button
                     type="button"
@@ -525,7 +666,18 @@ export function TeamMessagesView({
                   >
                     <Paperclip className={cn("size-[18px]", uploading > 0 && "animate-pulse")} strokeWidth={2} aria-hidden />
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setEmojiOpen((v) => !v)}
+                    aria-label="Add emoji"
+                    title="Emoji"
+                    aria-expanded={emojiOpen}
+                    className={cn("inline-flex size-10 shrink-0 items-center justify-center rounded-control transition-colors hover:bg-surface-hover hover:text-text", emojiOpen ? "bg-accent-soft text-accent" : "text-text-2")}
+                  >
+                    <SmilePlus className="size-[18px]" strokeWidth={2} aria-hidden />
+                  </button>
                   <textarea
+                    ref={composerRef}
                     value={draft}
                     onChange={(e) => { setDraft(e.target.value); emitTyping(active.id); }}
                     onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
@@ -544,6 +696,23 @@ export function TeamMessagesView({
           )}
         </div>
       </div>
+
+      {active && !active.id.startsWith("local_") && (
+        <ThreadInfo
+          key={active.id}
+          thread={active}
+          open={infoOpen}
+          onClose={() => setInfoOpen(false)}
+          myUserId={myUserId}
+          myRole={myRole}
+          teammates={teammates}
+          online={online}
+          onRenamed={(title) => setThreads((prev) => prev.map((t) => (t.id === active.id ? { ...t, otherName: title } : t)))}
+          onMembers={(members) => setThreads((prev) => prev.map((t) => (t.id === active.id ? { ...t, members, memberCount: members.length } : t)))}
+          onLeft={() => { setInfoOpen(false); setThreads((prev) => prev.filter((t) => t.id !== active.id)); setActiveId(null); setMobileThread(false); }}
+          onOpenAttachment={(id) => void openAttachment(id)}
+        />
+      )}
 
       <Dialog
         open={newOpen}
@@ -647,4 +816,23 @@ function MemberSearch({ query, onQuery, placeholder }: { query: string; onQuery:
       <Input placeholder={placeholder} value={query} onChange={(e) => onQuery(e.target.value)} className="pl-9" />
     </div>
   );
+}
+
+/** Batch 4g - add/remove one user's emoji in a message's grouped reactions. */
+function applyReaction(
+  reactions: { emoji: string; userIds: string[] }[] | undefined,
+  emoji: string,
+  userId: string,
+  added: boolean,
+): { emoji: string; userIds: string[] }[] | undefined {
+  const list = (reactions ?? []).map((r) => ({ emoji: r.emoji, userIds: [...r.userIds] }));
+  const hit = list.find((r) => r.emoji === emoji);
+  if (added) {
+    if (hit) { if (!hit.userIds.includes(userId)) hit.userIds.push(userId); }
+    else list.push({ emoji, userIds: [userId] });
+  } else if (hit) {
+    hit.userIds = hit.userIds.filter((u) => u !== userId);
+  }
+  const out = list.filter((r) => r.userIds.length > 0);
+  return out.length > 0 ? out : undefined;
 }

@@ -1869,6 +1869,23 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   org's admins ("500 LivePhila minutes added - new balance ..."). Pricing work parked by
   agreement: 17-day free trial + two more packages to be designed with the practice.
 
+- [x] **Messages upgrade - emoji, reactions, replies, group profile** *(2026-08-18, batch 4g)*: the
+  team chat grew the things that make a group feel like a place. A built-in, dependency-free
+  **emoji picker** on the composer (categorised + searchable, native glyphs); **reactions** on any
+  message (quick bar on hover, chips under the bubble, one row per (message, user, emoji) in
+  `team_message_reactions`, live to every member); **reply-to** with a quote above the bubble
+  (`team_messages.reply_to_id`, same-thread only, tap to jump); and the **thread profile** panel
+  behind the header: for a group - avatar, name, member count + created date, the full member
+  list with role / online / "you" / "created the group", Shared files, and management for the
+  creator or an org admin (rename in place, add members, remove a member) plus Leave for anyone;
+  for a DM - the person, role, presence, shared files. Membership changes broadcast
+  `thread_updated` / `thread_removed` so headers, counts and names move live for everyone (the
+  polling fallback carries the same); every group change audited. Migration 0079 + RLS on the
+  new table. Proven live with two signed-in members: emoji searched + sent, reply quoted,
+  ❤️ then 👍 landed on both screens without reload, rename + add Aisha + remove Thabo showed
+  on Nomsa's header live ("you, Thandeka, Aisha"), Nomsa left, DB + audit matched; the picker
+  fits at 360 px.
+
 - [ ] **Phase 33 - VoicePhila** *(in progress - `docs/PHASE_33_VOICE_CALLS_PLAN.md`)*:
   - [x] **33.1 Credit catalogue** *(2026-08-17)*: every purchasable bundle (SMS / Email /
     LivePhila / VoicePhila) is now a DB row the super-admin edits on Plans & billing - name,

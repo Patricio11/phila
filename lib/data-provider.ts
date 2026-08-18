@@ -261,6 +261,12 @@ export interface TeamMessage {
   deleted?: boolean;
   /** A file attached to the message (opened via a signed URL by message id). */
   attachment?: { name: string; contentType: string; bytes: number };
+  /** Batch 4g - who sent it (for avatars + "you reacted"). */
+  senderId?: string;
+  /** Batch 4g - emoji reactions, grouped: who reacted with what. */
+  reactions?: { emoji: string; userIds: string[] }[];
+  /** Batch 4g - the message this one quotes. */
+  replyTo?: { id: string; senderName: string; text: string } | null;
 }
 
 /** An internal staff-to-staff thread (hub ↔ counsellor, counsellor ↔ counsellor). */
@@ -275,6 +281,11 @@ export interface TeamThread {
   otherRole: import("@/lib/domain/enums").TeamRole;
   /** Group only: how many members. */
   memberCount?: number;
+  /** Batch 4g - everyone in the thread (the group profile + reaction names). */
+  members?: { userId: string; name: string; role: import("@/lib/domain/enums").TeamRole }[];
+  /** Batch 4g - group only: who created it (they + org admins manage it). */
+  createdBy?: string;
+  createdAt?: string;
   unread: number;
   lastAt: string;
   messages: TeamMessage[];

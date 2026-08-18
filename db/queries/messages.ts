@@ -4,7 +4,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { getDb } from "@/db/client";
 import { activeDb } from "@/lib/db/scoped";
-import { messageThreads, threadMembers, teamMessages, orgMembers } from "@/db/schema";
+import { messageThreads, threadMembers, teamMessages, teamMessageReactions, orgMembers } from "@/db/schema";
 import { user } from "@/db/auth-schema";
 import type { TeamMessage, TeamThread } from "@/lib/data-provider";
 import type { TeamRole } from "@/lib/domain/enums";
@@ -31,6 +31,21 @@ export async function listTeamThreadsDb(userId: string, orgId: string): Promise<
     db.select({ userId: orgMembers.userId, role: orgMembers.teamRole }).from(orgMembers).where(eq(orgMembers.orgId, orgId)),
     db.select().from(teamMessages).where(inArray(teamMessages.threadId, threadIds)).orderBy(teamMessages.createdAt),
   ]);
+  // Batch 4g - reactions for every message shown, grouped per message + emoji.
+  const msgIds = msgs.map((m) => m.id);
+  const reactionRows = msgIds.length
+    ? await db.select({ messageId: teamMessageReactions.messageId, userId: teamMessageReactions.userId, emoji: teamMessageReactions.emoji, at: teamMessageReactions.createdAt })
+        .from(teamMessageReactions).where(inArray(teamMessageReactions.messageId, msgIds)).orderBy(teamMessageReactions.createdAt)
+    : [];
+  const reactionsByMsg = new Map<string, { emoji: string; userIds: string[] }[]>();
+  for (const r of reactionRows) {
+    const list = reactionsByMsg.get(r.messageId) ?? [];
+    const hit = list.find((x) => x.emoji === r.emoji);
+    if (hit) hit.userIds.push(r.userId);
+    else list.push({ emoji: r.emoji, userIds: [r.userId] });
+    reactionsByMsg.set(r.messageId, list);
+  }
+  const msgById = new Map(msgs.map((m) => [m.id, m]));
 
   const roleByUser = new Map(roles.map((r) => [r.userId, r.role as TeamRole]));
   const msgsByThread = new Map<string, typeof msgs>();
@@ -54,15 +69,23 @@ export async function listTeamThreadsDb(userId: string, orgId: string): Promise<
     const lastRead = lastReadByThread.get(t.id) ?? null;
     const unread = tMsgs.filter((m) => m.senderUserId !== userId && (!lastRead || m.createdAt > lastRead)).length;
     const isGroup = t.kind === "group";
-    const messages: TeamMessage[] = tMsgs.map((m) => ({
-      id: m.id, from: m.senderUserId === userId ? "me" : "them",
-      text: m.deletedAt ? "" : m.body, at: m.createdAt.toISOString(),
-      senderName: isGroup && m.senderUserId !== userId ? nameByUser.get(m.senderUserId) : undefined,
-      edited: Boolean(m.editedAt), deleted: Boolean(m.deletedAt),
-      attachment: m.attachmentKey && !m.deletedAt
-        ? { name: m.attachmentName ?? "file", contentType: m.attachmentType ?? "application/octet-stream", bytes: m.attachmentBytes ?? 0 }
-        : undefined,
-    }));
+    const messages: TeamMessage[] = tMsgs.map((m) => {
+      const quoted = m.replyToId ? msgById.get(m.replyToId) : undefined;
+      return {
+        id: m.id, from: m.senderUserId === userId ? "me" : "them",
+        text: m.deletedAt ? "" : m.body, at: m.createdAt.toISOString(),
+        senderName: isGroup && m.senderUserId !== userId ? nameByUser.get(m.senderUserId) : undefined,
+        senderId: m.senderUserId,
+        edited: Boolean(m.editedAt), deleted: Boolean(m.deletedAt),
+        attachment: m.attachmentKey && !m.deletedAt
+          ? { name: m.attachmentName ?? "file", contentType: m.attachmentType ?? "application/octet-stream", bytes: m.attachmentBytes ?? 0 }
+          : undefined,
+        reactions: m.deletedAt ? undefined : reactionsByMsg.get(m.id),
+        replyTo: quoted
+          ? { id: quoted.id, senderName: quoted.senderUserId === userId ? "You" : (nameByUser.get(quoted.senderUserId) ?? "Team member"), text: quoted.deletedAt ? "Message deleted" : (quoted.body || (quoted.attachmentName ? `\u{1F4CE} ${quoted.attachmentName}` : "")) }
+          : m.replyToId ? { id: m.replyToId, senderName: "Team member", text: "Message unavailable" } : null,
+      };
+    });
     return {
       id: t.id,
       kind: (t.kind === "group" ? "group" : "direct") as "direct" | "group",
@@ -70,6 +93,9 @@ export async function listTeamThreadsDb(userId: string, orgId: string): Promise<
       otherName: t.kind === "group" ? t.title ?? "Group" : other?.name ?? "Team member",
       otherRole: (other ? roleByUser.get(other.userId) : undefined) ?? "counsellor",
       memberCount: t.kind === "group" ? tMembers.length : undefined,
+      members: tMembers.map((m) => ({ userId: m.userId, name: m.name, role: roleByUser.get(m.userId) ?? "counsellor" })),
+      createdBy: t.createdBy ?? undefined,
+      createdAt: t.createdAt.toISOString(),
       unread,
       lastAt: (t.lastMessageAt ?? t.createdAt).toISOString(),
       messages,
@@ -130,12 +156,12 @@ function attachmentCols(a?: ChatAttachment) {
 }
 
 /** Persist a direct message (find-or-create the 1:1 thread); returns the new row. */
-export async function sendTeamMessageDb(orgId: string, fromUserId: string, toUserId: string, text: string, attachment?: ChatAttachment): Promise<SentMessage> {
+export async function sendTeamMessageDb(orgId: string, fromUserId: string, toUserId: string, text: string, attachment?: ChatAttachment, replyToId?: string): Promise<SentMessage> {
   const db = getDb();
   const { threadId, created } = await findOrCreateDirectThread(db, orgId, fromUserId, toUserId);
   const messageId = `tm_${randomUUID()}`;
   const createdAt = new Date();
-  await db.insert(teamMessages).values({ id: messageId, orgId, threadId, senderUserId: fromUserId, body: text, createdAt, ...attachmentCols(attachment) });
+  await db.insert(teamMessages).values({ id: messageId, orgId, threadId, senderUserId: fromUserId, body: text, createdAt, replyToId: await validReplyTarget(db, threadId, replyToId), ...attachmentCols(attachment) });
   await db.update(messageThreads).set({ lastMessageAt: createdAt }).where(eq(messageThreads.id, threadId));
   await db.update(threadMembers).set({ lastReadAt: createdAt }).where(and(eq(threadMembers.threadId, threadId), eq(threadMembers.userId, fromUserId)));
   return { threadId, messageId, createdAt: createdAt.toISOString(), created };
@@ -162,12 +188,12 @@ async function isThreadMember(db: Db, orgId: string, threadId: string, userId: s
 }
 
 /** Persist a message to an existing thread (group or direct)  sender must be a member. */
-export async function sendToThreadDb(orgId: string, fromUserId: string, threadId: string, text: string, attachment?: ChatAttachment): Promise<SentMessage | null> {
+export async function sendToThreadDb(orgId: string, fromUserId: string, threadId: string, text: string, attachment?: ChatAttachment, replyToId?: string): Promise<SentMessage | null> {
   const db = getDb();
   if (!(await isThreadMember(db, orgId, threadId, fromUserId))) return null;
   const messageId = `tm_${randomUUID()}`;
   const createdAt = new Date();
-  await db.insert(teamMessages).values({ id: messageId, orgId, threadId, senderUserId: fromUserId, body: text, createdAt, ...attachmentCols(attachment) });
+  await db.insert(teamMessages).values({ id: messageId, orgId, threadId, senderUserId: fromUserId, body: text, createdAt, replyToId: await validReplyTarget(db, threadId, replyToId), ...attachmentCols(attachment) });
   await db.update(messageThreads).set({ lastMessageAt: createdAt }).where(eq(messageThreads.id, threadId));
   await db.update(threadMembers).set({ lastReadAt: createdAt }).where(and(eq(threadMembers.threadId, threadId), eq(threadMembers.userId, fromUserId)));
   return { threadId, messageId, createdAt: createdAt.toISOString() };
@@ -221,6 +247,105 @@ export async function deleteMessageDb(messageId: string, userId: string): Promis
   if (!row || row.sender !== userId) return null;
   await db.update(teamMessages).set({ deletedAt: new Date() }).where(eq(teamMessages.id, messageId));
   return row.threadId;
+}
+
+/** A reply target counts only if it's a message in the SAME thread (no cross-thread quoting). */
+async function validReplyTarget(db: Db, threadId: string, replyToId?: string): Promise<string | null> {
+  if (!replyToId) return null;
+  const [row] = await db.select({ id: teamMessages.id }).from(teamMessages)
+    .where(and(eq(teamMessages.id, replyToId), eq(teamMessages.threadId, threadId))).limit(1);
+  return row ? row.id : null;
+}
+
+/** The quoted message's display bits for a live broadcast (name resolved for the recipients). */
+export async function quotedMessageDb(messageId: string): Promise<{ id: string; senderId: string; senderName: string; text: string } | null> {
+  const db = getDb();
+  const [m] = await db.select({ id: teamMessages.id, sender: teamMessages.senderUserId, body: teamMessages.body, deletedAt: teamMessages.deletedAt, attachmentName: teamMessages.attachmentName })
+    .from(teamMessages).where(eq(teamMessages.id, messageId)).limit(1);
+  if (!m) return null;
+  const senderName = await getUserName(m.sender);
+  return { id: m.id, senderId: m.sender, senderName, text: m.deletedAt ? "Message deleted" : (m.body || (m.attachmentName ? `\u{1F4CE} ${m.attachmentName}` : "")) };
+}
+
+/**
+ * Batch 4g - toggle one's reaction on a message (members only). Returns the
+ * thread id + whether it's now on, or null when the message isn't reachable.
+ */
+export async function toggleReactionDb(orgId: string, userId: string, messageId: string, emoji: string): Promise<{ threadId: string; added: boolean } | null> {
+  const db = getDb();
+  const [m] = await db.select({ threadId: teamMessages.threadId, deletedAt: teamMessages.deletedAt })
+    .from(teamMessages).where(and(eq(teamMessages.id, messageId), eq(teamMessages.orgId, orgId))).limit(1);
+  if (!m || m.deletedAt) return null;
+  if (!(await isThreadMember(db, orgId, m.threadId, userId))) return null;
+  const [existing] = await db.select({ id: teamMessageReactions.id }).from(teamMessageReactions)
+    .where(and(eq(teamMessageReactions.messageId, messageId), eq(teamMessageReactions.userId, userId), eq(teamMessageReactions.emoji, emoji))).limit(1);
+  if (existing) {
+    await db.delete(teamMessageReactions).where(eq(teamMessageReactions.id, existing.id));
+    return { threadId: m.threadId, added: false };
+  }
+  await db.insert(teamMessageReactions).values({ orgId, messageId, userId, emoji }).onConflictDoNothing();
+  return { threadId: m.threadId, added: true };
+}
+
+/** Who may manage a group: its creator or an org admin. */
+export async function canManageGroupDb(orgId: string, threadId: string, userId: string, teamRole: string): Promise<{ ok: true; title: string } | { ok: false; error: string }> {
+  const db = getDb();
+  const [t] = await db.select({ kind: messageThreads.kind, createdBy: messageThreads.createdBy, title: messageThreads.title })
+    .from(messageThreads).where(and(eq(messageThreads.id, threadId), eq(messageThreads.orgId, orgId))).limit(1);
+  if (!t || t.kind !== "group") return { ok: false, error: "That group wasn't found." };
+  if (!(await isThreadMember(db, orgId, threadId, userId))) return { ok: false, error: "You're not in that group." };
+  if (t.createdBy !== userId && teamRole !== "org_admin") return { ok: false, error: "Only the group's creator or an org admin can change it." };
+  return { ok: true, title: t.title ?? "Group" };
+}
+
+export async function renameGroupDb(threadId: string, title: string): Promise<void> {
+  await getDb().update(messageThreads).set({ title }).where(eq(messageThreads.id, threadId));
+}
+
+/** Add teammates to a group (idempotent). Returns the ids actually added. */
+export async function addGroupMembersDb(orgId: string, threadId: string, userIds: string[]): Promise<string[]> {
+  const db = getDb();
+  if (userIds.length === 0) return [];
+  // Only real members of this org can join.
+  const eligible = await db.select({ userId: orgMembers.userId }).from(orgMembers)
+    .where(and(eq(orgMembers.orgId, orgId), inArray(orgMembers.userId, userIds)));
+  const ids = eligible.map((r) => r.userId);
+  if (ids.length === 0) return [];
+  const existing = await db.select({ userId: threadMembers.userId }).from(threadMembers)
+    .where(and(eq(threadMembers.threadId, threadId), inArray(threadMembers.userId, ids)));
+  const have = new Set(existing.map((r) => r.userId));
+  const fresh = ids.filter((id) => !have.has(id));
+  if (fresh.length === 0) return [];
+  const now = new Date();
+  await db.insert(threadMembers).values(fresh.map((userId) => ({ orgId, threadId, userId, lastReadAt: null, joinedAt: now }))).onConflictDoNothing();
+  return fresh;
+}
+
+export async function removeGroupMemberDb(orgId: string, threadId: string, userId: string): Promise<boolean> {
+  const res = await getDb().delete(threadMembers)
+    .where(and(eq(threadMembers.threadId, threadId), eq(threadMembers.userId, userId), eq(threadMembers.orgId, orgId)))
+    .returning({ id: threadMembers.id });
+  return res.length > 0;
+}
+
+/** Everyone in a thread (name + role) - the group profile + broadcast fan-out. */
+export async function threadMembersDb(orgId: string, threadId: string): Promise<{ userId: string; name: string; role: TeamRole }[]> {
+  const db = getDb();
+  const rows = await db.select({ userId: threadMembers.userId, name: user.name, role: orgMembers.teamRole })
+    .from(threadMembers)
+    .innerJoin(user, eq(threadMembers.userId, user.id))
+    .leftJoin(orgMembers, and(eq(orgMembers.userId, threadMembers.userId), eq(orgMembers.orgId, orgId)))
+    .where(and(eq(threadMembers.threadId, threadId), eq(threadMembers.orgId, orgId)));
+  return rows.map((r) => ({ userId: r.userId, name: r.name, role: (r.role ?? "counsellor") as TeamRole }));
+}
+
+/** Is this thread a group in this org, and is the user in it? (for Leave.) */
+export async function groupMembershipDb(orgId: string, threadId: string, userId: string): Promise<boolean> {
+  const db = getDb();
+  const [t] = await db.select({ kind: messageThreads.kind }).from(messageThreads)
+    .where(and(eq(messageThreads.id, threadId), eq(messageThreads.orgId, orgId))).limit(1);
+  if (!t || t.kind !== "group") return false;
+  return isThreadMember(db, orgId, threadId, userId);
 }
 
 /**

@@ -193,6 +193,15 @@ Sign in as **Thandeka**.
 - ☐ On a **phone**, Messages folds into **More**: the More tab carries the count, and inside the sheet the Messages row shows its number; the chat itself never scrolls sideways
 - ☐ The count is org-wide (all threads), only counts others' messages, and reading a thread brings it back down
 
+**Messages: emoji, reactions, replies, group profile** (batch 4g)
+- ☐ The composer's **smiley** opens a built-in emoji picker (Smileys / Gestures / Hearts / Work + search); a pick lands at the caret; it closes on outside click / Esc; at 360 px it fits with no sideways scroll
+- ☐ Hover a message → **React** shows the quick bar (👍 ❤️ 😂 🙏 👏 ✅); a tap adds a **chip** under the bubble (yours highlighted, count, names on hover); tapping again removes it; the OTHER member sees the chip appear without a reload
+- ☐ Hover → **Reply** shows "Replying to …" above the composer (X cancels); the sent bubble carries the **quote**; tapping the quote scrolls to and flashes the original
+- ☐ Tap the thread **header** (or the ⓘ) → **Group info**: avatar, name, "N members · created <date>", the **member list** (avatar, role, online dot, "you", "created the group"), Shared files, **Leave group** (with confirm)
+- ☐ As the **creator or an org admin**: the pencil **renames** in place, **Add members** searches + multi-selects colleagues, the **X** removes a member (never the creator); every change is audited and the other members' header + count + names update **live**
+- ☐ As a plain member: no pencil / Add / X - but **Leave group** works and the thread disappears for you; a removed member's thread disappears for them
+- ☐ A **DM** header opens **Conversation info**: the person, role, Active now, and the files shared in that chat
+
 **Storage backend: Supabase or Amazon S3** (batch 2o)
 - ☐ `/admin/integrations/storage` offers two chips: **Supabase** and **Amazon S3**. The chip you are not on shows *configured* when its credentials are stored, so switching back needs no retyping
 - ☐ Picking **Amazon S3** asks for region, bucket, access key ID, secret and an optional endpoint (MinIO / Cloudflare R2), and stops asking for a Supabase project URL

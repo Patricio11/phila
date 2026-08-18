@@ -32,6 +32,38 @@ export interface RealtimeMessagePayload {
   at: string;
   senderName?: string;
   attachment?: { name: string; contentType: string; bytes: number };
+  /** Batch 4g - the quoted message, resolved for the recipients. */
+  replyTo?: { id: string; senderId: string; senderName: string; text: string } | null;
+}
+
+/** One generic broadcast helper - every event goes through here. */
+async function post(messages: { topic: string; event: string; payload: unknown }[]): Promise<void> {
+  try {
+    const creds = await getCreds();
+    if (!creds || messages.length === 0) return;
+    await fetch(`${creds.url.replace(/\/$/, "")}/realtime/v1/api/broadcast`, {
+      method: "POST",
+      headers: { apikey: creds.serviceKey, Authorization: `Bearer ${creds.serviceKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ messages }),
+    });
+  } catch {
+    /* live delivery is best-effort; Neon is the truth */
+  }
+}
+
+/** Batch 4g - a reaction toggled on a message; open clients update the chip row. */
+export async function broadcastReaction(threadId: string, payload: { messageId: string; emoji: string; userId: string; added: boolean }): Promise<void> {
+  await post([{ topic: `thread:${threadId}`, event: "reaction", payload }]);
+}
+
+/** Batch 4g - a group's name / member list changed; every member's header + profile updates. */
+export async function broadcastThreadUpdated(threadId: string, payload: { title?: string; members?: { userId: string; name: string; role: string }[]; memberCount?: number }): Promise<void> {
+  await post([{ topic: `thread:${threadId}`, event: "thread_updated", payload }]);
+}
+
+/** Batch 4g - tell someone a thread is gone for them (removed / left). */
+export async function broadcastThreadRemoved(userIds: string[], threadId: string): Promise<void> {
+  await post(userIds.map((uid) => ({ topic: `user:${uid}`, event: "thread_removed", payload: { id: threadId } })));
 }
 
 /** Push a new message to a thread's channel. Best-effort; never throws. */

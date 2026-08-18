@@ -25,7 +25,7 @@ export default async function HubMessagesPage() {
   return (
     <div className="rise space-y-5">
       <PageHead title="Messages" summary="Private messages with your team  counsellors and operations." />
-      <TeamMessagesView threads={threads} teammates={teammates} realtime={realtime} myUserId={principal.userId} orgId={membership.orgId} />
+      <TeamMessagesView threads={threads} teammates={teammates} realtime={realtime} myUserId={principal.userId} orgId={membership.orgId} myRole={membership.teamRole} myName={principal.name} />
     </div>
   );
 }

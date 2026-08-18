@@ -84,32 +84,23 @@ export function SettingsShell({ sections }: { sections: SettingsSection[] }) {
 
   const railIndex = useMemo(() => sections.findIndex((s) => s.key === section.key), [sections, section.key]);
 
-  // Mobile: keep the active pill / sub-tab in view when it starts off-screen.
   const stripRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const active = stripRef.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
-    active?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
-  }, [section.key]);
-  useEffect(() => {
-    const row = document.querySelector<HTMLElement>(`[data-subtabs="${section.key}"]`);
-    const active = row?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
-    active?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
-  }, [section.key, panel.key]);
 
   return (
     <div className="lg:grid lg:grid-cols-[264px_minmax(0,1fr)] lg:items-start lg:gap-6">
       {/* ---- Rail (desktop) / pill strip (mobile) ---- */}
       <nav aria-label="Settings sections" className="lg:sticky lg:top-6">
-        {/* Mobile strip */}
-        <div ref={stripRef} className="-mx-4 mb-4 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6 lg:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div role="tablist" className="inline-flex gap-1 rounded-full border border-border bg-surface p-1 shadow-sm">
+        {/* Mobile: every section visible at once - pills WRAP, nothing to swipe for */}
+        <div ref={stripRef} className="mb-4 lg:hidden">
+          <div role="tablist" className="flex flex-wrap gap-1.5">
             {sections.map((s) => {
               const on = s.key === section.key;
               const I = ICONS[s.icon];
               return (
                 <button key={s.key} type="button" role="tab" aria-selected={on} onClick={() => go(s.key)}
-                  className={cn("inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors", on ? "bg-accent text-accent-ink shadow-sm" : "text-text-2 hover:bg-surface-hover hover:text-text")}>
+                  className={cn("inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-[12.5px] font-medium transition-colors", on ? "border-accent bg-accent text-accent-ink shadow-sm" : "border-border bg-surface text-text-2 hover:bg-surface-hover hover:text-text")}>
                   <I className="size-3.5" strokeWidth={2} aria-hidden /> {s.label}
+                  {s.status && !on && <span className={cn("ml-0.5 size-1.5 rounded-full", s.status.tone === "warn" ? "bg-warn" : s.status.tone === "accent" ? "bg-accent" : "bg-border-strong")} aria-hidden />}
                 </button>
               );
             })}
@@ -164,8 +155,8 @@ export function SettingsShell({ sections }: { sections: SettingsSection[] }) {
 
               {/* Sub-tabs (only when a section has more than one panel) */}
               {s.panels.length > 1 && (
-                <div className="-mx-4 overflow-x-auto px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  <div role="tablist" aria-label={`${s.label} panels`} data-subtabs={s.key} className="flex min-w-max gap-1 border-b border-border">
+                <div>
+                  <div role="tablist" aria-label={`${s.label} panels`} data-subtabs={s.key} className="flex flex-wrap gap-x-1 gap-y-0 border-b border-border">
                     {s.panels.map((p) => {
                       const on = p.key === activeSub;
                       return (

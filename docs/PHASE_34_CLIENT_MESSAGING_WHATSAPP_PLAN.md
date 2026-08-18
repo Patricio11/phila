@@ -68,10 +68,12 @@ Integrations home for the connection.*
   side, so a new admin sees the thread without a migration; the client row is the only stored member).
   RLS: same org isolation; the client's reads run under `runForClient` (org-scoped) and filter
   `client_id = me`.
-- [x] **Staff can start it** from three doors: the client page (Hub + counsellor app) - a **Message**
-  button; the Messages page **New message → Clients** tab (searchable, only clients the person may
-  see: an org admin / front desk sees all, a counsellor their own caseload); and the appointment modal
-  ("Message client"). If the client has **no portal account yet** the message still saves and the
+- [x] **Staff can start it** from the client page (Hub + counsellor app) - a **Message** button - and
+  the appointment modal ("Message client"). *Shipped 34.1.*
+- [ ] A third door - the Messages page **New message → Clients** tab (searchable, only clients the
+  person may see: an org admin / front desk sees all, a counsellor their own caseload) - **deferred**
+  to a follow-up; the two shipped doors cover the real workflows (you're on the client, or on the
+  session). If the client has **no portal account yet** the message still saves and the
   nudge carries the **activation link** (existing invite flow) so the first thing they see after
   setting a password is the message. Honest empty state when the client has no phone/email at all.
 - [x] **In the staff Messages page** client threads sit in their own **Clients** section of the list
@@ -87,8 +89,9 @@ Integrations home for the connection.*
   react, quote-reply; the composer has **no attach button**, no "new message", no member list beyond
   "your care team". Unread badge on the nav item; the bell gets a notification per new staff message.
 - [x] **Audit + POPIA:** opening a client thread logs `pii.read` (Thola does the same on inbox open);
-  every send is audited as today; the client thread is included in DSAR export + erasure (Phase 31)
-  and in retention clocks; the messages never leave the org's tenant.
+  every send is audited as today; the messages never leave the org's tenant.
+- [ ] **DSAR + erasure + retention** (Phase 31) must include the client thread's messages - to wire
+  and prove in a follow-up (today the export covers the client record, sessions, documents).
 - [x] **Rules the server enforces:** a client cannot create a thread (`sendTeamMessage` refuses a
   client principal without an existing thread id), cannot address anyone but "the practice", cannot
   add members, cannot attach; a counsellor can only open threads for clients on their caseload; a

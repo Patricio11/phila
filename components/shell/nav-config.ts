@@ -47,7 +47,8 @@ export interface NavItem {
   badge?: number;
   ready?: boolean;
   /** Hidden unless this org feature is on (Dormant-by-Default). */
-  feature?: import("@/lib/domain/enums").OrgFeature;
+  /** Org feature flag, or a nav-only gate ("client_messages" - Phase 34.1: shown once the practice has messaged the client). */
+  feature?: import("@/lib/domain/enums").OrgFeature | "client_messages";
   /**
    * Batch 2p - reachable but not in the rail. The page lives inside another
    * one (Companies sits behind a button on Clients), yet search should still
@@ -94,6 +95,8 @@ export const clientNav: NavSection[] = [
       { label: "Home", href: "/me", icon: House, ready: true },
       { label: "Your steps", href: "/me/steps", icon: Sprout, ready: true },
       { label: "Sessions", href: "/me/sessions", icon: CalendarHeart, ready: true },
+      // Phase 34.1 - appears only once the practice has messaged this client.
+      { label: "Messages", href: "/me/messages", icon: MessagesSquare, ready: true, feature: "client_messages" },
       { label: "Documents", href: "/me/documents", icon: FileText, ready: true },
       { label: "Forms", href: "/me/forms", icon: ClipboardList, ready: true },
       { label: "Billing", href: "/me/billing", icon: CreditCard, ready: true },

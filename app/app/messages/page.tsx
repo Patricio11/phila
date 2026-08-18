@@ -8,7 +8,8 @@ import { TeamMessagesView } from "@/components/messages/team-messages-view";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Messages" };
 
-export default async function MessagesPage() {
+export default async function MessagesPage({ searchParams }: { searchParams: Promise<{ t?: string }> }) {
+  const { t } = await searchParams;
   const { principal, membership } = await requireOrg(["counsellor"]);
   const provider = await getDataProvider();
   const [threads, team, realtime] = await Promise.all([
@@ -25,7 +26,7 @@ export default async function MessagesPage() {
   return (
     <div className="rise space-y-5">
       <PageHead title="Messages" summary="Private messages with your team  the hub and your colleagues." />
-      <TeamMessagesView threads={threads} teammates={teammates} realtime={realtime} myUserId={principal.userId} orgId={membership.orgId} myRole={membership.teamRole} myName={principal.name} />
+      <TeamMessagesView threads={threads} teammates={teammates} realtime={realtime} myUserId={principal.userId} orgId={membership.orgId} myRole={membership.teamRole} myName={principal.name} initialThreadId={t ?? null} />
     </div>
   );
 }

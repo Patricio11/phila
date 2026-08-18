@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient, type RealtimeChannel } from "@supabase/supabase-js";
-import { ArrowLeft, Check, CornerUpLeft, Download, FileText, Info, Lock, MessagesSquare, Paperclip, Pencil, PenSquare, Search, Send, SmilePlus, Trash2, UsersRound, X } from "lucide-react";
+import { ArrowLeft, Check, CornerUpLeft, Download, Eye, FileText, Info, Lock, MessagesSquare, Paperclip, Pencil, PenSquare, Search, Send, ShieldCheck, SmilePlus, Trash2, UsersRound, X } from "lucide-react";
 import type { TeamThread } from "@/lib/data-provider";
-import { TEAM_ROLE_LABELS, type TeamRole } from "@/lib/domain/enums";
+import { type TeamRole } from "@/lib/domain/enums";
+import { roleLabel } from "@/components/messages/role-label";
 import { Avatar } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Dialog } from "@/components/ui/dialog";
@@ -35,6 +36,8 @@ export function TeamMessagesView({
   orgId = "",
   myRole = "counsellor",
   myName = "You",
+  mode = "staff",
+  initialThreadId = null,
 }: {
   threads: TeamThread[];
   teammates?: Teammate[];
@@ -44,12 +47,17 @@ export function TeamMessagesView({
   /** Batch 4g - who may manage a group (creator or org admin). */
   myRole?: TeamRole;
   myName?: string;
+  /** Phase 34.1 - "client": the client's own portal view (reply-only, no attach, no new). */
+  mode?: "staff" | "client";
+  /** Land on this thread (deep link from a client page / notification). */
+  initialThreadId?: string | null;
 }) {
   const { toast } = useToast();
   const [threads, setThreads] = useState(initial);
-  const [activeId, setActiveId] = useState<string | null>(initial[0]?.id ?? null);
+  const [activeId, setActiveId] = useState<string | null>(initialThreadId && initial.some((t) => t.id === initialThreadId) ? initialThreadId : initial[0]?.id ?? null);
+  const isClient = mode === "client";
   const [draft, setDraft] = useState("");
-  const [mobileThread, setMobileThread] = useState(false);
+  const [mobileThread, setMobileThread] = useState(Boolean(initialThreadId));
   const [query, setQuery] = useState("");
   const [online, setOnline] = useState<Set<string>>(new Set());
   const [typing, setTyping] = useState<{ threadId: string; name: string } | null>(null);
@@ -450,14 +458,16 @@ export function TeamMessagesView({
   };
 
   if (threads.length === 0 && teammates.length === 0) {
-    return <EmptyState icon={MessagesSquare} title="No team messages yet" body="Messages with your colleagues will appear here." />;
+    return isClient
+      ? <EmptyState icon={MessagesSquare} title="No messages yet" body="Your practice will message you here when there's something to share." />
+      : <EmptyState icon={MessagesSquare} title="No team messages yet" body="Messages with your colleagues will appear here." />;
   }
 
   return (
     <div className="overflow-hidden rounded-card border border-border bg-surface shadow-sm">
-      <div className="grid h-[calc(100dvh-220px)] min-h-[420px] grid-cols-1 lg:grid-cols-[300px_1fr]">
-        {/* Thread list */}
-        <div className={cn("flex min-h-0 flex-col border-r border-border", mobileThread && "hidden lg:flex")}>
+      <div className={cn("grid h-[calc(100dvh-220px)] min-h-[420px] grid-cols-1", !isClient && "lg:grid-cols-[300px_1fr]")}>
+        {/* Thread list - a client has exactly one conversation, so their view is the thread alone. */}
+        <div className={cn("flex min-h-0 flex-col border-r border-border", mobileThread && "hidden lg:flex", isClient && "hidden")}>
           <div className="flex items-center gap-2 border-b border-border p-2.5">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-3" strokeWidth={2} aria-hidden />
@@ -483,7 +493,10 @@ export function TeamMessagesView({
                   <ThreadAvatar thread={t} size="md" online={t.kind === "direct" && online.has(t.otherUserId)} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-[13.5px] font-medium text-text">{t.otherName}</span>
+                      <span className="flex min-w-0 items-center gap-1.5 truncate text-[13.5px] font-medium text-text">
+                        <span className="truncate">{t.otherName}</span>
+                        {t.kind === "client" && !isClient && <span className="shrink-0 rounded-full bg-sky-100 px-1.5 text-[10px] font-semibold text-sky-800 dark:bg-sky-900/40 dark:text-sky-200">Client</span>}
+                      </span>
                       <span className="shrink-0 text-[11px] text-text-3">{t.lastAt ? timeOf(t.lastAt) : ""}</span>
                     </div>
                     <div className="mt-0.5 flex items-center justify-between gap-2">
@@ -493,7 +506,7 @@ export function TeamMessagesView({
                           if (last?.deleted) return "Message deleted";
                           if (last?.text) return last.text;
                           if (last?.attachment) return `📎 ${last.attachment.name}`;
-                          return t.kind === "group" ? `${t.memberCount ?? 0} members` : TEAM_ROLE_LABELS[t.otherRole];
+                          return t.kind === "group" ? `${t.memberCount ?? 0} members` : t.kind === "client" ? (isClient ? "Your practice" : "Client") : roleLabel(t.otherRole);
                         })()}
                       </span>
                       {t.unread > 0 && <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-accent text-[10px] font-semibold text-accent-ink">{t.unread}</span>}
@@ -506,11 +519,11 @@ export function TeamMessagesView({
         </div>
 
         {/* Thread */}
-        <div className={cn("flex min-h-0 flex-col", !mobileThread && "hidden lg:flex")}>
+        <div className={cn("flex min-h-0 flex-col", !mobileThread && !isClient && "hidden lg:flex")}>
           {active ? (
             <>
               <div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
-                <button type="button" onClick={() => setMobileThread(false)} className="lg:hidden" aria-label="Back to conversations"><ArrowLeft className="size-5 text-text-2" aria-hidden /></button>
+                {!isClient && <button type="button" onClick={() => setMobileThread(false)} className="lg:hidden" aria-label="Back to conversations"><ArrowLeft className="size-5 text-text-2" aria-hidden /></button>}
                 <button type="button" onClick={() => !active.id.startsWith("local_") && setInfoOpen(true)} className="flex min-w-0 flex-1 items-center gap-2.5 rounded-control text-left transition-colors hover:bg-surface-hover -mx-1 px-1 py-0.5" aria-label={active.kind === "group" ? "Group info" : "Conversation info"} data-testid="thread-header">
                   <ThreadAvatar thread={active} size="sm" online={active.kind === "direct" && online.has(active.otherUserId)} />
                   <div className="min-w-0 flex-1">
@@ -520,10 +533,14 @@ export function TeamMessagesView({
                         <span className="text-accent">{active.kind === "group" ? `${typing.name} is typing…` : "typing…"}</span>
                       ) : active.kind === "group" ? (
                         `${active.memberCount ?? active.members?.length ?? 0} members${active.members && active.members.length > 0 ? ` · ${active.members.slice(0, 3).map((m) => (m.userId === myUserId ? "you" : m.name.split(" ")[0])).join(", ")}${active.members.length > 3 ? ` +${active.members.length - 3}` : ""}` : ""}`
+                      ) : active.kind === "client" ? (
+                        isClient
+                          ? `Your care team${active.members && active.members.length > 0 ? ` · ${active.members.filter((m) => m.role !== "client").slice(0, 3).map((m) => m.name.split(" ")[0]).join(", ")}` : ""}`
+                          : "Client · they can read this conversation"
                       ) : online.has(active.otherUserId) ? (
                         <span className="text-emerald-600">Active now</span>
                       ) : (
-                        TEAM_ROLE_LABELS[active.otherRole]
+                        roleLabel(active.otherRole)
                       )}
                     </div>
                   </div>
@@ -540,8 +557,13 @@ export function TeamMessagesView({
                 )}
               </div>
 
+              {active.kind === "client" && !isClient && (
+                <div className="flex items-center gap-2 border-b border-sky-200/70 bg-sky-50 px-4 py-1.5 text-[11.5px] text-sky-900 dark:border-sky-900/40 dark:bg-sky-950/40 dark:text-sky-100" data-testid="client-banner">
+                  <Eye className="size-3.5 shrink-0" strokeWidth={2} aria-hidden /> <b>{active.clientName ?? active.otherName} can read this conversation.</b> Keep clinical notes in the session record.
+                </div>
+              )}
               <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto bg-surface-2/40 p-4">
-                {active.messages.length === 0 && <p className="pt-8 text-center text-[12.5px] text-text-3">Start the conversation with {active.otherName.split(" ")[0]}.</p>}
+                {active.messages.length === 0 && <p className="pt-8 text-center text-[12.5px] text-text-3">{isClient ? "Your practice will message you here." : `Start the conversation with ${active.otherName.split(" ")[0]}.`}</p>}
                 {active.messages.map((m, i) => {
                   const showDay = i === 0 || dayOf(m.at) !== dayOf(active.messages[i - 1]!.at);
                   return (
@@ -637,7 +659,13 @@ export function TeamMessagesView({
 
               <div className="relative border-t border-border p-3">
                 <div className="mb-2 flex items-center gap-1.5 text-[11.5px] text-text-3">
-                  <Lock className="size-3.5 shrink-0" strokeWidth={2} aria-hidden /> Internal  private to your team. Client reminders go out by SMS/WhatsApp, not here.
+                  {isClient ? (
+                    <><ShieldCheck className="size-3.5 shrink-0" strokeWidth={2} aria-hidden /> Private between you and your care team. Files are shared through Documents.</>
+                  ) : active.kind === "client" ? (
+                    <><Eye className="size-3.5 shrink-0" strokeWidth={2} aria-hidden /> Visible to the client. Reminders + booking notices still go out by SMS/WhatsApp.</>
+                  ) : (
+                    <><Lock className="size-3.5 shrink-0" strokeWidth={2} aria-hidden /> Internal  private to your team. Client reminders go out by SMS/WhatsApp, not here.</>
+                  )}
                 </div>
                 {replyTo && (
                   <div className="mb-2 flex items-center gap-2 rounded-control border-l-2 border-accent bg-surface-2 px-2.5 py-1.5" data-testid="reply-bar">
@@ -655,17 +683,21 @@ export function TeamMessagesView({
                   </div>
                 )}
                 <div className="flex items-end gap-1.5 sm:gap-2">
-                  <input ref={attachInput} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadAndSend(f); e.target.value = ""; }} aria-hidden />
-                  <button
-                    type="button"
-                    onClick={() => attachInput.current?.click()}
-                    disabled={uploading > 0}
-                    aria-label="Attach a file"
-                    title="Attach a file"
-                    className="inline-flex size-10 shrink-0 items-center justify-center rounded-control text-text-2 transition-colors hover:bg-surface-hover hover:text-text disabled:opacity-40"
-                  >
-                    <Paperclip className={cn("size-[18px]", uploading > 0 && "animate-pulse")} strokeWidth={2} aria-hidden />
-                  </button>
+                  {!isClient && (
+                    <>
+                      <input ref={attachInput} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadAndSend(f); e.target.value = ""; }} aria-hidden />
+                      <button
+                        type="button"
+                        onClick={() => attachInput.current?.click()}
+                        disabled={uploading > 0}
+                        aria-label="Attach a file"
+                        title="Attach a file"
+                        className="inline-flex size-10 shrink-0 items-center justify-center rounded-control text-text-2 transition-colors hover:bg-surface-hover hover:text-text disabled:opacity-40"
+                      >
+                        <Paperclip className={cn("size-[18px]", uploading > 0 && "animate-pulse")} strokeWidth={2} aria-hidden />
+                      </button>
+                    </>
+                  )}
                   <button
                     type="button"
                     onClick={() => setEmojiOpen((v) => !v)}
@@ -681,7 +713,7 @@ export function TeamMessagesView({
                     value={draft}
                     onChange={(e) => { setDraft(e.target.value); emitTyping(active.id); }}
                     onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-                    placeholder={uploading > 0 ? "Uploading…" : `Message ${active.otherName.split(" ")[0]}…`}
+                    placeholder={uploading > 0 ? "Uploading…" : isClient ? "Message your practice…" : `Message ${active.otherName.split(" ")[0]}…`}
                     rows={1}
                     className="max-h-32 min-h-[40px] flex-1 resize-none rounded-control border border-border bg-surface px-3 py-2 text-[14px] text-text placeholder:text-text-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
                   />
@@ -705,6 +737,7 @@ export function TeamMessagesView({
           onClose={() => setInfoOpen(false)}
           myUserId={myUserId}
           myRole={myRole}
+          mode={mode}
           teammates={teammates}
           online={online}
           onRenamed={(title) => setThreads((prev) => prev.map((t) => (t.id === active.id ? { ...t, otherName: title } : t)))}
@@ -738,7 +771,7 @@ export function TeamMessagesView({
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[13.5px] font-medium text-text">{m.name}</div>
-                  <div className="text-[11px] text-text-3">{online.has(m.userId) ? <span className="text-emerald-600">Active now</span> : TEAM_ROLE_LABELS[m.role]}</div>
+                  <div className="text-[11px] text-text-3">{online.has(m.userId) ? <span className="text-emerald-600">Active now</span> : roleLabel(m.role)}</div>
                 </div>
               </button>
             ))
@@ -775,7 +808,7 @@ export function TeamMessagesView({
                   <Avatar name={m.name} size="sm" />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[13px] font-medium text-text">{m.name}</div>
-                    <div className="text-[11px] text-text-3">{TEAM_ROLE_LABELS[m.role]}</div>
+                    <div className="text-[11px] text-text-3">{roleLabel(m.role)}</div>
                   </div>
                   <span className={cn("inline-flex size-4 shrink-0 items-center justify-center rounded-[5px] border", on ? "border-accent bg-accent text-white" : "border-border")}>
                     {on && <Check className="size-3" strokeWidth={3} aria-hidden />}
@@ -795,6 +828,11 @@ function ThreadAvatar({ thread, size, online }: { thread: TeamThread; size: "sm"
     thread.kind === "group" ? (
       <span className={cn(size === "md" ? "size-9" : "size-8", "inline-flex items-center justify-center rounded-full bg-accent-soft text-accent")}>
         <UsersRound className="size-[18px]" strokeWidth={1.9} aria-hidden />
+      </span>
+    ) : thread.kind === "client" ? (
+      <span className="relative inline-flex">
+        <Avatar name={thread.otherName} size={size} />
+        <span className="absolute -bottom-0.5 -right-0.5 inline-flex size-3.5 items-center justify-center rounded-full border-2 border-surface bg-sky-500 text-white" aria-hidden><ShieldCheck className="size-2" strokeWidth={3} /></span>
       </span>
     ) : (
       <Avatar name={thread.otherName} size={size} />

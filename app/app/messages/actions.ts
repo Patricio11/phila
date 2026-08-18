@@ -2,9 +2,12 @@
 
 import { z } from "zod";
 import { requireOrg } from "@/lib/auth/guard";
+import { requireMessagingPrincipal } from "@/lib/messaging/principal";
+import { notifyClientUser } from "@/db/queries/notifications";
+import { runForOrg } from "@/lib/db/scoped";
 import { getDataProvider, type TeamThread } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
-import { sendTeamMessageDb, sendToThreadDb, createGroupThreadDb, markThreadReadDb, getUserName, editMessageDb, deleteMessageDb, getAttachmentAccess, listMemberThreadIds, quotedMessageDb, toggleReactionDb, canManageGroupDb, renameGroupDb, addGroupMembersDb, removeGroupMemberDb, threadMembersDb, groupMembershipDb } from "@/db/queries/messages";
+import { sendTeamMessageDb, sendToThreadDb, createGroupThreadDb, markThreadReadDb, getUserName, editMessageDb, deleteMessageDb, getAttachmentAccess, listMemberThreadIds, quotedMessageDb, toggleReactionDb, canManageGroupDb, renameGroupDb, addGroupMembersDb, removeGroupMemberDb, threadMembersDb, groupMembershipDb, findOrCreateClientThreadDb, threadKindDb, listTeamThreadsDb, isClientUserDb } from "@/db/queries/messages";
 import { currentStorageBytes, addStorageUsage } from "@/db/queries/documents";
 import { broadcastToThread, broadcastThreadAdded, broadcastMessageUpdate, broadcastReaction, broadcastThreadUpdated, broadcastThreadRemoved, getRealtimeAuthSecret, signRealtimeToken } from "@/lib/messaging/realtime";
 import { getStorageProvider, activeStorageBackend, objectKey } from "@/lib/storage";
@@ -42,10 +45,20 @@ const input = z
 export async function sendTeamMessage(
   raw: z.infer<typeof input>,
 ): Promise<{ ok: true; threadId?: string; messageId?: string } | { ok: false; error: string }> {
-  const { principal, membership } = await requireOrg();
+  const me = await requireMessagingPrincipal();
+  const principal = { userId: me.userId };
+  const membership = { orgId: me.orgId, teamRole: me.kind === "staff" ? me.teamRole : null };
   const parsed = input.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Couldn't send." };
   const d = parsed.data;
+  // Phase 34.1 - the client rules: reply only into THEIR practice thread, never
+  // start one, never address a person, never attach.
+  if (me.kind === "client") {
+    if (!d.threadId || d.threadId.startsWith("local_") || d.toUserId) return { ok: false, error: "Your practice starts the conversation - you can reply here once they message you." };
+    if (d.attachment) return { ok: false, error: "Files go through Documents, not chat." };
+    const t = await threadKindDb(d.threadId);
+    if (!t || t.kind !== "client" || t.clientId !== me.clientId || t.orgId !== me.orgId) return { ok: false, error: "You're not in that conversation." };
+  }
   // Batch 2o - record which backend the bytes went to, so a later switch to S3
   // never orphans an attachment already sitting in the old bucket.
   const attachment = d.attachment ? { ...d.attachment, backend: await activeStorageBackend() } : undefined;
@@ -58,6 +71,8 @@ export async function sendTeamMessage(
       sent = await sendToThreadDb(membership.orgId, principal.userId, d.threadId, d.text, attachment, d.replyToId);
       if (!sent) return { ok: false, error: "You're not in that conversation." };
     } else if (d.toUserId) {
+      // A direct thread is staff-to-staff only - never to a client's login.
+      if (await isClientUserDb(d.toUserId)) return { ok: false, error: "Message a client from their client page." };
       sent = await sendTeamMessageDb(membership.orgId, principal.userId, d.toUserId, d.text, attachment, d.replyToId);
     } else {
       return { ok: false, error: "Pick a conversation." };
@@ -81,20 +96,53 @@ export async function sendTeamMessage(
     if (sent.created && d.toUserId) {
       await broadcastThreadAdded([d.toUserId], {
         id: sent.threadId, kind: "direct",
-        otherUserId: principal.userId, otherName: senderName, otherRole: membership.teamRole,
+        otherUserId: principal.userId, otherName: senderName, otherRole: membership.teamRole ?? "counsellor",
         message: msgPayload,
       });
+    }
+    // Phase 34.1 - a staff message into a client thread rings the client's bell
+    // (their portal has no other signal yet; the WhatsApp nudge is 34.2).
+    if (me.kind === "staff") {
+      const t = await threadKindDb(sent.threadId);
+      if (t?.kind === "client" && t.clientId) {
+        try {
+          await notifyClientUser(t.clientId, me.orgId, {
+            kind: "message",
+            title: `${senderName} sent you a message`,
+            body: d.text ? (d.text.length > 90 ? d.text.slice(0, 87) + "…" : d.text) : (attachment ? `Shared a file: ${attachment.name}` : "Open Messages to read it."),
+            href: "/me/messages",
+          });
+        } catch { /* the message is saved regardless */ }
+      }
     }
   }
 
   await logAccess({
     action: "admin.action",
-    actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
+    actor: { userId: principal.userId, platformRole: me.kind === "client" ? "client" : null, teamRole: membership.teamRole },
     orgId: membership.orgId,
     target: `team_message:${threadId ?? d.toUserId ?? "thread"}`,
-    reason: attachment ? "send_team_message_attachment" : "send_team_message",
+    reason: me.kind === "client" ? "client_reply" : attachment ? "send_team_message_attachment" : "send_team_message",
   });
   return { ok: true, threadId, messageId };
+}
+
+/**
+ * Phase 34.1 - the practice opens (or reopens) THE conversation with a client.
+ * Admins / front desk: any client; a counsellor: their own caseload. Returns
+ * the thread id so the caller can land on it. Audited.
+ */
+export async function startClientThread(raw: { clientId: string }): Promise<{ ok: true; threadId: string; created: boolean } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg(["org_admin", "front_desk", "counsellor"]);
+  const clientId = String(raw?.clientId ?? "");
+  if (!clientId) return { ok: false, error: "Invalid request." };
+  if (!isDb()) return { ok: false, error: "Client messaging needs the database." };
+  const res = await findOrCreateClientThreadDb(membership.orgId, principal.userId, membership.teamRole, clientId);
+  if (!res) return { ok: false, error: "You can only message clients on your caseload." };
+  if (res.created) {
+    await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole }, orgId: membership.orgId, target: `client_thread:${res.threadId}`, reason: "open_client_thread" });
+  }
+  return { ok: true, threadId: res.threadId, created: res.created };
 }
 
 /** Presign a chat attachment upload. Validates type + size + the org's storage quota. */
@@ -182,14 +230,16 @@ export async function createGroup(
 
 /** Clear unread for a thread (move the read cursor). */
 export async function markThreadRead(threadId: string): Promise<{ ok: boolean }> {
-  const { principal } = await requireOrg();
+  const principal = await requireMessagingPrincipal();
   if (isDb() && threadId && !threadId.startsWith("local_")) await markThreadReadDb(threadId, principal.userId);
   return { ok: true };
 }
 
 const editInput = z.object({ messageId: z.string().min(1), text: z.string().trim().min(1, "Message can't be empty.").max(4000) });
 export async function editMessage(raw: z.infer<typeof editInput>): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { principal, membership } = await requireOrg();
+  const me = await requireMessagingPrincipal();
+  const principal = { userId: me.userId };
+  const membership = { orgId: me.orgId, teamRole: me.kind === "staff" ? me.teamRole : null };
   const parsed = editInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the message." };
   if (isDb()) {
@@ -202,7 +252,9 @@ export async function editMessage(raw: z.infer<typeof editInput>): Promise<{ ok:
 }
 
 export async function deleteMessage(messageId: string): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { principal, membership } = await requireOrg();
+  const me = await requireMessagingPrincipal();
+  const principal = { userId: me.userId };
+  const membership = { orgId: me.orgId, teamRole: me.kind === "staff" ? me.teamRole : null };
   const id = String(messageId ?? "");
   if (!id || id.startsWith("local_")) return { ok: true };
   if (isDb()) {
@@ -221,9 +273,14 @@ export async function deleteMessage(messageId: string): Promise<{ ok: true } | {
  * to see a reply. Same data the page loads, same permissions.
  */
 export async function refreshThreads(): Promise<{ ok: true; threads: TeamThread[] } | { ok: false; error: string }> {
-  const { principal, membership } = await requireOrg();
+  const me = await requireMessagingPrincipal();
+  if (me.kind === "client") {
+    if (!isDb()) return { ok: true, threads: [] };
+    const threads = await runForOrg(me.orgId, () => listTeamThreadsDb(me.userId, me.orgId));
+    return { ok: true, threads: threads.filter((t) => t.kind === "client") };
+  }
   const provider = await getDataProvider();
-  const threads = await provider.listTeamThreads(principal.userId, membership.orgId);
+  const threads = await provider.listTeamThreads(me.userId, me.orgId);
   return { ok: true, threads };
 }
 
@@ -232,7 +289,9 @@ export async function refreshThreads(): Promise<{ ok: true; threads: TeamThread[
 const reactionInput = z.object({ messageId: z.string().min(1), emoji: z.string().min(1).max(16) });
 /** Toggle my emoji reaction on a message (members only). Live for the thread. */
 export async function toggleReaction(raw: z.infer<typeof reactionInput>): Promise<{ ok: true; added: boolean } | { ok: false; error: string }> {
-  const { principal, membership } = await requireOrg();
+  const me = await requireMessagingPrincipal();
+  const principal = { userId: me.userId };
+  const membership = { orgId: me.orgId };
   const parsed = reactionInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid reaction." };
   if (!isDb() || parsed.data.messageId.startsWith("local_")) return { ok: true, added: true };

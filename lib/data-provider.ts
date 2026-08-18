@@ -272,8 +272,8 @@ export interface TeamMessage {
 /** An internal staff-to-staff thread (hub ↔ counsellor, counsellor ↔ counsellor). */
 export interface TeamThread {
   id: string;
-  /** A 1:1 conversation, or a named group. */
-  kind: "direct" | "group";
+  /** A 1:1 conversation, a named group, or (Phase 34.1) the practice <-> client thread. */
+  kind: "direct" | "group" | "client";
   /** Direct: the other member's id. Group: "" (no single other). */
   otherUserId: string;
   /** Direct: the other member's name. Group: the group title. */
@@ -281,8 +281,11 @@ export interface TeamThread {
   otherRole: import("@/lib/domain/enums").TeamRole;
   /** Group only: how many members. */
   memberCount?: number;
-  /** Batch 4g - everyone in the thread (the group profile + reaction names). */
-  members?: { userId: string; name: string; role: import("@/lib/domain/enums").TeamRole }[];
+  /** Batch 4g - everyone in the thread (the group profile + reaction names). "client" = the client's own login. */
+  members?: { userId: string; name: string; role: import("@/lib/domain/enums").TeamRole | "client" }[];
+  /** Phase 34.1 - client threads only. */
+  clientId?: string;
+  clientName?: string;
   /** Batch 4g - group only: who created it (they + org admins manage it). */
   createdBy?: string;
   createdAt?: string;

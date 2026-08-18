@@ -8,7 +8,7 @@ Phila - open it". Underneath, harden the WhatsApp rail with what Thola does well
 retries + dead letters, webhook idempotency, delivery ticks that never regress, and a proper
 Integrations home for the connection.*
 
-> **Status:** ⏳ plan (2026-08-18). Written after reading Phila's messaging + WhatsApp stack end to end
+> **Status:** 🔨 in progress - 34.1 shipped 2026-08-18; 34.2 next. Written after reading Phila's messaging + WhatsApp stack end to end
 > and a deep read of Thola v2 (`C:\Users\patri\Downloads\thola\thola_v2` - its WhatsApp transport,
 > webhook, number-health, inbox, follow-up engine and readiness docs).
 >
@@ -60,7 +60,7 @@ Integrations home for the connection.*
 
 ## Task 34.1: Client conversations in the messaging system (practice ↔ client)
 *The room. Reuse `message_threads` - a third `kind`.*
-- [ ] **Data:** `message_threads.kind = "client"` + `client_id` column (nullable, indexed); pair key
+- [x] **Data:** `message_threads.kind = "client"` + `client_id` column (nullable, indexed); pair key
   `<orgId>:client:<clientId>` so there is exactly ONE practice↔client thread per client (the same
   DB-guaranteed uniqueness the direct threads use). Members: the client's **user** (via
   `user.client_id`) once activated, plus practice members - the client's **primary counsellor** and
@@ -68,35 +68,35 @@ Integrations home for the connection.*
   side, so a new admin sees the thread without a migration; the client row is the only stored member).
   RLS: same org isolation; the client's reads run under `runForClient` (org-scoped) and filter
   `client_id = me`.
-- [ ] **Staff can start it** from three doors: the client page (Hub + counsellor app) - a **Message**
+- [x] **Staff can start it** from three doors: the client page (Hub + counsellor app) - a **Message**
   button; the Messages page **New message → Clients** tab (searchable, only clients the person may
   see: an org admin / front desk sees all, a counsellor their own caseload); and the appointment modal
   ("Message client"). If the client has **no portal account yet** the message still saves and the
   nudge carries the **activation link** (existing invite flow) so the first thing they see after
   setting a password is the message. Honest empty state when the client has no phone/email at all.
-- [ ] **In the staff Messages page** client threads sit in their own **Clients** section of the list
+- [x] **In the staff Messages page** client threads sit in their own **Clients** section of the list
   (below Team / Groups) with a distinct **client chip + shield colour** and a header banner
   **"The client can read this conversation"** - staff must never mistake a client thread for internal
   chat. Every staff sender is named on the client side (the client sees "Nomsa Dlamini · Counsellor").
   Reactions / replies / emoji / edit / delete / read cursor / unread badge / realtime / polling all
   reuse the 4g machinery unchanged. Attachments from staff: allowed (signed URLs, members-only, as
   today) - a share by chat is logged like a document share.
-- [ ] **In the client portal** a **Messages** item appears in the nav **only when a thread exists**
+- [x] **In the client portal** a **Messages** item appears in the nav **only when a thread exists**
   (server-checked, not just hidden), landing on `/me/messages` - a single conversation with the
   practice (practice name + logo, the staff names inside). The client can **reply** (text + emoji),
   react, quote-reply; the composer has **no attach button**, no "new message", no member list beyond
   "your care team". Unread badge on the nav item; the bell gets a notification per new staff message.
-- [ ] **Audit + POPIA:** opening a client thread logs `pii.read` (Thola does the same on inbox open);
+- [x] **Audit + POPIA:** opening a client thread logs `pii.read` (Thola does the same on inbox open);
   every send is audited as today; the client thread is included in DSAR export + erasure (Phase 31)
   and in retention clocks; the messages never leave the org's tenant.
-- [ ] **Rules the server enforces:** a client cannot create a thread (`sendTeamMessage` refuses a
+- [x] **Rules the server enforces:** a client cannot create a thread (`sendTeamMessage` refuses a
   client principal without an existing thread id), cannot address anyone but "the practice", cannot
   add members, cannot attach; a counsellor can only open threads for clients on their caseload; a
   removed/archived team member drops out of client threads (already true via membership).
 
 **Done when:** an org admin messages a client from the client page; the client sees Messages appear
 in their space, reads it, replies; the counsellor sees the reply in the Clients section with the
-client banner; the client cannot start a new conversation or attach a file; all audited.
+client banner; the client cannot start a new conversation or attach a file; all audited. ✅ *(2026-08-18 - proven live with three signed-in browsers: admin, client, counsellor)*
 
 ## Task 34.2: Presence + the "you have a message on Phila" nudge (WhatsApp-first)
 *The doorbell. Never carries content. Never rings if you're already in the house.*

@@ -17,6 +17,7 @@ import { ClientTimeline } from "@/components/hub/client-timeline";
 import { OutcomeTrends } from "@/components/charts/outcome-trends";
 import { ReassignClientButton } from "@/components/hub/reassign-client-button";
 import { InviteClientButton } from "@/components/hub/invite-client-button";
+import { MessageClientButton } from "@/components/messages/message-client-button";
 import { EditClientButton } from "@/components/hub/edit-client-button";
 import { ClientFeeControl } from "@/components/hub/client-fee-control";
 import { AddToWaitlistButton } from "@/components/hub/add-to-waitlist-button";
@@ -107,6 +108,7 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
               initial={{ name: client.name, phone: client.phone ?? null, email: client.email ?? null, province: client.province, counsellorId: counsellor?.id ?? null, riskFlag: client.riskFlag, referralSource }}
             />
             <InviteClientButton clientId={client.id} clientName={client.name} phone={client.phone ?? null} email={client.email ?? null} whatsappOn={Boolean(org.features.whatsapp)} smsOn={Boolean(org.features.sms)} />
+            <MessageClientButton clientId={client.id} base="/hub/messages" />
             <ReassignClientButton clientId={client.id} clientName={client.name} counsellors={counsellorOpts} currentCounsellorId={counsellor?.id ?? null} />
             {waitlistOn && <AddToWaitlistButton clientId={client.id} clientName={client.name} counsellors={counsellorOpts} />}
             <Button asChild>

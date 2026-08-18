@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Check, FileText, LogOut, Pencil, Search, UserPlus, UsersRound, X } from "lucide-react";
 import type { TeamThread } from "@/lib/data-provider";
-import { TEAM_ROLE_LABELS, type TeamRole } from "@/lib/domain/enums";
+import { type TeamRole } from "@/lib/domain/enums";
+import { roleLabel } from "@/components/messages/role-label";
 import { Avatar } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,7 @@ import { sizeLabel } from "@/lib/documents/quota";
 import { cn } from "@/lib/utils";
 
 interface Teammate { userId: string; name: string; role: TeamRole }
-type Member = { userId: string; name: string; role: TeamRole };
+type Member = { userId: string; name: string; role: TeamRole | "client" };
 
 function longDay(iso: string): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "long", year: "numeric" }).format(new Date(iso));
@@ -27,13 +28,14 @@ function longDay(iso: string): string {
  * Rename / add / remove: the group's creator or an org admin. Leave: anyone.
  */
 export function ThreadInfo({
-  thread, open, onClose, myUserId, myRole, teammates, online, onRenamed, onMembers, onLeft, onOpenAttachment,
+  thread, open, onClose, myUserId, myRole, mode = "staff", teammates, online, onRenamed, onMembers, onLeft, onOpenAttachment,
 }: {
   thread: TeamThread;
   open: boolean;
   onClose: () => void;
   myUserId: string;
   myRole: TeamRole;
+  mode?: "staff" | "client";
   teammates: Teammate[];
   online: Set<string>;
   onRenamed: (title: string) => void;
@@ -43,6 +45,8 @@ export function ThreadInfo({
 }) {
   const { toast } = useToast();
   const isGroup = thread.kind === "group";
+  const isClientThread = thread.kind === "client";
+  const isClient = mode === "client";
   const canManage = isGroup && (thread.createdBy === myUserId || myRole === "org_admin");
   const members: Member[] = thread.members ?? [];
   const [renaming, setRenaming] = useState(false);
@@ -140,15 +144,16 @@ export function ThreadInfo({
           <p className="mt-0.5 text-[12.5px] text-text-3">
             {isGroup
               ? `${members.length} member${members.length === 1 ? "" : "s"}${thread.createdAt ? ` · created ${longDay(thread.createdAt)}` : ""}`
-              : online.has(thread.otherUserId) ? <span className="text-emerald-600">Active now</span> : TEAM_ROLE_LABELS[(other?.role ?? thread.otherRole) as TeamRole]}
+              : isClientThread ? (isClient ? "Your care team can see this conversation" : "Client · they can read this conversation")
+              : online.has(thread.otherUserId) ? <span className="text-emerald-600">Active now</span> : roleLabel(other?.role ?? thread.otherRole)}
           </p>
         </div>
 
-        {/* Members */}
-        {isGroup && (
+        {/* Members - groups (managed) and client threads (who can see this, read-only) */}
+        {(isGroup || isClientThread) && (
           <section>
             <div className="mb-1.5 flex items-center justify-between">
-              <h4 className="text-[11px] font-semibold uppercase tracking-wide text-text-3">Members</h4>
+              <h4 className="text-[11px] font-semibold uppercase tracking-wide text-text-3">{isClientThread ? (isClient ? "Your care team" : "Who can see this") : "Members"}</h4>
               {canManage && !adding && (
                 <button type="button" onClick={() => setAdding(true)} className="inline-flex items-center gap-1 text-[12px] font-medium text-accent hover:underline"><UserPlus className="size-3.5" strokeWidth={2} aria-hidden /> Add members</button>
               )}
@@ -169,7 +174,7 @@ export function ThreadInfo({
                         <Avatar name={t.name} size="sm" />
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[13px] font-medium text-text">{t.name}</span>
-                          <span className="block text-[11px] text-text-3">{TEAM_ROLE_LABELS[t.role]}</span>
+                          <span className="block text-[11px] text-text-3">{roleLabel(t.role)}</span>
                         </span>
                         <span className={cn("inline-flex size-4 shrink-0 items-center justify-center rounded-[5px] border", on ? "border-accent bg-accent text-white" : "border-border")}>{on && <Check className="size-3" strokeWidth={3} aria-hidden />}</span>
                       </button>
@@ -183,7 +188,7 @@ export function ThreadInfo({
               </div>
             )}
             <ul className="max-h-64 divide-y divide-border overflow-y-auto rounded-control border border-border">
-              {members.map((m) => (
+              {members.filter((m) => !(isClient && m.userId === myUserId)).map((m) => (
                 <li key={m.userId} className="flex items-center gap-2.5 px-2.5 py-2">
                   <span className="relative inline-flex shrink-0">
                     <Avatar name={m.name} size="sm" />
@@ -193,9 +198,9 @@ export function ThreadInfo({
                     <span className="flex items-center gap-1.5 truncate text-[13px] font-medium text-text">
                       {m.name}
                       {m.userId === myUserId && <span className="rounded-full bg-surface-2 px-1.5 text-[10px] font-medium text-text-3">you</span>}
-                      {m.userId === thread.createdBy && <span className="rounded-full bg-accent-soft px-1.5 text-[10px] font-medium text-accent">created the group</span>}
+                      {isGroup && m.userId === thread.createdBy && <span className="rounded-full bg-accent-soft px-1.5 text-[10px] font-medium text-accent">created the group</span>}
                     </span>
-                    <span className="block text-[11px] text-text-3">{online.has(m.userId) ? <span className="text-emerald-600">Active now</span> : TEAM_ROLE_LABELS[m.role]}</span>
+                    <span className="block text-[11px] text-text-3">{online.has(m.userId) ? <span className="text-emerald-600">Active now</span> : roleLabel(m.role)}</span>
                   </span>
                   {canManage && m.userId !== myUserId && m.userId !== thread.createdBy && (
                     <button type="button" onClick={() => removeNow(m)} disabled={busy === m.userId} aria-label={`Remove ${m.name}`} title="Remove from group" className="inline-flex size-7 shrink-0 items-center justify-center rounded-control text-text-3 hover:bg-surface-hover hover:text-danger disabled:opacity-50"><X className="size-4" aria-hidden /></button>

@@ -1,6 +1,6 @@
 "use server";
 
-import { requireOrg } from "@/lib/auth/guard";
+import { requireMessagingPrincipal } from "@/lib/messaging/principal";
 import { unreadMessageCountDb } from "@/db/queries/messages";
 
 /**
@@ -8,8 +8,8 @@ import { unreadMessageCountDb } from "@/db/queries/messages";
  * person. Any member may ask about their own unread; it leaks nothing else.
  */
 export async function getUnreadMessages(): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
-  const { principal, membership } = await requireOrg();
+  const me = await requireMessagingPrincipal();
   if (process.env.DATA_PROVIDER !== "db") return { ok: true, count: 0 };
-  const count = await unreadMessageCountDb(principal.userId, membership.orgId);
+  const count = await unreadMessageCountDb(me.userId, me.orgId);
   return { ok: true, count };
 }

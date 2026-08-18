@@ -1941,7 +1941,23 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   message content ever), and the WhatsApp rail hardened with the Thola lessons (number health +
   throttle + banner, jittered retry + masked dead letters, webhook idempotency, never-regress delivery
   ticks, Meta-approved template modelling) plus a proper Hub → Settings → Integrations home for the
-  connection. Not started.
+  connection.
+  - [x] **34.1 Client conversations** *(2026-08-18)*: `message_threads.kind = "client"` + `client_id`
+    (migration 0080, one thread per client via the pair key). The practice speaks first - **Message**
+    on the client page (Hub + counsellor app) and **Message client** on the appointment modal open
+    THE conversation and land on it (`?t=` deep link). Practice-side membership is derived by role /
+    caseload and self-heals on every list (org admins + front desk see every client thread, a
+    counsellor their own caseload, no migration when staff change); the client's login joins when
+    they activate. Staff see client threads with a **Client** chip + a **"<name> can read this
+    conversation"** banner and a client-aware composer note; the client's space grows a **Messages**
+    menu only once a thread exists (server-gated), a single full-width conversation with the
+    practice - staff named, "Your care team" in the info panel, reply / emoji / react / quote, **no
+    attach, no new, no manage**; a staff message rings the client's bell. Server rules: a client can
+    only send into their own thread (never start, never address a person, never attach); direct
+    staff threads refuse a client login; opening the client's Messages logs `pii.read`. Proven live
+    with three signed-in browsers (admin, client, counsellor): no menu → thread opened from the
+    client page → menu appeared → client replied with a quote → admin + counsellor saw it → care
+    team listed → membership / audit rows matched → 360 px clean. 292 unit tests green.
 
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees

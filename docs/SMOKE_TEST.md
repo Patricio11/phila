@@ -202,6 +202,13 @@ Sign in as **Thandeka**.
 - ☐ As a plain member: no pencil / Add / X - but **Leave group** works and the thread disappears for you; a removed member's thread disappears for them
 - ☐ A **DM** header opens **Conversation info**: the person, role, Active now, and the files shared in that chat
 
+**Client conversations** (Phase 34.1)
+- ☐ As a client with no conversation yet, `/me` has **no Messages** menu and `/me/messages` bounces home
+- ☐ As the org admin, a client page's **Message** button (or **Message client** on an appointment) opens the practice ↔ client thread in Messages: a **Client** chip on the row, a **"<name> can read this conversation"** banner, the composer note says "Visible to the client"; send a message
+- ☐ The client's space now shows **Messages**; the conversation is titled with the **practice name**, staff are **named**, the info panel lists **Your care team**; the client can reply (emoji, quote, react) but has **no attach, no new message, no group, no rename/add/leave**
+- ☐ The client's counsellor sees the same thread in `/app/messages` (caseload-derived - no setup); front desk sees it too; a counsellor without that client on their caseload cannot open one ("only clients on your caseload")
+- ☐ The staff message rang the client's **bell**; opening the client's Messages is audited as `pii.read`
+
 **Storage backend: Supabase or Amazon S3** (batch 2o)
 - ☐ `/admin/integrations/storage` offers two chips: **Supabase** and **Amazon S3**. The chip you are not on shows *configured* when its credentials are stored, so switching back needs no retyping
 - ☐ Picking **Amazon S3** asks for region, bucket, access key ID, secret and an optional endpoint (MinIO / Cloudflare R2), and stops asking for a Supabase project URL

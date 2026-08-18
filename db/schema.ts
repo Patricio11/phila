@@ -996,8 +996,11 @@ export const orgStorageUsage = pgTable("org_storage_usage", {
 export const messageThreads = pgTable("message_threads", {
   id: text("id").primaryKey(),
   orgId: text("org_id").notNull().references(() => orgs.id),
-  kind: text("kind").default("direct").notNull(), // direct | group
+  kind: text("kind").default("direct").notNull(), // direct | group | client (Phase 34.1)
   title: text("title"), // null for direct (derived from the other member)
+  /** Phase 34.1 - the practice <-> client conversation: one per client (pair_key
+   *  `<orgId>:client:<clientId>`). The client replies but never starts. */
+  clientId: text("client_id"),
   // For direct threads only: `<orgId>:<sorted member ids>`  a unique key that
   // makes "one 1:1 thread per pair" a DB guarantee (no find-then-create race).
   // Null for groups; Postgres treats NULLs as distinct, so many groups coexist.
@@ -1005,7 +1008,7 @@ export const messageThreads = pgTable("message_threads", {
   createdBy: text("created_by"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
   lastMessageAt: timestamp("last_message_at", { withTimezone: true }),
-}, (t) => [index("msg_threads_org_idx").on(t.orgId), uniqueIndex("thread_pair_uq").on(t.pairKey)]);
+}, (t) => [index("msg_threads_org_idx").on(t.orgId), uniqueIndex("thread_pair_uq").on(t.pairKey), index("msg_threads_client_idx").on(t.clientId)]);
 
 /** Membership of a thread + each member's read cursor (for unread counts). */
 export const threadMembers = pgTable("thread_members", {

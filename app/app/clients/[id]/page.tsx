@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarPlus, FileText, Mail, MessageSquare, NotebookPen, Phone, Target, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowLeft, CalendarPlus, FileText, Mail, NotebookPen, Phone, Target, TrendingDown, TrendingUp } from "lucide-react";
 import { requireOrg } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
@@ -10,6 +10,7 @@ import { AGE_BAND_LABELS, EMPLOYMENT_LABELS, GENDER_LABELS, POPULATION_GROUP_LAB
 import { Card, CardHead } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { MessageClientButton } from "@/components/messages/message-client-button";
 import { Tag } from "@/components/ui/tag";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SessionTimeline } from "@/components/client/session-timeline";
@@ -122,11 +123,7 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button asChild variant="ghost">
-            <Link href="/app/messages">
-              <MessageSquare className="size-4" strokeWidth={2} aria-hidden /> Message
-            </Link>
-          </Button>
+          <MessageClientButton clientId={client.id} base="/app/messages" />
           <Button asChild variant="ghost">
             <Link href="/app/appointments">
               <CalendarPlus className="size-4" strokeWidth={2} aria-hidden /> Book

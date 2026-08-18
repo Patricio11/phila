@@ -5,7 +5,7 @@ import { za } from "@/lib/format";
 import { isRemote } from "@/lib/domain/enums";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ArrowLeft, CalendarDays, Check, ChevronRight, Clock, Copy, Hash, Hourglass, MapPin, MonitorSmartphone, NotebookPen, Pencil, Phone, Receipt, Repeat, Stethoscope, UserX, Video, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CalendarDays, Check, ChevronRight, Clock, Copy, Hash, Hourglass, MapPin, MessageSquare, MonitorSmartphone, NotebookPen, Pencil, Phone, Receipt, Repeat, Stethoscope, UserX, Video, X } from "lucide-react";
 import { appointmentReference } from "@/lib/scheduling/reference";
 import { practiceGridTimes } from "@/lib/domain/helpers";
 import { getRescheduleSlots } from "@/app/app/appointments/actions";
@@ -26,6 +26,7 @@ import { SearchSelect } from "@/components/ui/search-select";
 import type { SchedulingOptions } from "@/components/scheduling/create-appointment-modal";
 import { getAppointmentInvoice, generateAppointmentInvoice } from "@/app/hub/invoicing/actions";
 import { markProgress } from "@/app/app/sessions/[id]/actions";
+import { startClientThread } from "@/app/app/messages/actions";
 import { CallPanel } from "@/components/voice/call-panel";
 import { cn } from "@/lib/utils";
 
@@ -113,7 +114,19 @@ export function AppointmentDetail({
   const [invoice, setInvoice] = useState<{ id: string; forId: string; number: string; amountCents: number; status: string; dueAt: string } | null | "none">(null);
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [messaging, setMessaging] = useState(false);
   const joinUrl = appt && join?.id === appt.id ? join.url : null;
+
+  // Phase 34.1 - open (or reopen) the client's conversation and land on it.
+  const messageClient = () => {
+    if (!appt) return;
+    setMessaging(true);
+    void startClientThread({ clientId: appt.clientId }).then((res) => {
+      setMessaging(false);
+      if (!res.ok) return toast({ tone: "error", title: "Can't open a conversation", description: res.error });
+      router.push(`${clientBasePath.replace(/\/clients$/, "/messages")}?t=${encodeURIComponent(res.threadId)}`);
+    });
+  };
 
   // Fetch the signed join link when viewing an online session (state set only async).
   useEffect(() => {
@@ -293,6 +306,8 @@ export function AppointmentDetail({
               <ActionChip icon={UserX} label="No-show" tone="warn" active={appt.state === "no_show"} onClick={() => mark("no_show")} disabled={pending} />
               <ActionChip icon={Hourglass} label="Postponed" tone="warn" active={appt.state === "postponed"} onClick={() => mark("postponed")} disabled={pending} />
               <ActionChip icon={X} label="Cancel" tone="danger" active={appt.state === "cancelled"} onClick={() => setShowCancel(true)} disabled={pending} />
+              {/* Phase 34.1 - the practice <-> client conversation, from the session. */}
+              <ActionChip icon={MessageSquare} label="Message client" onClick={messageClient} disabled={pending || messaging} />
               {openSessions && (
                 <Link
                   href={`/app/sessions/${appt.id}`}

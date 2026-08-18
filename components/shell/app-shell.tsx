@@ -76,7 +76,7 @@ export function AppShell({
   // whenever the tab comes back; land on Messages and it clears optimistically
   // (opening a thread marks it read server-side, so the next poll agrees).
   const [unread, setUnread] = useState(unreadMessages ?? 0);
-  const onMessages = /^\/(app|hub)\/messages/.test(pathname);
+  const onMessages = /^\/(app|hub|me)\/messages/.test(pathname);
   useEffect(() => {
     if (onMessages) setUnread(0);
   }, [onMessages]);

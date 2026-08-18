@@ -1933,6 +1933,16 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   first behind a swappable adapter so other providers can be switched on/off later; includes the
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).
 
+- [ ] **Phase 34 - Client messaging + the WhatsApp nudge + WhatsApp rail v2** *(planned 2026-08-18 -
+  `docs/PHASE_34_CLIENT_MESSAGING_WHATSAPP_PLAN.md`)*: practice ↔ client conversations inside Phila
+  (the practice speaks first; the client's Messages menu appears only then; reply but never start;
+  text + emoji only), a presence-aware "X sent you a message on Phila - open it" nudge over the org's
+  own WhatsApp number (SMS/email fallback, once per thread until read, quiet hours + opt-out, no
+  message content ever), and the WhatsApp rail hardened with the Thola lessons (number health +
+  throttle + banner, jittered retry + masked dead letters, webhook idempotency, never-regress delivery
+  ticks, Meta-approved template modelling) plus a proper Hub → Settings → Integrations home for the
+  connection. Not started.
+
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees
     their own aggregate dashboard - balance, usage, months - still never an identity.

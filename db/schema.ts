@@ -380,6 +380,9 @@ export const invoices = pgTable("invoices", {
   dueAt: timestamp("due_at", { withTimezone: true }).notNull(),
   /** The session this invoice was auto-raised for (W6.2), if any  links session ↔ invoice. */
   appointmentId: text("appointment_id"),
+  /** Batch 4j - a note printed on the invoice (payment reference, terms, account notes). Seeded from
+   *  the org's default note; editable per invoice while unpaid. */
+  notes: text("notes"),
 }, (t) => [index("invoice_appt_idx").on(t.appointmentId)]);
 
 /* ── Funders & grants cluster (M&E, Phase 10) ──────────────────────────── */

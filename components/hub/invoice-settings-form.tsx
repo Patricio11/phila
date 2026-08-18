@@ -5,7 +5,7 @@ import { Save } from "lucide-react";
 import Link from "next/link";
 import type { InvoiceSettings } from "@/lib/data-provider";
 import { Button } from "@/components/ui/button";
-import { Input, Label, FieldError } from "@/components/ui/input";
+import { Input, Label, FieldError, Textarea } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { saveInvoiceSettings } from "@/app/hub/settings/actions";
 import { cn } from "@/lib/utils";
@@ -41,6 +41,7 @@ export function InvoiceSettingsForm({
       branchCode: s.branchCode,
       showPayButton: s.showPayButton,
       autoInvoiceOnBooking: s.autoInvoiceOnBooking,
+      defaultNote: s.defaultNote ?? "",
     });
     setSaving(false);
     if (res.ok) toast({ tone: "success", title: "Invoicing saved", description: "New invoices use these settings." });
@@ -102,6 +103,20 @@ export function InvoiceSettingsForm({
           <Field label="Account number" value={s.accountNumber} onChange={(v) => set({ accountNumber: v.replace(/\D/g, "") })} placeholder="62845109973" inputMode="numeric" />
           <Field label="Branch code" value={s.branchCode} onChange={(v) => set({ branchCode: v.replace(/\D/g, "") })} placeholder="250655" inputMode="numeric" />
         </div>
+      </Section>
+
+      {/* Batch 4j - the note every invoice starts with */}
+      <Section title="Note on invoices">
+        <p className="text-[12px] text-text-2">Printed under the totals on every new invoice - payment terms, the reference to use, account notes. Each invoice can still be edited on its own while it&apos;s unpaid.</p>
+        <Textarea
+          aria-label="Default note on invoices"
+          rows={3}
+          value={s.defaultNote ?? ""}
+          onChange={(e) => set({ defaultNote: e.target.value })}
+          placeholder={"Please use the invoice number as your payment reference. Payment is due within 14 days.\nQueries: accounts@practice.co.za"}
+          className="min-h-[84px]"
+        />
+        <p className="text-[11px] text-text-3">{(s.defaultNote ?? "").length}/600</p>
       </Section>
 
       {/* Automatic invoicing */}

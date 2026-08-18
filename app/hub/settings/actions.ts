@@ -332,6 +332,8 @@ const invoiceInput = z.object({
   branchCode: z.string().trim().max(10).regex(/^\d*$/, "Branch code is digits only.").optional().or(z.literal("")),
   showPayButton: z.boolean(),
   autoInvoiceOnBooking: z.boolean(),
+  /** Batch 4j - printed on every new invoice; edited per invoice while unpaid. */
+  defaultNote: z.string().trim().max(600, "Keep the note under 600 characters.").optional().or(z.literal("")),
 });
 
 /**
@@ -355,6 +357,7 @@ export async function saveInvoiceSettings(
       invoicePrefix: d.invoicePrefix, paymentTermsDays: d.paymentTermsDays, bankName: d.bankName ?? "",
       accountName: d.accountName ?? "", accountNumber: d.accountNumber ?? "", branchCode: d.branchCode ?? "",
       showPayButton: d.showPayButton, autoInvoiceOnBooking: d.autoInvoiceOnBooking,
+      defaultNote: d.defaultNote ?? "",
     });
   }
   await logAccess({

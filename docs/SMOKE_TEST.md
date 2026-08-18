@@ -222,6 +222,11 @@ Sign in as **Thandeka**.
 - ☐ Delivery states on Billing → Recent messages never go backwards (a `Read` never becomes `Delivered`); a Meta failure shows its reason; **Failed after retries** lists dead letters with masked recipients
 - ☐ As the super admin, Integrations → **Org connections** ends with **WhatsApp numbers by org** (number, name, status, health chip); Billing shows "N message alerts this month" once any alert has actually gone out
 
+**Notes on invoices** (batch 4j)
+- ☐ Settings → Billing → **Invoicing & VAT** has **Note on invoices** (default text, 600 max); save it
+- ☐ **Create invoice** opens the sheet with that note already in the **Notes** area under the totals; edit it in place → Create → the board's preview prints it; the client sees the same on `/me/billing`
+- ☐ On an unpaid invoice → **Edit** shows **Notes on the invoice** prefilled; a change saves; a paid invoice can't be edited (as before)
+
 **Full page** (batch 4i)
 - ☐ Messages (hub / app / client space), the Appointments calendar and Documents each carry a **full-page** toggle (the expand icon on their toolbar); tapping it takes the surface over the whole viewport with a slim bar (title · what you're looking at · **Exit full page**); the sidebar, top bar and, on a phone, the floating tab bar are all hidden while open; **Esc** or Exit brings the shell back exactly as it was; a dialog opened inside (e.g. an appointment) still shows on top
 

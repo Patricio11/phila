@@ -75,6 +75,8 @@ export function InvoiceBuilder({
   const [appointmentId, setAppointmentId] = useState<string | null>(null);
   const [itemsTouched, setItemsTouched] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Batch 4j - the note printed under the totals; starts from the org's default.
+  const [notes, setNotes] = useState(settings.defaultNote ?? "");
 
   const nameOf = new Map(clients.map((c) => [c.id, c.name]));
   // Every unbilled session is offered (the label carries the client's name, so
@@ -101,7 +103,7 @@ export function InvoiceBuilder({
     const description = items.map((i) => i.description.trim()).filter(Boolean).join(" + ").slice(0, 160);
     setSaving(true);
     try {
-      const res = await createInvoice({ clientId, appointmentId, serviceName: description, amountRands: totalCents / 100 });
+      const res = await createInvoice({ clientId, appointmentId, serviceName: description, amountRands: totalCents / 100, notes });
       if (!res.ok) return toast({ tone: "error", title: res.error });
       toast({ tone: "success", title: `${res.number} created`, description: linked ? `Billing session ${appointmentReference(linked.id)}.` : "It's on the board as unpaid." });
       router.push(backHref);
@@ -267,6 +269,20 @@ export function InvoiceBuilder({
             </button>
           </div>
         )}
+
+        {/* Batch 4j - notes: type straight on the sheet (WYSIWYG - what you see is what prints) */}
+        <div className="mt-6">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-[#8b938e]">Notes</div>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value.slice(0, 600))}
+            rows={3}
+            aria-label="Invoice notes"
+            placeholder="Payment terms, the reference to use, account notes - anything the client should read."
+            className="mt-1 w-full resize-none rounded-[6px] bg-transparent px-1 -mx-1 text-[12px] leading-relaxed text-[#141916] outline-none transition-colors placeholder:text-[#a3aaa6] hover:bg-[#f4f6f5] focus:bg-[#f4f6f5] focus:ring-1 focus:ring-[#1C7D58]/40 print:hidden"
+          />
+          {notes.trim() && <p className="hidden whitespace-pre-line text-[12px] leading-relaxed text-[#141916] print:block">{notes}</p>}
+        </div>
 
         <div className="mt-auto pt-8">
         {settings.accountNumber ? (

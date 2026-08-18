@@ -338,6 +338,8 @@ export interface Invoice {
   dueAt: ISODateTime;
   /** Batch 3l - the session this invoice bills, if any; its APT reference prints on the invoice. */
   appointmentId?: string | null;
+  /** Batch 4j - a note printed on the invoice (payment reference, terms, account notes). */
+  notes?: string | null;
 }
 
 export interface OutcomeMeasure {

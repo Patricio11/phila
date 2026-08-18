@@ -1933,6 +1933,13 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   first behind a swappable adapter so other providers can be switched on/off later; includes the
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).
 
+- [x] **Notes on invoices** *(2026-08-18, batch 4j)*: `invoices.notes` (migration 0083) - a note printed
+  under the totals on the A4 sheet (payment terms, the reference to use, account notes). Settings →
+  Billing → Invoicing gained **Note on invoices** (the default every new invoice starts with; also
+  seeded onto auto-raised booking invoices); the builder carries a **Notes** area typed straight on the
+  sheet (WYSIWYG - it prints), the board's Edit dialog edits it while unpaid, and the preview (hub +
+  the client's own /me/billing view) prints it. Capped at 600 characters. Proven live end to end.
+
 - [x] **Full page - Messages, Appointments, Documents** *(2026-08-18, batch 4i)*: borrowed from Thola's
   invoice builder - a reusable `FullPage` layer (`components/ui/full-page.tsx`) that portals a
   working surface into a fixed, full-viewport panel with a slim toolbar (icon · title · live subtitle ·

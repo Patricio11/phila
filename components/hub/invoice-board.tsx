@@ -14,7 +14,7 @@ import { getInvoicePayLink, markInvoicePaid, sendInvoiceReminder, updateInvoice,
 import { KebabMenu } from "@/components/ui/kebab-menu";
 import { Avatar } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
-import { Input, Label } from "@/components/ui/input";
+import { Input, Label, Textarea } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useRouter } from "next/navigation";
 import { InvoicePreview } from "@/components/hub/invoice-preview";
@@ -57,6 +57,7 @@ export function InvoiceBoard({ rows, nowISO, orgName, province, vatRatePercent, 
   const [eService, setEService] = useState("");
   const [eAmount, setEAmount] = useState("");
   const [eDue, setEDue] = useState("");
+  const [eNotes, setENotes] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
 
   const effective = (r: InvoiceRow): PaymentStatus => statusOf[r.invoice.id] ?? r.invoice.status;
@@ -83,6 +84,7 @@ export function InvoiceBoard({ rows, nowISO, orgName, province, vatRatePercent, 
     setEService(r.invoice.serviceName);
     setEAmount(String(Math.round(r.invoice.amountCents / 100)));
     setEDue(r.invoice.dueAt.slice(0, 10));
+    setENotes(r.invoice.notes ?? "");
     setEditing(r);
   };
 
@@ -90,7 +92,7 @@ export function InvoiceBoard({ rows, nowISO, orgName, province, vatRatePercent, 
     if (!editing) return;
     setSavingEdit(true);
     try {
-      const res = await updateInvoice({ invoiceId: editing.invoice.id, serviceName: eService.trim(), amountRands: Number(eAmount || 0), dueAt: eDue });
+      const res = await updateInvoice({ invoiceId: editing.invoice.id, serviceName: eService.trim(), amountRands: Number(eAmount || 0), dueAt: eDue, notes: eNotes });
       if (!res.ok) return toast({ tone: "error", title: res.error });
       toast({ tone: "success", title: `${editing.invoice.number} updated`, description: "The client sees the new details on their invoice." });
       setEditing(null);
@@ -299,6 +301,11 @@ export function InvoiceBoard({ rows, nowISO, orgName, province, vatRatePercent, 
               <Label>Due date</Label>
               <DatePicker value={eDue} onChange={setEDue} ariaLabel="Due date" />
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Notes on the invoice</Label>
+            <Textarea aria-label="Invoice notes" rows={3} value={eNotes} onChange={(e) => setENotes(e.target.value.slice(0, 600))} placeholder="Payment terms, the reference to use, account notes." />
+            <p className="text-[11px] text-text-3">Printed under the totals. {eNotes.length}/600</p>
           </div>
         </div>
       </Dialog>

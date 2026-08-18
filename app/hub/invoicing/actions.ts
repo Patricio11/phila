@@ -185,6 +185,7 @@ const editInput = z.object({
   serviceName: z.string().trim().min(2, "Name the service.").max(160),
   amountRands: z.number().min(0).max(1_000_000),
   dueAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  notes: z.string().trim().max(600, "Keep the note under 600 characters.").optional(),
 });
 
 export async function updateInvoice(raw: z.infer<typeof editInput>): Promise<{ ok: true } | { ok: false; error: string }> {
@@ -198,6 +199,7 @@ export async function updateInvoice(raw: z.infer<typeof editInput>): Promise<{ o
     serviceName: d.serviceName,
     amountCents: Math.round(d.amountRands * 100),
     dueAt: new Date(`${d.dueAt}T17:00:00+02:00`),
+    notes: d.notes === undefined ? undefined : (d.notes.trim() || null),
   });
   if (!res.ok) return res;
   await logAccess({
@@ -241,6 +243,8 @@ const createInput = z.object({
   appointmentId: z.string().min(1).nullable(),
   serviceName: z.string().trim().min(2, "Describe what this invoice bills.").max(160),
   amountRands: z.number().min(0.01, "The invoice total must be more than zero.").max(1_000_000),
+  /** Batch 4j - the note printed on the sheet (starts from the org's default). */
+  notes: z.string().trim().max(600, "Keep the note under 600 characters.").optional(),
 });
 export async function createInvoice(
   raw: z.infer<typeof createInput>,
@@ -258,6 +262,7 @@ export async function createInvoice(
     serviceName: d.serviceName,
     amountCents: Math.round(d.amountRands * 100),
     issuedAt: new Date(),
+    notes: d.notes?.trim() || null,
   });
   if (!res.ok) return res;
   await logAccess({

@@ -149,6 +149,13 @@ export function InvoicePreview({
             </div>
           )}
 
+          {invoice.notes && (
+            <div className="mt-6" data-testid="invoice-notes">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-[#8b938e]">Notes</div>
+              <p className="mt-1 whitespace-pre-line text-[12px] leading-relaxed text-[#141916]">{invoice.notes}</p>
+            </div>
+          )}
+
           <div className="mt-auto pt-8">
           {settings.accountNumber ? (
             <div className="border-t border-[#e5e9e7] pt-4 text-[11.5px] text-[#5b635e]">

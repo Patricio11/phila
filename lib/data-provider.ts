@@ -600,6 +600,8 @@ export interface InvoiceSettings {
   showPayButton: boolean;
   /** Auto-raise an invoice when a priced session is booked (W6.2). Default on. */
   autoInvoiceOnBooking: boolean;
+  /** Batch 4j - the note every new invoice starts with (terms, payment reference, account notes). */
+  defaultNote: string;
 }
 
 export type InsightsPeriod = "week" | "month" | "quarter";

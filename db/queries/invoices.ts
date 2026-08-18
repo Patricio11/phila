@@ -134,6 +134,7 @@ export async function backfillInvoicesDb(orgId: string, issuedAt: Date): Promise
       number: `${settings.invoicePrefix}-${year}-${String(seq++).padStart(4, "0")}`,
       serviceName: r.serviceName, amountCents, status: "unpaid",
       issuedAt, dueAt, appointmentId: r.appointmentId,
+      notes: settings.defaultNote?.trim() || null,
     });
   }
   for (let i = 0; i < values.length; i += 100) {
@@ -174,7 +175,7 @@ export async function listUninvoicedCompletedDb(orgId: string): Promise<{ appoin
 export async function updateInvoiceDb(
   orgId: string,
   invoiceId: string,
-  patch: { serviceName?: string; amountCents?: number; dueAt?: Date },
+  patch: { serviceName?: string; amountCents?: number; dueAt?: Date; notes?: string | null },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const db = getDb();
   const [inv] = await db.select({ status: invoices.status }).from(invoices)
@@ -186,6 +187,7 @@ export async function updateInvoiceDb(
   if (patch.serviceName !== undefined) set.serviceName = patch.serviceName;
   if (patch.amountCents !== undefined) set.amountCents = patch.amountCents;
   if (patch.dueAt !== undefined) set.dueAt = patch.dueAt;
+  if (patch.notes !== undefined) set.notes = patch.notes;
   if (Object.keys(set).length === 0) return { ok: true };
   await db.update(invoices).set(set).where(and(eq(invoices.id, invoiceId), eq(invoices.orgId, orgId)));
   return { ok: true };
@@ -241,6 +243,7 @@ export async function createManualInvoiceDb(input: {
   serviceName: string;
   amountCents: number;
   issuedAt: Date;
+  notes?: string | null;
 }): Promise<{ ok: true; id: string; number: string } | { ok: false; error: string }> {
   const db = getDb();
   const [c] = await db.select({ id: clients.id }).from(clients)
@@ -268,6 +271,7 @@ export async function createManualInvoiceDb(input: {
     id, clientId: input.clientId, orgId: input.orgId, number,
     serviceName: input.serviceName, amountCents: input.amountCents,
     status: "unpaid", issuedAt: input.issuedAt, dueAt, appointmentId: input.appointmentId,
+    notes: input.notes ?? null,
   });
   return { ok: true, id, number };
 }

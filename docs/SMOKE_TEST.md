@@ -222,6 +222,9 @@ Sign in as **Thandeka**.
 - ☐ Delivery states on Billing → Recent messages never go backwards (a `Read` never becomes `Delivered`); a Meta failure shows its reason; **Failed after retries** lists dead letters with masked recipients
 - ☐ As the super admin, Integrations → **Org connections** ends with **WhatsApp numbers by org** (number, name, status, health chip); Billing shows "N message alerts this month" once any alert has actually gone out
 
+**Full page** (batch 4i)
+- ☐ Messages (hub / app / client space), the Appointments calendar and Documents each carry a **full-page** toggle (the expand icon on their toolbar); tapping it takes the surface over the whole viewport with a slim bar (title · what you're looking at · **Exit full page**); the sidebar, top bar and, on a phone, the floating tab bar are all hidden while open; **Esc** or Exit brings the shell back exactly as it was; a dialog opened inside (e.g. an appointment) still shows on top
+
 **Settings shell** (batch 4h)
 - ☐ `/hub/settings` shows a **left rail** of six sections with status chips (Verified · N channels on · N features on · Gateway live / Trial · 2FA on/off); clicking slides the active marker and the panel rises; each section has **sub-tabs** with a hint line (Organisation → Profile / Branding / Client portal / Public page / Verification, etc.)
 - ☐ The URL follows you (`?tab=…&sub=…`); a deep link such as `/hub/settings?tab=security&sub=compliance` opens on that panel; leaving a section and coming back remembers its sub-tab; a half-typed form survives switching

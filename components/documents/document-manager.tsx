@@ -40,6 +40,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { ShareEmailDialog } from "@/components/documents/share-email-dialog";
 import { cn } from "@/lib/utils";
+import { FullPage, FullPageToggle } from "@/components/ui/full-page";
 import { KebabMenu } from "@/components/ui/kebab-menu";
 import { SearchSelect } from "@/components/ui/search-select";
 import {
@@ -93,6 +94,8 @@ export function DocumentManager({
   const { toast } = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(0);
+  // Batch 4i - full page: the file manager takes the whole viewport, menus covered.
+  const [full, setFull] = useState(false);
 
   // Optimistic local state, re-synced from the server whenever a refresh delivers
   // new props (the React "adjust state during render" pattern  not an effect).
@@ -508,6 +511,7 @@ export function DocumentManager({
   const selCount = selected.size;
 
   return (
+    <FullPage open={full} onClose={() => setFull(false)} title="Documents" subtitle={breadcrumb.length ? breadcrumb.map((f) => f.name).join(" / ") : "Home"} icon={FolderOpen} padded>
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[220px_1fr]">
       {/* ── Left: views + folder tree ──────────────────────────────────── */}
       <aside className="space-y-4">
@@ -622,6 +626,7 @@ export function DocumentManager({
             >
               <Upload className="size-4" aria-hidden /> {uploading > 0 ? `Uploading ${uploading}…` : "Upload"}
             </Button>
+            <FullPageToggle full={full} onToggle={() => setFull((v) => !v)} label="Open documents full page" />
           </div>
         </div>
 
@@ -983,6 +988,7 @@ export function DocumentManager({
         </div>
       </Dialog>
     </div>
+    </FullPage>
   );
 }
 

@@ -1933,6 +1933,17 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   first behind a swappable adapter so other providers can be switched on/off later; includes the
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).
 
+- [x] **Full page - Messages, Appointments, Documents** *(2026-08-18, batch 4i)*: borrowed from Thola's
+  invoice builder - a reusable `FullPage` layer (`components/ui/full-page.tsx`) that portals a
+  working surface into a fixed, full-viewport panel with a slim toolbar (icon · title · live subtitle ·
+  Exit full page / Esc), body scroll locked, z-70 so the whole app shell (sidebar, top bar, the
+  mobile tab bar) is simply covered while dialogs (80) and toasts (100) still land on top; on close
+  the shell is exactly where it was. Wired with a `FullPageToggle` on the **Messages** list header +
+  thread header (hub, counsellor app, client portal - the chat fills the screen, composer at the
+  bottom edge on a phone), the **calendar** toolbar (week grid at full width) and the **Documents**
+  toolbar (breadcrumb as the subtitle). Proven live: desktop + 390 px, the shell hit-tested as
+  covered while open and back after Esc / Exit.
+
 - [x] **Settings redesigned - the settings shell** *(2026-08-18, batch 4h)*: `/hub/settings` is now a
   two-level settings surface. A **left rail** of sections (Organisation · Scheduling · Messaging ·
   Billing & plan · Integrations · Security & data) - icon, label, one-line blurb and a **live status

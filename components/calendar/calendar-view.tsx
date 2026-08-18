@@ -18,6 +18,7 @@ import { SearchSelect } from "@/components/ui/search-select";
 import { useToast } from "@/components/ui/toast";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
+import { FullPage, FullPageToggle } from "@/components/ui/full-page";
 
 type View = "day" | "week" | "month" | "agenda";
 const HOUR_PX = 52;
@@ -128,6 +129,8 @@ export function CalendarView({
   const [createInit, setCreateInit] = useState<CreateInitial | null>(null);
   const [createKey, setCreateKey] = useState(0);
   const [confirm, setConfirm] = useState<{ appt: AppointmentView; newStart: string } | null>(null);
+  // Batch 4i - full page: the calendar takes the whole viewport, menus covered.
+  const [full, setFull] = useState(false);
   // Feedback #2 - calendar filters: one counsellor, and/or a session type.
   const [filterCounsellor, setFilterCounsellor] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<"all" | "in_person" | "online" | "hybrid">("all");
@@ -188,7 +191,8 @@ export function CalendarView({
   };
 
   return (
-    <div className="overflow-hidden rounded-card border border-border bg-surface shadow-sm">
+    <FullPage open={full} onClose={() => setFull(false)} title="Appointments" subtitle={title} icon={CalendarDays} padded>
+    <div className={cn("overflow-hidden bg-surface", full ? "rounded-card border border-border" : "rounded-card border border-border shadow-sm")}>
       {/* Header - two calm rows: filters/actions on top, navigation below. */}
       <div className="space-y-2 border-b border-border px-3 py-2.5 sm:px-4">
         <div className="flex flex-wrap items-center gap-2">
@@ -235,10 +239,13 @@ export function CalendarView({
             <IconBtn label="Next" onClick={() => step(1)}><ChevronRight className="size-4.5" aria-hidden /></IconBtn>
           </div>
           <h2 className="ml-1 text-[14.5px] font-[650] tracking-[-0.01em] text-text">{title}</h2>
-          <div className="ml-auto inline-flex rounded-control border border-border p-0.5">
-            {(["day", "week", "month", "agenda"] as View[]).map((v) => (
-              <button key={v} type="button" onClick={() => { setViewChosen(true); setView(v); }} className={cn("h-7 rounded-[6px] px-2.5 text-[12px] font-medium capitalize transition-colors", view === v ? "bg-accent-soft text-accent" : "text-text-2 hover:text-text")}>{v}</button>
-            ))}
+          <div className="ml-auto flex items-center gap-2">
+            <div className="inline-flex rounded-control border border-border p-0.5">
+              {(["day", "week", "month", "agenda"] as View[]).map((v) => (
+                <button key={v} type="button" onClick={() => { setViewChosen(true); setView(v); }} className={cn("h-7 rounded-[6px] px-2.5 text-[12px] font-medium capitalize transition-colors", view === v ? "bg-accent-soft text-accent" : "text-text-2 hover:text-text")}>{v}</button>
+              ))}
+            </div>
+            <FullPageToggle full={full} onToggle={() => setFull((v) => !v)} label="Open calendar full page" />
           </div>
         </div>
       </div>
@@ -299,6 +306,7 @@ export function CalendarView({
         </div>
       )}
     </div>
+    </FullPage>
   );
 }
 

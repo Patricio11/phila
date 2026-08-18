@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/toast";
 import { createGroup, deleteMessage, editMessage, getRealtimeToken, markThreadRead, refreshThreads, requestChatUpload, sendTeamMessage, signChatAttachment, toggleReaction } from "@/app/app/messages/actions";
 import { EmojiPicker, QUICK_REACTIONS } from "@/components/messages/emoji-picker";
 import { ThreadInfo } from "@/components/messages/thread-info";
+import { FullPage, FullPageToggle } from "@/components/ui/full-page";
 import { sizeLabel } from "@/lib/documents/quota";
 import { cn } from "@/lib/utils";
 
@@ -86,6 +87,8 @@ export function TeamMessagesView({
   const [reactFor, setReactFor] = useState<string | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
   const [flashId, setFlashId] = useState<string | null>(null);
+  // Batch 4i - full page: the chat takes the whole viewport, menus covered.
+  const [full, setFull] = useState(false);
   const composerRef = useRef<HTMLTextAreaElement>(null);
 
   const active = threads.find((t) => t.id === activeId) ?? null;
@@ -472,8 +475,9 @@ export function TeamMessagesView({
   }
 
   return (
-    <div className="overflow-hidden rounded-card border border-border bg-surface shadow-sm">
-      <div className={cn("grid h-[calc(100dvh-220px)] min-h-[420px] grid-cols-1", !isClient && "lg:grid-cols-[300px_1fr]")}>
+    <FullPage open={full} onClose={() => setFull(false)} title="Messages" subtitle={active ? active.otherName : undefined} icon={MessagesSquare}>
+    <div className={cn("overflow-hidden bg-surface", full ? "flex min-h-0 flex-1 flex-col" : "rounded-card border border-border shadow-sm")}>
+      <div className={cn("grid grid-cols-1", full ? "min-h-0 flex-1" : "h-[calc(100dvh-220px)] min-h-[420px]", !isClient && "lg:grid-cols-[300px_1fr]")}>
         {/* Thread list - a client has exactly one conversation, so their view is the thread alone. */}
         <div className={cn("flex min-h-0 flex-col border-r border-border", mobileThread && "hidden lg:flex", isClient && "hidden")}>
           <div className="flex items-center gap-2 border-b border-border p-2.5">
@@ -491,6 +495,7 @@ export function TeamMessagesView({
                 <PenSquare className="size-4" strokeWidth={2} aria-hidden />
               </button>
             )}
+            {!full && <FullPageToggle full={full} onToggle={() => setFull(true)} label="Open messages full page" />}
           </div>
           <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">
             {visible.length === 0 ? (
@@ -563,6 +568,7 @@ export function TeamMessagesView({
                     <Info className="size-4" strokeWidth={2} aria-hidden />
                   </button>
                 )}
+                {!full && <FullPageToggle full={full} onToggle={() => setFull(true)} label="Open messages full page" className="border-0" />}
               </div>
 
               {active.kind === "client" && !isClient && (
@@ -828,6 +834,7 @@ export function TeamMessagesView({
         </div>
       </Dialog>
     </div>
+    </FullPage>
   );
 }
 

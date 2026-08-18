@@ -16,6 +16,8 @@ const settingsInput = z.object({
   emailFromName: z.string().max(80),
   quietStart: time,
   quietEnd: time,
+  messageAlertsStaff: z.boolean().default(true),
+  messageAlertsClients: z.boolean().default(true),
 });
 
 export async function saveNotificationSettings(
@@ -29,6 +31,7 @@ export async function saveNotificationSettings(
     whatsappEnabled: d.whatsappEnabled, smsEnabled: d.smsEnabled, emailEnabled: d.emailEnabled,
     emailReplyTo: d.emailReplyTo || null, emailFromName: d.emailFromName || null,
     quietStart: d.quietStart || null, quietEnd: d.quietEnd || null,
+    messageAlertsStaff: d.messageAlertsStaff, messageAlertsClients: d.messageAlertsClients,
   });
   await logAccess({ action: "admin.action", actor: { userId: "hub", platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `org:${membership.orgId}/messaging`, reason: "update_notification_settings" });
   return { ok: true };
@@ -55,7 +58,7 @@ export async function saveWhatsapp(
 
 const templateInput = z.object({
   channel: z.enum(["whatsapp", "sms", "email"]),
-  key: z.enum(["booked", "rescheduled", "cancelled", "reminder", "no_show", "document_shared", "client_uploaded_document", "form_sent", "waitlist_slot"]),
+  key: z.enum(["booked", "rescheduled", "cancelled", "reminder", "no_show", "document_shared", "client_uploaded_document", "form_sent", "waitlist_slot", "new_message"]),
   body: z.string().trim().min(1, "Message can't be empty.").max(2000),
   whatsappTemplateName: z.string().trim().max(120).default(""),
 });
@@ -72,7 +75,7 @@ export async function saveMessageTemplate(
   return { ok: true };
 }
 
-const resetInput = z.object({ channel: z.enum(["whatsapp", "sms", "email"]), key: z.enum(["booked", "rescheduled", "cancelled", "reminder", "no_show", "document_shared", "client_uploaded_document", "form_sent", "waitlist_slot"]) });
+const resetInput = z.object({ channel: z.enum(["whatsapp", "sms", "email"]), key: z.enum(["booked", "rescheduled", "cancelled", "reminder", "no_show", "document_shared", "client_uploaded_document", "form_sent", "waitlist_slot", "new_message"]) });
 
 export async function resetMessageTemplate(
   raw: z.infer<typeof resetInput>,

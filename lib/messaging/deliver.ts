@@ -55,7 +55,7 @@ export async function deliver(input: DeliverInput): Promise<DeliverOutcome> {
 
   // Quiet hours apply to non-urgent nudges (reminders, follow-ups). Transactional
   // confirmations (booked/rescheduled/cancelled) answer a client action  send anytime.
-  const respectQuiet = trigger === "reminder" || trigger === "no_show";
+  const respectQuiet = trigger === "reminder" || trigger === "no_show" || trigger === "new_message";
   if (respectQuiet && withinQuietHours(sastHHMM(clockNow()), settings.quietStart, settings.quietEnd)) {
     await logMessage({ orgId, channel, to, templateKey: trigger, trigger, status: "quiet_hours" });
     return { channel, status: "quiet_hours" };
@@ -115,7 +115,7 @@ export async function deliver(input: DeliverInput): Promise<DeliverOutcome> {
       subject,
       practiceName: vars.practiceName ?? "your practice",
       body,
-      cta: vars.joinLink ? { label: "Join your session", url: vars.joinLink } : undefined,
+      cta: vars.joinLink ? { label: "Join your session", url: vars.joinLink } : vars.link ? { label: "Open Phila", url: vars.link } : undefined,
     });
     result = await sendEmail(to, subject, text, settings.emailFromName ?? "", settings.emailReplyTo, html);
   }

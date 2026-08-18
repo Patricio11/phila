@@ -3,7 +3,8 @@
 import { z } from "zod";
 import { requireOrg } from "@/lib/auth/guard";
 import { requireMessagingPrincipal } from "@/lib/messaging/principal";
-import { notifyClientUser } from "@/db/queries/notifications";
+import { nudgeThreadMembers } from "@/lib/messaging/nudge";
+import { after } from "next/server";
 import { runForOrg } from "@/lib/db/scoped";
 import { getDataProvider, type TeamThread } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
@@ -100,21 +101,11 @@ export async function sendTeamMessage(
         message: msgPayload,
       });
     }
-    // Phase 34.1 - a staff message into a client thread rings the client's bell
-    // (their portal has no other signal yet; the WhatsApp nudge is 34.2).
-    if (me.kind === "staff") {
-      const t = await threadKindDb(sent.threadId);
-      if (t?.kind === "client" && t.clientId) {
-        try {
-          await notifyClientUser(t.clientId, me.orgId, {
-            kind: "message",
-            title: `${senderName} sent you a message`,
-            body: d.text ? (d.text.length > 90 ? d.text.slice(0, 87) + "…" : d.text) : (attachment ? `Shared a file: ${attachment.name}` : "Open Messages to read it."),
-            href: "/me/messages",
-          });
-        } catch { /* the message is saved regardless */ }
-      }
-    }
+    // Phase 34.2 - the doorbell: bell every other member (once per thread until
+    // read) and, for anyone NOT online in Phila, ONE external "X sent you a
+    // message on Phila" on their preferred channel. Runs after the response.
+    const nudgeInput = { threadId: sent.threadId, orgId: me.orgId, senderUserId: me.userId, senderName, messageId: sent.messageId, senderKind: me.kind };
+    after(() => nudgeThreadMembers(nudgeInput).catch(() => {}));
   }
 
   await logAccess({

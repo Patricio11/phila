@@ -14,10 +14,12 @@ export type MessageTrigger =
   | "document_shared"
   | "client_uploaded_document"
   | "form_sent"
-  | "waitlist_slot";
+  | "waitlist_slot"
+  /** Phase 34.2 - "X sent you a message on Phila" (never carries the message body). */
+  | "new_message";
 
 export const CHANNELS: Channel[] = ["whatsapp", "sms", "email"];
-export const TRIGGERS: MessageTrigger[] = ["booked", "rescheduled", "cancelled", "reminder", "no_show", "document_shared", "client_uploaded_document", "form_sent", "waitlist_slot"];
+export const TRIGGERS: MessageTrigger[] = ["booked", "rescheduled", "cancelled", "reminder", "no_show", "document_shared", "client_uploaded_document", "form_sent", "waitlist_slot", "new_message"];
 
 export interface RenderVars {
   clientName: string;
@@ -33,6 +35,10 @@ export interface RenderVars {
   joinLink?: string;
   /** Batch 3l - the booking reference (e.g. "APT-3F9A2C"); org templates may place it with {reference}. */
   reference?: string;
+  /** Phase 34.2 - who wrote the message (the nudge names the sender, never the content). */
+  senderName?: string;
+  /** Phase 34.2 - where to open it (deep link into Phila; emails render it as the button). */
+  link?: string;
 }
 
 /**
@@ -56,6 +62,7 @@ export const DEFAULT_TEMPLATES: Record<Channel, Record<MessageTrigger, string>> 
     client_uploaded_document: "{clientName} uploaded a document ({documentName}) at {practiceName}.",
     form_sent: "Hi {clientName}, {practiceName} would like you to fill in a quick form: {formName}. Open it here: {formLink}  it only takes a few minutes. Reply STOP to opt out.",
     waitlist_slot: "Hi {clientName}, good news  a slot has opened with {counsellorName} at {practiceName} on {date} at {time}. Reply YES to take it and we'll confirm. Reply STOP to opt out.",
+    new_message: "Hi {clientName}, {senderName} sent you a message on Phila. Open it here: {link}",
   },
   sms: {
     booked: "{practiceName}: your session is booked for {date} at {time}. Reply STOP to opt out.",
@@ -67,6 +74,7 @@ export const DEFAULT_TEMPLATES: Record<Channel, Record<MessageTrigger, string>> 
     client_uploaded_document: "{practiceName}: {clientName} uploaded {documentName}.",
     form_sent: "{practiceName}: please fill in this form ({formName}): {formLink}",
     waitlist_slot: "{practiceName}: a slot opened with {counsellorName} on {date} at {time}. Reply YES to take it. STOP to opt out.",
+    new_message: "{practiceName}: {senderName} sent you a message on Phila. Open it: {link}",
   },
   email: {
     booked: "Hi {clientName},\n\nYour {serviceName} with {counsellorName} at {practiceName} is confirmed for {date} at {time}.\n\nIf you need to change it, just reply to this email.\n\nWarmly,\n{practiceName}",
@@ -78,6 +86,7 @@ export const DEFAULT_TEMPLATES: Record<Channel, Record<MessageTrigger, string>> 
     client_uploaded_document: "{clientName} has uploaded a document ({documentName}). You can review it in the practice console.\n\n{practiceName}",
     form_sent: "Hi {clientName},\n\n{practiceName} would like you to complete a short form: {formName}.\n\nYou can fill it in whenever suits you:\n{formLink}\n\nIt only takes a few minutes, and your answers are kept confidential.\n\nWarmly,\n{practiceName}",
     waitlist_slot: "Hi {clientName},\n\nGood news  a slot has opened with {counsellorName} at {practiceName} on {date} at {time}. You're on our waitlist, so we wanted to offer it to you first.\n\nReply to this email to take it and we'll confirm the booking.\n\nWarmly,\n{practiceName}",
+    new_message: "Hi {clientName},\n\n{senderName} sent you a message on Phila. Open it here:\n{link}\n\nWarmly,\n{practiceName}",
   },
 };
 
@@ -91,6 +100,7 @@ export const EMAIL_SUBJECTS: Record<MessageTrigger, string> = {
   client_uploaded_document: "A client uploaded a document",
   form_sent: "A form to fill in",
   waitlist_slot: "A slot has opened - it's yours if you'd like it",
+  new_message: "You have a new message on Phila",
 };
 
 /** Substitute `{token}` placeholders; unknown tokens render empty. */

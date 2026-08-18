@@ -97,6 +97,14 @@ export function TeamMessagesView({
 
   // Keep the active thread readable inside the (stable) realtime handler.
   useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
+  // Phase 34.2 - a thread that opens on arrival (the first one, a ?t= deep link,
+  // the client's single conversation) counts as read the moment it's on screen -
+  // it moves the server cursor, clears the badge, and re-arms the message alert.
+  useEffect(() => {
+    if (!activeId || activeId.startsWith("local_")) return;
+    void markThreadRead(activeId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-scroll to the newest message when the open thread changes or grows.
   useEffect(() => {

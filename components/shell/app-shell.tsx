@@ -9,6 +9,7 @@ import { TwoFactorBanner } from "@/components/shell/two-factor-banner";
 import { NAVS, type NavKey, type NavSection } from "@/components/shell/nav-config";
 import { PageHeadSetterContext, type HeadInfo } from "@/components/shell/page-head-context";
 import { getUnreadMessages } from "@/lib/messaging/unread-actions";
+import { heartbeat } from "@/lib/messaging/presence-actions";
 
 const COLLAPSE_KEY = "phila-sidebar-collapsed";
 const COLLAPSE_EVENT = "phila:sidebar";
@@ -91,6 +92,16 @@ export function AppShell({
     const onVisible = () => { if (!document.hidden) void tick(); };
     document.addEventListener("visibilitychange", onVisible);
     return () => { stopped = true; clearInterval(id); document.removeEventListener("visibilitychange", onVisible); };
+  }, []);
+  // Phase 34.2 - presence heartbeat: "I'm here" every 60 s while the tab is
+  // visible, so a Phila message never rings the phone of someone already in Phila.
+  useEffect(() => {
+    let stopped = false;
+    const beat = () => { if (!stopped && !document.hidden) void heartbeat().catch(() => {}); };
+    beat();
+    const id = setInterval(beat, 60_000);
+    document.addEventListener("visibilitychange", beat);
+    return () => { stopped = true; clearInterval(id); document.removeEventListener("visibilitychange", beat); };
   }, []);
   const sections: NavSection[] = useMemo(
     () =>

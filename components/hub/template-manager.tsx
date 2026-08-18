@@ -15,18 +15,20 @@ const TRIGGER_LABEL: Record<MessageTrigger, string> = {
   booked: "Booking confirmed", rescheduled: "Rescheduled", cancelled: "Cancelled", reminder: "Reminder", no_show: "No-show follow-up",
   document_shared: "Document shared with client", client_uploaded_document: "Client uploaded a document", form_sent: "Form sent to client",
   waitlist_slot: "Waitlist - slot opened",
+  new_message: "New message on Phila (alert)",
 };
 const CHANNEL_META: Record<Channel, { label: string; icon: typeof Mail }> = {
   whatsapp: { label: "WhatsApp", icon: MessageCircle }, sms: { label: "SMS", icon: Smartphone }, email: { label: "Email", icon: Mail },
 };
 const TOKENS = ["clientName", "practiceName", "serviceName", "counsellorName", "date", "time", "documentName", "formName", "formLink", "joinLink"];
-const TRIGGERS: MessageTrigger[] = ["booked", "rescheduled", "cancelled", "reminder", "no_show", "document_shared", "client_uploaded_document", "form_sent", "waitlist_slot"];
+const TRIGGERS: MessageTrigger[] = ["booked", "rescheduled", "cancelled", "reminder", "no_show", "document_shared", "client_uploaded_document", "form_sent", "waitlist_slot", "new_message"];
 const CHANNELS: Channel[] = ["whatsapp", "sms", "email"];
 
 export function TemplateManager({ templates, practiceName }: { templates: TemplateView[]; practiceName: string }) {
   const sample = {
     clientName: "Lerato", practiceName, serviceName: "Individual counselling",
     counsellorName: "Nomsa", date: "Mon 6 Jul", time: "10:00",
+    senderName: "Nomsa Dlamini", link: "philasa.com/me/messages",
   };
   const find = (channel: Channel, key: MessageTrigger) => templates.find((t) => t.channel === channel && t.key === key)!;
 

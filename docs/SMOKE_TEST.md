@@ -209,6 +209,12 @@ Sign in as **Thandeka**.
 - ☐ The client's counsellor sees the same thread in `/app/messages` (caseload-derived - no setup); front desk sees it too; a counsellor without that client on their caseload cannot open one ("only clients on your caseload")
 - ☐ The staff message rang the client's **bell**; opening the client's Messages is audited as `pii.read`
 
+**Message alerts + presence** (Phase 34.2)
+- ☐ Settings → Notifications has **Message alerts** (Alert your team / Alert clients) and the template manager carries **New message on Phila (alert)** for WhatsApp / SMS / email
+- ☐ Message someone who is **not in Phila** (no tab open for 2+ min): they get the bell AND one alert on their preferred channel (see Billing → Recent messages: trigger `new_message`; honestly `Dormant` when that channel isn't configured); a **second message before they read** sends nothing more; when they open the thread the alert **re-arms**
+- ☐ Message someone who **is in Phila** (any tab open): bell only, no external row
+- ☐ A client with **no portal login yet** gets the alert with their **activation link**, once
+
 **Storage backend: Supabase or Amazon S3** (batch 2o)
 - ☐ `/admin/integrations/storage` offers two chips: **Supabase** and **Amazon S3**. The chip you are not on shows *configured* when its credentials are stored, so switching back needs no retyping
 - ☐ Picking **Amazon S3** asks for region, bucket, access key ID, secret and an optional endpoint (MinIO / Cloudflare R2), and stops asking for a Supabase project URL

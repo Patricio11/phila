@@ -29,6 +29,7 @@ export function NotificationsSettings({
       whatsappEnabled: s.whatsappEnabled, smsEnabled: s.smsEnabled, emailEnabled: s.emailEnabled,
       emailReplyTo: s.emailReplyTo ?? "", emailFromName: s.emailFromName ?? "",
       quietStart: s.quietStart ?? "", quietEnd: s.quietEnd ?? "",
+      messageAlertsStaff: s.messageAlertsStaff, messageAlertsClients: s.messageAlertsClients,
     });
     if (!res.ok) return toast({ tone: "error", title: res.error });
     toast({ tone: "success", title: "Notification settings saved" });
@@ -73,6 +74,28 @@ export function NotificationsSettings({
           <TimePicker minuteStep={15} className="w-32" value={s.quietStart ?? ""} onChange={(v) => set("quietStart", v)} ariaLabel="Quiet hours start" />
           <span className="text-[12px] text-text-3">to</span>
           <TimePicker minuteStep={15} className="w-32" value={s.quietEnd ?? ""} onChange={(v) => set("quietEnd", v)} ariaLabel="Quiet hours end" />
+        </div>
+      </div>
+
+      {/* Phase 34.2 - message alerts: the doorbell for Phila messages */}
+      <div className="rounded-card border border-border bg-surface-2/30 p-3.5">
+        <div className="text-[12px] font-[660] text-text">Message alerts</div>
+        <p className="mt-0.5 text-[11.5px] text-text-2">When someone gets a Phila message while they&apos;re not online, tell them on their preferred channel - &quot;X sent you a message on Phila, open it&quot;. Never the message itself. One alert per conversation until it&apos;s read; quiet hours apply.</p>
+        <div className="mt-2.5 grid gap-2 sm:grid-cols-2">
+          <div className="flex items-center justify-between gap-3 rounded-control border border-border bg-surface px-3 py-2">
+            <span className="min-w-0">
+              <span className="block text-[12.5px] font-medium text-text">Alert your team</span>
+              <span className="block text-[11px] text-text-3">Counsellors, front desk, admins - when they&apos;re not in Phila</span>
+            </span>
+            <Switch checked={s.messageAlertsStaff} onChange={(v) => set("messageAlertsStaff", v)} label="Alert your team" />
+          </div>
+          <div className="flex items-center justify-between gap-3 rounded-control border border-border bg-surface px-3 py-2">
+            <span className="min-w-0">
+              <span className="block text-[12.5px] font-medium text-text">Alert clients</span>
+              <span className="block text-[11px] text-text-3">On their preferred channel; never the message itself</span>
+            </span>
+            <Switch checked={s.messageAlertsClients} onChange={(v) => set("messageAlertsClients", v)} label="Alert clients" />
+          </div>
         </div>
       </div>
 

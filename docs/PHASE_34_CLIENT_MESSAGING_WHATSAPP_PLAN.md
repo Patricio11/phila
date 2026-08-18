@@ -8,7 +8,7 @@ Phila - open it". Underneath, harden the WhatsApp rail with what Thola does well
 retries + dead letters, webhook idempotency, delivery ticks that never regress, and a proper
 Integrations home for the connection.*
 
-> **Status:** 🔨 in progress - 34.1 shipped 2026-08-18; 34.2 next. Written after reading Phila's messaging + WhatsApp stack end to end
+> **Status:** 🔨 in progress - 34.1 + 34.2 shipped 2026-08-18; 34.3 next. Written after reading Phila's messaging + WhatsApp stack end to end
 > and a deep read of Thola v2 (`C:\Users\patri\Downloads\thola\thola_v2` - its WhatsApp transport,
 > webhook, number-health, inbox, follow-up engine and readiness docs).
 >
@@ -103,11 +103,11 @@ client banner; the client cannot start a new conversation or attach a file; all 
 
 ## Task 34.2: Presence + the "you have a message on Phila" nudge (WhatsApp-first)
 *The doorbell. Never carries content. Never rings if you're already in the house.*
-- [ ] **Server presence:** the shell sends a **heartbeat** every 60 s while the tab is visible
+- [x] **Server presence:** the shell sends a **heartbeat** every 60 s while the tab is visible
   (server action → `user_presence.last_seen_at`, the table already exists and is unused today);
   `isOnline(userId)` = last seen < 2 min. This is the source of truth for suppression (the Supabase
   presence dots stay for the green dot in the UI - two different jobs).
-- [ ] **New trigger `new_message`** in the message templates (system default + org-editable like the
+- [x] **New trigger `new_message`** in the message templates (system default + org-editable like the
   others): *"{senderName} sent you a message on Phila. Open it: {link}"* - **no body text ever**.
   Renders through the same `deliver()` chokepoint: preferred channel among the org's enabled ones
   (WhatsApp on the org's number when live - free inside the 24h window, an approved template outside;
@@ -115,27 +115,30 @@ client banner; the client cannot start a new conversation or attach a file; all 
   is a person too) + credit meter exactly as today. **Staff recipients** resolve phone from
   `team_profiles.phone` and email from `user.email`; **clients** from `clients.phone / email` +
   `preferredContact`.
-- [ ] **When it fires:** on every persisted message (team, group, client), for each OTHER member: if
+- [x] **When it fires:** on every persisted message (team, group, client), for each OTHER member: if
   `isOnline` → in-app bell only. Else → bell + external nudge, **once per thread until they read it**
   (a `nudged_at` on `thread_members`, cleared by `markThreadRead`); a burst of five messages = one
   nudge. Group threads: one nudge per member with the group name ("Thandeka posted in June Interns").
   Sender never nudged. Link deep-links to the thread (`/hub/messages?t=`, `/app/messages?t=`,
   `/me/messages`); for a not-yet-activated client, the activation link.
-- [ ] **Message templates + Meta template:** the org's template manager gains the `new_message` row
+- [x] **Message templates + Meta template:** the org's template manager gains the `new_message` row
   per channel; the WhatsApp **template-name** field applies (outside the window Meta requires an
   approved template - the org registers one like their reminder template; the plan documents the
   positional params `{{1}}` senderName `{{2}}` practiceName `{{3}}` link).
-- [ ] **Org control:** Settings → Notifications gains **"Message alerts"** - on/off for staff, on/off
+- [x] **Org control:** Settings → Notifications gains **"Message alerts"** - on/off for staff, on/off
   for clients, and the quiet-hours already there apply. Honest states: "WhatsApp not connected - alerts
   go by SMS/email", "No credits - alerts paused" (the existing low-credit rail already bells + emails).
-- [ ] **Metering + log:** SMS/email nudges consume credits with idempotency key
+- [x] **Metering + log:** SMS/email nudges consume credits with idempotency key
   `nudge_<threadId>_<userId>_<messageId>`; every attempt lands in `message_log` with trigger
   `new_message` so Recent messages on Billing shows them; dead-letter on failure (34.3).
 
 **Done when:** Nomsa messages Lerato while Lerato is offline → Lerato's phone gets ONE WhatsApp
 "Nomsa sent you a message on Phila - open it" (or SMS/email if WhatsApp isn't connected); a second
 message before she reads sends nothing more; when Lerato is online in Phila nothing external goes
-out; the same works staff-to-staff.
+out; the same works staff-to-staff. ✅ *(2026-08-18 - proven live: one alert (SMS lane, honestly
+dormant - BulkSMS not configured), dedupe on the second message, heartbeat + read re-armed, her reply
+alerted offline Nomsa but only belled online Thandeka, the third message belled online Lerato with no
+external row; the dead-letter/retry part of "metering + log" is 34.3.)*
 
 ## Task 34.3: WhatsApp rail v2 - the Thola lessons
 *Same connection, tougher plumbing.*

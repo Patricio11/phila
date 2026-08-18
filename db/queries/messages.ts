@@ -367,7 +367,8 @@ export async function sendToThreadDb(orgId: string, fromUserId: string, threadId
 
 /** Move a member's read cursor to now (clears unread). */
 export async function markThreadReadDb(threadId: string, userId: string): Promise<void> {
-  await getDb().update(threadMembers).set({ lastReadAt: new Date() })
+  // Phase 34.2 - reading re-arms the alert (one alert per thread until read).
+  await getDb().update(threadMembers).set({ lastReadAt: new Date(), nudgedAt: null })
     .where(and(eq(threadMembers.threadId, threadId), eq(threadMembers.userId, userId)));
 }
 

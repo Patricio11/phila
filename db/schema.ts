@@ -543,6 +543,9 @@ export const orgMessagingSettings = pgTable("org_messaging_settings", {
   emailFromName: text("email_from_name"),
   quietStart: text("quiet_start"), // "21:00" SAST; null = none
   quietEnd: text("quiet_end"), // "07:00" SAST
+  /** Phase 34.2 - "X sent you a message on Phila" alerts (WhatsApp / SMS / email) for offline recipients. */
+  messageAlertsStaff: boolean("message_alerts_staff").default(true).notNull(),
+  messageAlertsClients: boolean("message_alerts_clients").default(true).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 });
 
@@ -1005,6 +1008,8 @@ export const messageThreads = pgTable("message_threads", {
   // makes "one 1:1 thread per pair" a DB guarantee (no find-then-create race).
   // Null for groups; Postgres treats NULLs as distinct, so many groups coexist.
   pairKey: text("pair_key"),
+  /** Phase 34.2 - a client with NO portal login yet is alerted from the client record (activation link); this dedupes it. */
+  clientNudgedAt: timestamp("client_nudged_at", { withTimezone: true }),
   createdBy: text("created_by"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
   lastMessageAt: timestamp("last_message_at", { withTimezone: true }),
@@ -1018,6 +1023,8 @@ export const threadMembers = pgTable("thread_members", {
   userId: text("user_id").notNull(),
   lastReadAt: timestamp("last_read_at", { withTimezone: true }),
   joinedAt: timestamp("joined_at", { withTimezone: true }).notNull(),
+  /** Phase 34.2 - when we last alerted this member about unread messages here; cleared on read (one alert per thread until read). */
+  nudgedAt: timestamp("nudged_at", { withTimezone: true }),
 }, (t) => [uniqueIndex("thread_member_uq").on(t.threadId, t.userId)]);
 
 export const teamMessages = pgTable("team_messages", {

@@ -1958,6 +1958,23 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
     with three signed-in browsers (admin, client, counsellor): no menu → thread opened from the
     client page → menu appeared → client replied with a quote → admin + counsellor saw it → care
     team listed → membership / audit rows matched → 360 px clean. 292 unit tests green.
+  - [x] **34.2 Presence + the "you have a message on Phila" alert** *(2026-08-18)*: the shell now
+    heartbeats every 60 s while a tab is visible (`user_presence`, "online" = seen < 2 min - the
+    server truth for "don't ring someone who's already here"). After any message persists, every
+    other member gets the **bell** (once per thread until they read it - `thread_members.nudged_at`,
+    cleared on read; opening a thread on arrival now moves the cursor too) and, only when **offline**,
+    ONE external alert over the same `deliver()` chokepoint every client notice uses: new trigger
+    `new_message` (system + org-editable templates for WhatsApp / SMS / email; preview knows
+    `{senderName}` / `{link}`), the org's WhatsApp number when connected (free in-window, approved
+    template outside), else SMS / email from credits; opt-out, quiet hours and metering apply; the
+    alert **never carries the message**, only "X sent you a message on Phila - open it" + a deep
+    link (`/hub|/app/messages?t=` by role, `/me/messages` for clients, the activation link for a
+    client with no login yet - once, until they activate). Settings → Notifications gained **Message
+    alerts** (staff on/off, clients on/off; migration 0081). Every attempt lands in `message_log` +
+    audit (`message_alert_<channel>_<status>`). Proven live: one honest SMS-lane alert (BulkSMS not
+    configured → "dormant"), no second alert before read, heartbeat + read re-armed, a client reply
+    belled online Thandeka only and alerted offline Nomsa, an online client got the bell with no
+    external row. 298 unit tests green (6 new: presence boundary + alert rules).
 
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees

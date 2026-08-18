@@ -4,6 +4,7 @@ import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import type { BusinessHours } from "@/lib/domain/types";
 import { PageHead } from "@/components/shell/page-head";
+import { YourConnections } from "@/components/hub/your-connections";
 import { SettingsTabs } from "@/components/hub/settings-tabs";
 import { ClientPortalSettings } from "@/components/hub/client-portal-settings";
 import { FundersFeatureToggle } from "@/components/hub/funders-feature-toggle";
@@ -73,6 +74,10 @@ export default async function HubSettingsPage() {
     getCreditBalances(membership.orgId),
     getWhatsappConnection(membership.orgId),
   ]);
+  // Phase 34.4 - the Integrations home: number health + whether the voice rail is on.
+  const waHealth = process.env.DATA_PROVIDER === "db" && whatsappConn.status !== "off"
+    ? await (await import("@/db/queries/whatsapp-health")).readNumberHealth(membership.orgId) : null;
+  const voiceOn = process.env.DATA_PROVIDER === "db" ? await (await import("@/lib/voice")).voiceConfigured() : false;
   // A short-lived signed URL for the current logo (if any + storage is live).
   let logoUrl: string | null = null;
   if (process.env.DATA_PROVIDER === "db") {
@@ -190,6 +195,13 @@ export default async function HubSettingsPage() {
         }
         integrations={
           <>
+            <Card>
+              <CardHead title="Your connections" />
+              <div className="px-[17px] pb-[17px]">
+                <p className="mb-3 text-[12.5px] text-text-2">What this practice has connected for itself, and the rails Phila provides. Each is honest about its state - nothing sends until it&apos;s live.</p>
+                <YourConnections whatsapp={whatsappConn} health={waHealth} gateway={gateway} credits={credits} voiceOn={voiceOn} />
+              </div>
+            </Card>
             <Card>
               <CardHead title="Platform features" />
               <div className="space-y-2.5 px-[17px] pb-[17px]">

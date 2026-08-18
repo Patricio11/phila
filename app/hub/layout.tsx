@@ -4,6 +4,7 @@ import { requireHub } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { shouldPromptTwoFactor } from "@/lib/auth/two-factor-prompt";
 import { effectiveFeaturesDb } from "@/db/queries/features";
+import { NumberHealthBanner } from "@/components/hub/number-health-banner";
 
 /**
  * The Org-admin Hub shell (DESIGN.md §5.4). The guard resolves the org-admin
@@ -29,6 +30,11 @@ export default async function HubLayout({ children }: { children: React.ReactNod
     ? await (await import("@/db/queries/messages")).unreadMessageCountDb(principal.userId, membership.orgId)
     : 0;
 
+  // Phase 34.3 - a flagged / restricted WhatsApp number shows a shell-wide banner.
+  const health = process.env.DATA_PROVIDER === "db"
+    ? await (await import("@/db/queries/whatsapp-health")).readNumberHealth(membership.orgId).catch(() => null)
+    : null;
+
   return (
     <ToastProvider>
       <AppShell
@@ -39,6 +45,7 @@ export default async function HubLayout({ children }: { children: React.ReactNod
         features={features}
         twoFactorPrompt={twoFactorPrompt}
         unreadMessages={unreadMessages}
+        banner={<NumberHealthBanner health={health} />}
       >
         {children}
       </AppShell>

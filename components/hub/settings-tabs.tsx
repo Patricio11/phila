@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Blocks, Building2, CalendarClock, MessagesSquare, Receipt, ShieldCheck, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +30,11 @@ export function SettingsTabs({
   integrations,
   security,
 }: Record<TabKey, React.ReactNode>) {
-  const [active, setActive] = useState<TabKey>("organisation");
+  // Phase 34.4 - `?tab=integrations` lands on a panel (deep links from Integrations / Manage).
+  const params = useSearchParams();
+  const requested = params.get("tab");
+  const initial: TabKey = TABS.some((t) => t.key === requested) ? (requested as TabKey) : "organisation";
+  const [active, setActive] = useState<TabKey>(initial);
   const panels: Record<TabKey, React.ReactNode> = { organisation, scheduling, messaging, billing, integrations, security };
 
   return (

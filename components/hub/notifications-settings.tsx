@@ -9,14 +9,17 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { useToast } from "@/components/ui/toast";
 import { saveNotificationSettings, saveWhatsapp, requestWhatsappSetup, verifyWhatsappConnection } from "@/app/hub/settings/notifications/actions";
 import { cn } from "@/lib/utils";
+import { statusGuidance, sendsPaused, type NumberHealth } from "@/lib/messaging/whatsapp-health";
 
 export function NotificationsSettings({
-  settings, whatsapp, credits, practiceName,
+  settings, whatsapp, credits, practiceName, health = null,
 }: {
   settings: MessagingSettings;
   whatsapp: WhatsappConnectionView;
   credits: { sms: number; email: number };
   practiceName: string;
+  /** Phase 34.3 - the number as Meta sees it (quality / status / tier). */
+  health?: NumberHealth | null;
 }) {
   const { toast } = useToast();
   const [pending, start] = useTransition();
@@ -38,7 +41,7 @@ export function NotificationsSettings({
   return (
     <div className="space-y-3">
       {/* WhatsApp - the headline channel (BYO number, free 24h window) */}
-      <WhatsappHeadline whatsapp={whatsapp} enabled={s.whatsappEnabled} onToggle={(v) => set("whatsappEnabled", v)} />
+      <WhatsappHeadline whatsapp={whatsapp} enabled={s.whatsappEnabled} onToggle={(v) => set("whatsappEnabled", v)} health={health} />
 
       <div className="pt-1 text-[11px] font-medium uppercase tracking-wide text-text-3">Backup channels</div>
 
@@ -109,7 +112,7 @@ export function NotificationsSettings({
 
 /* ---- WhatsApp headline -------------------------------------------------- */
 
-function WhatsappHeadline({ whatsapp, enabled, onToggle }: { whatsapp: WhatsappConnectionView; enabled: boolean; onToggle: (v: boolean) => void }) {
+function WhatsappHeadline({ whatsapp, enabled, onToggle, health }: { whatsapp: WhatsappConnectionView; enabled: boolean; onToggle: (v: boolean) => void; health: NumberHealth | null }) {
   const connected = whatsapp.status === "configured" || whatsapp.status === "live";
   return (
     <div className="overflow-hidden rounded-card border border-accent/25 bg-gradient-to-br from-accent-soft/50 to-surface">
@@ -136,7 +139,7 @@ function WhatsappHeadline({ whatsapp, enabled, onToggle }: { whatsapp: WhatsappC
       </div>
 
       <div className="border-t border-accent/15 bg-surface/60 p-4">
-        <WhatsappCard whatsapp={whatsapp} connected={connected} />
+        <WhatsappCard whatsapp={whatsapp} connected={connected} health={health} />
       </div>
     </div>
   );
@@ -193,10 +196,10 @@ const SETUP_STEPS = [
   "In Meta Business Manager, add the WhatsApp product to your app and register your Business number.",
   "Copy the Phone Number ID and WhatsApp Business Account ID from the API Setup screen.",
   "Create a permanent System User access token with whatsapp_business_messaging permission.",
-  "Add the webhook URL below in Meta → Configuration, using your verify token, and subscribe to the messages field.",
+  "Add the webhook URL below in Meta → Configuration, using your verify token, and subscribe to the messages, phone_number_quality_update and account_update fields (the last two let Phila protect your number's quality).",
 ];
 
-function WhatsappCard({ whatsapp, connected }: { whatsapp: WhatsappConnectionView; connected: boolean }) {
+function WhatsappCard({ whatsapp, connected, health }: { whatsapp: WhatsappConnectionView; connected: boolean; health: NumberHealth | null }) {
   const { toast } = useToast();
   const [pending, start] = useTransition();
   const [testing, startTest] = useTransition();
@@ -243,7 +246,7 @@ function WhatsappCard({ whatsapp, connected }: { whatsapp: WhatsappConnectionVie
               {whatsapp.status === "live" && <span className="inline-flex items-center gap-1 rounded-chip bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent"><BadgeCheck className="size-3" strokeWidth={2.4} aria-hidden /> Verified</span>}
             </div>
             <div className="text-[11.5px] text-text-2">
-              {live?.displayPhone ? <>Sending from <b className="text-text">{live.displayPhone}</b>{live.name ? ` · ${live.name}` : ""}{live.quality ? ` · quality ${live.quality.toLowerCase()}` : ""}</>
+              {(live?.displayPhone ?? whatsapp.displayPhone) ? <>Sending from <b className="text-text">{live?.displayPhone ?? whatsapp.displayPhone}</b>{(live?.name ?? whatsapp.verifiedName) ? ` · ${live?.name ?? whatsapp.verifiedName}` : ""}</>
                 : <>Phone number ID {whatsapp.phoneNumberId}{verifiedLabel ? ` · verified ${verifiedLabel}` : ""}</>}
             </div>
           </div>
@@ -252,6 +255,8 @@ function WhatsappCard({ whatsapp, connected }: { whatsapp: WhatsappConnectionVie
             <Button variant="mini" onClick={() => setOpen(true)}>Change</Button>
           </div>
         </div>
+        {/* Phase 34.3 - number health, as Meta reports it */}
+        <NumberHealthCard health={health} />
       </div>
     );
   }
@@ -308,6 +313,28 @@ function Field({ label, value, onChange, placeholder }: { label: string; value: 
     <div className="space-y-1">
       <Label>{label}</Label>
       <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+    </div>
+  );
+}
+
+/** Phase 34.3 - the number as Meta sees it. Quiet when healthy; guidance when not. */
+function NumberHealthCard({ health }: { health: NumberHealth | null }) {
+  if (!health) return null;
+  const guidance = statusGuidance(health);
+  const paused = sendsPaused(health.status);
+  const qualityTone = health.quality === "green" ? "bg-accent-soft text-accent" : health.quality === "yellow" ? "bg-warn-soft text-warn" : health.quality === "red" ? "bg-danger-soft text-danger" : "bg-surface-2 text-text-3";
+  const statusTone = paused ? "bg-danger-soft text-danger" : health.status === "flagged" ? "bg-warn-soft text-warn" : "bg-accent-soft text-accent";
+  return (
+    <div className={cn("rounded-control border px-3 py-2.5", guidance ? (paused ? "border-danger/30 bg-danger-soft/30" : "border-warn/30 bg-warn-soft/30") : "border-border bg-surface-2/40")} data-testid="number-health">
+      <div className="flex flex-wrap items-center gap-1.5 text-[12px]">
+        <span className="font-[640] text-text">Number health</span>
+        <span className={cn("rounded-full px-1.5 py-0.5 text-[10.5px] font-semibold capitalize", statusTone)}>{health.status}</span>
+        <span className={cn("rounded-full px-1.5 py-0.5 text-[10.5px] font-semibold", qualityTone)}>Quality {health.quality}</span>
+        {health.dailyLimit > 0 && <span className="text-[11px] text-text-3">· {health.dailyLimit.toLocaleString()}/day tier</span>}
+        {health.dailyLimit < 0 && health.tierLabel && <span className="text-[11px] text-text-3">· {health.tierLabel}</span>}
+        {!health.lastEventAt && <span className="text-[11px] text-text-3">· Meta hasn&apos;t reported yet - Test connection reads the current rating</span>}
+      </div>
+      {guidance && <p className="mt-1 text-[11.5px] leading-relaxed text-text-2">{guidance}</p>}
     </div>
   );
 }

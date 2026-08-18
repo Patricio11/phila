@@ -215,6 +215,12 @@ Sign in as **Thandeka**.
 - ☐ Message someone who **is in Phila** (any tab open): bell only, no external row
 - ☐ A client with **no portal login yet** gets the alert with their **activation link**, once
 
+**WhatsApp rail v2 + Integrations home** (Phase 34.3 / 34.4)
+- ☐ Settings → **Integrations** opens with **Your connections**: WhatsApp Business (with a Number-health chip once connected), Payment gateway, and the Phila-provided rails - each honest off · configured · live, each with a Manage / Connect link; `/hub/settings?tab=integrations` lands there
+- ☐ On the WhatsApp card, **Test connection** now shows the number + verified name from Meta and a **Number health** row (quality / status / tier); the guide asks Meta to subscribe `messages`, `phone_number_quality_update`, `account_update`
+- ☐ Simulate (or receive) a Meta **FLAGGED / RED** event → a hub-wide banner explains it, the org admins get a bell, WhatsApp sends slow down (`throttled` rows on Billing when the ceiling is hit); a **RESTRICTION** → "sends paused" banner + `paused` rows; a recovery event clears both
+- ☐ Delivery states on Billing → Recent messages never go backwards (a `Read` never becomes `Delivered`); a Meta failure shows its reason; **Failed after retries** lists dead letters with masked recipients
+
 **Storage backend: Supabase or Amazon S3** (batch 2o)
 - ☐ `/admin/integrations/storage` offers two chips: **Supabase** and **Amazon S3**. The chip you are not on shows *configured* when its credentials are stored, so switching back needs no retyping
 - ☐ Picking **Amazon S3** asks for region, bucket, access key ID, secret and an optional endpoint (MinIO / Cloudflare R2), and stops asking for a Supabase project URL

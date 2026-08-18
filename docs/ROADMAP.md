@@ -1975,6 +1975,28 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
     configured → "dormant"), no second alert before read, heartbeat + read re-armed, a client reply
     belled online Thandeka only and alerted offline Nomsa, an online client got the bell with no
     external row. 298 unit tests green (6 new: presence boundary + alert rules).
+  - [x] **34.3 WhatsApp rail v2 (core) + 34.4 Integrations home** *(2026-08-18)*: **number health** -
+    Meta's `phone_number_quality_update` / `account_update` webhooks (HMAC-verified, routed by
+    display phone, idempotent via `processed_events`) land in `whatsapp_number_health`; sends are
+    **throttled by quality** (red a quarter, yellow/flagged half, floor 5/min, plus the tier's daily
+    cap - business-initiated only, in-window replies stay free) and **paused** when Meta restricts /
+    bans; a hub-wide **banner** + a health card on the connection say in plain English what's
+    happening and what we're doing; status changes bell + audit the org's admins. **Retry + dead
+    letters** - every transport goes through a jittered transient-only retry (250 / 1000 / 4000 ms)
+    at the `deliver()` chokepoint; exhausted transient failures land in `dead_letters` (recipient
+    masked) and on Billing as "Failed after retries". **Delivery statuses never regress** (sent →
+    delivered → read; a late "failed" can't undo a delivery), read receipts recorded, Meta's error
+    reasons captured, redelivered webhooks are no-ops, and a real handler failure answers 500 so
+    Meta retries (Thola's always-200 forfeited that). Test connection now stores the display phone +
+    verified name and seeds health. **Integrations home**: Settings → Integrations opens with **Your
+    connections** - WhatsApp Business (with health), payment gateway, LivePhila / VoicePhila / SMS /
+    Email - each with an honest off · configured · live pill and a Manage link; `?tab=` deep links.
+    Migration 0082 + RLS. Proven live on the second tenant with signed Meta-shaped webhooks: bad
+    signature 401; FLAGGED/RED/TIER_250 → banner + card + admin bell, redelivery no-op; read → a late
+    "delivered" ignored; failed carried code 131026; ACCOUNT_RESTRICTION → "sends paused" banner;
+    RESTORED + UNFLAGGED/GREEN/TIER_1K → banner gone, flaggedAt cleared; Integrations home rendered.
+    308 unit tests green (10 new). Deferred, stated honestly in the plan: Meta template modelling,
+    inbound media labels, country cost hint, Embedded Signup.
 
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees

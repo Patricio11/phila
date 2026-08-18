@@ -7,6 +7,12 @@ import { sendWhatsApp, sendWhatsAppTemplate, sendSms, sendEmail, type TransportR
 import { getMessagingSettings, getWhatsappCreds, getWhatsappTemplateName, getWhatsappLastInbound, getTemplateBody, getCreditBalances, isOptedOut, consumeCredit, logMessage } from "@/db/queries/messaging";
 import { whatsappWindowOpen, decideWhatsappSend, orderedTemplateParams } from "@/lib/messaging/whatsapp-window";
 import { railEmailHtml } from "@/lib/email/templates";
+import { withRetry, isTransient } from "@/lib/messaging/retry";
+import { readNumberHealth, whatsappSentSince, recordDeadLetter } from "@/db/queries/whatsapp-health";
+import { sendsPaused, effectiveLimit } from "@/lib/messaging/whatsapp-health";
+
+/** Base business-initiated WhatsApp sends per org per minute (scaled down by number quality). */
+const WA_BASE_PER_MINUTE = 60;
 
 export interface DeliverInput {
   orgId: string;
@@ -84,6 +90,7 @@ export async function deliver(input: DeliverInput): Promise<DeliverOutcome> {
   // message (free); outside it we can only use a Meta-approved template - and if none is
   // configured we skip honestly rather than have Meta bounce a free-form message.
   let result: TransportResult;
+  let attempts = 1;
   let waNote: string | undefined;
   if (channel === "whatsapp") {
     const windowOpen = whatsappWindowOpen(await getWhatsappLastInbound(orgId, to), clockNow());
@@ -93,19 +100,39 @@ export async function deliver(input: DeliverInput): Promise<DeliverOutcome> {
       await logMessage({ orgId, channel, to, templateKey: trigger, trigger, status: "window_closed", detail: "outside 24h window · no approved template configured" });
       return { channel, status: "window_closed" };
     }
+    // Phase 34.3 - protect the org's number: paused when Meta restricted it,
+    // and throttled by quality (red = a quarter, yellow/flagged = half) + tier.
+    // Only business-initiated sends (outside the window) count toward Meta's
+    // tier; in-window replies are free and unlimited, so they skip the meter.
+    const health = await readNumberHealth(orgId);
+    if (sendsPaused(health.status)) {
+      await logMessage({ orgId, channel, to, templateKey: trigger, trigger, status: "paused", detail: `WhatsApp number ${health.status} by Meta - sends paused` });
+      return { channel, status: "paused" };
+    }
+    if (mode === "template") {
+      const nowMs = clockNow();
+      const perMin = effectiveLimit(health, WA_BASE_PER_MINUTE);
+      const lastMinute = await whatsappSentSince(orgId, new Date(new Date(nowMs).getTime() - 60_000));
+      const today = health.dailyLimit > 0 ? await whatsappSentSince(orgId, new Date(new Date(nowMs).getTime() - 24 * 60 * 60_000)) : 0;
+      if (lastMinute >= perMin || (health.dailyLimit > 0 && today >= health.dailyLimit)) {
+        const why = lastMinute >= perMin ? `easing off to protect the number's quality rating (${perMin}/min)` : `Meta's daily limit for this number reached (${health.dailyLimit}/day)`;
+        await logMessage({ orgId, channel, to, templateKey: trigger, trigger, status: "throttled", detail: why });
+        return { channel, status: "throttled" };
+      }
+    }
     const creds = { phoneNumberId: wa.phoneNumberId, accessTokenEnc: wa.accessTokenEnc };
     // An online session's join link travels with the message (free-form only -
     // an approved template's params are fixed by Meta).
     const waBody = vars.joinLink ? `${body}\n\nJoin online: ${vars.joinLink}` : body;
     if (mode === "free_form") {
       waNote = "in-window (free)";
-      result = await sendWhatsApp(creds, to, waBody);
+      ({ result, attempts } = await withRetry(() => sendWhatsApp(creds, to, waBody)));
     } else {
       waNote = "approved template";
-      result = await sendWhatsAppTemplate(creds, to, templateName!, "en", orderedTemplateParams(vars));
+      ({ result, attempts } = await withRetry(() => sendWhatsAppTemplate(creds, to, templateName!, "en", orderedTemplateParams(vars))));
     }
   } else if (channel === "sms") {
-    result = await sendSms(to, vars.joinLink ? `${body}\nJoin: ${vars.joinLink}` : body);
+    ({ result, attempts } = await withRetry(() => sendSms(to, vars.joinLink ? `${body}\nJoin: ${vars.joinLink}` : body)));
   } else {
     // Email goes out branded (HTML shell + plain-text fallback); an online session
     // renders its join link as the button.
@@ -117,7 +144,14 @@ export async function deliver(input: DeliverInput): Promise<DeliverOutcome> {
       body,
       cta: vars.joinLink ? { label: "Join your session", url: vars.joinLink } : vars.link ? { label: "Open Phila", url: vars.link } : undefined,
     });
-    result = await sendEmail(to, subject, text, settings.emailFromName ?? "", settings.emailReplyTo, html);
+    ({ result, attempts } = await withRetry(() => sendEmail(to, subject, text, settings.emailFromName ?? "", settings.emailReplyTo, html)));
+  }
+
+  // Phase 34.3 - a send that failed after transient retries is a dead letter:
+  // logged honestly, recipient masked, one row per idempotency key.
+  if (result.status === "failed" && attempts > 1 && isTransient(result.detail)) {
+    await recordDeadLetter(orgId, channel, to, result.detail ?? "transient failure", attempts, `${ref}:${channel}`);
+    waNote = `failed after ${attempts} tries - ${result.detail ?? "transient error"}`;
   }
 
   // Charge a credit only on a real send (never for dormant/failed).

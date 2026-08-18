@@ -101,6 +101,13 @@ export async function verifyWhatsappConnection(): Promise<
   const creds = await getWhatsappCreds(membership.orgId);
   const res = await verifyWhatsApp({ phoneNumberId: creds.phoneNumberId, accessTokenEnc: creds.accessTokenEnc });
   await markWhatsappVerified(membership.orgId, res.ok);
+  if (res.ok) {
+    // Phase 34.3 - remember the human number + name (health events route by it) and seed health.
+    const { recordWhatsappIdentity, upsertNumberHealth } = await import("@/db/queries/whatsapp-health");
+    await recordWhatsappIdentity(membership.orgId, res.displayPhone ?? null, res.name ?? null);
+    const q = (res.quality ?? "").toUpperCase();
+    await upsertNumberHealth(membership.orgId, { displayPhone: res.displayPhone ?? null, quality: q === "GREEN" ? "green" : q === "YELLOW" ? "yellow" : q === "RED" ? "red" : "unknown" }, "verify");
+  }
   await logAccess({ action: "admin.action", actor: { userId: "hub", platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `org:${membership.orgId}/whatsapp`, reason: res.ok ? "verify_whatsapp_ok" : "verify_whatsapp_failed" });
   if (!res.ok) return { ok: false, error: res.detail ?? "Could not reach WhatsApp." };
   return { ok: true, displayPhone: res.displayPhone, name: res.name, quality: res.quality };

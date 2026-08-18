@@ -28,6 +28,10 @@ export default async function NotificationsSettingsPage() {
     getTemplates(membership.orgId),
     listRecentMessages(membership.orgId, 12),
   ]);
+  // Phase 34.3 - the number as Meta sees it (only meaningful once connected).
+  const health = process.env.DATA_PROVIDER === "db" && whatsapp.status !== "off"
+    ? await (await import("@/db/queries/whatsapp-health")).readNumberHealth(membership.orgId)
+    : null;
 
   return (
     <div className="rise space-y-6">
@@ -42,6 +46,7 @@ export default async function NotificationsSettingsPage() {
             whatsapp={whatsapp}
             credits={credits}
             practiceName={org.name}
+            health={health}
           />
         </div>
       </Card>

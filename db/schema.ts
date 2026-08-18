@@ -559,8 +559,47 @@ export const whatsappConnections = pgTable("whatsapp_connections", {
   verifyToken: text("verify_token"),
   status: text("status").default("off").notNull(), // off | configured | live
   verifiedAt: timestamp("verified_at", { withTimezone: true }),
+  /** Phase 34.3 - from Meta on verify: the human number + verified business name (health events route by display phone). */
+  displayPhone: text("display_phone"),
+  verifiedName: text("verified_name"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 });
+
+/**
+ * Phase 34.3 - the org's WhatsApp number as Meta sees it. Written only from
+ * Meta's own webhook events (quality / limit / ban) and the Test-connection ping.
+ * Drives the send throttle (quality-scaled), the pause on restriction, and the
+ * plain-English banner. One row per org.
+ */
+export const whatsappNumberHealth = pgTable("whatsapp_number_health", {
+  orgId: text("org_id").primaryKey().references(() => orgs.id),
+  quality: text("quality").default("unknown").notNull(), // green | yellow | red | unknown
+  status: text("status").default("connected").notNull(), // connected | flagged | restricted | banned
+  dailyLimit: integer("daily_limit").default(-1).notNull(), // -1 = unknown / unlimited
+  tierLabel: text("tier_label"),
+  displayPhone: text("display_phone"),
+  flaggedAt: timestamp("flagged_at", { withTimezone: true }),
+  lastEventAt: timestamp("last_event_at", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/** Phase 34.3 - webhook idempotency: an event id we've already acted on (Meta redelivers). */
+export const processedEvents = pgTable("processed_events", {
+  id: text("id").primaryKey(), // `${provider}:${eventId}`
+  provider: text("provider").notNull(),
+  at: timestamp("at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/** Phase 34.3 - a send that failed after transient retries. Recipient MASKED (POPIA). One row per idempotency key. */
+export const deadLetters = pgTable("dead_letters", {
+  id: text("id").primaryKey(), // `dl_${ref}:${channel}`
+  orgId: text("org_id").notNull().references(() => orgs.id),
+  channel: text("channel").notNull(),
+  target: text("target").notNull(), // masked
+  reason: text("reason").notNull(),
+  attempts: integer("attempts").default(1).notNull(),
+  at: timestamp("at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("dead_letters_org_idx").on(t.orgId, t.at)]);
 
 /**
  * Per-client WhatsApp 24-hour service window. `lastInboundAt` is updated every time

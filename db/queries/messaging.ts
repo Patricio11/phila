@@ -43,13 +43,16 @@ export interface WhatsappConnectionView {
   hasToken: boolean;
   verifyToken: string | null;
   verifiedAt: string | null;
+  /** Phase 34.3 - what Meta told us on the last Test connection. */
+  displayPhone: string | null;
+  verifiedName: string | null;
 }
 
 /** Never returns the decrypted token  only whether one is stored. */
 export async function getWhatsappConnection(orgId: string): Promise<WhatsappConnectionView> {
   const [row] = await getDb().select().from(whatsappConnections).where(eq(whatsappConnections.orgId, orgId)).limit(1);
-  if (!row) return { status: "off", phoneNumberId: null, wabaId: null, hasToken: false, verifyToken: null, verifiedAt: null };
-  return { status: row.status as WhatsappConnectionView["status"], phoneNumberId: row.phoneNumberId, wabaId: row.wabaId, hasToken: Boolean(row.accessTokenEnc), verifyToken: row.verifyToken, verifiedAt: row.verifiedAt?.toISOString() ?? null };
+  if (!row) return { status: "off", phoneNumberId: null, wabaId: null, hasToken: false, verifyToken: null, verifiedAt: null, displayPhone: null, verifiedName: null };
+  return { status: row.status as WhatsappConnectionView["status"], phoneNumberId: row.phoneNumberId, wabaId: row.wabaId, hasToken: Boolean(row.accessTokenEnc), verifyToken: row.verifyToken, verifiedAt: row.verifiedAt?.toISOString() ?? null, displayPhone: row.displayPhone, verifiedName: row.verifiedName };
 }
 
 /** Promote a connection to "live" after a successful Graph API ping (records the moment). */
@@ -227,6 +230,13 @@ export async function getOrgByWhatsappPhone(phoneNumberId: string): Promise<stri
   return row?.orgId ?? null;
 }
 
+/** Phase 34.3 - the org's app secret by org id (health events route by display phone). */
+export async function getWhatsappAppSecretByOrg(orgId: string): Promise<string | null> {
+  const [row] = await getDb().select({ enc: whatsappConnections.appSecretEnc }).from(whatsappConnections).where(eq(whatsappConnections.orgId, orgId)).limit(1);
+  if (!row?.enc) return null;
+  try { return decryptField(row.enc); } catch { return null; }
+}
+
 /** The org's Meta app secret (decrypted) for a phone number - to verify the webhook HMAC. */
 export async function getWhatsappAppSecretByPhone(phoneNumberId: string): Promise<string | null> {
   const [row] = await getDb().select({ enc: whatsappConnections.appSecretEnc }).from(whatsappConnections).where(eq(whatsappConnections.phoneNumberId, phoneNumberId)).limit(1);
@@ -246,7 +256,15 @@ export async function whatsappVerifyTokenExists(token: string): Promise<boolean>
 
 /** Update a sent message's delivery state from a provider status webhook. */
 export async function updateMessageStatus(providerMessageId: string, status: string, detail?: string): Promise<void> {
-  await getDb().update(messageLog).set({ status, detail: detail ?? null }).where(eq(messageLog.providerMessageId, providerMessageId));
+  // Phase 34.3 - never regress: an out-of-order "sent" after "read" is ignored,
+  // and a late "failed" can't undo a delivery.
+  const db = getDb();
+  const [row] = await db.select({ status: messageLog.status, detail: messageLog.detail }).from(messageLog).where(eq(messageLog.providerMessageId, providerMessageId)).limit(1);
+  if (!row) return;
+  const { nextDeliveryState } = await import("@/lib/messaging/retry");
+  const next = nextDeliveryState(row.status, status);
+  if (next === row.status && !detail) return;
+  await db.update(messageLog).set({ status: next, detail: detail ?? row.detail }).where(eq(messageLog.providerMessageId, providerMessageId));
 }
 
 /** Recent message activity for an org (the Notifications activity view). `to` already masked. */

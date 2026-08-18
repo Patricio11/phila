@@ -58,6 +58,7 @@ export function AppShell({
   features,
   twoFactorPrompt = false,
   unreadMessages,
+  banner,
   children,
 }: {
   navKey: NavKey;
@@ -70,6 +71,8 @@ export function AppShell({
   twoFactorPrompt?: boolean;
   /** Batch 2u - unread team messages at render time; the badge on Messages. */
   unreadMessages?: number;
+  /** Phase 34.3 - an extra shell banner (e.g. the WhatsApp number-health warning). */
+  banner?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -169,6 +172,7 @@ export function AppShell({
           settingsHref={settingsHref}
         />
         {twoFactorPrompt && <TwoFactorBanner />}
+        {banner}
         <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto outline-none">
           {/* Bottom padding on mobile clears the floating tab bar + home-indicator safe area. */}
           <div className="mx-auto w-full max-w-[1320px] px-4 pt-6 pb-[calc(env(safe-area-inset-bottom)+5.75rem)] sm:px-6 sm:pt-8 lg:pb-8">{children}</div>

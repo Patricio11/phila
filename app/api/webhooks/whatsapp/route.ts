@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { addOptOut, getOrgByWhatsappPhone, getWhatsappAppSecretByPhone, whatsappVerifyTokenExists, updateMessageStatus, recordWhatsappInbound } from "@/db/queries/messaging";
+import { addOptOut, getOrgByWhatsappPhone, getWhatsappAppSecretByPhone, getWhatsappAppSecretByOrg, whatsappVerifyTokenExists, updateMessageStatus, recordWhatsappInbound } from "@/db/queries/messaging";
+import { claimEvent, findOrgByDisplayPhone, upsertNumberHealth } from "@/db/queries/whatsapp-health";
+import { parseHealthEvent } from "@/lib/messaging/whatsapp-health";
 
 export const dynamic = "force-dynamic";
 
@@ -49,43 +51,78 @@ export async function POST(req: Request) {
   // Verify the signature with the receiving org's app secret (routed by phone_number_id).
   // Single-URL multi-tenant webhook: the routing id is read from the body, then the
   // signature is checked against that org's secret before we act on anything.
-  const routePhoneId = payload.entry?.[0]?.changes?.[0]?.value?.metadata?.phone_number_id;
-  const appSecret = routePhoneId ? await getWhatsappAppSecretByPhone(routePhoneId) : null;
+  // Phase 34.3 - Meta's number-health events (quality / limit / ban) carry the
+  // human number rather than the phone_number_id; route those by display phone.
+  const first = payload.entry?.[0]?.changes?.[0];
+  const routePhoneId = first?.value?.metadata?.phone_number_id;
+  const routeDisplay = first?.value?.display_phone_number;
+  let routeOrgId: string | null = routePhoneId ? await getOrgByWhatsappPhone(routePhoneId) : null;
+  if (!routeOrgId && routeDisplay) routeOrgId = await findOrgByDisplayPhone(routeDisplay);
+  const appSecret = routePhoneId ? await getWhatsappAppSecretByPhone(routePhoneId) : routeOrgId ? await getWhatsappAppSecretByOrg(routeOrgId) : null;
   if (!appSecret || !signatureValid(appSecret, rawBody, req.headers.get("x-hub-signature-256"))) {
     return NextResponse.json({ error: "invalid signature" }, { status: 401 });
   }
 
-  for (const entry of payload.entry ?? []) {
-    for (const change of entry.changes ?? []) {
-      const value = change.value ?? {};
-      const phoneNumberId = value.metadata?.phone_number_id;
-      const orgId = phoneNumberId ? await getOrgByWhatsappPhone(phoneNumberId) : null;
+  try {
+    for (const entry of payload.entry ?? []) {
+      for (const change of entry.changes ?? []) {
+        const value = change.value ?? {};
+        const phoneNumberId = value.metadata?.phone_number_id;
+        let orgId = phoneNumberId ? await getOrgByWhatsappPhone(phoneNumberId) : null;
+        if (!orgId && value.display_phone_number) orgId = await findOrgByDisplayPhone(value.display_phone_number);
 
-      // Inbound messages: every one (re)opens the free 24h service window; STOP also opts out.
-      for (const msg of value.messages ?? []) {
-        if (!orgId || !msg.from) continue;
-        await recordWhatsappInbound(orgId, `+${msg.from}`, new Date());
-        const text = (msg.text?.body ?? "").trim().toLowerCase();
-        if (OPT_OUT_WORDS.has(text)) {
-          await addOptOut(orgId, "whatsapp", `+${msg.from}`, "client replied STOP");
+        // Number health first - a ban / restriction / quality change.
+        const health = parseHealthEvent(change.field, value as Record<string, unknown>);
+        if (health && orgId) {
+          const evId = `health:${orgId}:${change.field}:${String(value.event ?? "")}:${String(value.current_quality_score ?? value.quality_rating ?? "")}:${String(value.current_limit ?? value.messaging_limit_tier ?? "")}:${entry.time ?? ""}`;
+          if (await claimEvent("whatsapp", evId)) await upsertNumberHealth(orgId, health, "meta");
+          continue;
+        }
+
+        // Inbound messages: every one (re)opens the free 24h service window; STOP also opts out.
+        for (const msg of value.messages ?? []) {
+          if (!orgId || !msg.from) continue;
+          if (msg.id && !(await claimEvent("whatsapp", msg.id))) continue; // Meta redelivered - already handled
+          await recordWhatsappInbound(orgId, `+${msg.from}`, new Date());
+          const text = (msg.text?.body ?? "").trim().toLowerCase();
+          if (OPT_OUT_WORDS.has(text)) {
+            await addOptOut(orgId, "whatsapp", `+${msg.from}`, "client replied STOP");
+          }
+        }
+        // Delivery statuses - keep message_log honest: sent -> delivered -> read,
+        // never backwards; a failure carries Meta's reason.
+        for (const st of value.statuses ?? []) {
+          if (!st.id || !st.status) continue;
+          if (!(await claimEvent("whatsapp", `${st.id}:${st.status}`))) continue;
+          const err = st.errors?.[0];
+          const detail = err ? `Meta ${err.code ?? ""} ${err.title ?? err.message ?? ""}`.trim() : undefined;
+          await updateMessageStatus(st.id, st.status, detail);
         }
       }
-      // Delivery statuses  keep message_log honest.
-      for (const st of value.statuses ?? []) {
-        if (st.id && st.status) await updateMessageStatus(st.id, st.status === "read" ? "delivered" : st.status);
-      }
     }
+  } catch (e) {
+    // A real handler failure must NOT be swallowed with a 200 - Meta retries on
+    // non-2xx, and idempotency makes that retry safe.
+    return NextResponse.json({ error: e instanceof Error ? e.message : "handler error" }, { status: 500 });
   }
   return NextResponse.json({ ok: true });
 }
 
 interface WhatsAppWebhook {
   entry?: {
+    time?: number;
     changes?: {
+      field?: string;
       value?: {
         metadata?: { phone_number_id?: string };
-        messages?: { from?: string; text?: { body?: string } }[];
-        statuses?: { id?: string; status?: string }[];
+        display_phone_number?: string;
+        event?: string;
+        current_quality_score?: string;
+        quality_rating?: string;
+        current_limit?: string;
+        messaging_limit_tier?: string;
+        messages?: { id?: string; from?: string; type?: string; text?: { body?: string } }[];
+        statuses?: { id?: string; status?: string; errors?: { code?: number; title?: string; message?: string }[] }[];
       };
     }[];
   }[];

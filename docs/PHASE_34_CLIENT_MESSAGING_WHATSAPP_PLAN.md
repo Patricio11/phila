@@ -8,7 +8,7 @@ Phila - open it". Underneath, harden the WhatsApp rail with what Thola does well
 retries + dead letters, webhook idempotency, delivery ticks that never regress, and a proper
 Integrations home for the connection.*
 
-> **Status:** 🔨 in progress - 34.1 + 34.2 shipped 2026-08-18; 34.3 next. Written after reading Phila's messaging + WhatsApp stack end to end
+> **Status:** 🔨 in progress - 34.1, 34.2, 34.3 (core), 34.4 shipped 2026-08-18; 34.5 polish + deferred bits remain. Written after reading Phila's messaging + WhatsApp stack end to end
 > and a deep read of Thola v2 (`C:\Users\patri\Downloads\thola\thola_v2` - its WhatsApp transport,
 > webhook, number-health, inbox, follow-up engine and readiness docs).
 >
@@ -142,46 +142,49 @@ external row; the dead-letter/retry part of "metering + log" is 34.3.)*
 
 ## Task 34.3: WhatsApp rail v2 - the Thola lessons
 *Same connection, tougher plumbing.*
-- [ ] **Number health** (`lib/whatsapp/health.ts` pattern): subscribe to `phone_number_quality_update`
+- [x] **Number health** (`lib/whatsapp/health.ts` pattern): subscribe to `phone_number_quality_update`
   + `account_update` in the webhook; store `whatsapp_number_health` (quality green/yellow/red, status
   connected/flagged/restricted/banned, tier → daily limit, display phone, flaggedAt); **throttle**
   business-initiated sends per org (`red ¼ · yellow/flagged ½ · floor 5/min`, plus tier daily cap);
   **pause** on restricted/banned with an honest reason; a **health banner** in the hub shell + a card
   on the connection with plain-English guidance ("quality dropped - we're easing off; usually recovers
   in ~7 days"); status change → audit + org-admin bell/email.
-- [ ] **Retry + dead letters:** `withRetry` (3 tries, 250/1000/4000 ms ± jitter, transient only -
+- [x] **Retry + dead letters:** `withRetry` (3 tries, 250/1000/4000 ms ± jitter, transient only -
   408/425/429/5xx/network) around every transport; `dead_letters` UPSERT keyed by idempotency key,
   recipient **masked** (`+27•••67`), shown on the Billing page's Recent messages as "failed - we'll
   retry" vs "failed" honestly; the reminder cron's cursor only advances on a settled send.
-- [ ] **Webhook idempotency + ordering:** `processed_events (provider:eventId)` claimed atomically
+- [x] **Webhook idempotency + ordering:** `processed_events (provider:eventId)` claimed atomically
   before acting (Meta redelivers); delivery statuses **never regress** (sent → delivered → read); read
   receipts recorded (`read_at`) and shown as double ticks on messages we sent; `statuses[].errors[]`
   captured into `message_log.detail`. Return non-200 on a real handler failure so Meta retries
   (Thola's always-200 forfeits that).
-- [ ] **Template modelling:** an org registers its **Meta-approved templates** (name, language, body,
+- [ ] **Template modelling** *(deferred - the per-trigger Meta template NAME already exists; language/category/param-count modelling + a real approved-template picker wait for live Meta credentials)*: an org registers its **Meta-approved templates** (name, language, body,
   category, param count) in the template manager; the composer / nudge only offers approved ones
   outside the window; template send failures (e.g. 132001 "template does not exist") map to a plain
   message. (Thola documents this as its biggest open gap - M0.3b.)
-- [ ] **Inbound**: the webhook already handles text + STOP; add **media types** to the log (label
+- [ ] **Inbound** *(deferred - text + STOP + window as today; media labels / context when the mirrored inbox is asked for)*: the webhook already handles text + STOP; add **media types** to the log (label
   only, no download in v1), `context` (which of our messages they replied to), and mark the
   conversation window per client as today. **No two-way WhatsApp inbox in v1** - see the design line;
   the client's reply belongs in Phila. Revisit as 34.6 if the practice asks for a mirrored inbox.
-- [ ] **Country-keyed cost hint** on the SMS credit row ("SA numbers only in v1") - the SMS meter is
+- [ ] **Country-keyed cost hint** *(deferred)* on the SMS credit row ("SA numbers only in v1") - the SMS meter is
   already per-message; note Meta bills conversations per recipient country for the org's own bill.
 
 **Done when:** a Meta quality/tier/ban event shows on the org's connection + banner and slows or
 pauses sends; a transient Meta 5xx retries and lands; a redelivered webhook is a no-op; a "read"
 never turns back into "sent"; the org's approved templates are the only ones offered when the
-window is closed.
+window is closed. ✅ *(2026-08-18 - core shipped: health events (routed by display phone, HMAC-verified,
+idempotent) drove the banner + card + throttle/pause; ordering + Meta error reasons proven; retry +
+dead letters unit-tested + wired at the chokepoint. Template modelling / inbound media / cost hint
+deferred as noted.)*
 
 ## Task 34.4: An **Integrations** home for the org (Hub → Settings → Integrations)
 *Where the practice sees everything it has connected - not buried under Notifications.*
-- [ ] New **Settings → Integrations** page listing the org's OWN connections as cards: **WhatsApp
+- [x] The **Settings → Integrations** tab listing the org's OWN connections as cards: **WhatsApp
   Business** (moved here from Notifications; Notifications keeps a link + the enable toggle), the
   **payment gateway** (already BYO under Settings → Payments - card mirrored here), **Held items the
   platform provides** shown read-only for clarity (LivePhila video, VoicePhila minutes, SMS/Email
   credits - "provided by Phila", link to Billing). Same off / configured / live pills as the admin.
-- [ ] The **WhatsApp card** absorbs Thola's connect-drawer polish: **copyable webhook URL** + verify
+- [x] The **WhatsApp card** absorbs Thola's connect-drawer polish: **copyable webhook URL** + verify
   token, the **5-step Meta guide** (System user token with `whatsapp_business_messaging` +
   `whatsapp_business_management`), **merge-on-save** (blank keeps the stored secret), **Test
   connection against saved creds**, the **number-health** card (34.3), display phone + verified name
@@ -193,7 +196,12 @@ window is closed.
   approved. Documented as 34.7.
 
 **Done when:** an org admin opens Settings → Integrations, sees WhatsApp / gateway / platform rails at
-a glance, connects or re-tests WhatsApp from there with the guide + webhook URL beside it.
+a glance, connects or re-tests WhatsApp from there with the guide + webhook URL beside it. ✅
+*(2026-08-18 - "Your connections" on the Integrations tab (WhatsApp with health, gateway, LivePhila /
+VoicePhila / SMS / Email) with off · configured · live pills + Manage links; `?tab=` deep links; the
+WhatsApp card (already carrying webhook URL + verify token + 5-step guide + merge-on-save) gained the
+display phone / verified name from Meta, the health card, and the quality/account webhook fields in
+its guide. Embedded Signup stays 34.7.)*
 
 ## Task 34.5: Message alerts polish + admin visibility
 - [ ] Super-admin **Integrations → WhatsApp** (org connections view) lists every org's number health

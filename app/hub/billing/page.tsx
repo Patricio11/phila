@@ -55,6 +55,9 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
   // 33.6 - VoicePhila usage: total minutes billed across every call leg.
   const { voiceMinutesUsedDb } = await import("@/db/queries/voice");
   const voiceUsed = voiceOn ? await voiceMinutesUsedDb(membership.orgId) : 0;
+  // 34.3 - sends that failed after transient retries (recipient masked).
+  const { listDeadLetters } = await import("@/db/queries/whatsapp-health");
+  const deadLetters = await listDeadLetters(membership.orgId, 5);
   const aiPct = aiSettings.monthlyCapCents > 0 ? Math.min(100, Math.round((aiSpent / aiSettings.monthlyCapCents) * 100)) : 0;
 
   return (
@@ -123,10 +126,22 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
                   <li key={i} className="flex items-center gap-2 py-1.5">
                     <span className="w-14 shrink-0 capitalize text-text-2">{m.channel}</span>
                     <span className="min-w-0 flex-1 truncate text-text-3">{m.toMasked}</span>
-                    <span className="shrink-0 capitalize text-text-3">{m.status.replace("_", " ")}</span>
+                    <span className={`shrink-0 capitalize ${m.status === "failed" || m.status === "paused" ? "text-danger" : m.status === "throttled" ? "text-warn" : m.status === "read" || m.status === "delivered" ? "text-accent" : "text-text-3"}`}>{m.status.replace("_", " ")}</span>
                   </li>
                 ))}
               </ul>
+            )}
+            {deadLetters.length > 0 && (
+              <div className="mt-3 rounded-control border border-danger/30 bg-danger-soft/30 p-2.5 text-[12px]">
+                <div className="font-[640] text-danger">Failed after retries</div>
+                <ul className="mt-1 space-y-0.5 text-text-2">
+                  {deadLetters.map((d) => (
+                    <li key={d.at + d.target} className="flex items-center gap-2">
+                      <span className="capitalize">{d.channel}</span><span className="text-text-3">{d.target}</span><span className="min-w-0 flex-1 truncate">{d.reason}</span><span className="shrink-0 text-text-3">{d.attempts} tries</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
         </Card>

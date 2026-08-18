@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq, gte, sql, count } from "drizzle-orm";
 import { getDb } from "@/db/client";
-import { whatsappNumberHealth, whatsappConnections, processedEvents, deadLetters, messageLog } from "@/db/schema";
+import { whatsappNumberHealth, whatsappConnections, processedEvents, deadLetters, messageLog, orgs } from "@/db/schema";
 import { HEALTHY, mergeHealth, sendsPaused, statusGuidance, type NumberHealth } from "@/lib/messaging/whatsapp-health";
 import { maskTarget } from "@/lib/messaging/retry";
 
@@ -104,4 +104,24 @@ export async function whatsappSentSince(orgId: string, since: Date): Promise<num
 export async function listDeadLetters(orgId: string, limit = 10): Promise<{ channel: string; target: string; reason: string; attempts: number; at: string }[]> {
   const rows = await getDb().select().from(deadLetters).where(eq(deadLetters.orgId, orgId)).orderBy(sql`${deadLetters.at} desc`).limit(limit);
   return rows.map((r) => ({ channel: r.channel, target: r.target, reason: r.reason, attempts: r.attempts, at: r.at.toISOString() }));
+}
+
+/**
+ * Phase 34.5 - super-admin: every org's WhatsApp number at a glance (status,
+ * display phone, health, last Meta event). Cross-org on purpose - owner
+ * connection, super-admin only.
+ */
+export async function listOrgWhatsappNumbers(): Promise<{ orgId: string; orgName: string; status: string; displayPhone: string | null; verifiedName: string | null; verifiedAt: string | null; health: NumberHealth | null }[]> {
+  const db = getDb();
+  const rows = await db.select({
+    orgId: whatsappConnections.orgId, orgName: orgs.name, status: whatsappConnections.status, displayPhone: whatsappConnections.displayPhone,
+    verifiedName: whatsappConnections.verifiedName, verifiedAt: whatsappConnections.verifiedAt,
+    hq: whatsappNumberHealth.quality, hs: whatsappNumberHealth.status, hd: whatsappNumberHealth.dailyLimit, ht: whatsappNumberHealth.tierLabel, hf: whatsappNumberHealth.flaggedAt, hl: whatsappNumberHealth.lastEventAt,
+  }).from(whatsappConnections)
+    .innerJoin(orgs, eq(orgs.id, whatsappConnections.orgId))
+    .leftJoin(whatsappNumberHealth, eq(whatsappNumberHealth.orgId, whatsappConnections.orgId));
+  return rows.map((r) => ({
+    orgId: r.orgId, orgName: r.orgName, status: r.status, displayPhone: r.displayPhone, verifiedName: r.verifiedName, verifiedAt: r.verifiedAt ? r.verifiedAt.toISOString() : null,
+    health: r.hs ? { quality: r.hq as NumberHealth["quality"], status: r.hs as NumberHealth["status"], dailyLimit: r.hd ?? -1, tierLabel: r.ht ?? null, displayPhone: r.displayPhone, flaggedAt: r.hf ? r.hf.toISOString() : null, lastEventAt: r.hl ? r.hl.toISOString() : null } : null,
+  }));
 }

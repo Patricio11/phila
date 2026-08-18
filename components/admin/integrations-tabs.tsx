@@ -14,7 +14,9 @@ const ICON: Record<PlatformIntegrationSlug, typeof CreditCard> = {
 
 type Status = { enabled: boolean; configured: boolean };
 
-export function IntegrationsTabs({ statuses, catalogue }: { statuses: Record<string, Status>; catalogue: IntegrationCatalogItem[] }) {
+export interface OrgNumberRow { orgId: string; orgName: string; status: string; displayPhone: string | null; verifiedName: string | null; verifiedAt: string | null; health: { quality: string; status: string; dailyLimit: number; tierLabel: string | null; lastEventAt: string | null } | null }
+
+export function IntegrationsTabs({ statuses, catalogue, orgNumbers = [] }: { statuses: Record<string, Status>; catalogue: IntegrationCatalogItem[]; orgNumbers?: OrgNumberRow[] }) {
   const [tab, setTab] = useState<"platform" | "org">("platform");
 
   return (
@@ -60,6 +62,33 @@ export function IntegrationsTabs({ statuses, catalogue }: { statuses: Record<str
         <>
           <p className="text-[12.5px] text-text-3">What each org may connect or use for itself  WhatsApp (their own number), the payment gateways for client invoices, and the providers available platform-wide. Set each off · mock · live.</p>
           <IntegrationsCatalogue initial={catalogue} />
+          {/* Phase 34.5 - ops sees a flagged number before the org complains */}
+          <section className="rounded-card border border-border bg-surface p-4" data-testid="org-whatsapp-numbers">
+            <h2 className="text-[13px] font-semibold uppercase tracking-wide text-text-3">WhatsApp numbers by org</h2>
+            {orgNumbers.length === 0 ? (
+              <p className="mt-2 text-[12.5px] text-text-3">No org has connected a WhatsApp Business number yet.</p>
+            ) : (
+              <ul className="mt-2 divide-y divide-border">
+                {orgNumbers.map((n) => {
+                  const bad = n.health && (n.health.status !== "connected" || n.health.quality === "red");
+                  return (
+                    <li key={n.orgId} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 text-[12.5px]">
+                      <span className="min-w-0 flex-1 truncate font-medium text-text">{n.orgName}</span>
+                      <span className="text-text-2">{n.displayPhone ?? "number not verified yet"}{n.verifiedName ? ` · ${n.verifiedName}` : ""}</span>
+                      <span className={cn("rounded-full px-2 py-0.5 text-[10.5px] font-medium", n.status === "live" ? "bg-accent-soft text-accent" : "bg-surface-2 text-text-2")}>{n.status}</span>
+                      {n.health ? (
+                        <span className={cn("rounded-full px-2 py-0.5 text-[10.5px] font-semibold", bad ? "bg-warn-soft text-warn" : "bg-surface-2 text-text-2")}>
+                          {n.health.status} · quality {n.health.quality}{n.health.dailyLimit > 0 ? ` · ${n.health.dailyLimit.toLocaleString()}/day` : ""}
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[10.5px] text-text-3">no Meta health yet</span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
         </>
       )}
     </div>

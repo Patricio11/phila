@@ -1997,6 +1997,10 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
     RESTORED + UNFLAGGED/GREEN/TIER_1K → banner gone, flaggedAt cleared; Integrations home rendered.
     308 unit tests green (10 new). Deferred, stated honestly in the plan: Meta template modelling,
     inbound media labels, country cost hint, Embedded Signup.
+  - [x] **34.5 Ops visibility** *(2026-08-18)*: super-admin Integrations → Org connections lists
+    **WhatsApp numbers by org** (display phone, verified name, connection status, Meta health chip -
+    flagged/quality/tier) so a flagged number is seen before the org complains; Billing → Recent
+    messages carries "N message alerts this month · x WhatsApp · y SMS · z email". Proven live.
 
 - [ ] **EAP companies - deferred next steps** *(parked until decided)*:
   - [ ] A company **self-serve portal** (same pattern as the funder portal): HR signs in and sees

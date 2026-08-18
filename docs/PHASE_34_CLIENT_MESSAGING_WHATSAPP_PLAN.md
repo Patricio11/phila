@@ -8,7 +8,7 @@ Phila - open it". Underneath, harden the WhatsApp rail with what Thola does well
 retries + dead letters, webhook idempotency, delivery ticks that never regress, and a proper
 Integrations home for the connection.*
 
-> **Status:** 🔨 in progress - 34.1, 34.2, 34.3 (core), 34.4 shipped 2026-08-18; 34.5 polish + deferred bits remain. Written after reading Phila's messaging + WhatsApp stack end to end
+> **Status:** ✅ 34.1 - 34.5 shipped 2026-08-18. Remaining: the deferred bits inside 34.1/34.3 (Clients tab door, DSAR inclusion, Meta template modelling, inbound media labels, cost hint) and the on-request 34.6 (mirrored inbox) / 34.7 (Embedded Signup). Written after reading Phila's messaging + WhatsApp stack end to end
 > and a deep read of Thola v2 (`C:\Users\patri\Downloads\thola\thola_v2` - its WhatsApp transport,
 > webhook, number-health, inbox, follow-up engine and readiness docs).
 >
@@ -204,11 +204,11 @@ display phone / verified name from Meta, the health card, and the quality/accoun
 its guide. Embedded Signup stays 34.7.)*
 
 ## Task 34.5: Message alerts polish + admin visibility
-- [ ] Super-admin **Integrations → WhatsApp** (org connections view) lists every org's number health
+- [x] Super-admin **Integrations → WhatsApp** (org connections view) lists every org's number health
   + last event, so ops sees a flagged number before the org complains.
-- [ ] Billing → Recent messages shows `new_message` nudges with channel + state; the org can see
+- [x] Billing → Recent messages shows `new_message` nudges with channel + state; the org can see
   "12 alerts this month · 9 WhatsApp (free) · 3 SMS".
-- [ ] Unit tests: `isOnline` boundary, nudge de-dupe (once per thread until read), quiet-hours for
+- [x] Unit tests (16 across nudge rules / presence / health / retry / ordering; the client-can't-start rule is proven end-to-end): `isOnline` boundary, nudge de-dupe (once per thread until read), quiet-hours for
   nudges, health throttle formula, retry classification, never-regress ordering, client-can't-start
   rule.
 

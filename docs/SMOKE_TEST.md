@@ -220,6 +220,7 @@ Sign in as **Thandeka**.
 - ☐ On the WhatsApp card, **Test connection** now shows the number + verified name from Meta and a **Number health** row (quality / status / tier); the guide asks Meta to subscribe `messages`, `phone_number_quality_update`, `account_update`
 - ☐ Simulate (or receive) a Meta **FLAGGED / RED** event → a hub-wide banner explains it, the org admins get a bell, WhatsApp sends slow down (`throttled` rows on Billing when the ceiling is hit); a **RESTRICTION** → "sends paused" banner + `paused` rows; a recovery event clears both
 - ☐ Delivery states on Billing → Recent messages never go backwards (a `Read` never becomes `Delivered`); a Meta failure shows its reason; **Failed after retries** lists dead letters with masked recipients
+- ☐ As the super admin, Integrations → **Org connections** ends with **WhatsApp numbers by org** (number, name, status, health chip); Billing shows "N message alerts this month" once any alert has actually gone out
 
 **Storage backend: Supabase or Amazon S3** (batch 2o)
 - ☐ `/admin/integrations/storage` offers two chips: **Supabase** and **Amazon S3**. The chip you are not on shows *configured* when its credentials are stored, so switching back needs no retyping

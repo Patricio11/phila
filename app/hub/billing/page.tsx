@@ -58,6 +58,9 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
   // 34.3 - sends that failed after transient retries (recipient masked).
   const { listDeadLetters } = await import("@/db/queries/whatsapp-health");
   const deadLetters = await listDeadLetters(membership.orgId, 5);
+  // 34.5 - message alerts this month, by channel (the doorbell's cost, in one line).
+  const { messageAlertsThisMonth } = await import("@/db/queries/messaging");
+  const alerts = await messageAlertsThisMonth(membership.orgId);
   const aiPct = aiSettings.monthlyCapCents > 0 ? Math.min(100, Math.round((aiSpent / aiSettings.monthlyCapCents) * 100)) : 0;
 
   return (
@@ -118,6 +121,12 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
         <Card>
           <CardHead title="Recent messages" />
           <div className="px-[17px] pb-[17px]">
+            {alerts.total > 0 && (
+              <p className="mb-2 text-[12px] text-text-2" data-testid="alerts-month">
+                <b className="text-text">{alerts.total} message alert{alerts.total === 1 ? "" : "s"} this month</b>
+                {" · "}{alerts.whatsapp} WhatsApp (your number){" · "}{alerts.sms} SMS{" · "}{alerts.email} email
+              </p>
+            )}
             {recent.length === 0 ? (
               <p className="text-[12.5px] text-text-3">No messages yet  they&apos;ll appear here as they go out.</p>
             ) : (

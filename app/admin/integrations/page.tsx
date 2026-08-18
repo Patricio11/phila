@@ -17,6 +17,8 @@ export default async function AdminIntegrationsPage() {
     Promise.all(PLATFORM_INTEGRATIONS.map(async (m) => [m.slug, await getPlatformIntegrationStatus(m.key)] as const)),
   ]);
   const statuses = Object.fromEntries(statusEntries);
+  // Phase 34.5 - every org's WhatsApp number + Meta health, for ops.
+  const orgNumbers = process.env.DATA_PROVIDER === "db" ? await (await import("@/db/queries/whatsapp-health")).listOrgWhatsappNumbers() : [];
 
   return (
     <div className="rise space-y-6">
@@ -24,7 +26,7 @@ export default async function AdminIntegrationsPage() {
         title="Integrations"
         summary="Phila's own platform gateways (you configure + switch on here) and the catalogue of providers each org may connect for itself."
       />
-      <IntegrationsTabs statuses={statuses} catalogue={catalogue} />
+      <IntegrationsTabs statuses={statuses} catalogue={catalogue} orgNumbers={orgNumbers} />
     </div>
   );
 }

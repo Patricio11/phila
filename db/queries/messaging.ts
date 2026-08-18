@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, isNull, or } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, or } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { orgMessagingSettings, whatsappConnections, whatsappWindows, creditBalances, creditLedger, messageTemplates, messageLog, messageOptOuts } from "@/db/schema";
 import { encryptField, decryptField } from "@/lib/crypto";
@@ -306,4 +306,14 @@ export async function videoMinutesUsedDb(orgId: string): Promise<number> {
   const rows = await getDb().select({ delta: creditLedger.delta }).from(creditLedger)
     .where(and(eq(creditLedger.orgId, orgId), eq(creditLedger.channel, "video")));
   return rows.filter((r) => r.delta < 0).reduce((s, r) => s - r.delta, 0);
+}
+
+/** Phase 34.5 - "N message alerts this month · x WhatsApp · y SMS · z email" for Billing. */
+export async function messageAlertsThisMonth(orgId: string): Promise<{ total: number; whatsapp: number; sms: number; email: number }> {
+  const start = new Date(); start.setUTCDate(1); start.setUTCHours(0, 0, 0, 0);
+  const rows = await getDb().select({ channel: messageLog.channel, status: messageLog.status }).from(messageLog)
+    .where(and(eq(messageLog.orgId, orgId), eq(messageLog.trigger, "new_message"), gte(messageLog.createdAt, start)));
+  const sent = rows.filter((r) => r.status === "sent" || r.status === "delivered" || r.status === "read");
+  const by = (c: string) => sent.filter((r) => r.channel === c).length;
+  return { total: sent.length, whatsapp: by("whatsapp"), sms: by("sms"), email: by("email") };
 }

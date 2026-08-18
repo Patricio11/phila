@@ -1933,6 +1933,19 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   first behind a swappable adapter so other providers can be switched on/off later; includes the
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).
 
+- [x] **Settings redesigned - the settings shell** *(2026-08-18, batch 4h)*: `/hub/settings` is now a
+  two-level settings surface. A **left rail** of sections (Organisation · Scheduling · Messaging ·
+  Billing & plan · Integrations · Security & data) - icon, label, one-line blurb and a **live status
+  chip** (Verified / 2 channels on / 6 features on / Gateway live / 2FA off) with a sliding active
+  marker; the active section on the right with a header and **sub-tabs** (Profile · Branding · Client
+  portal · Public page · Verification; Session defaults · Business hours; Invoicing · Payments · Plan;
+  Your connections · Platform features · Video · AI; Security · Compliance) each with a one-line
+  hint and optional badge. **URL-linked** (`?tab=integrations&sub=features`, replaceState - deep
+  links + back/forward honest), sub-tab memory per section, every panel stays mounted so a
+  half-filled form survives a look elsewhere, the incoming panel rises. **Mobile**: the rail folds
+  into a scrolling pill strip and the sub-tabs scroll, both auto-centring the active item; nothing
+  scrolls sideways at page level (proven at 360 px). Old `SettingsTabs` removed.
+
 - [ ] **Phase 34 - Client messaging + the WhatsApp nudge + WhatsApp rail v2** *(planned 2026-08-18 -
   `docs/PHASE_34_CLIENT_MESSAGING_WHATSAPP_PLAN.md`)*: practice ↔ client conversations inside Phila
   (the practice speaks first; the client's Messages menu appears only then; reply but never start;

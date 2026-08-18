@@ -5,13 +5,12 @@ import { getDataProvider } from "@/lib/data-provider";
 import type { BusinessHours } from "@/lib/domain/types";
 import { PageHead } from "@/components/shell/page-head";
 import { YourConnections } from "@/components/hub/your-connections";
-import { SettingsTabs } from "@/components/hub/settings-tabs";
+import { SettingsShell, SettingsPane, type SettingsSection } from "@/components/hub/settings-shell";
 import { ClientPortalSettings } from "@/components/hub/client-portal-settings";
 import { FundersFeatureToggle } from "@/components/hub/funders-feature-toggle";
 import { ReferralsFeatureToggle } from "@/components/hub/referrals-feature-toggle";
 import { LanguageFeatureToggle } from "@/components/hub/language-feature-toggle";
 import { OrgFeatureToggle } from "@/components/hub/org-feature-toggle";
-import { Card, CardHead } from "@/components/ui/card";
 import { IntegrationToggles } from "@/components/hub/integration-toggles";
 import { PaymentConnectionCard } from "@/components/hub/payment-connection-card";
 import { PublicPageEditor } from "@/components/hub/public-page-editor";
@@ -105,187 +104,126 @@ export default async function HubSettingsPage() {
     address: p.address ?? "",
   };
 
+  // Live status chips on the rail - the state of each area at a glance.
+  const channelsOn = [messaging.whatsappEnabled && whatsappConn.status !== "off", messaging.smsEnabled, messaging.emailEnabled].filter(Boolean).length;
+  const featuresOn = Object.values(org.features).filter(Boolean).length;
+  const gatewayLive = gateway.enabled && gateway.configured;
+
+  const sections: SettingsSection[] = [
+    {
+      key: "organisation", label: "Organisation", icon: "organisation",
+      blurb: "Who you are - profile, brand, verification, your public page.",
+      status: onboardingStatus === "verified" ? { label: "Verified", tone: "accent" } : { label: "Verification pending", tone: "warn" },
+      panels: [
+        { key: "profile", label: "Profile", hint: "The practice's legal identity - printed on invoices, letters and the compliance pack.", node: <SettingsPane><OrgProfileForm initial={profile} /></SettingsPane> },
+        { key: "branding", label: "Branding", hint: "Your logo and accent colour - the public page, client portal, invoices and emails wear them.", node: (
+          <SettingsPane className="space-y-5">
+            <LogoSettings initialUrl={logoUrl} />
+            <div className="border-t border-border pt-4"><BrandingSettings initial={org.brandAccent} /></div>
+          </SettingsPane>
+        ) },
+        { key: "portal", label: "Client portal", hint: "What clients see and can do in their private space.", node: <SettingsPane><ClientPortalSettings initial={org.clientPortal} /></SettingsPane> },
+        { key: "public", label: "Public page", hint: `Your micro-site at /o/${org.slug} - what the public reads and how they book.`, node: <SettingsPane><PublicPageEditor slug={org.slug} initial={pageContent} stats={pageStats} /></SettingsPane> },
+        { key: "verification", label: "Verification", badge: onboardingStatus === "verified" ? "Verified" : "Pending", badgeTone: onboardingStatus === "verified" ? "accent" : "warn", hint: "Company verification - Phila checks the practice before it goes live to the public.", node: <SettingsPane><VerificationStatusCard status={onboardingStatus} profile={p as Record<string, string>} /></SettingsPane> },
+      ],
+    },
+    {
+      key: "scheduling", label: "Scheduling", icon: "scheduling",
+      blurb: "Session defaults and the hours the practice is open.",
+      panels: [
+        { key: "defaults", label: "Session defaults", hint: "The default length, the buffer between sessions and how much notice a change needs.", node: <SettingsPane><SchedulingDefaultsForm initial={scheduling} /></SettingsPane> },
+        { key: "hours", label: "Business hours", hint: "The week as the practice keeps it - every booking grid, reminder and public slot follows this clock.", node: <SettingsPane><BusinessHoursEditor initial={bh} /></SettingsPane> },
+      ],
+    },
+    {
+      key: "messaging", label: "Messaging", icon: "messaging",
+      blurb: "How clients hear from you - WhatsApp, SMS, email, templates, alerts.",
+      status: channelsOn > 0 ? { label: `${channelsOn} channel${channelsOn === 1 ? "" : "s"} on`, tone: "accent" } : { label: "All off", tone: "muted" },
+      panels: [
+        { key: "overview", label: "Channels & templates", hint: "A summary here - the full editor (channels, quiet hours, message alerts, every template) lives on its own page.", node: <SettingsPane><MessagingSummary settings={messaging} whatsapp={whatsappConn} credits={credits} quietHours={messaging.quietStart && messaging.quietEnd ? `${messaging.quietStart} to ${messaging.quietEnd}` : null} /></SettingsPane> },
+      ],
+    },
+    {
+      key: "billing", label: "Billing & plan", icon: "billing",
+      blurb: "Invoicing, how clients pay you, and your Phila plan.",
+      status: gatewayLive ? { label: "Gateway live", tone: "accent" } : subscription?.status === "trialing" ? { label: "Trial", tone: "warn" } : undefined,
+      panels: [
+        { key: "invoicing", label: "Invoicing & VAT", hint: "Numbering, VAT and the wording on every invoice.", node: <SettingsPane><InvoiceSettingsForm initial={invoiceSettings} vatRatePercent={platform.vatRatePercent} paymentsEnabled={Boolean(org.features.payments)} /></SettingsPane> },
+        { key: "payments", label: "Payments", badge: gatewayLive ? "Live" : gateway.configured ? "Configured" : undefined, badgeTone: gatewayLive ? "accent" : "muted", hint: "Connect your gateway so clients pay your practice directly. Funds settle to you; Phila just orchestrates.", node: <SettingsPane><PaymentConnectionCard initial={gateway} /></SettingsPane> },
+        ...(subscription ? [{ key: "plan", label: "Your Phila plan", badge: subscription.status === "trialing" ? "Trial" : undefined, badgeTone: "warn" as const, hint: "What you're on, what it includes, and when it renews.", node: <SettingsPane><YourPlanCard subscription={subscription} daysLeft={subscription.status === "trialing" ? trialDaysLeft(subscription.nextBillingAt, clockNow()) : undefined} /></SettingsPane> }] : []),
+      ],
+    },
+    {
+      key: "integrations", label: "Integrations", icon: "integrations",
+      blurb: "What you've connected, what Phila provides, and which features are on.",
+      status: { label: `${featuresOn} feature${featuresOn === 1 ? "" : "s"} on`, tone: featuresOn > 0 ? "accent" : "muted" },
+      panels: [
+        { key: "connections", label: "Your connections", hint: "What this practice has connected for itself, and the rails Phila provides. Each is honest about its state - nothing sends until it's live.", node: <SettingsPane><YourConnections whatsapp={whatsappConn} health={waHealth} gateway={gateway} credits={credits} voiceOn={voiceOn} /></SettingsPane> },
+        { key: "features", label: "Platform features", badge: `${featuresOn} on`, badgeTone: featuresOn > 0 ? "accent" : "muted", hint: "Everything starts off. Turn on only what you need - nothing sends or leaves until you do.", node: (
+          <SettingsPane className="space-y-2.5">
+            <IntegrationToggles initial={org.features} />
+            <FundersFeatureToggle initial={Boolean(org.features.funders)} />
+            <ReferralsFeatureToggle initial={Boolean(org.features.referrals)} />
+            <LanguageFeatureToggle
+              initial={langRes ? langRes.selfEnabled : Boolean(org.features.language)}
+              locked={langRes ? !langRes.orgControllable : false}
+              lockedReason={langRes && !langRes.orgControllable ? langRes.reason : undefined}
+            />
+            <OrgFeatureToggle
+              feature="waitlist"
+              label="Client waitlist"
+              description="Hold clients waiting for a space and book them in the moment a slot opens - an Add-to-waitlist action on each client and a waitlist queue on the Appointments page."
+              onDescription="Add to waitlist appears on client dossiers, and the queue shows on Appointments."
+              offDescription="Hidden everywhere. Anyone already on the list is kept, never lost."
+              initial={featureRes ? featureRes.waitlist.selfEnabled : Boolean(org.features.waitlist)}
+              locked={featureRes ? !featureRes.waitlist.orgControllable : false}
+              lockedReason={featureRes && !featureRes.waitlist.orgControllable ? featureRes.waitlist.reason : undefined}
+            />
+            <OrgFeatureToggle
+              feature="outcomes"
+              label="Outcome tracking"
+              description="Measure client progress with PHQ-9 / GAD-7 between sessions - captured in session notes, with trend charts on client dossiers and the counsellor dashboard."
+              onDescription="Counsellors can capture measures and everyone sees the trends."
+              offDescription="Capture and charts are hidden. Measures already taken are kept, never deleted."
+              initial={featureRes ? featureRes.outcomes.selfEnabled : Boolean(org.features.outcomes)}
+              locked={featureRes ? !featureRes.outcomes.orgControllable : false}
+              lockedReason={featureRes && !featureRes.outcomes.orgControllable ? featureRes.outcomes.reason : undefined}
+            />
+          </SettingsPane>
+        ) },
+        { key: "video", label: "Video sessions", hint: "How online sessions happen - a secure in-region Phila room, or your own meeting link.", node: <SettingsPane><VideoSettingsCard initial={videoSettings} /></SettingsPane> },
+        { key: "ai", label: "AI assistant", badge: aiSettings.aiEnabled ? "On" : undefined, badgeTone: "accent", hint: "A de-identified scribe that drafts the session note and the funder fields - the counsellor edits and signs.", node: <SettingsPane><AiSettingsCard initial={aiSettings} spentCents={aiSpent} providerLive={Boolean(aiProvider)} /></SettingsPane> },
+      ],
+    },
+    {
+      key: "security", label: "Security & data", icon: "security",
+      blurb: "Your account's protection and the practice's POPIA posture.",
+      status: principal.twoFactorEnabled ? { label: "2FA on", tone: "accent" } : { label: "2FA off", tone: "warn" },
+      panels: [
+        { key: "security", label: "Security", badge: principal.twoFactorEnabled ? "2FA on" : "2FA off", badgeTone: principal.twoFactorEnabled ? "accent" : "warn", hint: "Two-factor authentication and your password.", node: <SettingsPane><SecuritySettings initialTwoFactor={principal.twoFactorEnabled} /></SettingsPane> },
+        { key: "compliance", label: "Compliance & POPIA", hint: "Everything runs from what you already record - consent evidence, the access audit, HPCSA-aware retention clocks, Phila's operator register.", node: (
+          <SettingsPane className="space-y-3">
+            <IoNudge registered={Boolean((p as Record<string, string>).ioRegisteredAt)} />
+            <p className="text-[12.5px] text-text-2">One click assembles it all into an auditor-ready pack - nothing to maintain.</p>
+            <a
+              href="/reports/popia"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-10 items-center gap-2 rounded-control bg-accent px-4 text-[13.5px] font-medium text-white shadow-sm transition-[filter] hover:brightness-95"
+            >
+              <FileCheck className="size-4" strokeWidth={2} aria-hidden /> Download compliance pack
+            </a>
+            <p className="text-[11px] text-text-3">Opens as a printable page - save it to PDF. Each generation is recorded in the audit trail.</p>
+          </SettingsPane>
+        ) },
+      ],
+    },
+  ];
+
   return (
     <div className="rise space-y-6">
-      <PageHead title="Settings" summary="Your organisation, scheduling, billing, integrations, and security  grouped so you can find each in a tap." />
-
-      <SettingsTabs
-        organisation={
-          <>
-            <Card>
-              <CardHead title="Company verification" />
-              <div className="px-[17px] pb-[17px]">
-                <VerificationStatusCard status={onboardingStatus} profile={p as Record<string, string>} />
-              </div>
-            </Card>
-            <Card>
-              <CardHead title="Organisation profile" />
-              <div className="px-[17px] pb-[17px]">
-                <OrgProfileForm initial={profile} />
-              </div>
-            </Card>
-            <Card>
-              <CardHead title="Branding" />
-              <div className="space-y-5 px-[17px] pb-[17px]">
-                <LogoSettings initialUrl={logoUrl} />
-                <div className="border-t border-border pt-4">
-                  <BrandingSettings initial={org.brandAccent} />
-                </div>
-              </div>
-            </Card>
-            <Card>
-              <CardHead title="Client portal" />
-              <div className="px-[17px] pb-[17px]">
-                <ClientPortalSettings initial={org.clientPortal} />
-              </div>
-            </Card>
-            <Card>
-              <CardHead title="Public page" />
-              <div className="px-[17px] pb-[17px]">
-                <PublicPageEditor slug={org.slug} initial={pageContent} stats={pageStats} />
-              </div>
-            </Card>
-          </>
-        }
-        scheduling={
-          <Card>
-            <CardHead title="Scheduling" />
-            <div className="space-y-5 px-[17px] pb-[17px]">
-              <SchedulingDefaultsForm initial={scheduling} />
-              <div className="border-t border-border pt-4">
-                <BusinessHoursEditor initial={bh} />
-              </div>
-            </div>
-          </Card>
-        }
-        billing={
-          <>
-            <Card>
-              <CardHead title="Invoicing & VAT" />
-              <div className="px-[17px] pb-[17px]">
-                <InvoiceSettingsForm initial={invoiceSettings} vatRatePercent={platform.vatRatePercent} paymentsEnabled={Boolean(org.features.payments)} />
-              </div>
-            </Card>
-            <div className="grid items-start gap-6 lg:grid-cols-2">
-              <Card>
-                <CardHead title="Payments  your own gateway" />
-                <div className="px-[17px] pb-[17px]">
-                  <p className="mb-3 text-[12.5px] text-text-2">Connect your gateway so clients pay your org directly for invoices. Funds settle to you; Phila just orchestrates. Switching providers is one choice.</p>
-                  <PaymentConnectionCard initial={gateway} />
-                </div>
-              </Card>
-              {subscription && (
-                <Card>
-                  <CardHead title="Your Phila plan" />
-                  <div className="px-[17px] pb-[17px]">
-                    <YourPlanCard subscription={subscription} daysLeft={subscription.status === "trialing" ? trialDaysLeft(subscription.nextBillingAt, clockNow()) : undefined} />
-                  </div>
-                </Card>
-              )}
-            </div>
-          </>
-        }
-        messaging={
-          <Card>
-            <CardHead title="Messaging & notifications" />
-            <div className="px-[17px] pb-[17px]">
-              <MessagingSummary settings={messaging} whatsapp={whatsappConn} credits={credits} quietHours={messaging.quietStart && messaging.quietEnd ? `${messaging.quietStart} to ${messaging.quietEnd}` : null} />
-            </div>
-          </Card>
-        }
-        integrations={
-          <>
-            <Card>
-              <CardHead title="Your connections" />
-              <div className="px-[17px] pb-[17px]">
-                <p className="mb-3 text-[12.5px] text-text-2">What this practice has connected for itself, and the rails Phila provides. Each is honest about its state - nothing sends until it&apos;s live.</p>
-                <YourConnections whatsapp={whatsappConn} health={waHealth} gateway={gateway} credits={credits} voiceOn={voiceOn} />
-              </div>
-            </Card>
-            <Card>
-              <CardHead title="Platform features" />
-              <div className="space-y-2.5 px-[17px] pb-[17px]">
-                <p className="text-[12.5px] text-text-2">Everything starts off. Turn on only what you need  nothing sends or leaves until you do.</p>
-                <IntegrationToggles initial={org.features} />
-                <FundersFeatureToggle initial={Boolean(org.features.funders)} />
-                <ReferralsFeatureToggle initial={Boolean(org.features.referrals)} />
-                <LanguageFeatureToggle
-                  initial={langRes ? langRes.selfEnabled : Boolean(org.features.language)}
-                  locked={langRes ? !langRes.orgControllable : false}
-                  lockedReason={langRes && !langRes.orgControllable ? langRes.reason : undefined}
-                />
-                <OrgFeatureToggle
-                  feature="waitlist"
-                  label="Client waitlist"
-                  description="Hold clients waiting for a space and book them in the moment a slot opens - an Add-to-waitlist action on each client and a waitlist queue on the Appointments page."
-                  onDescription="Add to waitlist appears on client dossiers, and the queue shows on Appointments."
-                  offDescription="Hidden everywhere. Anyone already on the list is kept, never lost."
-                  initial={featureRes ? featureRes.waitlist.selfEnabled : Boolean(org.features.waitlist)}
-                  locked={featureRes ? !featureRes.waitlist.orgControllable : false}
-                  lockedReason={featureRes && !featureRes.waitlist.orgControllable ? featureRes.waitlist.reason : undefined}
-                />
-                <OrgFeatureToggle
-                  feature="outcomes"
-                  label="Outcome tracking"
-                  description="Measure client progress with PHQ-9 / GAD-7 between sessions - captured in session notes, with trend charts on client dossiers and the counsellor dashboard."
-                  onDescription="Counsellors can capture measures and everyone sees the trends."
-                  offDescription="Capture and charts are hidden. Measures already taken are kept, never deleted."
-                  initial={featureRes ? featureRes.outcomes.selfEnabled : Boolean(org.features.outcomes)}
-                  locked={featureRes ? !featureRes.outcomes.orgControllable : false}
-                  lockedReason={featureRes && !featureRes.outcomes.orgControllable ? featureRes.outcomes.reason : undefined}
-                />
-              </div>
-            </Card>
-            <div className="grid items-start gap-6 lg:grid-cols-2">
-              <Card>
-                <CardHead title="Video sessions" />
-                <div className="px-[17px] pb-[17px]">
-                  <p className="mb-3 text-[12.5px] text-text-2">How online sessions happen  a secure in-region Phila room, or your own meeting link.</p>
-                  <VideoSettingsCard initial={videoSettings} />
-                </div>
-              </Card>
-              <Card>
-                <CardHead title="AI assistant" />
-                <div className="px-[17px] pb-[17px]">
-                  <p className="mb-3 text-[12.5px] text-text-2">A de-identified scribe that drafts the session note and the funder fields  the counsellor edits and signs.</p>
-                  <AiSettingsCard initial={aiSettings} spentCents={aiSpent} providerLive={Boolean(aiProvider)} />
-                </div>
-              </Card>
-            </div>
-          </>
-        }
-        security={
-          <>
-            <Card>
-              <CardHead title="Security" />
-              <div className="px-[17px] pb-[17px]">
-                <SecuritySettings initialTwoFactor={principal.twoFactorEnabled} />
-              </div>
-            </Card>
-
-            <Card>
-              <CardHead title="Compliance & POPIA" />
-              <div className="space-y-3 px-[17px] pb-[17px]">
-                <IoNudge registered={Boolean((p as Record<string, string>).ioRegisteredAt)} />
-                <p className="text-[12.5px] text-text-2">
-                  Everything runs from what you already record: consent evidence, the access audit, HPCSA-aware
-                  retention clocks, and Phila&apos;s operator register. One click assembles it into an
-                  auditor-ready pack - nothing to maintain.
-                </p>
-                <a
-                  href="/reports/popia"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-10 items-center gap-2 rounded-control bg-accent px-4 text-[13.5px] font-medium text-white shadow-sm transition-[filter] hover:brightness-95"
-                >
-                  <FileCheck className="size-4" strokeWidth={2} aria-hidden /> Download compliance pack
-                </a>
-                <p className="text-[11px] text-text-3">Opens as a printable page - save it to PDF. Each generation is recorded in the audit trail.</p>
-              </div>
-            </Card>
-          </>
-        }
-      />
+      <PageHead title="Settings" summary="Your organisation, scheduling, billing, integrations, and security - grouped so you can find each in a tap." />
+      <SettingsShell sections={sections} />
     </div>
   );
 }

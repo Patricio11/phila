@@ -222,6 +222,11 @@ Sign in as **Thandeka**.
 - ☐ Delivery states on Billing → Recent messages never go backwards (a `Read` never becomes `Delivered`); a Meta failure shows its reason; **Failed after retries** lists dead letters with masked recipients
 - ☐ As the super admin, Integrations → **Org connections** ends with **WhatsApp numbers by org** (number, name, status, health chip); Billing shows "N message alerts this month" once any alert has actually gone out
 
+**Settings shell** (batch 4h)
+- ☐ `/hub/settings` shows a **left rail** of six sections with status chips (Verified · N channels on · N features on · Gateway live / Trial · 2FA on/off); clicking slides the active marker and the panel rises; each section has **sub-tabs** with a hint line (Organisation → Profile / Branding / Client portal / Public page / Verification, etc.)
+- ☐ The URL follows you (`?tab=…&sub=…`); a deep link such as `/hub/settings?tab=security&sub=compliance` opens on that panel; leaving a section and coming back remembers its sub-tab; a half-typed form survives switching
+- ☐ On a phone the rail becomes a scrolling **pill strip** and the sub-tabs scroll, both centring the active item; no sideways page scroll
+
 **Storage backend: Supabase or Amazon S3** (batch 2o)
 - ☐ `/admin/integrations/storage` offers two chips: **Supabase** and **Amazon S3**. The chip you are not on shows *configured* when its credentials are stored, so switching back needs no retyping
 - ☐ Picking **Amazon S3** asks for region, bucket, access key ID, secret and an optional endpoint (MinIO / Cloudflare R2), and stops asking for a Supabase project URL

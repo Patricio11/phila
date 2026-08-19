@@ -29,6 +29,8 @@ export async function nudgeThreadMembers(input: {
   messageId: string;
   /** Sender is a client (their reply) or staff. */
   senderKind: "staff" | "client";
+  /** Batch 4n - people @mentioned in this message: they always hear, even if already alerted for the thread. */
+  mentionedUserIds?: string[];
 }): Promise<void> {
   const db = getDb();
   const [thread] = await db.select().from(messageThreads).where(and(eq(messageThreads.id, input.threadId), eq(messageThreads.orgId, input.orgId))).limit(1);
@@ -43,6 +45,8 @@ export async function nudgeThreadMembers(input: {
   const base = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
   const others = members.filter((m) => m.userId !== input.senderUserId);
   const now = new Date();
+  const mentioned = new Set(input.mentionedUserIds ?? []);
+  const due = (m: { userId: string; nudgedAt: Date | null; lastReadAt: Date | null }) => mentioned.has(m.userId) || shouldAlert({ nudgedAt: m.nudgedAt, lastReadAt: m.lastReadAt });
 
   // Who are they? (client logins vs staff + role, phone, email)
   const ids = others.map((m) => m.userId);
@@ -69,7 +73,7 @@ export async function nudgeThreadMembers(input: {
   // Batch 4m - web push first, for everyone who isn't online and is due an alert:
   // one card per conversation (replacing tag), never the text. Reached by push
   // counts like "online" - the external lane (WhatsApp / SMS / email) then stays quiet.
-  const dueOffline = others.filter((m) => shouldAlert({ nudgedAt: m.nudgedAt, lastReadAt: m.lastReadAt }) && !online.has(m.userId)).map((m) => m.userId);
+  const dueOffline = others.filter((m) => due(m) && !online.has(m.userId)).map((m) => m.userId);
   let pushed = new Set<string>();
   if (dueOffline.length) {
     try {
@@ -86,8 +90,9 @@ export async function nudgeThreadMembers(input: {
 
   // Members are independent - alert them concurrently (Neon round-trips add up).
   await Promise.all(others.map(async (m) => {
-    if (!shouldAlert({ nudgedAt: m.nudgedAt, lastReadAt: m.lastReadAt })) return;
+    if (!due(m)) return;
     const u = userById.get(m.userId);
+    const isMention = mentioned.has(m.userId);
     if (!u) return;
     const isClient = Boolean(u.clientId);
     const role = roleByUser.get(m.userId) ?? "counsellor";
@@ -100,7 +105,9 @@ export async function nudgeThreadMembers(input: {
       userId: m.userId,
       orgId: input.orgId,
       kind: "message",
-      title: threadLabel ? `${input.senderName} posted in ${threadLabel}` : `${input.senderName} sent you a message`,
+      title: isMention
+        ? (threadLabel ? `${input.senderName} mentioned you in ${threadLabel}` : `${input.senderName} mentioned you`)
+        : (threadLabel ? `${input.senderName} posted in ${threadLabel}` : `${input.senderName} sent you a message`),
       body: "Open Messages to read it.",
       href: isClient ? "/me/messages" : `${role === "counsellor" ? "/app" : "/hub"}/messages?t=${encodeURIComponent(input.threadId)}`,
     });

@@ -1,6 +1,7 @@
 import "server-only";
 import type { StorageBackend } from "@/lib/domain/enums";
 import { and, eq, inArray, sql } from "drizzle-orm";
+import { sanitiseMentions } from "@/lib/messaging/mentions";
 import { randomUUID } from "node:crypto";
 import { getDb } from "@/db/client";
 import { activeDb } from "@/lib/db/scoped";
@@ -402,7 +403,10 @@ export async function editMessageDb(messageId: string, userId: string, text: str
   const [row] = await db.select({ threadId: teamMessages.threadId, sender: teamMessages.senderUserId, deletedAt: teamMessages.deletedAt })
     .from(teamMessages).where(eq(teamMessages.id, messageId)).limit(1);
   if (!row || row.sender !== userId || row.deletedAt) return null;
-  await db.update(teamMessages).set({ body: text, editedAt: new Date() }).where(eq(teamMessages.id, messageId));
+  // Batch 4n - a mention token must point at a member of this thread.
+  const members = await db.select({ userId: threadMembers.userId }).from(threadMembers).where(eq(threadMembers.threadId, row.threadId));
+  const body = sanitiseMentions(text, members.map((m) => ({ userId: m.userId, name: "" })));
+  await db.update(teamMessages).set({ body, editedAt: new Date() }).where(eq(teamMessages.id, messageId));
   return row.threadId;
 }
 

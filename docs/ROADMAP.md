@@ -1933,6 +1933,21 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   first behind a swappable adapter so other providers can be switched on/off later; includes the
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).
 
+- [x] **Messages: @mentions + give-the-words-back** *(2026-08-19, batch 4n - the two mycatfish
+  borrows)*: (1) **@mentions** - type `@` in any conversation and a small list of the people in it
+  appears (name + role, arrow keys, Enter / Tab, click); the box stays plain (`@Nomsa Dlamini`), and
+  at send the name becomes a token the server can trust (`@[Nomsa Dlamini](user_nomsa)` in the body;
+  `lib/messaging/mentions.ts`, pure + unit-tested: tokenise longest-name-first, strip, split,
+  sanitise - a token for a non-member flattens to plain `@Name` on send AND on edit). Rendered as a
+  chip in the bubble (the one naming you glows); previews, quotes and the edit box show plain text.
+  A mentioned person always hears: bell "X mentioned you in Y" even if already alerted for the
+  thread, and the offline lanes (push → WhatsApp / SMS / email) fire for them regardless of the
+  once-per-thread rule. (2) **Give the words back** - a send that fails (server "no" or the network
+  dropping) removes the optimistic bubble, returns the draft AND the reply target to the composer,
+  focuses it, and says so honestly ("Couldn't send - your words are back in the box"). Proven live:
+  menu → pick → chip → token stored → Nomsa's bell; a network-aborted send → draft + reply bar back,
+  no phantom bubble.
+
 - [x] **Messages: typing indicator · roomier composer · crisis support (toggle) · web push** *(2026-08-19,
   batch 4m)*: (1) **Typing indicator that works without Supabase** - `thread_members.typing_at`
   stamped through a tiny route (`/api/messages/typing`, a plain fetch because server actions from

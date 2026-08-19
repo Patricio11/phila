@@ -222,6 +222,11 @@ Sign in as **Thandeka**.
 - ☐ Delivery states on Billing → Recent messages never go backwards (a `Read` never becomes `Delivered`); a Meta failure shows its reason; **Failed after retries** lists dead letters with masked recipients
 - ☐ As the super admin, Integrations → **Org connections** ends with **WhatsApp numbers by org** (number, name, status, health chip); Billing shows "N message alerts this month" once any alert has actually gone out
 
+**Messages: @mentions + give the words back** (batch 4n)
+- ☐ In a group (or any thread) type `@nom` → a list of the people in the conversation appears; Enter inserts `@Nomsa Dlamini ` plain; send → the bubble shows an **@Nomsa** chip, the list preview shows plain text, Nomsa's bell says "<You> mentioned you in <group>"
+- ☐ Edit a message with a mention - the edit box shows plain `@Name`, saving keeps the chip
+- ☐ Go offline (or block the request) and send - the bubble disappears again, the draft and the reply bar come back, and the toast says "Couldn't send - your words are back in the box"
+
 **Messages: typing, composer, crisis support, web push** (batch 4m)
 - ☐ Two browsers (staff + client): while one types, the other's thread shows the dots bubble + "X is typing…" in the header within ~3 s, gone ~6 s after the last keystroke - with Supabase unconfigured
 - ☐ The composer is 44 px tall empty (also under a reply bar) and grows with a multi-line draft; editing a message gets the same roomy box

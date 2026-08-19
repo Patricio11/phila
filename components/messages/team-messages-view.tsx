@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient, type RealtimeChannel } from "@supabase/supabase-js";
-import { ArrowLeft, Check, CornerUpLeft, Download, Eye, FileText, HeartHandshake, Info, Lock, MessagesSquare, Paperclip, Pencil, PenSquare, Phone, Search, Send, ShieldCheck, SmilePlus, Trash2, UsersRound, X } from "lucide-react";
+import { ArrowLeft, AtSign, Check, CornerUpLeft, Download, Eye, FileText, HeartHandshake, Info, Lock, MessagesSquare, Paperclip, Pencil, PenSquare, Phone, Search, Send, ShieldCheck, SmilePlus, Trash2, UsersRound, X } from "lucide-react";
 import type { TeamThread } from "@/lib/data-provider";
 import { type TeamRole } from "@/lib/domain/enums";
 import { roleLabel } from "@/components/messages/role-label";
@@ -18,6 +18,7 @@ import { ThreadInfo } from "@/components/messages/thread-info";
 import { FullPage, FullPageToggle } from "@/components/ui/full-page";
 import { PushOptIn } from "@/components/push/push-opt-in";
 import type { CrisisLine } from "@/lib/messaging/crisis";
+import { applyMention, mentionCandidates, mentionQueryAt, splitMentions, stripMentionTokens, tokeniseMentions, type MentionMember } from "@/lib/messaging/mentions";
 import { sizeLabel } from "@/lib/documents/quota";
 import { cn } from "@/lib/utils";
 
@@ -66,6 +67,9 @@ export function TeamMessagesView({
   const [typing, setTyping] = useState<{ threadId: string; name: string } | null>(null);
   // Batch 4m - typing over the DB: names by thread, refreshed every 2.5 s while a thread is open.
   const [typingNames, setTypingNames] = useState<Record<string, string[]>>({});
+  // Batch 4n - @mention completion: the "@query" under the caret + the highlighted row.
+  const [mention, setMention] = useState<{ start: number; query: string } | null>(null);
+  const [mentionIdx, setMentionIdx] = useState(0);
   // Batch 4m - crisis support lines handed back to the author (client) by the server - shown once, to them alone.
   const [support, setSupport] = useState<{ threadId: string; lines: CrisisLine[] } | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -347,6 +351,39 @@ export function TeamMessagesView({
   };
   useEffect(() => { autoGrow(composerRef.current); }, [draft, replyTo, activeId]);
 
+  // Batch 4n - who can be @mentioned here: everyone in the thread but me (a DM = the other person).
+  const mentionMembers: MentionMember[] = active
+    ? (active.members && active.members.length > 0
+        ? active.members.map((m) => ({ userId: m.userId, name: m.name }))
+        : active.kind === "direct" && active.otherUserId ? [{ userId: active.otherUserId, name: active.otherName }] : [])
+    : [];
+  const mentionOptions = mention ? mentionCandidates(mention.query, mentionMembers, myUserId) : [];
+  const updateMention = (el: HTMLTextAreaElement | null) => {
+    if (!el) return;
+    const q = mentionQueryAt(el.value, el.selectionStart ?? el.value.length);
+    setMention((prev) => (q ? (prev && prev.start === q.start && prev.query === q.query ? prev : q) : null));
+    if (!q) setMentionIdx(0);
+  };
+  const pickMention = (member: MentionMember) => {
+    const el = composerRef.current;
+    if (!el || !mention) return;
+    const caret = el.selectionStart ?? draft.length;
+    const next = applyMention(draft, mention.start, caret, member);
+    setDraft(next.text);
+    setMention(null);
+    setMentionIdx(0);
+    requestAnimationFrame(() => { el.focus(); el.setSelectionRange(next.caret, next.caret); autoGrow(el); });
+  };
+  const onComposerKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (mention && mentionOptions.length > 0) {
+      if (e.key === "ArrowDown") { e.preventDefault(); setMentionIdx((i) => (i + 1) % mentionOptions.length); return; }
+      if (e.key === "ArrowUp") { e.preventDefault(); setMentionIdx((i) => (i - 1 + mentionOptions.length) % mentionOptions.length); return; }
+      if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); pickMention(mentionOptions[Math.min(mentionIdx, mentionOptions.length - 1)]!); return; }
+      if (e.key === "Escape") { e.preventDefault(); setMention(null); return; }
+    }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+  };
+
   const patchMessage = (threadId: string, messageId: string, patch: Partial<{ text: string; edited: boolean; deleted: boolean }>) =>
     setThreads((prev) => prev.map((t) => (t.id !== threadId ? t : { ...t, messages: t.messages.map((m) => (m.id === messageId ? { ...m, ...patch } : m)) })));
 
@@ -354,9 +391,10 @@ export function TeamMessagesView({
     const text = editDraft.trim();
     const id = editingId;
     if (!id || !active || !text) return;
-    patchMessage(active.id, id, { text, edited: true });
+    const body = tokeniseMentions(text, mentionMembers);
+    patchMessage(active.id, id, { text: body, edited: true });
     setEditingId(null);
-    void editMessage({ messageId: id, text }).then((res) => { if (!res.ok) toast({ tone: "error", title: res.error }); });
+    void editMessage({ messageId: id, text: body }).then((res) => { if (!res.ok) toast({ tone: "error", title: res.error }); });
   };
 
   const doDelete = (messageId: string) => {
@@ -387,16 +425,26 @@ export function TeamMessagesView({
     const localId = `local_${(localSeq.current += 1)}`;
     const quoted = replyTo;
     setReplyTo(null);
-    const optimistic = { id: localId, from: "me" as const, text, at: new Date().toISOString(), senderId: myUserId, attachment: attachment ? { name: attachment.name, contentType: attachment.contentType, bytes: attachment.bytes } : undefined, replyTo: quoted };
+    // Batch 4n - "@Thabo Mokoena" typed plain becomes a mention token the server can trust.
+    const body = tokeniseMentions(text, mentionMembers);
+    const optimistic = { id: localId, from: "me" as const, text: body, at: new Date().toISOString(), senderId: myUserId, attachment: attachment ? { name: attachment.name, contentType: attachment.contentType, bytes: attachment.bytes } : undefined, replyTo: quoted };
     setThreads((prev) => prev.map((t) => (t.id === wasThreadId ? { ...t, messages: [...t.messages, optimistic], lastAt: optimistic.at } : t)));
+    // Batch 4n - give the words back: a failed send returns the draft + the reply target to the box.
+    const giveBack = (reason: string) => {
+      setThreads((prev) => prev.map((t) => (t.id === wasThreadId ? { ...t, messages: t.messages.filter((m) => m.id !== localId) } : t)));
+      setDraft((cur) => (cur.trim() ? `${text}\n${cur}` : text));
+      if (quoted) setReplyTo(quoted);
+      requestAnimationFrame(() => composerRef.current?.focus());
+      toast({ tone: "error", title: "Couldn't send - your words are back in the box", description: reason });
+    };
     void sendTeamMessage({
       threadId: wasThreadId.startsWith("local_") ? undefined : wasThreadId,
       toUserId: active.otherUserId || undefined,
-      text,
+      text: body,
       attachment,
       replyToId: quoted && !quoted.id.startsWith("local_") ? quoted.id : undefined,
     }).then((res) => {
-      if (!res.ok) return toast({ tone: "error", title: res.error });
+      if (!res.ok) return giveBack(res.error);
       if (res.support?.length) setSupport({ threadId: res.threadId ?? wasThreadId, lines: res.support });
       const realThreadId = res.threadId;
       setThreads((prev) => prev.map((t) => (t.id !== wasThreadId ? t : {
@@ -405,7 +453,7 @@ export function TeamMessagesView({
         messages: t.messages.map((m) => (m.id === localId && res.messageId ? { ...m, id: res.messageId } : m)),
       })));
       if (realThreadId && wasThreadId.startsWith("local_")) setActiveId(realThreadId);
-    });
+    }).catch(() => giveBack("Phila couldn't be reached. Check your connection and send again."));
   };
 
   const send = () => {
@@ -551,7 +599,7 @@ export function TeamMessagesView({
                         {(() => {
                           const last = t.messages[t.messages.length - 1];
                           if (last?.deleted) return "Message deleted";
-                          if (last?.text) return last.text;
+                          if (last?.text) return stripMentionTokens(last.text);
                           if (last?.attachment) return `📎 ${last.attachment.name}`;
                           return t.kind === "group" ? `${t.memberCount ?? 0} members` : t.kind === "client" ? (isClient ? "Your practice" : "Client") : roleLabel(t.otherRole);
                         })()}
@@ -639,10 +687,10 @@ export function TeamMessagesView({
                             {!m.deleted && !m.id.startsWith("local_") && (
                               <div className={cn("relative mb-1 flex items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100", m.from === "them" && "order-2")}>
                                 <button type="button" onClick={() => setReactFor(reactFor === m.id ? null : m.id)} aria-label="React" title="React" className="inline-flex size-7 items-center justify-center rounded-control text-text-3 hover:bg-surface-hover hover:text-text"><SmilePlus className="size-3.5" aria-hidden /></button>
-                                <button type="button" onClick={() => { setReplyTo({ id: m.id, senderName: m.from === "me" ? "You" : (m.senderName ?? active.otherName), text: m.text || (m.attachment ? `📎 ${m.attachment.name}` : "") }); composerRef.current?.focus(); }} aria-label="Reply" title="Reply" className="inline-flex size-7 items-center justify-center rounded-control text-text-3 hover:bg-surface-hover hover:text-text"><CornerUpLeft className="size-3.5" aria-hidden /></button>
+                                <button type="button" onClick={() => { setReplyTo({ id: m.id, senderName: m.from === "me" ? "You" : (m.senderName ?? active.otherName), text: stripMentionTokens(m.text) || (m.attachment ? `📎 ${m.attachment.name}` : "") }); composerRef.current?.focus(); }} aria-label="Reply" title="Reply" className="inline-flex size-7 items-center justify-center rounded-control text-text-3 hover:bg-surface-hover hover:text-text"><CornerUpLeft className="size-3.5" aria-hidden /></button>
                                 {m.from === "me" && (
                                   <>
-                                    <button type="button" onClick={() => { setEditingId(m.id); setEditDraft(m.text); }} aria-label="Edit message" className="inline-flex size-7 items-center justify-center rounded-control text-text-3 hover:bg-surface-hover hover:text-text"><Pencil className="size-3.5" aria-hidden /></button>
+                                    <button type="button" onClick={() => { setEditingId(m.id); setEditDraft(stripMentionTokens(m.text)); }} aria-label="Edit message" className="inline-flex size-7 items-center justify-center rounded-control text-text-3 hover:bg-surface-hover hover:text-text"><Pencil className="size-3.5" aria-hidden /></button>
                                     <button type="button" onClick={() => doDelete(m.id)} aria-label="Delete message" className="inline-flex size-7 items-center justify-center rounded-control text-text-3 hover:bg-surface-hover hover:text-danger"><Trash2 className="size-3.5" aria-hidden /></button>
                                   </>
                                 )}
@@ -660,7 +708,7 @@ export function TeamMessagesView({
                               {!m.deleted && m.replyTo && (
                                 <button type="button" onClick={() => jumpTo(m.replyTo!.id)} className={cn("mb-1.5 block w-full rounded-lg border-l-2 px-2.5 py-1.5 text-left", m.from === "me" ? "border-accent-ink/60 bg-white/15 hover:bg-white/25" : "border-accent bg-surface-2 hover:bg-surface-hover")}>
                                   <span className={cn("block text-[11px] font-semibold", m.from === "me" ? "text-accent-ink/90" : "text-accent")}>{m.replyTo.senderName}</span>
-                                  <span className={cn("block truncate text-[12px]", m.from === "me" ? "text-accent-ink/80" : "text-text-2")}>{m.replyTo.text || "Message"}</span>
+                                  <span className={cn("block truncate text-[12px]", m.from === "me" ? "text-accent-ink/80" : "text-text-2")}>{stripMentionTokens(m.replyTo.text) || "Message"}</span>
                                 </button>
                               )}
                               {!m.deleted && m.attachment && (
@@ -679,7 +727,7 @@ export function TeamMessagesView({
                                   <Download className={cn("size-4 shrink-0", m.from === "me" ? "text-accent-ink/80" : "text-text-3")} aria-hidden />
                                 </button>
                               )}
-                              {m.deleted ? "This message was deleted" : <span className="whitespace-pre-wrap break-words">{m.text}</span>}
+                              {m.deleted ? "This message was deleted" : <span className="whitespace-pre-wrap break-words"><MessageBody text={m.text} myUserId={myUserId} mine={m.from === "me"} /></span>}
                               {!m.deleted && (
                                 <div className={cn("mt-1 flex items-center gap-1 text-[10px]", m.from === "me" ? "text-accent-ink/70" : "text-text-3")}>
                                   {timeOf(m.at)}{m.edited && <span>· edited</span>}
@@ -753,9 +801,37 @@ export function TeamMessagesView({
                     <CornerUpLeft className="size-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
                     <span className="min-w-0 flex-1">
                       <span className="block text-[11px] font-semibold text-accent">Replying to {replyTo.senderName}</span>
-                      <span className="block truncate text-[12px] text-text-2">{replyTo.text || "Message"}</span>
+                      <span className="block truncate text-[12px] text-text-2">{stripMentionTokens(replyTo.text) || "Message"}</span>
                     </span>
                     <button type="button" onClick={() => setReplyTo(null)} aria-label="Cancel reply" className="inline-flex size-6 shrink-0 items-center justify-center rounded-control text-text-3 hover:bg-surface-hover hover:text-text"><X className="size-3.5" aria-hidden /></button>
+                  </div>
+                )}
+                {/* Batch 4n - @mention completion: people in this conversation, arrow keys + Enter / Tab */}
+                {mention && mentionOptions.length > 0 && (
+                  <div className="absolute bottom-full left-3 right-3 z-30 mb-1 sm:right-auto sm:w-72" data-testid="mention-menu" role="listbox" aria-label="Mention someone">
+                    <div className="overflow-hidden rounded-card border border-border bg-surface shadow-lg">
+                      <div className="flex items-center gap-1.5 border-b border-border px-2.5 py-1.5 text-[11px] text-text-3"><AtSign className="size-3" strokeWidth={2.2} aria-hidden /> Mention someone in this conversation</div>
+                      <ul className="max-h-56 overflow-y-auto py-1">
+                        {mentionOptions.map((m, i) => (
+                          <li key={m.userId}>
+                            <button
+                              type="button"
+                              role="option"
+                              aria-selected={i === mentionIdx}
+                              onMouseDown={(e) => { e.preventDefault(); pickMention(m); }}
+                              onMouseEnter={() => setMentionIdx(i)}
+                              className={cn("flex w-full items-center gap-2.5 px-2.5 py-1.5 text-left", i === mentionIdx ? "bg-accent-soft/60" : "hover:bg-surface-hover")}
+                            >
+                              <Avatar name={m.name} size="sm" />
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-[13px] font-medium text-text">{m.name}</span>
+                                <span className="block truncate text-[11px] text-text-3">{roleLabel((active.members?.find((x) => x.userId === m.userId)?.role ?? "counsellor") as TeamRole)}</span>
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 )}
                 {emojiOpen && (
@@ -792,8 +868,11 @@ export function TeamMessagesView({
                   <textarea
                     ref={composerRef}
                     value={draft}
-                    onChange={(e) => { setDraft(e.target.value); emitTyping(active.id); }}
-                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+                    onChange={(e) => { setDraft(e.target.value); emitTyping(active.id); updateMention(e.target); }}
+                    onKeyDown={onComposerKeyDown}
+                    onKeyUp={(e) => { if (e.key.startsWith("Arrow") || e.key === "Home" || e.key === "End") updateMention(e.currentTarget); }}
+                    onClick={(e) => updateMention(e.currentTarget)}
+                    onBlur={() => setTimeout(() => setMention(null), 150)}
                     placeholder={uploading > 0 ? "Uploading…" : isClient ? "Message your practice…" : `Message ${active.otherName.split(" ")[0]}…`}
                     rows={1}
                     onInput={(e) => autoGrow(e.currentTarget)}
@@ -966,4 +1045,27 @@ function typingLabel(kind: string, names: string[]): string {
   if (first.length === 1) return `${first[0]} is typing…`;
   if (first.length === 2) return `${first[0]} and ${first[1]} are typing…`;
   return `${first[0]}, ${first[1]} and ${first.length - 2} more are typing…`;
+}
+
+/** Batch 4n - a message body with @mentions as chips; the one that names me glows. */
+function MessageBody({ text, myUserId, mine }: { text: string; myUserId: string; mine: boolean }) {
+  const segs = splitMentions(text);
+  if (segs.length === 1 && segs[0]!.kind === "text") return <>{text}</>;
+  return (
+    <>
+      {segs.map((seg, i) => seg.kind === "text"
+        ? <span key={i}>{seg.text}</span>
+        : (
+          <span
+            key={i}
+            data-testid="mention-chip"
+            data-me={seg.userId === myUserId ? "true" : undefined}
+            className={cn(
+              "rounded-md px-1 py-px font-[620]",
+              mine ? "bg-white/20 text-accent-ink" : seg.userId === myUserId ? "bg-accent text-accent-ink" : "bg-accent-soft text-accent",
+            )}
+          >@{seg.name.split(" ")[0]}</span>
+        ))}
+    </>
+  );
 }

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireOrg } from "@/lib/auth/guard";
 import { requireMessagingPrincipal } from "@/lib/messaging/principal";
 import { readsAsCrisis, CRISIS_LINES, type CrisisLine } from "@/lib/messaging/crisis";
+import { mentionedUserIds, sanitiseMentions } from "@/lib/messaging/mentions";
 import { getMessagingSettings } from "@/db/queries/messaging";
 import { createNotification } from "@/db/queries/notifications";
 import { nudgeThreadMembers } from "@/lib/messaging/nudge";
@@ -70,14 +71,21 @@ export async function sendTeamMessage(
 
   let threadId: string | undefined;
   let messageId: string | undefined;
+  // Batch 4n - @mentions: a token must name a member of the thread; anyone else flattens to "@Name".
+  let mentioned: string[] = [];
   if (isDb()) {
     let sent;
     if (d.threadId && !d.threadId.startsWith("local_")) {
+      const members = await threadMembersDb(membership.orgId, d.threadId);
+      d.text = sanitiseMentions(d.text, members);
+      mentioned = mentionedUserIds(d.text, members).filter((id) => id !== me.userId);
       sent = await sendToThreadDb(membership.orgId, principal.userId, d.threadId, d.text, attachment, d.replyToId);
       if (!sent) return { ok: false, error: "You're not in that conversation." };
     } else if (d.toUserId) {
       // A direct thread is staff-to-staff only - never to a client's login.
       if (await isClientUserDb(d.toUserId)) return { ok: false, error: "Message a client from their client page." };
+      d.text = sanitiseMentions(d.text, [{ userId: d.toUserId, name: "" }]);
+      mentioned = mentionedUserIds(d.text).filter((id) => id === d.toUserId);
       sent = await sendTeamMessageDb(membership.orgId, principal.userId, d.toUserId, d.text, attachment, d.replyToId);
     } else {
       return { ok: false, error: "Pick a conversation." };
@@ -108,7 +116,7 @@ export async function sendTeamMessage(
     // Phase 34.2 - the doorbell: bell every other member (once per thread until
     // read) and, for anyone NOT online in Phila, ONE external "X sent you a
     // message on Phila" on their preferred channel. Runs after the response.
-    const nudgeInput = { threadId: sent.threadId, orgId: me.orgId, senderUserId: me.userId, senderName, messageId: sent.messageId, senderKind: me.kind };
+    const nudgeInput = { threadId: sent.threadId, orgId: me.orgId, senderUserId: me.userId, senderName, messageId: sent.messageId, senderKind: me.kind, mentionedUserIds: mentioned };
     after(() => nudgeThreadMembers(nudgeInput).catch(() => {}));
 
     // Batch 4m - crisis support (OFF by default, the practice's switch). A client's
@@ -274,7 +282,8 @@ export async function editMessage(raw: z.infer<typeof editInput>): Promise<{ ok:
   if (isDb()) {
     const threadId = await editMessageDb(parsed.data.messageId, principal.userId, parsed.data.text);
     if (!threadId) return { ok: false, error: "You can only edit your own message." };
-    await broadcastMessageUpdate(threadId, { messageId: parsed.data.messageId, text: parsed.data.text, edited: true, deleted: false });
+    const members = await threadMembersDb(membership.orgId, threadId);
+    await broadcastMessageUpdate(threadId, { messageId: parsed.data.messageId, text: sanitiseMentions(parsed.data.text, members), edited: true, deleted: false });
   }
   await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole }, orgId: membership.orgId, target: `team_message:${parsed.data.messageId}`, reason: "edit_message" });
   return { ok: true };

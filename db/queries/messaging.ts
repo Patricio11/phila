@@ -17,7 +17,7 @@ export interface MessagingSettings {
   /** Phase 34.2 - "X sent you a message on Phila" alerts for offline staff / clients. */
   messageAlertsStaff: boolean;
   messageAlertsClients: boolean;
-  /** Batch 4m - crisis support in client conversations (OFF by default). */
+  /** Batch 4m - the practice's say on crisis support in client conversations (Phila's platform switch must be on too). */
   crisisSupport: boolean;
 }
 
@@ -25,7 +25,7 @@ const DEFAULT_SETTINGS: MessagingSettings = {
   whatsappEnabled: false, smsEnabled: false, emailEnabled: false,
   emailReplyTo: null, emailFromName: null, quietStart: null, quietEnd: null,
   messageAlertsStaff: true, messageAlertsClients: true,
-  crisisSupport: false,
+  crisisSupport: true,
 };
 
 export async function getMessagingSettings(orgId: string): Promise<MessagingSettings> {

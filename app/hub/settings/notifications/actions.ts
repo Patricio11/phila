@@ -18,7 +18,7 @@ const settingsInput = z.object({
   quietEnd: time,
   messageAlertsStaff: z.boolean().default(true),
   messageAlertsClients: z.boolean().default(true),
-  crisisSupport: z.boolean().default(false),
+  crisisSupport: z.boolean().default(true),
 });
 
 export async function saveNotificationSettings(

@@ -325,11 +325,13 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
   folder, shared folders, their clients). `counsellorAccessibleDocumentDb` is the one download rule.
 - **4m Messages polish + safety + push** (2026-08-19): typing indicator over the DB
   (`thread_members.typing_at`, `/api/messages/typing`), composer/edit auto-grow (44 px min),
-  **crisis support** toggle (OFF by default; `lib/messaging/crisis.ts`, author-only SADAG / Lifeline
-  card, quiet bell to thread staff + admins), **web push** lane (`lib/push/*`, `web_push` platform
+  **crisis support** as a PLATFORM function (super admin: Feature control → Platform functions,
+  `platform_settings.crisis_support_enabled`, OFF until switched on; orgs then have it and may opt out
+  in Notifications settings; `lib/messaging/crisis.ts`, author-only SADAG / Lifeline card, quiet bell
+  to thread staff + admins), **web push** lane (`lib/push/*`, `web_push` platform
   integration with Phila's VAPID keys, `push_subscriptions`, `public/sw.js` push handlers,
   `/open/messages` role door; nudge rail pushes offline members first and skips external for them).
-- **Numbers at 2026-08-19:** migrations through **0085**; **311** unit tests; every batch / task
+- **Numbers at 2026-08-19:** migrations through **0086**; **311** unit tests; every batch / task
   proven live on `npm run build && npm run start` with screenshots.
 - **The messaging shell rule (34.1):** `lib/messaging/principal.ts` - messaging actions accept a
   STAFF (org membership) or a CLIENT (their linked `user.client_id`) principal; the client rules are

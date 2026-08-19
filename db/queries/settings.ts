@@ -8,9 +8,22 @@ import { invoices, carePlans, orgs, platformSettings } from "@/db/schema";
 const PLATFORM_ID = "global";
 
 /** The platform-wide VAT rate (super-admin, single row). Falls back to 15% if unseeded. */
-export async function getPlatformSettingsDb(): Promise<{ vatRatePercent: number }> {
+export async function getPlatformSettingsDb(): Promise<{ vatRatePercent: number; crisisSupportEnabled: boolean }> {
   const [row] = await getDb().select().from(platformSettings).where(eq(platformSettings.id, PLATFORM_ID)).limit(1);
-  return { vatRatePercent: row?.vatRatePercent ?? 15 };
+  return { vatRatePercent: row?.vatRatePercent ?? 15, crisisSupportEnabled: row?.crisisSupportEnabled ?? false };
+}
+
+/** Batch 4m - Phila's switch for crisis support in client conversations (every org follows). */
+export async function setPlatformCrisisSupportDb(enabled: boolean): Promise<void> {
+  await getDb().insert(platformSettings).values({ id: PLATFORM_ID, vatRatePercent: 15, crisisSupportEnabled: enabled })
+    .onConflictDoUpdate({ target: platformSettings.id, set: { crisisSupportEnabled: enabled } });
+}
+
+/** Is the function on for this org right now? Phila's switch first, then the practice's own. */
+export async function crisisSupportActiveDb(orgCrisisSupport: boolean): Promise<boolean> {
+  if (!orgCrisisSupport) return false;
+  const p = await getPlatformSettingsDb();
+  return p.crisisSupportEnabled;
 }
 
 /** Persist the national VAT rate  one super-admin change, every org's invoices follow. */

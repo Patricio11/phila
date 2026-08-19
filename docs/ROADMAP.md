@@ -1941,8 +1941,11 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   dots bubble at the foot of the thread; gone ~6 s after the last keystroke. The Supabase broadcast
   path is kept when configured. (2) **Composer + edit box auto-grow** - 44 px minimum (was a 40 px
   slit under the reply bar), grows with the text to ~6 lines, same for editing a message.
-  (3) **Crisis support in client conversations - OFF by default, the practice's switch** (Settings →
-  Messaging → Notifications): when ON and a client's message reads as self-harm (`lib/messaging/
+  (3) **Crisis support in client conversations - the PLATFORM admin's switch** (Admin → Feature
+  control → **Platform functions**; `platform_settings.crisis_support_enabled`, OFF until Phila turns
+  it on; every practice then has it and may switch it off for itself under Settings → Messaging →
+  Notifications, where the card says "Not switched on by Phila yet" until then): when ON and a
+  client's message reads as self-harm (`lib/messaging/
   crisis.ts`, a short conservative phrase list, unit-tested, no AI), the message still sends exactly
   as written, the staff in that conversation + the org's admins get a quiet bell (never the text;
   `kind = crisis`; audited `crisis_support_shown_alerted_N`), and **SADAG 0800 567 567 · SADAG SMS
@@ -1966,7 +1969,9 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   normal external lane. Headless Chromium has no push service (permission reads "denied"), so the
   device-side subscribe is proven by its honest "Blocked" state here and by the server lane - a
   real browser completes it. Migrations 0084 (`typing_at`) + 0085 (`crisis_support`,
-  `push_subscriptions`).
+  `push_subscriptions`), 0086 (platform switch; org column now defaults ON = "opt out"). Proven live:
+  platform OFF → org card honest + a distress message sends with no card; platform ON → org card shows
+  its own switch on + the client's card appears; switched back OFF after.
 
 - [x] **S3 browser uploads - the bucket's CORS rule, diagnosed and fixable from Phila** *(2026-08-19,
   batch 4l)*: the practice's uploads to the org's Amazon S3 bucket were dying on the browser's

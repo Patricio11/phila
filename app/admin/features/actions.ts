@@ -30,3 +30,16 @@ export async function setPlatformFeature(raw: z.infer<typeof input>): Promise<{ 
   revalidatePath("/admin/orgs");
   return { ok: true };
 }
+
+/* ── Batch 4m - crisis support in client conversations: Phila's switch for every org ── */
+export async function setPlatformCrisisSupport(raw: { enabled: boolean }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const principal = await requireSuperAdmin();
+  const enabled = Boolean(raw?.enabled);
+  if (process.env.DATA_PROVIDER === "db") {
+    const { setPlatformCrisisSupportDb } = await import("@/db/queries/settings");
+    await setPlatformCrisisSupportDb(enabled);
+  }
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: null, target: "platform:function:crisis_support", reason: enabled ? "crisis_support_on" : "crisis_support_off" });
+  revalidatePath("/admin/features");
+  return { ok: true };
+}

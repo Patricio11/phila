@@ -1,6 +1,8 @@
 /**
- * Batch 4m - crisis support in client conversations (OFF by default; the
- * practice switches it on under Settings → Messaging → Notifications).
+ * Batch 4m - crisis support in client conversations. OFF until Phila's super
+ * admin switches the function on for practices (Admin → Feature control →
+ * Platform functions); every practice then has it and may switch it off for
+ * itself under Settings → Messaging → Notifications.
  *
  * The rule never blocks and never punishes: the message is saved and delivered
  * exactly as written. When it reads as self-harm, two quiet things happen:

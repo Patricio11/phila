@@ -117,7 +117,8 @@ export async function sendTeamMessage(
     // and hand SADAG / Lifeline back to the author alone.
     if (me.kind === "client" && d.text.trim() && readsAsCrisis(d.text)) {
       const settings = await getMessagingSettings(me.orgId).catch(() => null);
-      if (settings?.crisisSupport) {
+      const { crisisSupportActiveDb } = await import("@/db/queries/settings");
+      if (settings && (await crisisSupportActiveDb(settings.crisisSupport).catch(() => false))) {
         support = CRISIS_LINES;
         const crisisThreadId = sent.threadId;
         after(async () => {

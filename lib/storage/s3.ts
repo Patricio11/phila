@@ -52,18 +52,28 @@ function hostFor(cfg: S3StorageConfig): { host: string; protocol: string; pathPr
  * Presign one request as a URL (query-string auth). The payload stays unsigned,
  * which is what lets a browser PUT the bytes straight to the bucket.
  */
-function presign(cfg: S3StorageConfig, method: "GET" | "PUT" | "DELETE" | "HEAD", key: string, expiresIn: number, now = new Date()): string {
+function presign(cfg: S3StorageConfig, method: "GET" | "PUT" | "DELETE" | "HEAD", key: string, expiresIn: number, now = new Date(), extraParams: [string, string][] = [], extraHeaders: Record<string, string> = {}): string {
   const { host, protocol, pathPrefix } = hostFor(cfg);
   const { amzDate, dateStamp } = stamps(now);
   const scope = `${dateStamp}/${cfg.region}/${SERVICE}/aws4_request`;
   const canonicalUri = `${pathPrefix}/${uriEncode(key, true)}`.replace(/^\/\//, "/");
+
+  // Signed headers: host always; plus any header the caller will actually send
+  // (e.g. Content-MD5 on a bucket-config PUT - S3 rejects a presigned request
+  // that carries headers it didn't sign).
+  const headerEntries = Object.entries({ host, ...Object.fromEntries(Object.entries(extraHeaders).map(([k, v]) => [k.toLowerCase(), v.trim()])) })
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  const signedHeaders = headerEntries.map(([k]) => k).join(";");
+  const canonicalHeaders = headerEntries.map(([k, v]) => `${k}:${v}\n`).join("");
 
   const params: [string, string][] = [
     ["X-Amz-Algorithm", ALGORITHM],
     ["X-Amz-Credential", `${cfg.accessKeyId}/${scope}`],
     ["X-Amz-Date", amzDate],
     ["X-Amz-Expires", String(expiresIn)],
-    ["X-Amz-SignedHeaders", "host"],
+    ["X-Amz-SignedHeaders", signedHeaders],
+    // Subresources such as `?cors` ride along in the canonical query (batch 4l).
+    ...extraParams,
   ];
   const canonicalQuery = params
     .map(([k, v]) => [uriEncode(k, false), uriEncode(v, false)] as const)
@@ -71,7 +81,7 @@ function presign(cfg: S3StorageConfig, method: "GET" | "PUT" | "DELETE" | "HEAD"
     .map(([k, v]) => `${k}=${v}`)
     .join("&");
 
-  const canonicalRequest = [method, canonicalUri, canonicalQuery, `host:${host}\n`, "host", "UNSIGNED-PAYLOAD"].join("\n");
+  const canonicalRequest = [method, canonicalUri, canonicalQuery, canonicalHeaders, signedHeaders, "UNSIGNED-PAYLOAD"].join("\n");
   const stringToSign = [ALGORITHM, amzDate, scope, sha256hex(canonicalRequest)].join("\n");
 
   const signature = createHmac(
@@ -118,5 +128,78 @@ export async function testS3Connection(cfg: S3StorageConfig): Promise<{ ok: bool
   } catch (e) {
     const why = e instanceof Error && e.name === "TimeoutError" ? "timed out" : "could not be reached";
     return { ok: false, detail: `${host} ${why}.` };
+  }
+}
+
+/* ── Batch 4l - browser uploads need the bucket's CORS rule ───────────────── */
+
+/**
+ * Why this exists: a browser uploading straight to S3 first sends a preflight
+ * OPTIONS; without a CORS rule naming the app's origin the bucket answers 403
+ * and every upload dies before a byte moves (exactly the "CORS error" a
+ * practice saw). Phila can read and set that rule itself with the same key it
+ * signs uploads with - when the key is allowed to (s3:GetBucketCors /
+ * s3:PutBucketCors); otherwise we hand the admin the exact JSON to paste.
+ */
+export interface BucketCorsState {
+  ok: boolean;
+  /** Origins the bucket currently allows for PUT (empty = none / no rule). */
+  allowedOrigins: string[];
+  /** The key lacks s3:GetBucketCors (or the bucket isn't reachable). */
+  detail?: string;
+}
+
+/** The CORS rule Phila needs: PUT/GET/HEAD from the app's origins, any header, ETag exposed. */
+export function corsRuleFor(origins: string[]): { AllowedHeaders: string[]; AllowedMethods: string[]; AllowedOrigins: string[]; ExposeHeaders: string[]; MaxAgeSeconds: number }[] {
+  return [{ AllowedHeaders: ["*"], AllowedMethods: ["PUT", "GET", "HEAD"], AllowedOrigins: origins, ExposeHeaders: ["ETag"], MaxAgeSeconds: 3000 }];
+}
+
+function corsXml(origins: string[]): string {
+  const rule = corsRuleFor(origins)[0]!;
+  const tag = (name: string, values: string[]) => values.map((v) => `<${name}>${v}</${name}>`).join("");
+  return `<?xml version="1.0" encoding="UTF-8"?><CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><CORSRule>${tag("AllowedOrigin", rule.AllowedOrigins)}${tag("AllowedMethod", rule.AllowedMethods)}${tag("AllowedHeader", rule.AllowedHeaders)}${tag("ExposeHeader", rule.ExposeHeaders)}<MaxAgeSeconds>${rule.MaxAgeSeconds}</MaxAgeSeconds></CORSRule></CORSConfiguration>`;
+}
+
+/** Read the bucket's CORS rule (origins that may PUT). */
+export async function getBucketCors(cfg: S3StorageConfig): Promise<BucketCorsState> {
+  const url = presign(cfg, "GET", "", 60, new Date(), [["cors", ""]]).replace(/\/\?/, "?");
+  try {
+    const res = await fetch(url, { method: "GET", signal: AbortSignal.timeout(TIMEOUT_MS) });
+    if (res.status === 404) return { ok: true, allowedOrigins: [] }; // NoSuchCORSConfiguration
+    if (res.status === 403) {
+      const xml = await res.text().catch(() => "");
+      const msg = xml.match(/<Message>([^<]*)<\/Message>/)?.[1];
+      return { ok: false, allowedOrigins: [], detail: msg ? `AWS: ${msg}` : "This access key may not read the bucket's CORS rule (s3:GetBucketCORS)." };
+    }
+    if (!res.ok) return { ok: false, allowedOrigins: [], detail: `S3 returned ${res.status} reading CORS.` };
+    const xml = await res.text();
+    // Origins from rules that allow PUT.
+    const origins = new Set<string>();
+    for (const rule of xml.match(/<CORSRule>[\s\S]*?<\/CORSRule>/g) ?? []) {
+      if (!/<AllowedMethod>PUT<\/AllowedMethod>/.test(rule)) continue;
+      for (const m of rule.matchAll(/<AllowedOrigin>([^<]*)<\/AllowedOrigin>/g)) origins.add(m[1]!.trim());
+    }
+    return { ok: true, allowedOrigins: Array.from(origins) };
+  } catch (e) {
+    return { ok: false, allowedOrigins: [], detail: e instanceof Error && e.name === "TimeoutError" ? "S3 timed out." : "S3 could not be reached." };
+  }
+}
+
+/** Write Phila's CORS rule (PUT/GET/HEAD from the given origins). Returns an honest reason on refusal. */
+export async function putBucketCors(cfg: S3StorageConfig, origins: string[]): Promise<{ ok: boolean; detail?: string }> {
+  const body = corsXml(origins);
+  const md5 = createHash("md5").update(body, "utf8").digest("base64");
+  const url = presign(cfg, "PUT", "", 60, new Date(), [["cors", ""]], { "content-md5": md5 }).replace(/\/\?/, "?");
+  try {
+    const res = await fetch(url, { method: "PUT", headers: { "Content-Type": "application/xml", "Content-MD5": md5 }, body, signal: AbortSignal.timeout(TIMEOUT_MS) });
+    if (res.ok) return { ok: true };
+    if (res.status === 403) {
+      const xml = await res.text().catch(() => "");
+      const msg = xml.match(/<Message>([^<]*)<\/Message>/)?.[1];
+      return { ok: false, detail: msg ? `AWS: ${msg}. Grant s3:PutBucketCORS to this user, or paste the rule in the AWS console.` : "This access key isn't allowed to set the bucket's CORS rule (s3:PutBucketCORS). Paste the rule in the AWS console instead." };
+    }
+    return { ok: false, detail: `S3 returned ${res.status} setting CORS.` };
+  } catch (e) {
+    return { ok: false, detail: e instanceof Error && e.name === "TimeoutError" ? "S3 timed out." : "S3 could not be reached." };
   }
 }

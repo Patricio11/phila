@@ -222,6 +222,10 @@ Sign in as **Thandeka**.
 - ☐ Delivery states on Billing → Recent messages never go backwards (a `Read` never becomes `Delivered`); a Meta failure shows its reason; **Failed after retries** lists dead letters with masked recipients
 - ☐ As the super admin, Integrations → **Org connections** ends with **WhatsApp numbers by org** (number, name, status, health chip); Billing shows "N message alerts this month" once any alert has actually gone out
 
+**S3 browser uploads (CORS)** (batch 4l)
+- ☐ Admin → Integrations → Storage (Amazon S3): the **Browser uploads** panel reads the bucket's CORS rule - green "Allowed from https://philasa.com · http://localhost:3000" once set; otherwise AWS's own reason + **Allow uploads from Phila** (works when the key has `s3:PutBucketCORS`) + **Copy rule** for the console
+- ☐ After the rule is in place, a hub / counsellor upload completes (the browser's preflight to the bucket answers 200, not 403)
+
 **Documents: supervisors, recall, counsellor upload** (batch 4k)
 - ☐ As a **supervisor** (Nomsa supervises Aisha / Thabo / Pieter), `/app/documents` ends with **Supervising · <name>** sections (Supervisee chip) showing each supervisee's folder + their clients' files; files open (audited); a non-supervisor sees no such section
 - ☐ As any counsellor, **Upload** sits on *Your folder*, on each folder the practice shared, and on each client section; a file lands in that folder / on that client as theirs; with storage unreachable the toast says so honestly

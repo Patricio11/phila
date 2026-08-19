@@ -1933,6 +1933,17 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   first behind a swappable adapter so other providers can be switched on/off later; includes the
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).
 
+- [x] **S3 browser uploads - the bucket's CORS rule, diagnosed and fixable from Phila** *(2026-08-19,
+  batch 4l)*: the practice's uploads to the org's Amazon S3 bucket were dying on the browser's
+  preflight (`OPTIONS` → 403) because the bucket had no CORS rule naming `https://philasa.com`. The
+  S3 provider can now read (`GET ?cors`) and set (`PUT ?cors`, Content-MD5 signed) the bucket's rule
+  with the same key it signs uploads with; the admin Storage card gained a **Browser uploads** panel
+  that shows the live state (allowed origins vs the app's origins), a one-click **Allow uploads from
+  Phila** (PUT/GET/HEAD from the app origin + localhost, ETag exposed), AWS's own reason when the key
+  isn't allowed (`s3:GetBucketCORS` / `s3:PutBucketCORS`), and **Copy rule** (the exact JSON for the
+  console). Presign learnt to sign extra headers. Proven against the real bucket: read refused with
+  AWS's message, apply refused on permission only (signature accepted).
+
 - [x] **Documents: supervisors see supervisees · recall a share · counsellors upload** *(2026-08-19,
   batch 4k)*: (1) a **supervisor** now sees each supervisee's folder(s) and their clients' files in
   their own Documents page ("Supervising · Aisha Patel", Supervisee chip, read-only, every open

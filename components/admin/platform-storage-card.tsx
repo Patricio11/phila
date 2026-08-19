@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { CheckCircle2, HardDrive, Plug, XCircle } from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
+import { CheckCircle2, Copy, Globe, HardDrive, Plug, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
-import { saveStorageConfig, testStorageConnectionAction } from "@/app/admin/integrations/actions";
+import { saveStorageConfig, testStorageConnectionAction, getStorageCorsState, applyStorageCors } from "@/app/admin/integrations/actions";
 import { cn } from "@/lib/utils";
 
 type Backend = "supabase" | "s3";
@@ -156,6 +156,8 @@ export function PlatformStorageCard({ initial }: { initial: {
               Keep the bucket <strong>private</strong> and in-region (af-south-1 for South African data residency). Phila only ever hands out short-lived signed URLs.
             </p>
           </div>
+          {/* Batch 4l - browser uploads need the bucket's CORS rule */}
+          {s3Configured && <CorsPanel />}
         </>
       ) : (
       <>
@@ -225,6 +227,55 @@ export function PlatformStorageCard({ initial }: { initial: {
           <Button size="sm" onClick={() => save(true)} loading={pending} disabled={!canAct}>Switch on</Button>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Batch 4l - "Browser uploads". A browser PUTs files straight to the bucket, so
+ * the bucket must allow the app's origin (CORS) - without it every upload dies
+ * on the preflight with a 403. Phila reads the rule, sets it in one click when
+ * the key may, and otherwise hands over the exact JSON for the AWS console.
+ */
+function CorsPanel() {
+  const { toast } = useToast();
+  const [state, setState] = useState<Awaited<ReturnType<typeof getStorageCorsState>> | null>(null);
+  const [busy, startBusy] = useTransition();
+  const load = () => getStorageCorsState().then(setState).catch(() => setState(null));
+  useEffect(() => { void load(); }, []);
+  const apply = () => startBusy(async () => {
+    const res = await applyStorageCors();
+    if (!res.ok) { toast({ tone: "error", title: "Couldn't set the rule", description: res.error }); await load(); return; }
+    toast({ tone: "success", title: "Browser uploads allowed", description: `From ${res.origins.join(" and ")}.` });
+    await load();
+  });
+  const json = state ? JSON.stringify(state.rule, null, 2) : "";
+  const copy = () => { void navigator.clipboard?.writeText(json); toast({ tone: "default", title: "CORS rule copied", description: "Paste it under the bucket's Permissions → Cross-origin resource sharing (CORS)." }); };
+  const tone = !state ? "muted" : state.satisfied ? "ok" : "warn";
+  return (
+    <div className={cn("mt-3 rounded-control border p-3", tone === "ok" ? "border-accent/30 bg-accent-soft/20" : tone === "warn" ? "border-warn/40 bg-warn-soft/30" : "border-border bg-surface-2/40")} data-testid="s3-cors">
+      <div className="flex flex-wrap items-center gap-2">
+        <Globe className={cn("size-4", tone === "ok" ? "text-accent" : tone === "warn" ? "text-warn" : "text-text-3")} strokeWidth={2} aria-hidden />
+        <span className="text-[12.5px] font-[640] text-text">Browser uploads</span>
+        {!state ? (
+          <span className="text-[11.5px] text-text-3">checking the bucket&apos;s CORS rule…</span>
+        ) : state.satisfied ? (
+          <span className="text-[11.5px] text-text-2">Allowed from {state.required.join(" · ")}</span>
+        ) : (
+          <span className="text-[11.5px] text-warn">{state.ok ? `Not allowed yet - the bucket ${state.allowed.length ? `only allows ${state.allowed.join(", ")}` : "has no CORS rule"}. Uploads from the browser will fail with a 403 on the preflight.` : state.detail}</span>
+        )}
+        <div className="ml-auto flex items-center gap-1.5">
+          {state && !state.satisfied && (
+            <Button size="sm" onClick={apply} loading={busy}>Allow uploads from Phila</Button>
+          )}
+          <Button size="sm" variant="ghost" onClick={copy} disabled={!state}><Copy className="size-3.5" strokeWidth={2} aria-hidden /> Copy rule</Button>
+        </div>
+      </div>
+      {state && !state.satisfied && (
+        <p className="mt-1.5 text-[11px] leading-relaxed text-text-3">
+          One click sets it with this access key (needs <code>s3:PutBucketCors</code>). If the key isn&apos;t allowed to, paste the copied rule in the AWS console: S3 → your bucket → Permissions → Cross-origin resource sharing (CORS).
+        </p>
+      )}
     </div>
   );
 }

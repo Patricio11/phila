@@ -306,3 +306,42 @@ export async function testVoiceConnection(raw: { accountSid: string; authToken: 
   const { twilioAdapter } = await import("@/lib/voice/twilio");
   return twilioAdapter({ provider: "twilio", mode: "live", accountSid: sid, authToken: token, callerNumber: "" }).testConnection();
 }
+
+/* ── Batch 4l - browser uploads need the S3 bucket's CORS rule ─────────────── */
+
+/** The origins a browser will upload from: the app's URL (+ localhost for development). */
+function appOrigins(): string[] {
+  const out = new Set<string>();
+  const base = process.env.BETTER_AUTH_URL ?? "";
+  try { if (base) out.add(new URL(base).origin); } catch { /* ignore */ }
+  out.add("http://localhost:3000");
+  return Array.from(out);
+}
+
+export async function getStorageCorsState(): Promise<{ ok: boolean; provider: "supabase" | "s3"; required: string[]; allowed: string[]; satisfied: boolean; detail?: string; rule: unknown }> {
+  await requireSuperAdmin();
+  const it = await getPlatformIntegration("phila_storage");
+  const provider = it?.creds.provider === "s3" ? "s3" : "supabase";
+  const required = appOrigins();
+  const { corsRuleFor } = await import("@/lib/storage/s3");
+  const rule = corsRuleFor(required);
+  if (provider !== "s3") return { ok: true, provider, required, allowed: required, satisfied: true, detail: "Supabase Storage allows browser uploads by default.", rule };
+  const s3 = await resolveS3Creds({});
+  if (!s3.s3_region || !s3.s3_bucket || !s3.s3_accessKeyId || !s3.s3_secretAccessKey) return { ok: false, provider, required, allowed: [], satisfied: false, detail: "Add the S3 details first.", rule };
+  const { getBucketCors } = await import("@/lib/storage/s3");
+  const state = await getBucketCors({ region: s3.s3_region, bucket: s3.s3_bucket, accessKeyId: s3.s3_accessKeyId, secretAccessKey: s3.s3_secretAccessKey, endpoint: s3.s3_endpoint || undefined });
+  const satisfied = state.ok && required.every((o) => state.allowedOrigins.includes(o) || state.allowedOrigins.includes("*"));
+  return { ok: state.ok, provider, required, allowed: state.allowedOrigins, satisfied, detail: state.detail, rule };
+}
+
+export async function applyStorageCors(): Promise<{ ok: true; origins: string[] } | { ok: false; error: string }> {
+  const principal = await requireSuperAdmin();
+  const s3 = await resolveS3Creds({});
+  if (!s3.s3_region || !s3.s3_bucket || !s3.s3_accessKeyId || !s3.s3_secretAccessKey) return { ok: false, error: "Add the S3 details first." };
+  const origins = appOrigins();
+  const { putBucketCors } = await import("@/lib/storage/s3");
+  const res = await putBucketCors({ region: s3.s3_region, bucket: s3.s3_bucket, accessKeyId: s3.s3_accessKeyId, secretAccessKey: s3.s3_secretAccessKey, endpoint: s3.s3_endpoint || undefined }, origins);
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: null, target: "platform_integration:phila_storage", reason: res.ok ? "s3_cors_applied" : "s3_cors_refused" });
+  if (!res.ok) return { ok: false, error: res.detail ?? "S3 refused." };
+  return { ok: true, origins };
+}

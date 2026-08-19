@@ -58,6 +58,13 @@ export function FormDesign({ theme, orgName, onChange }: { theme: FormTheme; org
         </div>
       </Card>
 
+      {/* Batch 4q - the printed document's footer (export + on-screen document) */}
+      <Card className="space-y-2 p-5" data-testid="print-footer">
+        <div className="text-[13px] font-[640] text-text">Printed footer</div>
+        <p className="text-[12px] leading-relaxed text-text-2">The line at the foot of every page when this form&apos;s answers are viewed or exported as a document. Blank = the practice&apos;s default (Settings → Organisation → Branding).</p>
+        <Input value={theme.printFooter ?? ""} onChange={(e) => patch({ printFooter: e.target.value })} placeholder="e.g. 174-733 NPO | 145 Sir Lowry Road, Woodstock 7925 | info@yourpractice.org.za" maxLength={240} className="h-9 text-[13px]" />
+      </Card>
+
       {theme.layout === "split" && (
         <>
           <Card className="space-y-4 p-5">

@@ -11,6 +11,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Tag, type TagTone } from "@/components/ui/tag";
 import { FormFields } from "@/components/forms/form-fields";
 import { IntakeDetail } from "@/components/hub/intake-detail";
+import type { DocBrand } from "@/lib/export/response-pdf";
 import { SendFormModal, type SendClient } from "@/components/hub/send-form-modal";
 import { FormShare } from "@/components/hub/form-share";
 import { FormEmails } from "@/components/hub/form-emails";
@@ -27,11 +28,15 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 
 type Tab = "responses" | "questions" | "preview" | "emails";
 
-export function FormDetail({ form, responses, clients, automations = [], counsellors = [], sharedWithAll = false, sharedWith = [] }: {
+export function FormDetail({ form, responses, clients, automations = [], counsellors = [], sharedWithAll = false, sharedWith = [], brand = null }: {
   form: Form; responses: FormResponseRow[]; clients: SendClient[];
   automations?: AutomationRow[]; counsellors?: { id: string; name: string }[];
   sharedWithAll?: boolean; sharedWith?: string[];
+  /** Batch 4q - logo / accent / footer for the printed document. */
+  brand?: DocBrand | null;
 }) {
+  // The form's own printed footer wins over the practice's default.
+  const docBrand: DocBrand | null = brand ? { ...brand, footer: (form.theme?.printFooter ?? "").trim() || brand.footer } : null;
   const [tab, setTab] = useState<Tab>("responses");
   const [sendOpen, setSendOpen] = useState(false);
   const [viewing, setViewing] = useState<FormResponseRow | null>(null);
@@ -156,6 +161,7 @@ export function FormDetail({ form, responses, clients, automations = [], counsel
         status={viewing?.status === "completed" ? "completed" : "sent"}
         submittedAt={viewing?.submittedAt}
         answers={viewing?.answers}
+        brand={docBrand}
       />
     </div>
   );

@@ -23,6 +23,8 @@ export default async function CounsellorFormsPage() {
   const forms = isDb ? await formsForCounsellorDb(membership.orgId, me.id) : [];
   // Batch 4p - forms the practice asked ME to fill in (about my clients).
   const toFill = isDb ? await counsellorFillsDb(membership.orgId, me.id) : [];
+  // Batch 4q - the practice's document identity for the response document + export.
+  const brand = isDb ? await (await import("@/db/queries/doc-brand")).getDocBrandDb(membership.orgId) : null;
   const clients = isDb ? await counsellorClientsDb(membership.orgId, me.id) : [];
   // Responses across this counsellor's whole caseload, newest first.
   const responses = isDb
@@ -42,7 +44,7 @@ export default async function CounsellorFormsPage() {
   return (
     <div className="rise space-y-6">
       <PageHead title="Forms" summary="Forms the practice shared with you, and what your clients have sent back." />
-      <CounsellorForms forms={forms} clients={clients} responses={responses} toFill={toFill} />
+      <CounsellorForms forms={forms} clients={clients} responses={responses} toFill={toFill} brand={brand} />
     </div>
   );
 }

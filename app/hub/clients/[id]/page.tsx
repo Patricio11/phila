@@ -58,6 +58,8 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
   const referralsOn = Boolean(dossier.org.features.referrals);
   const referralSource = referralsOn && isDbMode ? await getClientReferralDb(membership.orgId, id) : null;
   // Batch 2l - forms sent to this client + their completed answers.
+  // Batch 4q - the practice's document identity for viewing / exporting answers.
+  const docBrand = isDbMode ? await (await import("@/db/queries/doc-brand")).getDocBrandDb(membership.orgId) : null;
   const formRows = isDbMode
     ? await (await import("@/db/queries/form-automations")).clientFormResponsesDb(membership.orgId, id)
     : [];
@@ -153,7 +155,7 @@ export default async function HubClientDetailPage({ params }: { params: Promise<
             </Card>
           )}
 
-          <ClientFormsCard rows={formRows} />
+          <ClientFormsCard rows={formRows} brand={docBrand} clientName={client.name} />
 
           <Card>
             <CardHead title="Timeline" />

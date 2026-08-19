@@ -56,6 +56,9 @@ export default async function HubWaitlistPage() {
     businessHours: org?.scheduling.businessHours ?? { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null, 7: null },
   };
 
+  // Batch 4q - the practice's document identity for the answers document + export.
+  const brand = process.env.DATA_PROVIDER === "db" ? await (await import("@/db/queries/doc-brand")).getDocBrandDb(membership.orgId) : null;
+
   return (
     <div className="rise space-y-6">
       <Link href="/hub/clients" className="inline-flex items-center gap-1.5 text-[13px] text-text-2 transition-colors hover:text-text">
@@ -74,7 +77,7 @@ export default async function HubWaitlistPage() {
         </p>
       )}
 
-      <WaitlistBoard rows={rows} scheduling={scheduling} nowISO={now} />
+      <WaitlistBoard rows={rows} scheduling={scheduling} nowISO={now} brand={brand} />
     </div>
   );
 }

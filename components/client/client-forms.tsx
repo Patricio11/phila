@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, ClipboardList, FileDown } from "lucide-react";
-import { downloadResponsePdf } from "@/lib/export/response-pdf";
+import { downloadResponsePdf, type DocBrand } from "@/lib/export/response-pdf";
 import type { ClientFormRow } from "@/lib/data-provider";
 import { Tag } from "@/components/ui/tag";
 
 /** A client's assigned forms (portal). Pending ones link out to the fill page. */
-export function ClientForms({ forms }: { forms: ClientFormRow[] }) {
+export function ClientForms({ forms, brand = null }: { forms: ClientFormRow[]; brand?: DocBrand | null }) {
   if (forms.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-card border border-dashed border-border bg-surface-2/30 px-6 py-14 text-center">
@@ -51,7 +51,7 @@ export function ClientForms({ forms }: { forms: ClientFormRow[] }) {
               {f.fields && f.answers && (
                 <button
                   type="button"
-                  onClick={() => downloadResponsePdf({ formTitle: f.formTitle, submittedAt: f.submittedAt, fields: f.fields!, answers: f.answers ?? {} })}
+                  onClick={() => downloadResponsePdf({ formTitle: f.formTitle, submittedAt: f.submittedAt, fields: f.fields!, answers: f.answers ?? {}, brand })}
                   className="inline-flex shrink-0 items-center gap-1.5 rounded-control border border-border px-2.5 py-1.5 text-[12px] font-medium text-text-2 transition-colors hover:bg-surface-hover hover:text-text"
                 >
                   <FileDown className="size-3.5" strokeWidth={2} aria-hidden /> PDF

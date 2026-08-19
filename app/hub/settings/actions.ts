@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { requireHub } from "@/lib/auth/guard";
 import { logAccess } from "@/lib/audit";
-import { saveBusinessHours as persistBusinessHours, saveClientPortal as persistClientPortal, setOrgFeature as persistOrgFeature, saveSchedulingDefaults as persistSchedulingDefaults, saveOrgProfileDb, saveOrgBrandingDb, saveOrgLogoDb, getOrgLogoDb, saveInvoiceSettingsDb as persistInvoiceSettings } from "@/db/queries/settings";
+import { saveBusinessHours as persistBusinessHours, saveClientPortal as persistClientPortal, setOrgFeature as persistOrgFeature, saveSchedulingDefaults as persistSchedulingDefaults, saveOrgProfileDb, saveOrgBrandingDb, saveOrgDocumentFooterDb, saveOrgLogoDb, getOrgLogoDb, saveInvoiceSettingsDb as persistInvoiceSettings } from "@/db/queries/settings";
 import { saveVideoSettings } from "@/db/queries/video";
 import { saveAiSettings } from "@/db/queries/ai";
 import { ORG_FEATURES } from "@/lib/domain/enums";
@@ -415,5 +415,14 @@ export async function markIoRegistered(): Promise<{ ok: true } | { ok: false; er
     .set({ profile: sql`coalesce(${orgs.profile}, '{}'::jsonb) || jsonb_build_object('ioRegisteredAt', ${new Date().toISOString()}::text)` })
     .where(eq(orgs.id, membership.orgId));
   await logAccess({ action: "admin.action", actor: { userId: "hub", platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `org:${membership.orgId}`, reason: "io_registered_marked" });
+  return { ok: true };
+}
+
+/* ── Batch 4q - the footer printed on every page of the practice's documents ── */
+export async function saveOrgDocumentFooter(raw: { footer: string }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const footer = String(raw?.footer ?? "").replace(/\s+/g, " ").trim().slice(0, 240);
+  if (process.env.DATA_PROVIDER === "db") await saveOrgDocumentFooterDb(membership.orgId, footer || null);
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `org:${membership.orgId}/document_footer`, reason: footer ? "update_document_footer" : "clear_document_footer" });
   return { ok: true };
 }

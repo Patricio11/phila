@@ -340,7 +340,12 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
   `every_session`; `form_assignments.counsellor_id` / `appointment_id`; counsellor fills are in-app
   tasks (bell + "For you to fill in" on /app/forms, fill page badge, "Filled by X (counsellor)" in
   responses). `runFormAutomations(orgId, clientId, trigger, sentBy, nowISO, { appointmentId, counsellorId })`.
-- **Numbers at 2026-08-19:** migrations through **0088**; **317** unit tests; every batch / task
+- **4q Form documents** (2026-08-20): `lib/export/response-pdf.ts` builds the letterhead document
+  (logo every page, Q|A table, footer pinned to the page bottom via thead/tfoot spacers + fixed
+  letterhead); `ResponseView` renders the same as an A4 sheet everywhere answers are read;
+  `orgs.document_footer` + `theme.printFooter` (form override) + `composeDocumentFooter` fallback;
+  `db/queries/doc-brand.ts` (`getDocBrandDb`) is the one brand read.
+- **Numbers at 2026-08-20:** migrations through **0089**; **218** unit tests (unit suite); **317** unit tests; every batch / task
   proven live on `npm run build && npm run start` with screenshots.
 - **The messaging shell rule (34.1):** `lib/messaging/principal.ts` - messaging actions accept a
   STAFF (org membership) or a CLIENT (their linked `user.client_id`) principal; the client rules are

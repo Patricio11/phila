@@ -42,6 +42,7 @@ const field = z.object({
 const themeInput = z
   .object({
     layout: z.enum(FORM_LAYOUTS),
+    printFooter: z.string().trim().max(240).optional(),
     hero: z.object({
       heading: z.string().trim().max(120).optional(),
       subheading: z.string().trim().max(300).optional(),

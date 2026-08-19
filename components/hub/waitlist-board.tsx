@@ -15,7 +15,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { ResponseView } from "@/components/forms/response-view";
 import type { FormField } from "@/lib/domain/types";
 import { removeFromWaitlist } from "@/app/hub/waitlist/actions";
-import { downloadResponsePdf } from "@/lib/export/response-pdf";
+import { downloadResponsePdf, type DocBrand } from "@/lib/export/response-pdf";
 import { cn } from "@/lib/utils";
 
 export type WaitlistRow = WaitlistDetail;
@@ -42,10 +42,12 @@ function waited(fromISO: string, nowISO: string): string {
  * even self-booking) moves a person across automatically - the server settles
  * the wait, so no surface has to remember.
  */
-export function WaitlistBoard({ rows, scheduling, nowISO }: {
+export function WaitlistBoard({ rows, scheduling, nowISO, brand = null }: {
   rows: WaitlistRow[];
   scheduling: SchedulingOptions;
   nowISO: string;
+  /** Batch 4q - logo / accent / footer for the answers document + export. */
+  brand?: DocBrand | null;
 }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -244,7 +246,7 @@ export function WaitlistBoard({ rows, scheduling, nowISO }: {
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => downloadResponsePdf({ formTitle: reading.formTitle ?? "Form answers", respondent: reading.clientName, fields: (reading.formFields ?? []) as FormField[], answers: reading.formAnswers ?? {} })}
+                onClick={() => downloadResponsePdf({ formTitle: reading.formTitle ?? "Form answers", respondent: reading.clientName, fields: (reading.formFields ?? []) as FormField[], answers: reading.formAnswers ?? {}, brand })}
               >
                 Download PDF
               </Button>
@@ -258,7 +260,7 @@ export function WaitlistBoard({ rows, scheduling, nowISO }: {
         }
       >
         {reading?.formAnswers && (
-          <ResponseView fields={(reading.formFields ?? []) as FormField[]} answers={reading.formAnswers} />
+          <ResponseView fields={(reading.formFields ?? []) as FormField[]} answers={reading.formAnswers} formTitle={reading.formTitle ?? "Form answers"} brand={brand} respondent={reading.clientName} />
         )}
       </Dialog>
 

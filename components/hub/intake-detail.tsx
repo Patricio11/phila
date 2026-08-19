@@ -5,8 +5,8 @@ import type { IntakeForm } from "@/lib/domain/types";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FormFields } from "@/components/forms/form-fields";
-import { downloadResponsePdf } from "@/lib/export/response-pdf";
-import { cn } from "@/lib/utils";
+import { downloadResponsePdf, type DocBrand } from "@/lib/export/response-pdf";
+import { ResponseView } from "@/components/forms/response-view";
 
 function fullDate(iso: string): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "long", year: "numeric" }).format(new Date(iso));
@@ -27,6 +27,7 @@ export function IntakeDetail({
   answers,
   onSend,
   sending,
+  brand = null,
 }: {
   open: boolean;
   onClose: () => void;
@@ -37,14 +38,17 @@ export function IntakeDetail({
   answers?: Record<string, string> | null;
   onSend?: () => void;
   sending?: boolean;
+  /** Batch 4q - logo / accent / footer: the answers read as the practice's document. */
+  brand?: DocBrand | null;
 }) {
   const completed = status === "completed" && answers;
-  const title = clientName ? `${clientName.split(" ")[0]}'s intake` : "Intake form";
+  const title = !clientName ? "Intake form" : /share link/i.test(clientName) ? "Shared-link response" : `${clientName.split(" ")[0]}'s intake`;
 
   return (
     <Dialog
       open={open}
       onClose={onClose}
+      className="sm:max-w-3xl"
       title={title}
       description={completed ? undefined : form?.intro}
       footer={
@@ -60,7 +64,7 @@ export function IntakeDetail({
             {completed && form && (
               <Button
                 variant="ghost"
-                onClick={() => downloadResponsePdf({ formTitle: form.title, respondent: clientName ?? null, submittedAt: submittedAt ?? null, fields: form.fields, answers: answers ?? {} })}
+                onClick={() => downloadResponsePdf({ formTitle: form.title, respondent: clientName ?? null, submittedAt: submittedAt ?? null, fields: form.fields, answers: answers ?? {}, brand })}
               >
                 <FileDown className="size-4" strokeWidth={2} aria-hidden /> Download PDF
               </Button>
@@ -79,21 +83,7 @@ export function IntakeDetail({
       {!form ? (
         <p className="text-[13px] text-text-3">No intake form is set up for this practice yet.</p>
       ) : completed ? (
-        <ol className="space-y-3.5">
-          {form.fields.map((f) => {
-            const answer = answers?.[f.id];
-            return (
-              <li key={f.id}>
-                <div className="flex items-center gap-1.5 text-[12.5px] font-medium text-text-2">
-                  {f.label}{f.required && <span className="text-danger">*</span>}
-                </div>
-                <div className={cn("mt-1 rounded-control border border-border bg-surface-2/40 px-3 py-2 text-[13.5px]", answer ? "text-text" : "italic text-text-3")}>
-                  {answer || "Left blank"}
-                </div>
-              </li>
-            );
-          })}
-        </ol>
+        <ResponseView fields={form.fields} answers={answers ?? {}} formTitle={form.title} brand={brand} respondent={clientName ?? null} submittedAt={submittedAt ?? null} />
       ) : (
         // Blank-form preview  rendered exactly as a client sees it (read-only).
         <FormFields fields={form.fields} readOnly idPrefix="preview" />

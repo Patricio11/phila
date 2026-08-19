@@ -19,6 +19,8 @@ import { SchedulingDefaultsForm } from "@/components/hub/scheduling-defaults-for
 import { OrgProfileForm, type OrgProfile } from "@/components/hub/org-profile-form";
 import { BrandingSettings } from "@/components/hub/branding-settings";
 import { LogoSettings } from "@/components/hub/logo-settings";
+import { DocumentFooterSettings } from "@/components/hub/document-footer-settings";
+import { composeDocumentFooter } from "@/lib/forms/doc-footer";
 import { getOrgLogoDb } from "@/db/queries/settings";
 import { getStorageProvider } from "@/lib/storage";
 import { MessagingSummary } from "@/components/hub/messaging-summary";
@@ -78,6 +80,10 @@ export default async function HubSettingsPage() {
     ? await (await import("@/db/queries/whatsapp-health")).readNumberHealth(membership.orgId) : null;
   const voiceOn = process.env.DATA_PROVIDER === "db" ? await (await import("@/lib/voice")).voiceConfigured() : false;
   // A short-lived signed URL for the current logo (if any + storage is live).
+  // Batch 4q - the practice's own document footer (null = composed from the profile).
+  const docFooter = process.env.DATA_PROVIDER === "db"
+    ? ((await (await import("@/db/client")).getDb().select({ f: (await import("@/db/schema")).orgs.documentFooter }).from((await import("@/db/schema")).orgs).where((await import("drizzle-orm")).eq((await import("@/db/schema")).orgs.id, membership.orgId)).limit(1))[0]?.f ?? null)
+    : null;
   let logoUrl: string | null = null;
   if (process.env.DATA_PROVIDER === "db") {
     const logo = await getOrgLogoDb(membership.orgId);
@@ -120,6 +126,8 @@ export default async function HubSettingsPage() {
           <SettingsPane className="space-y-5">
             <LogoSettings initialUrl={logoUrl} />
             <div className="border-t border-border pt-4"><BrandingSettings initial={org.brandAccent} /></div>
+            {/* Batch 4q - the footer on every printed page */}
+            <div className="border-t border-border pt-4"><DocumentFooterSettings initial={docFooter} composed={composeDocumentFooter(p as Record<string, string>, org.name)} /></div>
           </SettingsPane>
         ) },
         { key: "portal", label: "Client portal", hint: "What clients see and can do in their private space.", node: <SettingsPane><ClientPortalSettings initial={org.clientPortal} /></SettingsPane> },

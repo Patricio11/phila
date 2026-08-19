@@ -28,6 +28,8 @@ export default async function HubFormPage({ params }: { params: Promise<{ id: st
   // Batch 2l - automations + which counsellors may send this form.
   const isDb = process.env.DATA_PROVIDER === "db";
   const { listAutomationsDb } = await import("@/db/queries/form-automations");
+  // Batch 4q - the practice's document identity for viewing / exporting answers.
+  const brand = isDb ? await (await import("@/db/queries/doc-brand")).getDocBrandDb(membership.orgId) : null;
   const automations = isDb ? (await listAutomationsDb(membership.orgId)).filter((a) => a.formId === id) : [];
   let sharedWithAll = false;
   let sharedWith: string[] = [];
@@ -42,6 +44,7 @@ export default async function HubFormPage({ params }: { params: Promise<{ id: st
 
   return (
     <FormDetail
+      brand={brand}
       form={result.form}
       responses={result.rows}
       clients={clients}

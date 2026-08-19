@@ -77,6 +77,11 @@ export async function saveOrgProfileDb(orgId: string, name: string, profile: Rec
   await runForOrg(orgId, () => activeDb().update(orgs).set({ name, profile }).where(eq(orgs.id, orgId)));
 }
 
+/** Batch 4q - the footer line printed on every page of the practice's documents. RLS-scoped. */
+export async function saveOrgDocumentFooterDb(orgId: string, footer: string | null): Promise<void> {
+  await runForOrg(orgId, () => activeDb().update(orgs).set({ documentFooter: footer }).where(eq(orgs.id, orgId)));
+}
+
 /** Persist the org's brand accent (a hex colour, consumed app-wide + on the public page). RLS-scoped. */
 export async function saveOrgBrandingDb(orgId: string, brandAccent: string): Promise<void> {
   await runForOrg(orgId, () => activeDb().update(orgs).set({ brandAccent }).where(eq(orgs.id, orgId)));

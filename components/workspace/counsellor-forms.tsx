@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { ResponseView, scaleTotal } from "@/components/forms/response-view";
+import { downloadResponsePdf, type DocBrand } from "@/lib/export/response-pdf";
 import { sendFormToMyClients } from "@/app/app/forms/actions";
 import { cn } from "@/lib/utils";
 
@@ -34,11 +35,13 @@ const DAY = (iso: string) => new Intl.DateTimeFormat("en-ZA", { timeZone: "Afric
  * each with Send to my clients. Right: what their own clients have sent back,
  * openable in full. They never see another counsellor's clients.
  */
-export function CounsellorForms({ forms, clients, responses, toFill = [] }: {
+export function CounsellorForms({ forms, clients, responses, toFill = [], brand = null }: {
   forms: SharedForm[];
   clients: { id: string; name: string }[];
   responses: Response[];
   toFill?: ToFill[];
+  /** Batch 4q - logo / accent / footer for the document view + export. */
+  brand?: DocBrand | null;
 }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -188,10 +191,13 @@ export function CounsellorForms({ forms, clients, responses, toFill = [] }: {
         onClose={() => setOpen(null)}
         title={open ? open.title : "Response"}
         description={open ? `${open.clientName} · completed ${DAY(open.submittedAt ?? open.sentAt)}` : undefined}
-        className="sm:max-w-2xl"
-        footer={<div className="flex justify-end"><Button variant="ghost" onClick={() => setOpen(null)}>Close</Button></div>}
+        className="sm:max-w-3xl"
+        footer={<div className="flex justify-end gap-2">
+          {open?.answers && <Button variant="ghost" onClick={() => downloadResponsePdf({ formTitle: open.title, respondent: open.filledBy ? `${open.filledBy} (counsellor)` : open.clientName, submittedAt: open.submittedAt, fields: (open.snapshot.fields ?? []) as FormField[], answers: open.answers ?? {}, brand })}>Download PDF</Button>}
+          <Button variant="ghost" onClick={() => setOpen(null)}>Close</Button>
+        </div>}
       >
-        {open?.answers && <ResponseView fields={(open.snapshot.fields ?? []) as FormField[]} answers={open.answers} />}
+        {open?.answers && <ResponseView fields={(open.snapshot.fields ?? []) as FormField[]} answers={open.answers} formTitle={open.title} brand={brand} respondent={open.filledBy ? `${open.filledBy} (counsellor)` : open.clientName} submittedAt={open.submittedAt} />}
       </Dialog>
     </div>
   );

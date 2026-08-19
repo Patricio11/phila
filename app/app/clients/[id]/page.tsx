@@ -64,6 +64,8 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
 
   const { client, counsellor, consents, demographics, sessions, outcomes, documents, carePlan } = dossier;
   // Batch 2l - forms this client was sent, with completed answers readable.
+  // Batch 4q - the practice's document identity for viewing / exporting answers.
+  const docBrand = process.env.DATA_PROVIDER === "db" ? await (await import("@/db/queries/doc-brand")).getDocBrandDb(membership.orgId) : null;
   const formRows = process.env.DATA_PROVIDER === "db"
     ? await (await import("@/db/queries/form-automations")).clientFormResponsesDb(membership.orgId, id)
     : [];
@@ -185,7 +187,7 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
             </div>
           </Card>
 
-          <ClientFormsCard rows={formRows} />
+          <ClientFormsCard rows={formRows} brand={docBrand} clientName={client.name} />
 
           {outcomesOn && (
             <Card>

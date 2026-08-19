@@ -379,6 +379,8 @@ export function isAnswerable(type: FormFieldType): boolean {
  */
 export interface FormTheme {
   layout: FormLayout;
+  /** Batch 4q - this form's printed footer (export / on-screen document); blank = the practice's default. */
+  printFooter?: string;
   hero: {
     heading?: string;
     subheading?: string;

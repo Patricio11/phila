@@ -222,6 +222,12 @@ Sign in as **Thandeka**.
 - ☐ Delivery states on Billing → Recent messages never go backwards (a `Read` never becomes `Delivered`); a Meta failure shows its reason; **Failed after retries** lists dead letters with masked recipients
 - ☐ As the super admin, Integrations → **Org connections** ends with **WhatsApp numbers by org** (number, name, status, health chip); Billing shows "N message alerts this month" once any alert has actually gone out
 
+**Form documents: letterhead PDF + A4 view + configurable footer** (batch 4q)
+- ☐ Settings → Organisation → Branding: **Document footer** saves (blank = the line composed from the profile, shown as the placeholder)
+- ☐ Hub → Forms → View answers: the response reads as an A4 sheet - logo centred, title in the practice colour with a rule, Questions | Answers table, footer line at the sheet's foot; **Download PDF** prints the same document with the logo on top and the footer at the true bottom of EVERY page
+- ☐ A form's **Design** tab has "Printed footer" - setting it overrides the practice default for that form only
+- ☐ The client dossier / counsellor Forms / waitlist answers all show the same document; a client's own PDF from /me/forms wears the same letterhead
+
 **Form automations: who fills it + after every session** (batch 4p)
 - ☐ Hub → Forms → a form → Send automatically: "When should it send?" offers booking / after every session / after Nth session; "Who fills it in?" offers client / counsellor / both; the added row reads "<when> → <who>"
 - ☐ Mark a session held (counsellor app) with a "counsellor" or "both" automation on: the counsellor gets a bell "Fill in: <form> for <client>" and a **For you to fill in** card on Forms; the fill page says "You're filling this in about <client>" (no SADAG line) and ends "Saved to <client>'s record"; the hub Responses row says "Filled by <name> (counsellor)"; the client dossier shows "filled by <name>"

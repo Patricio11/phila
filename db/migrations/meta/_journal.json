@@ -624,6 +624,13 @@
       "when": 1787173910382,
       "tag": "0088_rapid_shotgun",
       "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1787175930907,
+      "tag": "0089_unique_magma",
+      "breakpoints": true
     }
   ]
 }

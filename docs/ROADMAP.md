@@ -1933,6 +1933,27 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   first behind a swappable adapter so other providers can be switched on/off later; includes the
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).
 
+- [x] **Form responses as the practice's own document - on screen and in PDF** *(2026-08-20, batch
+  4q)*: every completed form now reads and prints as a real letterhead document (the "Form
+  Publisher" layout the practice asked for). (1) **The document**: the practice's logo centred at
+  the top of EVERY page, the form title centred beneath it in the practice's accent with a short
+  rule, one bordered table - **Questions** left, **Answers** right (accent header band, tinted
+  question column, section titles as accent rows, statements in italics, "-" for unanswered) - and
+  the practice's one-line **footer pinned to the true bottom of every page** (thead/tfoot spacer
+  rows reserve the room per page; fixed elements pin the letterhead - survives every browser's real
+  print dialog). No meta line above the table. (2) **On screen the same document**: `ResponseView`
+  renders an actual A4 sheet (210 x 297 proportions, 14 mm-equivalent margins, paper-white on a
+  muted backdrop) wherever answers are viewed - hub form Responses, client dossiers (hub +
+  counsellor), counsellor Forms, waitlist answers - with Download PDF beside it everywhere,
+  including counsellor-filled responses ("Filled by ... (counsellor)"). (3) **The footer is
+  configurable**: Settings → Organisation → **Branding → Document footer** (one line: NPO number |
+  address | email; blank = composed automatically from the organisation profile -
+  `composeDocumentFooter`, unit-tested), and any single form may override it on its **Design** tab
+  (`theme.printFooter`). Migration 0089 (`orgs.document_footer`). Builder pure + 10 unit tests
+  (layout, brand, escaping, footer precedence). Proven live: logo + footer set in Branding; View
+  answers = the A4 document; the exported PDF renders with the letterhead and the footer at y=793/842
+  on every page of a 4-page form; a per-form override wins; demo data reverted.
+
 - [x] **Form automations say WHO fills it - and can fire after every session** *(2026-08-19, batch
   4p)*: the "Send automatically" card silently meant "the client"; it now asks **Who fills it in?**
   - **The client** (their private link on their preferred channel, as before), **The counsellor**

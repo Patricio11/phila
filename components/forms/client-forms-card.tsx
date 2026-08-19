@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, ClipboardList, Clock } from "lucide-react";
+import { CheckCircle2, Clock, FileDown } from "lucide-react";
 import type { FormField } from "@/lib/domain/types";
 import { Card, CardHead } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ResponseView, scaleTotal } from "@/components/forms/response-view";
+import { downloadResponsePdf, type DocBrand } from "@/lib/export/response-pdf";
 
 export interface ClientFormRow {
   id: string;
@@ -27,7 +28,7 @@ const DAY = (iso: string) => new Intl.DateTimeFormat("en-ZA", { timeZone: "Afric
  * (rendered from its snapshot, so it reads exactly as it was asked); one still
  * out shows honestly as waiting. Used on the counsellor dossier and the hub.
  */
-export function ClientFormsCard({ rows }: { rows: ClientFormRow[] }) {
+export function ClientFormsCard({ rows, brand = null, clientName = null }: { rows: ClientFormRow[]; brand?: DocBrand | null; clientName?: string | null }) {
   const [open, setOpen] = useState<ClientFormRow | null>(null);
   if (rows.length === 0) return null;
   const done = rows.filter((r) => r.status === "completed");
@@ -71,10 +72,13 @@ export function ClientFormsCard({ rows }: { rows: ClientFormRow[] }) {
         onClose={() => setOpen(null)}
         title={open?.title ?? "Response"}
         description={open ? `Completed ${DAY(open.submittedAt ?? open.sentAt)}` : undefined}
-        className="sm:max-w-2xl"
-        footer={<div className="flex justify-end"><Button variant="ghost" onClick={() => setOpen(null)}>Close</Button></div>}
+        className="sm:max-w-3xl"
+        footer={<div className="flex justify-end gap-2">
+          {open?.answers && <Button variant="ghost" onClick={() => downloadResponsePdf({ formTitle: open.title, respondent: open.filledBy ? `${open.filledBy} (counsellor)` : clientName, submittedAt: open.submittedAt, fields: (open.snapshot.fields ?? []) as FormField[], answers: open.answers ?? {}, brand })}><FileDown className="size-4" strokeWidth={2} aria-hidden /> Download PDF</Button>}
+          <Button variant="ghost" onClick={() => setOpen(null)}>Close</Button>
+        </div>}
       >
-        {open?.answers && <ResponseView fields={(open.snapshot.fields ?? []) as FormField[]} answers={open.answers} />}
+        {open?.answers && <ResponseView fields={(open.snapshot.fields ?? []) as FormField[]} answers={open.answers} formTitle={open.title} brand={brand} respondent={open.filledBy ? `${open.filledBy} (counsellor)` : clientName} submittedAt={open.submittedAt} />}
       </Dialog>
     </Card>
   );

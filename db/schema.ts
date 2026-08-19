@@ -44,6 +44,8 @@ export const orgs = pgTable("orgs", {
   brandAccent: text("brand_accent").default("#1C7D58").notNull(),
   /** Storage key of the org's uploaded logo (W6.1), shown on the public page + branding. Null = wordmark only. */
   brandLogoKey: text("brand_logo_key"),
+  /** Batch 4q - the one-line footer printed on every page of the practice's documents (forms). Null = composed from the profile. */
+  documentFooter: text("document_footer"),
   /** Batch 2o - the backend the logo lives on. */
   brandLogoBackend: text("brand_logo_backend").default("supabase").notNull(),
   /** The logo's size in bytes - tracked so it counts against (and releases from) org storage. */

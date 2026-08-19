@@ -9,6 +9,7 @@ import { Input, Label, FieldError, Textarea } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { saveInvoiceSettings } from "@/app/hub/settings/actions";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 export function InvoiceSettingsForm({
   initial,
@@ -186,9 +187,5 @@ function Choice({ selected, onClick, title, desc }: { selected: boolean; onClick
 }
 
 function Toggle({ on, onClick, disabled }: { on: boolean; onClick: () => void; disabled?: boolean }) {
-  return (
-    <button type="button" onClick={onClick} disabled={disabled} aria-pressed={on} className={cn("inline-flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:opacity-40", on && !disabled ? "bg-accent" : "bg-surface-2")}>
-      <span className={cn("size-4 rounded-full bg-white shadow-sm transition-transform", on && "translate-x-4")} />
-    </button>
-  );
+  return <Switch checked={on && !disabled} onChange={onClick} disabled={disabled} label={on ? "Turn off" : "Turn on"} />;
 }

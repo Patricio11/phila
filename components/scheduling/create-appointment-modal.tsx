@@ -14,6 +14,7 @@ import { createAppointment, createClientForBooking, getAvailableCounsellors } fr
 import { isoWeekday, practiceGridTimes } from "@/lib/domain/helpers";
 import type { BusinessHours } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 import { languageName } from "@/lib/domain/languages";
 
 export interface SchedulingOptions {
@@ -387,18 +388,7 @@ function Toggle({ label, hint, checked, onChange }: { label: string; hint?: stri
         <div className="text-[13.5px] font-medium text-text">{label}</div>
         {hint ? <div className="text-[12px] text-text-3">{hint}</div> : null}
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        aria-label={label}
-        onClick={() => onChange(!checked)}
-        className={cn("inline-flex h-6 w-10 shrink-0 items-center rounded-full p-0.5 transition-colors", checked ? "bg-accent" : "bg-border-strong")}
-      >
-        <span className={cn("inline-flex size-5 items-center justify-center rounded-full bg-white shadow-sm transition-transform", checked ? "translate-x-4" : "translate-x-0")}>
-          {checked ? <Check className="size-3 text-accent" strokeWidth={3} aria-hidden /> : null}
-        </span>
-      </button>
+      <Switch checked={checked} onChange={onChange} label={label} showCheck />
     </div>
   );
 }

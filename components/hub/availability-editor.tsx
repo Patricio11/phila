@@ -9,6 +9,7 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { useToast } from "@/components/ui/toast";
 import { saveMemberAvailability } from "@/app/hub/team/actions";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 type DayNum = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 export interface Window { weekday: number; start: string; end: string; mode: AvailabilityMode }
@@ -35,11 +36,7 @@ const MODES: { key: AvailabilityMode; label: string; icon: typeof MapPin; blurb:
 type Grid = Record<AvailabilityMode, Record<DayNum, { start: string; end: string } | null>>;
 
 function Toggle({ on, onClick, label }: { on: boolean; onClick: () => void; label?: string }) {
-  return (
-    <button type="button" onClick={onClick} aria-pressed={on} aria-label={label} className={cn("inline-flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors", on ? "bg-accent" : "bg-surface-2")}>
-      <span className={cn("size-4 rounded-full bg-surface shadow-sm transition-transform", on && "translate-x-4")} />
-    </button>
-  );
+  return <Switch checked={on} onChange={onClick} label={label ?? (on ? "Turn off" : "Turn on")} />;
 }
 
 /**

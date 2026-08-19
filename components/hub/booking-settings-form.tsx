@@ -15,6 +15,7 @@ import { CredentialChip } from "@/components/ui/credential-chip";
 import { useToast } from "@/components/ui/toast";
 import { saveBookingSettings } from "@/app/hub/booking/actions";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 const NOTICE = [
   { value: "0", label: "No minimum" },
@@ -218,11 +219,7 @@ function Row({ title, desc, on, onToggle, icon: Icon }: { title: string; desc: s
 }
 
 function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} aria-pressed={on} className={cn("inline-flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors", on ? "bg-accent" : "bg-surface-2")}>
-      <span className={cn("size-4 rounded-full bg-white shadow-sm transition-transform", on && "translate-x-4")} />
-    </button>
-  );
+  return <Switch checked={on} onChange={onClick} label={on ? "Turn off" : "Turn on"} />;
 }
 
 function Chip({ on, onClick, disabled, children }: { on: boolean; onClick: () => void; disabled?: boolean; children: React.ReactNode }) {

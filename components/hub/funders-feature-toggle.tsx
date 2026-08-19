@@ -6,6 +6,7 @@ import { HandCoins } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { saveOrgFeature } from "@/app/hub/settings/actions";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 /**
  * Enable the Funders & grants (M&E) module. Off by default  most practices don't
@@ -51,17 +52,7 @@ export function FundersFeatureToggle({ initial }: { initial: boolean }) {
           reporting and a read-only funder portal. Turn on if your practice reports to funders or donors.
         </p>
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={on}
-        disabled={pending}
-        aria-label={`${on ? "Turn off" : "Turn on"} Funders and grants`}
-        onClick={toggle}
-        className={cn("mt-0.5 inline-flex h-6 w-10 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:opacity-60", on ? "bg-accent" : "bg-border-strong")}
-      >
-        <span className={cn("size-5 rounded-full bg-surface shadow-sm transition-transform", on && "translate-x-4")} />
-      </button>
+      <Switch checked={on} onChange={toggle} disabled={pending} label={`${on ? "Turn off" : "Turn on"} Funders and grants`} className="mt-0.5" />
     </div>
   );
 }

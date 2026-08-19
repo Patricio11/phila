@@ -1933,6 +1933,14 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   first behind a swappable adapter so other providers can be switched on/off later; includes the
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).
 
+- [x] **One Switch everywhere** *(2026-08-19)*: `components/ui/switch.tsx` is now the only on/off
+  control - 44 x 24 track, 20 px knob that travels exactly the inner width (transparent border +
+  `p-0`, so a browser's default button padding can never push the knob past the edge - the bug
+  the form page's "Open share link" / "joins the waitlist" switches showed), accent or danger tone,
+  disabled state, focus ring, optional tick. 26 hand-rolled variants across admin / hub / client /
+  scheduling replaced; proven by measuring every visible switch on six pages (knob inside the
+  track, all 44 x 24).
+
 - [x] **Messages: the Clients door + DSAR includes the conversation** *(2026-08-19, batch 4o - the
   two deferred 34.1 items)*: (1) **New message → Clients** tab in the Messages page (staff only):
   searchable list of the clients this person may message - org admin / front desk see every active

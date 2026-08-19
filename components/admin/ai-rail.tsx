@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { za } from "@/lib/format";
-import { Check, KeyRound, Lock, Zap } from "lucide-react";
+import { KeyRound, Lock, Zap } from "lucide-react";
 import type { AiRailConfig } from "@/lib/domain/types";
 import { Card, CardHead } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 const PROVIDERS = [
   { key: "anthropic", label: "Anthropic" },
@@ -98,17 +99,7 @@ export function AiRail({ initial }: { initial: AiRailConfig }) {
         <CardHead title="Cross-border processing (POPIA s.72)" />
         <div className="space-y-4 px-[17px] pb-[17px]">
           <label className="flex cursor-pointer items-start gap-3 rounded-control border border-border p-3.5">
-            <button
-              type="button"
-              role="switch"
-              aria-checked={cfg.s72Acknowledged}
-              onClick={() => setCfg((c) => ({ ...c, s72Acknowledged: !c.s72Acknowledged, status: !c.s72Acknowledged ? c.status : c.status === "live" ? "mock" : c.status }))}
-              className={cn("mt-0.5 inline-flex h-6 w-10 shrink-0 items-center rounded-full p-0.5 transition-colors", cfg.s72Acknowledged ? "bg-accent" : "bg-border-strong")}
-            >
-              <span className={cn("inline-flex size-5 items-center justify-center rounded-full bg-white shadow-sm transition-transform", cfg.s72Acknowledged ? "translate-x-4" : "translate-x-0")}>
-                {cfg.s72Acknowledged ? <Check className="size-3 text-accent" strokeWidth={3} aria-hidden /> : null}
-              </span>
-            </button>
+            <Switch checked={cfg.s72Acknowledged} onChange={() => setCfg((c) => ({ ...c, s72Acknowledged: !c.s72Acknowledged, status: !c.s72Acknowledged ? c.status : c.status === "live" ? "mock" : c.status }))} label="I acknowledge the s72 de-identification rule" showCheck className="mt-0.5" />
             <span className="text-[12.5px] leading-relaxed text-text-2">
               I acknowledge that AI inference is <span className="font-medium text-text">de-identified before any cross-border call</span>,
               uses a <span className="font-medium text-text">zero-data-retention</span> provider, and that

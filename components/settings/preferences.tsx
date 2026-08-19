@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/theme/use-theme";
 import { useToast } from "@/components/ui/toast";
-import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 interface Pref {
   key: string;
@@ -73,18 +73,7 @@ function Row({ label, description, on, onToggle }: { label: string; description:
         <div className="text-[14px] font-[600] text-text">{label}</div>
         <p className="mt-1 text-[12.5px] leading-relaxed text-text-2">{description}</p>
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={on}
-        aria-label={label}
-        onClick={onToggle}
-        className={cn("mt-0.5 inline-flex h-6 w-10 shrink-0 items-center rounded-full p-0.5 transition-colors", on ? "bg-accent" : "bg-border-strong")}
-      >
-        <span className={cn("inline-flex size-5 items-center justify-center rounded-full bg-white shadow-sm transition-transform", on ? "translate-x-4" : "translate-x-0")}>
-          {on ? <Check className="size-3 text-accent" strokeWidth={3} aria-hidden /> : null}
-        </span>
-      </button>
+      <Switch checked={on} onChange={onToggle} label={label} showCheck className="mt-0.5" />
     </div>
   );
 }

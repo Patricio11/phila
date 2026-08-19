@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Check } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 interface Flag {
   key: string;
@@ -44,18 +44,7 @@ export function FeatureFlags() {
             <div className="text-[14px] font-[600] text-text">{f.label}</div>
             <p className="mt-1 text-[12.5px] leading-relaxed text-text-2">{f.description}</p>
           </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={f.on}
-            aria-label={`${f.on ? "Turn off" : "Turn on"} ${f.label}`}
-            onClick={() => toggle(f.key)}
-            className={cn("mt-0.5 inline-flex h-6 w-10 shrink-0 items-center rounded-full p-0.5 transition-colors", f.on ? (f.caution ? "bg-danger" : "bg-accent") : "bg-border-strong")}
-          >
-            <span className={cn("inline-flex size-5 items-center justify-center rounded-full bg-white shadow-sm transition-transform", f.on ? "translate-x-4" : "translate-x-0")}>
-              {f.on ? <Check className={cn("size-3", f.caution ? "text-danger" : "text-accent")} strokeWidth={3} aria-hidden /> : null}
-            </span>
-          </button>
+          <Switch checked={f.on} onChange={() => toggle(f.key)} label={`${f.on ? "Turn off" : "Turn on"} ${f.label}`} tone={f.caution ? "danger" : "accent"} showCheck className="mt-0.5" />
         </div>
       ))}
     </div>

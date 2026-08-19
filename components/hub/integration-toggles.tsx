@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, Check, Video } from "lucide-react";
+import { Bot, Video } from "lucide-react";
 import type { OrgFeature } from "@/lib/domain/enums";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 const FEATURES: { key: OrgFeature; label: string; description: string; icon: typeof Bot }[] = [
   { key: "ai", label: "AI note assistant", description: "Drafts notes for counsellors to edit and sign. Turning this on is also the POPIA cross-border consent gate.", icon: Bot },
@@ -50,18 +51,7 @@ export function IntegrationToggles({ initial }: { initial: Record<OrgFeature, bo
               </div>
               <p className="mt-1 text-[12.5px] leading-relaxed text-text-2">{f.description}</p>
             </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={on}
-              aria-label={`${on ? "Turn off" : "Turn on"} ${f.label}`}
-              onClick={() => toggle(f.key, f.label)}
-              className={cn("mt-0.5 inline-flex h-6 w-10 shrink-0 items-center rounded-full p-0.5 transition-colors", on ? "bg-accent" : "bg-border-strong")}
-            >
-              <span className={cn("inline-flex size-5 items-center justify-center rounded-full bg-white shadow-sm transition-transform", on ? "translate-x-4" : "translate-x-0")}>
-                {on ? <Check className="size-3 text-accent" strokeWidth={3} aria-hidden /> : null}
-              </span>
-            </button>
+            <Switch checked={on} onChange={() => toggle(f.key, f.label)} label={`${on ? "Turn off" : "Turn on"} ${f.label}`} showCheck className="mt-0.5" />
           </div>
         );
       })}

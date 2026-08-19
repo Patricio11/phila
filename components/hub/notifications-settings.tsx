@@ -9,6 +9,7 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { useToast } from "@/components/ui/toast";
 import { saveNotificationSettings, saveWhatsapp, requestWhatsappSetup, verifyWhatsappConnection } from "@/app/hub/settings/notifications/actions";
 import { cn } from "@/lib/utils";
+import { Switch as UiSwitch } from "@/components/ui/switch";
 import { PushOptIn } from "@/components/push/push-opt-in";
 import { statusGuidance, sendsPaused, type NumberHealth } from "@/lib/messaging/whatsapp-health";
 
@@ -166,12 +167,7 @@ function ChannelShell({ icon: Icon, title, tag, enabled, onToggle, children }: {
 
 function Switch({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
-    <button
-      type="button" role="switch" aria-checked={checked} aria-label={label} onClick={() => onChange(!checked)}
-      className={cn("relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors", checked ? "bg-accent" : "bg-border")}
-    >
-      <span className={cn("inline-block size-4 transform rounded-full bg-white shadow transition-transform", checked ? "translate-x-5" : "translate-x-1")} />
-    </button>
+    <UiSwitch checked={checked} onChange={onChange} label={label} />
   );
 }
 

@@ -7,14 +7,10 @@ import { Input, Label } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { saveOnboardingRequirements } from "@/app/admin/onboarding/actions";
-import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} aria-pressed={on} className={cn("inline-flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors", on ? "bg-accent" : "bg-surface-2")}>
-      <span className={cn("size-4 rounded-full bg-surface shadow-sm transition-transform", on && "translate-x-4")} />
-    </button>
-  );
+  return <Switch checked={on} onChange={onClick} label={on ? "Turn off" : "Turn on"} />;
 }
 
 export function OnboardingRequirementsEditor({ initial }: { initial: OnboardingRequirement[] }) {

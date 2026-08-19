@@ -6,6 +6,7 @@ import { Share2 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { saveOrgFeature } from "@/app/hub/settings/actions";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 /**
  * Referral tracking (W7) - off by default. When on, staff can record how each client
@@ -48,17 +49,7 @@ export function ReferralsFeatureToggle({ initial }: { initial: boolean }) {
           come from in Insights. Useful for funders and marketing  turn off if you&apos;d rather not ask.
         </p>
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={on}
-        disabled={pending}
-        aria-label={`${on ? "Turn off" : "Turn on"} referral tracking`}
-        onClick={toggle}
-        className={cn("mt-0.5 inline-flex h-6 w-10 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:opacity-60", on ? "bg-accent" : "bg-border-strong")}
-      >
-        <span className={cn("size-5 rounded-full bg-surface shadow-sm transition-transform", on && "translate-x-4")} />
-      </button>
+      <Switch checked={on} onChange={toggle} disabled={pending} label={`${on ? "Turn off" : "Turn on"} referral tracking`} className="mt-0.5" />
     </div>
   );
 }

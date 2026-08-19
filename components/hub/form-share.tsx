@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { setFormShare, setFormWaitlist } from "@/app/hub/forms/actions";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 /** The open share link  anyone with it can fill the form (great for lead capture). */
 export function FormShare({ formId, shareToken, shareEnabled, waitlistOnSubmit }: {
@@ -64,17 +65,7 @@ export function FormShare({ formId, shareToken, shareEnabled, waitlistOnSubmit }
             <p className="text-[11.5px] leading-relaxed text-text-3">One public link anyone can fill  post it, or send it out. Each submission lands in Responses.</p>
           </div>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={enabled}
-          aria-label="Open share link"
-          onClick={toggle}
-          disabled={pending}
-          className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60", enabled ? "bg-accent" : "bg-surface-2")}
-        >
-          <span className={cn("absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform", enabled ? "translate-x-[22px]" : "translate-x-0.5")} />
-        </button>
+        <Switch checked={enabled} onChange={toggle} disabled={pending} label="Open share link" />
       </div>
 
       {/* What happens to whoever completes it - the other half of a public form. */}
@@ -85,17 +76,7 @@ export function FormShare({ formId, shareToken, shareEnabled, waitlistOnSubmit }
             They become a client record with their answers attached, waiting for the practice to book them. This is how an employer intake works.
           </p>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={waitlist}
-          aria-label="Everyone who completes this joins the waitlist"
-          onClick={toggleWaitlist}
-          disabled={pending}
-          className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60", waitlist ? "bg-accent" : "bg-surface-2")}
-        >
-          <span className={cn("absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform", waitlist ? "translate-x-[22px]" : "translate-x-0.5")} />
-        </button>
+        <Switch checked={waitlist} onChange={toggleWaitlist} disabled={pending} label="Everyone who completes this joins the waitlist" />
       </div>
 
       {enabled && token && (

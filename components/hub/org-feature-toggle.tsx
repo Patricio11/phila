@@ -7,6 +7,7 @@ import type { OrgFeature } from "@/lib/domain/enums";
 import { useToast } from "@/components/ui/toast";
 import { saveOrgFeature } from "@/app/hub/settings/actions";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 const ICONS: Partial<Record<OrgFeature, LucideIcon>> = { waitlist: ListChecks, outcomes: Activity };
 
@@ -57,17 +58,7 @@ export function OrgFeatureToggle({ feature, label, description, onDescription, o
         <p className="mt-1 text-[12.5px] leading-relaxed text-text-2">{description}</p>
         {locked && <p className="mt-1 text-[11.5px] text-text-3">{lockedReason ?? "Managed by Phila for your practice."}</p>}
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={on}
-        disabled={pending || locked}
-        aria-label={`${on ? "Turn off" : "Turn on"} ${label.toLowerCase()}`}
-        onClick={toggle}
-        className={cn("mt-0.5 inline-flex h-6 w-10 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:opacity-60", on ? "bg-accent" : "bg-border-strong")}
-      >
-        <span className={cn("size-5 rounded-full bg-surface shadow-sm transition-transform", on && "translate-x-4")} />
-      </button>
+      <Switch checked={on} onChange={toggle} disabled={pending || locked} label={`${on ? "Turn off" : "Turn on"} ${label.toLowerCase()}`} className="mt-0.5" />
     </div>
   );
 }

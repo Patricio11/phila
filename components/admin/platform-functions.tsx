@@ -5,6 +5,7 @@ import { HeartHandshake, Power } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { setPlatformCrisisSupport } from "@/app/admin/features/actions";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 /**
  * Batch 4m - "Platform functions": things Phila switches ON for practices (the
@@ -53,17 +54,7 @@ export function PlatformFunctions({ crisisSupportEnabled }: { crisisSupportEnabl
             <Power className="size-3.5" strokeWidth={2} aria-hidden />
             {on ? "On for every practice" : "Off - nothing is read, nothing is shown"}
           </span>
-          <button
-            type="button"
-            onClick={toggle}
-            disabled={pending}
-            role="switch"
-            aria-checked={on}
-            aria-label="Crisis support in client conversations"
-            className={cn("inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:opacity-50", on ? "bg-accent" : "bg-surface-2")}
-          >
-            <span className={cn("size-5 rounded-full bg-surface shadow-sm transition-transform", on && "translate-x-5")} />
-          </button>
+          <Switch checked={on} onChange={toggle} label="Crisis support in client conversations" disabled={pending} />
         </div>
       </div>
     </section>

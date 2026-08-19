@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/toast";
 import { setFormNotify } from "@/app/hub/forms/actions";
 import { DEFAULT_NOTIFY_SUBJECT, DEFAULT_NOTIFY_BODY, NOTIFY_TOKENS } from "@/lib/forms/notify-email";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 /**
  * Batch 3j - the Emails tab. When someone completes this form, the practice
@@ -54,16 +55,7 @@ export function FormEmails({ formId, initial }: { formId: string; initial: FormN
             <p className="text-[11.5px] leading-relaxed text-text-3">The moment anyone completes this form, the email below goes out. Leave recipients empty to reach every practice admin.</p>
           </div>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={enabled}
-          aria-label="Email the practice on every submission"
-          onClick={() => setEnabled((v) => !v)}
-          className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors", enabled ? "bg-accent" : "bg-surface-2")}
-        >
-          <span className={cn("absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform", enabled ? "translate-x-[22px]" : "translate-x-0.5")} />
-        </button>
+        <Switch checked={enabled} onChange={() => setEnabled((v) => !v)} label="Email the practice on every submission" />
       </div>
 
       <div className={cn("space-y-3 rounded-card border border-border bg-surface p-3.5", !enabled && "opacity-60")}>

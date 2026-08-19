@@ -14,6 +14,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/toast";
 import { scheduleClassSession, markClassAttendance } from "@/app/app/supervision/actions";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 function when(iso: string): string {
   return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
@@ -204,16 +205,7 @@ export function ClassSessions({ classId, className, members, sessions, canManage
                 <div className="text-[13px] font-[600] text-text">Repeat weekly</div>
                 <p className="text-[12px] text-text-2">Book the same day and time for several weeks in one go.</p>
               </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={repeatOn}
-                aria-label="Repeat weekly"
-                onClick={() => setRepeatOn((v) => !v)}
-                className={cn("inline-flex h-6 w-10 shrink-0 items-center rounded-full p-0.5 transition-colors", repeatOn ? "bg-accent" : "bg-border-strong")}
-              >
-                <span className={cn("size-5 rounded-full bg-surface shadow-sm transition-transform", repeatOn && "translate-x-4")} />
-              </button>
+              <Switch checked={repeatOn} onChange={() => setRepeatOn((v) => !v)} label="Repeat weekly" />
             </div>
             {repeatOn && (
               <div className="mt-2.5 flex items-center gap-2 border-t border-border/70 pt-2.5">

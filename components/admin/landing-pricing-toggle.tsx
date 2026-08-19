@@ -5,6 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { setLandingPricing } from "@/app/admin/plans/actions";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 export function LandingPricingToggle({ initial }: { initial: boolean }) {
   const { toast } = useToast();
@@ -36,17 +37,7 @@ export function LandingPricingToggle({ initial }: { initial: boolean }) {
           </p>
         </div>
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={on}
-        aria-label="Show pricing on the landing page"
-        onClick={toggle}
-        disabled={pending}
-        className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors", on ? "bg-accent" : "bg-surface-2", pending && "opacity-60")}
-      >
-        <span className={cn("absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform", on ? "translate-x-[22px]" : "translate-x-0.5")} />
-      </button>
+      <Switch checked={on} onChange={toggle} label="Show pricing on the landing page" disabled={pending} />
     </div>
   );
 }

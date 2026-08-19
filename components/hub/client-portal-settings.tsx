@@ -5,6 +5,7 @@ import { CalendarPlus, UserPlus, type LucideIcon } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { saveClientPortalSettings } from "@/app/hub/settings/actions";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 type PortalState = { inviteOnBooking: boolean; inviteOnCreate: boolean };
 type Key = keyof PortalState;
@@ -57,17 +58,7 @@ export function ClientPortalSettings({ initial }: { initial: PortalState }) {
               </div>
               <p className="mt-1 text-[12.5px] leading-relaxed text-text-2">{r.description}</p>
             </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={on}
-              disabled={pending}
-              aria-label={`${on ? "Turn off" : "Turn on"} ${r.label}`}
-              onClick={() => toggle(r.key, r.label)}
-              className={cn("mt-0.5 inline-flex h-6 w-10 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:opacity-60", on ? "bg-accent" : "bg-border-strong")}
-            >
-              <span className={cn("size-5 rounded-full bg-surface shadow-sm transition-transform", on && "translate-x-4")} />
-            </button>
+            <Switch checked={on} onChange={() => toggle(r.key, r.label)} disabled={pending} label={`${on ? "Turn off" : "Turn on"} ${r.label}`} className="mt-0.5" />
           </div>
         );
       })}

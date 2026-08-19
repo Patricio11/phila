@@ -6,6 +6,7 @@ import { Languages } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { saveOrgFeature } from "@/app/hub/settings/actions";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 /**
  * Language of record (Phase 32.0) - the practice's own switch. Off = the whole
@@ -54,17 +55,7 @@ export function LanguageFeatureToggle({ initial, locked, lockedReason }: { initi
         </p>
         {locked && <p className="mt-1 text-[11.5px] text-text-3">{lockedReason ?? "Managed by Phila for your practice."}</p>}
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={on}
-        disabled={pending || locked}
-        aria-label={`${on ? "Turn off" : "Turn on"} language of record`}
-        onClick={toggle}
-        className={cn("mt-0.5 inline-flex h-6 w-10 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:opacity-60", on ? "bg-accent" : "bg-border-strong")}
-      >
-        <span className={cn("size-5 rounded-full bg-surface shadow-sm transition-transform", on && "translate-x-4")} />
-      </button>
+      <Switch checked={on} onChange={toggle} disabled={pending || locked} label={`${on ? "Turn off" : "Turn on"} language of record`} className="mt-0.5" />
     </div>
   );
 }

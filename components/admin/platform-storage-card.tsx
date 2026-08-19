@@ -7,6 +7,7 @@ import { Input, Label } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { saveStorageConfig, testStorageConnectionAction, getStorageCorsState, applyStorageCors } from "@/app/admin/integrations/actions";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 type Backend = "supabase" | "s3";
 
@@ -187,16 +188,7 @@ export function PlatformStorageCard({ initial }: { initial: {
             <div className="text-[12.5px] font-[640] text-text">Private realtime channels (RLS)</div>
             <p className="mt-0.5 text-[11px] text-text-3">Hardening: only thread members can subscribe. <strong>First run the setup SQL</strong> (docs/SUPABASE_REALTIME_SETUP.md) + paste the JWT secret, then switch on. If chat goes quiet after enabling, switch it off.</p>
           </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={realtimePrivate}
-            aria-label="Private realtime channels"
-            onClick={() => setRealtimePrivate((v) => !v)}
-            className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors", realtimePrivate ? "bg-accent" : "bg-surface-2")}
-          >
-            <span className={cn("absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform", realtimePrivate ? "translate-x-[22px]" : "translate-x-0.5")} />
-          </button>
+          <Switch checked={realtimePrivate} onChange={() => setRealtimePrivate((v) => !v)} label="Private realtime channels" />
         </div>
         <div className="mt-2 space-y-1">
           <Label>Supabase JWT secret</Label>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check } from "lucide-react";
 import {
   CONSENT_PURPOSE_LABELS,
   type ConsentPurpose,
@@ -10,6 +9,7 @@ import type { ConsentRecord } from "@/lib/domain/types";
 import { useToast } from "@/components/ui/toast";
 import { setConsent } from "@/app/me/consent/actions";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 /** Plain-English descriptions for the consent centre. */
 const DESCRIPTIONS: Record<ConsentPurpose, string> = {
@@ -94,26 +94,7 @@ export function ConsentCentre({ records }: { records: ConsentRecord[] }) {
               <p className="mt-1 text-[12.5px] leading-relaxed text-text-2">{DESCRIPTIONS[purpose]}</p>
             </div>
 
-            <button
-              type="button"
-              role="switch"
-              aria-checked={on}
-              aria-label={`${on ? "Turn off" : "Turn on"} ${CONSENT_PURPOSE_LABELS[purpose]}`}
-              onClick={() => toggle(purpose)}
-              className={cn(
-                "mt-0.5 inline-flex h-6 w-10 shrink-0 items-center rounded-full p-0.5 transition-colors",
-                on ? "bg-accent" : "bg-border-strong",
-              )}
-            >
-              <span
-                className={cn(
-                  "inline-flex size-5 items-center justify-center rounded-full bg-white shadow-sm transition-transform",
-                  on ? "translate-x-4" : "translate-x-0",
-                )}
-              >
-                {on ? <Check className="size-3 text-accent" strokeWidth={3} aria-hidden /> : null}
-              </span>
-            </button>
+            <Switch checked={on} onChange={() => toggle(purpose)} label={`${on ? "Turn off" : "Turn on"} ${CONSENT_PURPOSE_LABELS[purpose]}`} showCheck className="mt-0.5" />
           </div>
         );
       })}

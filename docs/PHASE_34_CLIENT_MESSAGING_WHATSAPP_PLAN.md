@@ -8,7 +8,8 @@ Phila - open it". Underneath, harden the WhatsApp rail with what Thola does well
 retries + dead letters, webhook idempotency, delivery ticks that never regress, and a proper
 Integrations home for the connection.*
 
-> **Status:** ✅ 34.1 - 34.5 shipped 2026-08-18. Remaining: the deferred bits inside 34.1/34.3 (Clients tab door, DSAR inclusion, Meta template modelling, inbound media labels, cost hint) and the on-request 34.6 (mirrored inbox) / 34.7 (Embedded Signup). Written after reading Phila's messaging + WhatsApp stack end to end
+> **Status:** ✅ 34.1 - 34.5 shipped 2026-08-18; batch 4m (2026-08-19) added the web push lane to the nudge rail, the DB typing indicator, and the opt-in crisis support rule in client conversations (see ROADMAP).
+> ✅ 34.1 - 34.5 shipped 2026-08-18. Remaining: the deferred bits inside 34.1/34.3 (Clients tab door, DSAR inclusion, Meta template modelling, inbound media labels, cost hint) and the on-request 34.6 (mirrored inbox) / 34.7 (Embedded Signup). Written after reading Phila's messaging + WhatsApp stack end to end
 > and a deep read of Thola v2 (`C:\Users\patri\Downloads\thola\thola_v2` - its WhatsApp transport,
 > webhook, number-health, inbox, follow-up engine and readiness docs).
 >

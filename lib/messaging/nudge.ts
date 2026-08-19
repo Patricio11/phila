@@ -9,6 +9,7 @@ import { onlineSet } from "@/lib/messaging/presence";
 import { shouldAlert, shouldNudgeExternally } from "@/lib/messaging/nudge-rules";
 import { deliver } from "@/lib/messaging/deliver";
 import { logAccess } from "@/lib/audit";
+import { pushToUsers } from "@/lib/push";
 
 /**
  * Phase 34.2 - the doorbell. After a message is persisted, every OTHER member
@@ -65,6 +66,24 @@ export async function nudgeThreadMembers(input: {
   const threadLabel = thread.kind === "group" ? (thread.title ?? "a group") : null;
   const senderLabel = threadLabel ? `${input.senderName} · ${threadLabel}` : input.senderName;
 
+  // Batch 4m - web push first, for everyone who isn't online and is due an alert:
+  // one card per conversation (replacing tag), never the text. Reached by push
+  // counts like "online" - the external lane (WhatsApp / SMS / email) then stays quiet.
+  const dueOffline = others.filter((m) => shouldAlert({ nudgedAt: m.nudgedAt, lastReadAt: m.lastReadAt }) && !online.has(m.userId)).map((m) => m.userId);
+  let pushed = new Set<string>();
+  if (dueOffline.length) {
+    try {
+      const res = await pushToUsers(dueOffline, {
+        title: threadLabel ? `${input.senderName} posted in ${threadLabel}` : `${input.senderName} sent you a message`,
+        body: `On Phila · ${practiceName}. Open it to read.`,
+        url: "/open/messages?t=" + encodeURIComponent(input.threadId),
+        tag: `thread:${input.threadId}`,
+      });
+      pushed = res.reached;
+      if (res.sent || res.pruned) await logAccess({ action: "admin.action", actor: { userId: "system:nudge", platformRole: null, teamRole: null }, orgId: input.orgId, target: `thread:${input.threadId}`, reason: `message_alert_push_${res.sent}_pruned_${res.pruned}` });
+    } catch { /* push is best-effort; the other lanes still run */ }
+  }
+
   // Members are independent - alert them concurrently (Neon round-trips add up).
   await Promise.all(others.map(async (m) => {
     if (!shouldAlert({ nudgedAt: m.nudgedAt, lastReadAt: m.lastReadAt })) return;
@@ -88,7 +107,7 @@ export async function nudgeThreadMembers(input: {
 
     // 2. External - only when offline and the org allows it for this kind of person.
     const alertsOn = isClient ? settings.messageAlertsClients : settings.messageAlertsStaff;
-    if (shouldNudgeExternally({ online: online.has(m.userId), alertsOn })) {
+    if (shouldNudgeExternally({ online: online.has(m.userId) || pushed.has(m.userId), alertsOn })) {
       const c = isClient ? clientById.get(u.clientId!) : null;
       const prof = (c?.profile as Record<string, string> | null) ?? null;
       const recipient = isClient

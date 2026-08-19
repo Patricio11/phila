@@ -11,6 +11,7 @@ import { PlatformStorageCard } from "@/components/admin/platform-storage-card";
 import { PlatformSmsCard } from "@/components/admin/platform-sms-card";
 import { PlatformVoiceCard } from "@/components/admin/platform-voice-card";
 import { PlatformEmailCard } from "@/components/admin/platform-email-card";
+import { PlatformPushCard } from "@/components/admin/platform-push-card";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +79,9 @@ export default async function IntegrationConfigPage({ params }: { params: Promis
   } else if (slug === "resend") {
     const raw = await getPlatformIntegration("resend");
     card = <PlatformEmailCard initial={{ enabled: raw?.enabled ?? false, configured: Boolean(raw?.creds.apiKey), from: raw?.creds.from ?? "" }} />;
+  } else if (slug === "push") {
+    const raw = await getPlatformIntegration("web_push");
+    card = <PlatformPushCard initial={{ enabled: raw?.enabled ?? false, configured: Boolean(raw?.creds.publicKey && raw?.creds.privateKey), publicKey: raw?.creds.publicKey ?? "", subject: raw?.creds.subject ?? "" }} />;
   } else {
     notFound();
   }

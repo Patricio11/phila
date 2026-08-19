@@ -5,7 +5,7 @@
  * counsellor on metered data still gets a calm, honest screen when the network
  * drops. The durable offline send-queue + background sync land in Phase 11.
  */
-const VERSION = "phila-v1";
+const VERSION = "phila-v2";
 const SHELL_CACHE = `${VERSION}-shell`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const OFFLINE_URL = "/offline";
@@ -60,4 +60,42 @@ self.addEventListener("fetch", (event) => {
       }),
     );
   }
+});
+
+/*
+ * Batch 4m - web push. The payload never carries a message body (title + a
+ * short "open it" line + the conversation link). `tag` replaces an earlier
+ * card for the same conversation instead of stacking; a click focuses an
+ * open Phila tab when there is one, otherwise opens the link.
+ */
+self.addEventListener("push", (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch { data = { title: "Phila", body: event.data ? event.data.text() : "" }; }
+  const title = data.title || "Phila";
+  const options = {
+    body: data.body || "Open Phila to read it.",
+    tag: data.tag || "phila",
+    renotify: true,
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    data: { url: data.url || "/open/messages" },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = new URL((event.notification.data && event.notification.data.url) || "/open/messages", self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      for (const client of list) {
+        if (client.url.startsWith(self.location.origin) && "focus" in client) {
+          client.focus();
+          if ("navigate" in client) return client.navigate(target).catch(() => undefined);
+          return undefined;
+        }
+      }
+      return self.clients.openWindow(target);
+    }),
+  );
 });

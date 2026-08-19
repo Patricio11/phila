@@ -9,6 +9,7 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { useToast } from "@/components/ui/toast";
 import { saveNotificationSettings, saveWhatsapp, requestWhatsappSetup, verifyWhatsappConnection } from "@/app/hub/settings/notifications/actions";
 import { cn } from "@/lib/utils";
+import { PushOptIn } from "@/components/push/push-opt-in";
 import { statusGuidance, sendsPaused, type NumberHealth } from "@/lib/messaging/whatsapp-health";
 
 export function NotificationsSettings({
@@ -33,6 +34,7 @@ export function NotificationsSettings({
       emailReplyTo: s.emailReplyTo ?? "", emailFromName: s.emailFromName ?? "",
       quietStart: s.quietStart ?? "", quietEnd: s.quietEnd ?? "",
       messageAlertsStaff: s.messageAlertsStaff, messageAlertsClients: s.messageAlertsClients,
+      crisisSupport: s.crisisSupport,
     });
     if (!res.ok) return toast({ tone: "error", title: res.error });
     toast({ tone: "success", title: "Notification settings saved" });
@@ -99,6 +101,19 @@ export function NotificationsSettings({
             </span>
             <Switch checked={s.messageAlertsClients} onChange={(v) => set("messageAlertsClients", v)} label="Alert clients" />
           </div>
+        </div>
+        {/* Batch 4m - web push: your own device */}
+        <PushOptIn variant="row" className="mt-2" />
+      </div>
+
+      {/* Batch 4m - crisis support in client conversations: OFF by default, the practice decides */}
+      <div className={cn("rounded-card border p-3.5", s.crisisSupport ? "border-accent/30 bg-accent-soft/15" : "border-border bg-surface-2/30")} data-testid="crisis-support">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[12px] font-[660] text-text">Crisis support in client conversations</div>
+            <p className="mt-0.5 text-[11.5px] text-text-2">When a client&apos;s message reads as self-harm, it still sends exactly as written - nothing is blocked, nothing is held. Phila then quietly tells the people in that conversation and your admins (bell only, never the text), and shows <strong>SADAG 0800 567 567</strong> and <strong>Lifeline 0861 322 322</strong> to the client alone, once, under their message. Off means Phila never reads messages for this.</p>
+          </div>
+          <Switch checked={s.crisisSupport} onChange={(v) => set("crisisSupport", v)} label="Crisis support in client conversations" />
         </div>
       </div>
 

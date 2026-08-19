@@ -1,0 +1,1 @@
+ALTER TABLE "thread_members" ADD COLUMN "typing_at" timestamp with time zone;

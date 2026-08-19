@@ -1933,6 +1933,41 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   first behind a swappable adapter so other providers can be switched on/off later; includes the
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).
 
+- [x] **Messages: typing indicator · roomier composer · crisis support (toggle) · web push** *(2026-08-19,
+  batch 4m)*: (1) **Typing indicator that works without Supabase** - `thread_members.typing_at`
+  stamped through a tiny route (`/api/messages/typing`, a plain fetch because server actions from
+  one page queue behind each other), polled every 2.5 s while a thread is open + the tab is visible;
+  header "Lerato is typing…" / "Nomsa and Thabo are typing…" / "typing…" in a DM, and an animated
+  dots bubble at the foot of the thread; gone ~6 s after the last keystroke. The Supabase broadcast
+  path is kept when configured. (2) **Composer + edit box auto-grow** - 44 px minimum (was a 40 px
+  slit under the reply bar), grows with the text to ~6 lines, same for editing a message.
+  (3) **Crisis support in client conversations - OFF by default, the practice's switch** (Settings →
+  Messaging → Notifications): when ON and a client's message reads as self-harm (`lib/messaging/
+  crisis.ts`, a short conservative phrase list, unit-tested, no AI), the message still sends exactly
+  as written, the staff in that conversation + the org's admins get a quiet bell (never the text;
+  `kind = crisis`; audited `crisis_support_shown_alerted_N`), and **SADAG 0800 567 567 · SADAG SMS
+  31393 · Lifeline 0861 322 322** are shown under the message to the **author alone**, once,
+  dismissible (`data-testid="crisis-support-card"`). OFF means Phila never reads messages for this.
+  (4) **Web push - the fourth nudge lane** (`lib/push/*`, `web-push`, `push_subscriptions`): Phila's
+  own VAPID keys generated once in Admin → Integrations → **Web push** (private half encrypted at
+  rest; dormant until switched on); every signed-in person can turn notifications on for their
+  device from an in-context banner at the top of Messages (shown only when push is on, the browser
+  can, permission is undecided, and they haven't said "not now" in 14 days) or the
+  **Notifications on this device** row (hub Notifications settings, counsellor Settings, client
+  Profile) with **Send me a test**. The nudge rail pushes offline members first (one card per
+  conversation - replacing `tag`, never the body, link via `/open/messages?t=` which routes client /
+  counsellor / hub) and treats "reached by push" like online, so WhatsApp / SMS / email stay quiet
+  for them; a 404/410 endpoint is pruned on the spot (audited `message_alert_push_<sent>_pruned_<n>`).
+  `public/sw.js` gained `push` + `notificationclick` (focus an open Phila tab, else open).
+  Proven live: client typing → staff bubble + header (and the reverse), composer 44 px → grows;
+  toggle default OFF → ON → client's distress message sent untouched + support card to her only,
+  staff thread clean, bell "Lerato's message may need you now"; admin keys generated + Live; an
+  offline member with a (synthetic) subscription → push attempted, dead endpoint pruned, then the
+  normal external lane. Headless Chromium has no push service (permission reads "denied"), so the
+  device-side subscribe is proven by its honest "Blocked" state here and by the server lane - a
+  real browser completes it. Migrations 0084 (`typing_at`) + 0085 (`crisis_support`,
+  `push_subscriptions`).
+
 - [x] **S3 browser uploads - the bucket's CORS rule, diagnosed and fixable from Phila** *(2026-08-19,
   batch 4l)*: the practice's uploads to the org's Amazon S3 bucket were dying on the browser's
   preflight (`OPTIONS` → 403) because the bucket had no CORS rule naming `https://philasa.com`. The

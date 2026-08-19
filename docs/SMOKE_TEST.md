@@ -222,6 +222,13 @@ Sign in as **Thandeka**.
 - ☐ Delivery states on Billing → Recent messages never go backwards (a `Read` never becomes `Delivered`); a Meta failure shows its reason; **Failed after retries** lists dead letters with masked recipients
 - ☐ As the super admin, Integrations → **Org connections** ends with **WhatsApp numbers by org** (number, name, status, health chip); Billing shows "N message alerts this month" once any alert has actually gone out
 
+**Messages: typing, composer, crisis support, web push** (batch 4m)
+- ☐ Two browsers (staff + client): while one types, the other's thread shows the dots bubble + "X is typing…" in the header within ~3 s, gone ~6 s after the last keystroke - with Supabase unconfigured
+- ☐ The composer is 44 px tall empty (also under a reply bar) and grows with a multi-line draft; editing a message gets the same roomy box
+- ☐ Settings → Messaging → Notifications: **Crisis support in client conversations** is OFF by default; switch ON + Save → a client message such as "I don't want to be here anymore" sends as written, the client alone sees the SADAG / Lifeline card under it, staff see the message with no card and a bell "<Name>'s message may need you now"; switch OFF again
+- ☐ Admin → Integrations → **Web push**: Generate keys + switch on → Live + public key + **Notifications on this device** row; in a real browser **Turn on** → permission prompt → "Notifications on" toast → **Send me a test** shows a card; Messages shows the one-line banner only while permission is undecided; "Not now" hides it for 14 days
+- ☐ With a subscribed device away from Phila, a message to that person lands as ONE push card per conversation (never the text); clicking it opens the conversation; WhatsApp / SMS / email alert is skipped for them
+
 **S3 browser uploads (CORS)** (batch 4l)
 - ☐ Admin → Integrations → Storage (Amazon S3): the **Browser uploads** panel reads the bucket's CORS rule - green "Allowed from https://philasa.com · http://localhost:3000" once set; otherwise AWS's own reason + **Allow uploads from Phila** (works when the key has `s3:PutBucketCORS`) + **Copy rule** for the console
 - ☐ After the rule is in place, a hub / counsellor upload completes (the browser's preflight to the bucket answers 200, not 403)

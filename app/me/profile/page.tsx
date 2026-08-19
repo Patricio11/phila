@@ -3,6 +3,7 @@ import { HeartHandshake } from "lucide-react";
 import { requireClient } from "@/lib/auth/guard";
 import { getDataProvider } from "@/lib/data-provider";
 import { PageHead } from "@/components/shell/page-head";
+import { PushOptIn } from "@/components/push/push-opt-in";
 import { Card, CardHead } from "@/components/ui/card";
 import { ClientProfileForm, type ClientProfile } from "@/components/client/client-profile-form";
 import { SecuritySettings } from "@/components/hub/security-settings";
@@ -47,6 +48,14 @@ export default async function MeProfilePage() {
           You&apos;re cared for by <span className="font-medium text-text">{profile.counsellorName}</span>
           {profile.memberSince ? <> · with us since {new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", month: "long", year: "numeric" }).format(new Date(profile.memberSince))}</> : null}.
         </p>
+      </Card>
+
+      {/* Batch 4m - web push on this device (honest when Phila hasn't switched it on) */}
+      <Card>
+        <CardHead title="Notifications" />
+        <div className="px-[17px] pb-[17px]">
+          <PushOptIn variant="row" />
+        </div>
       </Card>
 
       <Card>

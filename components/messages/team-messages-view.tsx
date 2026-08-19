@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient, type RealtimeChannel } from "@supabase/supabase-js";
-import { ArrowLeft, Check, CornerUpLeft, Download, Eye, FileText, Info, Lock, MessagesSquare, Paperclip, Pencil, PenSquare, Search, Send, ShieldCheck, SmilePlus, Trash2, UsersRound, X } from "lucide-react";
+import { ArrowLeft, Check, CornerUpLeft, Download, Eye, FileText, HeartHandshake, Info, Lock, MessagesSquare, Paperclip, Pencil, PenSquare, Phone, Search, Send, ShieldCheck, SmilePlus, Trash2, UsersRound, X } from "lucide-react";
 import type { TeamThread } from "@/lib/data-provider";
 import { type TeamRole } from "@/lib/domain/enums";
 import { roleLabel } from "@/components/messages/role-label";
@@ -16,6 +16,8 @@ import { createGroup, deleteMessage, editMessage, getRealtimeToken, markThreadRe
 import { EmojiPicker, QUICK_REACTIONS } from "@/components/messages/emoji-picker";
 import { ThreadInfo } from "@/components/messages/thread-info";
 import { FullPage, FullPageToggle } from "@/components/ui/full-page";
+import { PushOptIn } from "@/components/push/push-opt-in";
+import type { CrisisLine } from "@/lib/messaging/crisis";
 import { sizeLabel } from "@/lib/documents/quota";
 import { cn } from "@/lib/utils";
 
@@ -62,6 +64,10 @@ export function TeamMessagesView({
   const [query, setQuery] = useState("");
   const [online, setOnline] = useState<Set<string>>(new Set());
   const [typing, setTyping] = useState<{ threadId: string; name: string } | null>(null);
+  // Batch 4m - typing over the DB: names by thread, refreshed every 2.5 s while a thread is open.
+  const [typingNames, setTypingNames] = useState<Record<string, string[]>>({});
+  // Batch 4m - crisis support lines handed back to the author (client) by the server - shown once, to them alone.
+  const [support, setSupport] = useState<{ threadId: string; lines: CrisisLine[] } | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
   const [uploading, setUploading] = useState(0);
@@ -311,10 +317,35 @@ export function TeamMessagesView({
   const emitTyping = (threadId: string | null) => {
     if (!threadId || threadId.startsWith("local_") || !myUserId) return;
     const now = Date.now();
-    if (now - lastTypingSent.current < 2000) return;
+    if (now - lastTypingSent.current < 2500) return;
     lastTypingSent.current = now;
     void channelsRef.current.get(threadId)?.send({ type: "broadcast", event: "typing", payload: { userId: myUserId } });
+    // Batch 4m - and the database, so the indicator works without Supabase (a plain
+    // fetch: server actions from one page queue behind each other, this mustn't).
+    void fetch("/api/messages/typing", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ threadId }), keepalive: true }).catch(() => {});
   };
+
+  // Batch 4m - poll who's typing while a thread is open + the tab is visible (cheap: member rows only).
+  useEffect(() => {
+    if (!activeId || activeId.startsWith("local_")) return;
+    let stopped = false;
+    const tick = async () => {
+      if (stopped || document.hidden) return;
+      const res = await fetch("/api/messages/typing", { cache: "no-store" }).then((r) => (r.ok ? (r.json() as Promise<{ ok: boolean; typing: Record<string, string[]> }>) : null)).catch(() => null);
+      if (!stopped && res?.ok) setTypingNames(res.typing);
+    };
+    void tick();
+    const id = setInterval(() => void tick(), 2500);
+    return () => { stopped = true; clearInterval(id); };
+  }, [activeId]);
+
+  // Batch 4m - composer + edit boxes grow with the text (up to ~6 lines), never a one-line slit.
+  const autoGrow = (el: HTMLTextAreaElement | null) => {
+    if (!el) return;
+    el.style.height = "0px";
+    el.style.height = `${Math.min(Math.max(el.scrollHeight, 44), 176)}px`;
+  };
+  useEffect(() => { autoGrow(composerRef.current); }, [draft, replyTo, activeId]);
 
   const patchMessage = (threadId: string, messageId: string, patch: Partial<{ text: string; edited: boolean; deleted: boolean }>) =>
     setThreads((prev) => prev.map((t) => (t.id !== threadId ? t : { ...t, messages: t.messages.map((m) => (m.id === messageId ? { ...m, ...patch } : m)) })));
@@ -366,6 +397,7 @@ export function TeamMessagesView({
       replyToId: quoted && !quoted.id.startsWith("local_") ? quoted.id : undefined,
     }).then((res) => {
       if (!res.ok) return toast({ tone: "error", title: res.error });
+      if (res.support?.length) setSupport({ threadId: res.threadId ?? wasThreadId, lines: res.support });
       const realThreadId = res.threadId;
       setThreads((prev) => prev.map((t) => (t.id !== wasThreadId ? t : {
         ...t,
@@ -476,6 +508,8 @@ export function TeamMessagesView({
 
   return (
     <FullPage open={full} onClose={() => setFull(false)} title="Messages" subtitle={active ? active.otherName : undefined} icon={MessagesSquare}>
+    {/* Batch 4m - web push, offered in context (only when Phila has it on + this browser can + not decided yet) */}
+    {!full && <PushOptIn variant="banner" className="mb-2.5" />}
     <div className={cn("overflow-hidden bg-surface", full ? "flex min-h-0 flex-1 flex-col" : "rounded-card border border-border shadow-sm")}>
       <div className={cn("grid grid-cols-1", full ? "min-h-0 flex-1" : "h-[calc(100dvh-220px)] min-h-[420px]", !isClient && "lg:grid-cols-[300px_1fr]")}>
         {/* Thread list - a client has exactly one conversation, so their view is the thread alone. */}
@@ -542,8 +576,8 @@ export function TeamMessagesView({
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[14px] font-[600] leading-tight text-text">{active.otherName}</div>
                     <div className="truncate text-[11px] text-text-3">
-                      {typing?.threadId === active.id ? (
-                        <span className="text-accent">{active.kind === "group" ? `${typing.name} is typing…` : "typing…"}</span>
+                      {typing?.threadId === active.id || (typingNames[active.id]?.length ?? 0) > 0 ? (
+                        <span className="text-accent">{typingLabel(active.kind, typing?.threadId === active.id ? [typing.name] : typingNames[active.id] ?? [])}</span>
                       ) : active.kind === "group" ? (
                         `${active.memberCount ?? active.members?.length ?? 0} members${active.members && active.members.length > 0 ? ` · ${active.members.slice(0, 3).map((m) => (m.userId === myUserId ? "you" : m.name.split(" ")[0])).join(", ")}${active.members.length > 3 ? ` +${active.members.length - 3}` : ""}` : ""}`
                       ) : active.kind === "client" ? (
@@ -589,10 +623,12 @@ export function TeamMessagesView({
                             <textarea
                               autoFocus
                               rows={1}
+                              ref={(el) => autoGrow(el)}
+                              onInput={(e) => autoGrow(e.currentTarget)}
                               value={editDraft}
                               onChange={(e) => setEditDraft(e.target.value)}
                               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveEdit(); } if (e.key === "Escape") setEditingId(null); }}
-                              className="max-h-32 min-h-[38px] flex-1 resize-none rounded-2xl border border-accent/50 bg-surface px-3 py-2 text-[13.5px] text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                              className="max-h-44 min-h-[44px] flex-1 resize-none rounded-2xl border border-accent/50 bg-surface px-3 py-2.5 text-[13.5px] leading-[1.45] text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
                             />
                             <button type="button" onClick={saveEdit} aria-label="Save" className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink"><Check className="size-4" aria-hidden /></button>
                             <button type="button" onClick={() => setEditingId(null)} aria-label="Cancel" className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-text-3 hover:bg-surface-hover"><X className="size-4" aria-hidden /></button>
@@ -668,10 +704,41 @@ export function TeamMessagesView({
                     </div>
                   );
                 })}
+                {((typingNames[active.id]?.length ?? 0) > 0 || typing?.threadId === active.id) && (
+                  <div className="flex items-end gap-1.5" data-testid="typing-bubble" aria-live="polite">
+                    <div className="inline-flex items-center gap-2 rounded-2xl bg-surface px-3.5 py-2 text-[12px] text-text-3 shadow-sm">
+                      <span className="inline-flex items-center gap-0.5" aria-hidden>
+                        <span className="size-1.5 animate-bounce rounded-full bg-text-3 [animation-delay:0ms]" />
+                        <span className="size-1.5 animate-bounce rounded-full bg-text-3 [animation-delay:150ms]" />
+                        <span className="size-1.5 animate-bounce rounded-full bg-text-3 [animation-delay:300ms]" />
+                      </span>
+                      {typingLabel(active.kind, typing?.threadId === active.id ? [typing.name] : typingNames[active.id] ?? [])}
+                    </div>
+                  </div>
+                )}
                 <div ref={messagesEndRef} />
               </div>
 
               <div className="relative border-t border-border p-3">
+                {support && support.threadId === active.id && (
+                  <div className="mb-2.5 rounded-card border border-accent/30 bg-accent-soft/30 p-3" data-testid="crisis-support-card" role="status" aria-live="polite">
+                    <div className="flex items-start gap-2.5">
+                      <HeartHandshake className="mt-0.5 size-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[13px] font-[650] text-text">Your message was sent. If things feel heavy right now, you don&apos;t have to wait.</div>
+                        <p className="mt-0.5 text-[12px] text-text-2">These lines are free, open any time, and only you can see this note.</p>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {support.lines.map((l) => (
+                            <a key={l.name} href={l.href} className="inline-flex items-center gap-1.5 rounded-control border border-accent/30 bg-surface px-2.5 py-1.5 text-[12.5px] font-medium text-text hover:bg-surface-hover">
+                              <Phone className="size-3.5 text-accent" strokeWidth={2.2} aria-hidden /> {l.name} <span className="font-semibold">{l.phone}</span> <span className="text-[11px] font-normal text-text-3">· {l.note}</span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                      <button type="button" onClick={() => setSupport(null)} aria-label="Close" className="inline-flex size-6 shrink-0 items-center justify-center rounded-control text-text-3 hover:bg-surface-hover hover:text-text"><X className="size-3.5" aria-hidden /></button>
+                    </div>
+                  </div>
+                )}
                 <div className="mb-2 flex items-center gap-1.5 text-[11.5px] text-text-3">
                   {isClient ? (
                     <><ShieldCheck className="size-3.5 shrink-0" strokeWidth={2} aria-hidden /> Private between you and your care team. Files are shared through Documents.</>
@@ -729,7 +796,8 @@ export function TeamMessagesView({
                     onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
                     placeholder={uploading > 0 ? "Uploading…" : isClient ? "Message your practice…" : `Message ${active.otherName.split(" ")[0]}…`}
                     rows={1}
-                    className="max-h-32 min-h-[40px] flex-1 resize-none rounded-control border border-border bg-surface px-3 py-2 text-[14px] text-text placeholder:text-text-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                    onInput={(e) => autoGrow(e.currentTarget)}
+                    className="max-h-44 min-h-[44px] flex-1 resize-none rounded-control border border-border bg-surface px-3 py-2.5 text-[14px] leading-[1.45] text-text placeholder:text-text-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
                   />
                   <button type="button" onClick={send} disabled={!draft.trim()} aria-label="Send" className="inline-flex size-10 shrink-0 items-center justify-center rounded-control bg-accent text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-50">
                     <Send className="size-4" strokeWidth={2} aria-hidden />
@@ -888,4 +956,14 @@ function applyReaction(
   }
   const out = list.filter((r) => r.userIds.length > 0);
   return out.length > 0 ? out : undefined;
+}
+
+/** Batch 4m - "Nomsa is typing…" / "Nomsa and Thabo are typing…" / "typing…" for a DM. */
+function typingLabel(kind: string, names: string[]): string {
+  if (kind === "direct") return "typing…";
+  const first = names.map((n) => n.split(" ")[0]);
+  if (first.length === 0) return "typing…";
+  if (first.length === 1) return `${first[0]} is typing…`;
+  if (first.length === 2) return `${first[0]} and ${first[1]} are typing…`;
+  return `${first[0]}, ${first[1]} and ${first.length - 2} more are typing…`;
 }

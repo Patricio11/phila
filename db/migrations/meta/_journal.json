@@ -589,6 +589,20 @@
       "when": 1787077672017,
       "tag": "0083_broad_naoko",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1787155253169,
+      "tag": "0084_solid_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 85,
+      "version": "7",
+      "when": 1787155853856,
+      "tag": "0085_slim_white_queen",
+      "breakpoints": true
     }
   ]
 }

@@ -5,6 +5,7 @@ import { PageHead } from "@/components/shell/page-head";
 import { Card, CardHead } from "@/components/ui/card";
 import { MyProfileForm, type MyProfile } from "@/components/settings/my-profile-form";
 import { SecuritySettings } from "@/components/hub/security-settings";
+import { PushOptIn } from "@/components/push/push-opt-in";
 import { Preferences } from "@/components/settings/preferences";
 import { MyAvailabilityCard } from "@/components/settings/my-availability-card";
 import { now as clockNow } from "@/lib/clock";
@@ -85,6 +86,14 @@ export default async function CounsellorSettingsPage() {
           </div>
         </Card>
       </div>
+
+      {/* Batch 4m - web push on this device */}
+      <Card>
+        <CardHead title="Notifications" />
+        <div className="px-[17px] pb-[17px]">
+          <PushOptIn variant="row" />
+        </div>
+      </Card>
     </div>
   );
 }

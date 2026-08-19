@@ -345,3 +345,27 @@ export async function applyStorageCors(): Promise<{ ok: true; origins: string[] 
   if (!res.ok) return { ok: false, error: res.detail ?? "S3 refused." };
   return { ok: true, origins };
 }
+
+/* ── Batch 4m - web push (Phila's own VAPID keys) ─────────────────────────── */
+
+const pushInput = z.object({ subject: z.string().max(200), enabled: z.boolean(), regenerate: z.boolean().default(false) });
+
+/** Save / switch web push. Keys are generated here once (regenerate = every browser must re-subscribe). */
+export async function saveWebPushConfig(raw: z.infer<typeof pushInput>): Promise<{ ok: true; publicKey: string } | { ok: false; error: string }> {
+  const principal = await requireSuperAdmin();
+  const parsed = pushInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Check the details." };
+  const d = parsed.data;
+  const subject = d.subject.trim();
+  if (subject && !/^(mailto:[^\s@]+@[^\s@]+\.[^\s@]+|https?:\/\/\S+)$/.test(subject)) return { ok: false, error: "Contact must be mailto:you@domain or an https:// URL." };
+  const existing = (await getPlatformIntegration("web_push"))?.creds ?? {};
+  let publicKey = existing.publicKey ?? "";
+  let privateKey = existing.privateKey ?? "";
+  if (!publicKey || !privateKey || d.regenerate) {
+    const { generateVapidKeys } = await import("@/lib/push");
+    ({ publicKey, privateKey } = generateVapidKeys());
+  }
+  await savePlatformIntegration("web_push", { publicKey, privateKey, subject: subject || "mailto:hello@philasa.com" }, d.enabled);
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: null, target: "platform_integration:web_push", reason: d.regenerate ? "web_push_keys_regenerated" : d.enabled ? "web_push_on" : "web_push_saved" });
+  return { ok: true, publicKey };
+}

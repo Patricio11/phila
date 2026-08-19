@@ -3,6 +3,9 @@
 import { z } from "zod";
 import { requireOrg } from "@/lib/auth/guard";
 import { requireMessagingPrincipal } from "@/lib/messaging/principal";
+import { readsAsCrisis, CRISIS_LINES, type CrisisLine } from "@/lib/messaging/crisis";
+import { getMessagingSettings } from "@/db/queries/messaging";
+import { createNotification } from "@/db/queries/notifications";
 import { nudgeThreadMembers } from "@/lib/messaging/nudge";
 import { after } from "next/server";
 import { runForOrg } from "@/lib/db/scoped";
@@ -45,9 +48,10 @@ const input = z
 
 export async function sendTeamMessage(
   raw: z.infer<typeof input>,
-): Promise<{ ok: true; threadId?: string; messageId?: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; threadId?: string; messageId?: string; support?: CrisisLine[] } | { ok: false; error: string }> {
   const me = await requireMessagingPrincipal();
   const principal = { userId: me.userId };
+  let support: CrisisLine[] | undefined;
   const membership = { orgId: me.orgId, teamRole: me.kind === "staff" ? me.teamRole : null };
   const parsed = input.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Couldn't send." };
@@ -106,6 +110,39 @@ export async function sendTeamMessage(
     // message on Phila" on their preferred channel. Runs after the response.
     const nudgeInput = { threadId: sent.threadId, orgId: me.orgId, senderUserId: me.userId, senderName, messageId: sent.messageId, senderKind: me.kind };
     after(() => nudgeThreadMembers(nudgeInput).catch(() => {}));
+
+    // Batch 4m - crisis support (OFF by default, the practice's switch). A client's
+    // message that reads as self-harm is already saved + delivered above, untouched.
+    // Now: quietly bell the staff in the thread + the org's admins (never the text),
+    // and hand SADAG / Lifeline back to the author alone.
+    if (me.kind === "client" && d.text.trim() && readsAsCrisis(d.text)) {
+      const settings = await getMessagingSettings(me.orgId).catch(() => null);
+      if (settings?.crisisSupport) {
+        support = CRISIS_LINES;
+        const crisisThreadId = sent.threadId;
+        after(async () => {
+          try {
+            const { threadMembersDb } = await import("@/db/queries/messages");
+            const { getDb } = await import("@/db/client");
+            const { orgMembers } = await import("@/db/schema");
+            const { and, eq } = await import("drizzle-orm");
+            const members = await threadMembersDb(me.orgId, crisisThreadId);
+            const admins = await getDb().select({ userId: orgMembers.userId }).from(orgMembers)
+              .where(and(eq(orgMembers.orgId, me.orgId), eq(orgMembers.teamRole, "org_admin"), eq(orgMembers.status, "active")));
+            const targets = new Set<string>([...members.map((m) => m.userId), ...admins.map((a) => a.userId)]);
+            targets.delete(me.userId);
+            const firstName = senderName.split(" ")[0] ?? "A client";
+            await Promise.all(Array.from(targets).map((userId) => createNotification({
+              userId, orgId: me.orgId, kind: "crisis",
+              title: `${firstName}'s message may need you now`,
+              body: "Something they wrote reads as distress. Open the conversation and reach out - Phila showed them SADAG and Lifeline.",
+              href: `/open/messages?t=${encodeURIComponent(crisisThreadId)}`,
+            })));
+            await logAccess({ action: "admin.action", actor: { userId: "system:crisis", platformRole: null, teamRole: null }, orgId: me.orgId, target: `thread:${crisisThreadId}`, reason: `crisis_support_shown_alerted_${targets.size}` });
+          } catch { /* support was still shown to the author */ }
+        });
+      }
+    }
   }
 
   await logAccess({
@@ -115,7 +152,7 @@ export async function sendTeamMessage(
     target: `team_message:${threadId ?? d.toUserId ?? "thread"}`,
     reason: me.kind === "client" ? "client_reply" : attachment ? "send_team_message_attachment" : "send_team_message",
   });
-  return { ok: true, threadId, messageId };
+  return support ? { ok: true, threadId, messageId, support } : { ok: true, threadId, messageId };
 }
 
 /**

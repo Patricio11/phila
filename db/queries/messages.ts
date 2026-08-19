@@ -1,6 +1,6 @@
 import "server-only";
 import type { StorageBackend } from "@/lib/domain/enums";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { getDb } from "@/db/client";
 import { activeDb } from "@/lib/db/scoped";
@@ -538,4 +538,28 @@ export async function unreadMessageCountDb(userId: string, orgId: string): Promi
     const seen = lastRead.get(m.threadId);
     return !seen || m.createdAt > seen;
   }).length;
+}
+
+/* ── Batch 4m - typing over the database (works with or without Supabase) ── */
+
+/** Stamp "I'm typing in this thread" (member rows only - a stranger can't). */
+export async function stampTypingDb(threadId: string, userId: string): Promise<void> {
+  await getDb().update(threadMembers).set({ typingAt: new Date() })
+    .where(and(eq(threadMembers.threadId, threadId), eq(threadMembers.userId, userId)));
+}
+
+/** Who is typing right now (last 6 s) in any of MY threads, excluding me - names grouped by thread. One query. */
+export async function typingNowDb(userId: string, orgId: string): Promise<Record<string, string[]>> {
+  const db = getDb();
+  const since = new Date(Date.now() - 6_000);
+  const rows = await db.execute<{ thread_id: string; name: string }>(sql`
+    select o.thread_id, u.name
+    from thread_members me
+    join thread_members o on o.thread_id = me.thread_id and o.user_id <> me.user_id
+    join "user" u on u.id = o.user_id
+    where me.user_id = ${userId} and me.org_id = ${orgId} and o.typing_at > ${since}
+  `);
+  const out: Record<string, string[]> = {};
+  for (const r of rows.rows) (out[r.thread_id] ??= []).push(r.name);
+  return out;
 }

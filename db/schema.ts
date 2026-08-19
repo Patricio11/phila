@@ -549,6 +549,9 @@ export const orgMessagingSettings = pgTable("org_messaging_settings", {
   /** Phase 34.2 - "X sent you a message on Phila" alerts (WhatsApp / SMS / email) for offline recipients. */
   messageAlertsStaff: boolean("message_alerts_staff").default(true).notNull(),
   messageAlertsClients: boolean("message_alerts_clients").default(true).notNull(),
+  /** Batch 4m - OFF by default. When on: a client-visible message that reads as self-harm still
+   *  sends, the practice is quietly told, and SADAG / Lifeline are shown to the author only. */
+  crisisSupport: boolean("crisis_support").default(false).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 });
 
@@ -1067,6 +1070,8 @@ export const threadMembers = pgTable("thread_members", {
   joinedAt: timestamp("joined_at", { withTimezone: true }).notNull(),
   /** Phase 34.2 - when we last alerted this member about unread messages here; cleared on read (one alert per thread until read). */
   nudgedAt: timestamp("nudged_at", { withTimezone: true }),
+  /** Batch 4m - "is typing": stamped by the composer every ~2.5 s while typing; others read it on their poll. */
+  typingAt: timestamp("typing_at", { withTimezone: true }),
 }, (t) => [uniqueIndex("thread_member_uq").on(t.threadId, t.userId)]);
 
 export const teamMessages = pgTable("team_messages", {
@@ -1106,6 +1111,19 @@ export const userPresence = pgTable("user_presence", {
   userId: text("user_id").primaryKey(),
   lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull(),
 });
+
+/** Batch 4m - web push subscriptions (one row per browser). Pushed to when the person is
+ *  offline and someone messages them; a dead endpoint (404/410) is pruned on first failure. */
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+}, (t) => [index("push_subscriptions_user_idx").on(t.userId)]);
 
 /* ── Forms cluster (Phase 18.6  org forms library) ───────────────────── */
 

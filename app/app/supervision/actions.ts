@@ -174,7 +174,7 @@ export async function scheduleClassSession(
         notifyCounsellor(cid, {
           kind: "class_session",
           title: `Class session: ${d.title}`,
-          body: `${res.className} · ${whenLabel}${runLabel} · ${d.mode === "online" ? "online - the join link is on your Supervision page" : (d.location || "in person")}`,
+          body: `${res.className} · ${whenLabel}${runLabel} · ${d.mode === "online" ? "online - the join link is on your Classroom page" : (d.location || "in person")}`,
           href: "/app/supervision",
         }),
       ));

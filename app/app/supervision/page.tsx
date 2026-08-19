@@ -10,7 +10,7 @@ import { SupervisionView } from "@/components/workspace/supervision-view";
 import { now as clockNow } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Supervision" };
+export const metadata = { title: "Classroom" };
 
 export default async function SupervisionPage() {
   const { principal, membership } = await requireOrg(["counsellor"]);
@@ -35,7 +35,7 @@ export default async function SupervisionPage() {
       const nowISO = clockNow();
       return (
         <div className="rise space-y-6">
-          <PageHead title="Your supervision" summary="Your supervisor, where your notes stand, and their feedback." />
+          <PageHead title="Classroom" summary="Your supervisor, where your notes stand, their feedback, and your classes." />
           <MySupervision view={view} />
           {classes.map((cls) => (
             <ClassStream key={cls.id} cls={cls} sessions={sessions.filter((s) => s.classId === cls.id)} nowISO={nowISO} meUserId={principal.userId} />
@@ -45,11 +45,11 @@ export default async function SupervisionPage() {
     }
     return (
       <div className="rise space-y-6">
-        <PageHead title="Supervision" summary="Clinical oversight of the counsellors you supervise." />
+        <PageHead title="Classroom" summary="Clinical oversight of the counsellors you supervise." />
         <Card className="p-2">
           <EmptyState
             icon={UserCog}
-            title="Supervision is for supervisors"
+            title="Classroom is for supervisors"
             body="When the hub assigns you to supervise other counsellors, their notes for sign-off will appear here."
           />
         </Card>
@@ -83,7 +83,7 @@ export default async function SupervisionPage() {
   return (
     <div className="rise space-y-6">
       <PageHead
-        title="Supervision"
+        title="Classroom"
         summary={`${overview.supervisees.length} supervisee${overview.supervisees.length === 1 ? "" : "s"} · ${items.length} note${items.length === 1 ? "" : "s"} awaiting your sign-off.`}
       />
       <SupervisionView overview={overview} items={items} nowISO={now} />

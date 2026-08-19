@@ -77,7 +77,7 @@ Cross-tenant / cross-role checks (signed in):
 - ☐ **No fresh bookings from the workspace**: the dashboard has no New-appointment button (no Ctrl-K), and **Calendar** (renamed from Appointments) has no "New" button, no click-a-slot booking, no team filter - the counsellor's own sessions only. New bookings live with the Hub / public page.
 - ☐ **Sessions running out** (dashboard): a recurring series with <= 2 sessions left shows a nudge card; **Add sessions** (2/4/6/12 weeks) extends the same series - same day, time and room - the toast confirms the new end date, the client is notified, and the calendar shows the new weeks. A counsellor can only extend their OWN series (server-enforced).
 - ☐ Client profile + care plan render
-- ☐ **Supervision** loads (Nomsa is a supervisor)  the sign-off queue shows a supervisee note awaiting review
+- ☐ **Classroom** (counsellor nav; was "Supervision", renamed 2026-08-19 to match the hub) loads (Nomsa is a supervisor)  the sign-off queue shows a supervisee note awaiting review
 - ☐ **Documents** → **Shared with me** is not empty (the admin shared the Reports folder with counsellors)
 - ☐ **Messages** → the seeded team threads render; sending a message persists (live if the Supabase anon key is set, else on refresh)
 - ☐ **Rooms** shows the room schedule

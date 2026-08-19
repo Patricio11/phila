@@ -336,7 +336,11 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
   bubbles, mentioned members always nudged); failed sends hand the draft + reply target back.
 - **4o Clients door + DSAR** (2026-08-19): New message → Clients tab (`listMessageableClientsDb`,
   caseload rule); DSAR export "Messages with the practice" + erasure blanks the client thread.
-- **Numbers at 2026-08-19:** migrations through **0087**; **317** unit tests; every batch / task
+- **4p Form automations** (2026-08-19): `form_automations.recipient` (client | counsellor | both) +
+  `every_session`; `form_assignments.counsellor_id` / `appointment_id`; counsellor fills are in-app
+  tasks (bell + "For you to fill in" on /app/forms, fill page badge, "Filled by X (counsellor)" in
+  responses). `runFormAutomations(orgId, clientId, trigger, sentBy, nowISO, { appointmentId, counsellorId })`.
+- **Numbers at 2026-08-19:** migrations through **0088**; **317** unit tests; every batch / task
   proven live on `npm run build && npm run start` with screenshots.
 - **The messaging shell rule (34.1):** `lib/messaging/principal.ts` - messaging actions accept a
   STAFF (org membership) or a CLIENT (their linked `user.client_id`) principal; the client rules are

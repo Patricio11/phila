@@ -12,6 +12,8 @@ export interface ClientFormRow {
   id: string;
   title: string;
   status: string;
+  /** Batch 4p - a counsellor (not the client) fills / filled this. */
+  filledBy?: string | null;
   sentAt: string;
   submittedAt: string | null;
   snapshot: { title: string; fields: unknown[] };
@@ -48,7 +50,7 @@ export function ClientFormsCard({ rows }: { rows: ClientFormRow[] }) {
               <CheckCircle2 className="size-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[13px] font-medium text-text">{r.title}</div>
-                <div className="text-[11.5px] text-text-3">Completed {DAY(r.submittedAt ?? r.sentAt)}</div>
+                <div className="text-[11.5px] text-text-3">Completed {DAY(r.submittedAt ?? r.sentAt)}{r.filledBy ? ` · filled by ${r.filledBy} (counsellor)` : ""}</div>
               </div>
               {total && <span className="shrink-0 rounded-chip bg-surface-2 px-2 py-0.5 text-[11.5px] font-semibold tabular-nums text-text-2">Score {total.total}</span>}
             </button>
@@ -57,7 +59,7 @@ export function ClientFormsCard({ rows }: { rows: ClientFormRow[] }) {
               <Clock className="size-4 shrink-0 text-text-3" strokeWidth={2} aria-hidden />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[13px] text-text-2">{r.title}</div>
-                <div className="text-[11.5px] text-text-3">Sent {DAY(r.sentAt)} · waiting on the client</div>
+                <div className="text-[11.5px] text-text-3">Sent {DAY(r.sentAt)} · {r.filledBy ? `waiting on ${r.filledBy} (counsellor)` : "waiting on the client"}</div>
               </div>
             </div>
           );

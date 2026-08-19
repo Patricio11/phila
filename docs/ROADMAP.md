@@ -1933,6 +1933,26 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   first behind a swappable adapter so other providers can be switched on/off later; includes the
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).
 
+- [x] **Form automations say WHO fills it - and can fire after every session** *(2026-08-19, batch
+  4p)*: the "Send automatically" card silently meant "the client"; it now asks **Who fills it in?**
+  - **The client** (their private link on their preferred channel, as before), **The counsellor**
+  (an in-app task: bell "Fill in: <form> for <client>" + a **For you to fill in** card on their
+  Forms page, never WhatsApp / SMS), or **Both** (two separate fills). "When" gained **After every
+  session attended** (one fill per session - `form_assignments.appointment_id`) beside "When a
+  booking is made" and "After their Nth session". Each automation row reads in plain words ("After
+  every session attended → the client + the counsellor"). The counsellor is the one on the session
+  (or the client's counsellor for a booking); their fill page wears a badge "You're filling this in
+  about <client>", no crisis line, and ends with "Saved to <client>'s record · Back to Phila". The
+  answers land in the form's Responses as "Filled by Nomsa Dlamini (counsellor)" and on the
+  client's record ("filled by Nomsa"). Engine idempotence: once per (form, client[, counsellor])
+  for once-only automations, once per (form, client[, counsellor], appointment) for every-session
+  ones; an open client fill of the same form is re-sent, never duplicated; every client fill is
+  delivered (the old code only delivered the first of several). Migration 0088
+  (`recipient`, `every_session`, `form_assignments.counsellor_id` / `appointment_id`). Proven live:
+  admin adds "after every session → both"; Nomsa marks a session held → two fills (client link +
+  her task), her bell + "For you to fill in" card, she fills it about Johan, the hub shows the
+  response filled by her, the dossier too. (Test data reverted.)
+
 - [x] **One Switch everywhere** *(2026-08-19)*: `components/ui/switch.tsx` is now the only on/off
   control - 44 x 24 track, 20 px knob that travels exactly the inner width (transparent border +
   `p-0`, so a browser's default button padding can never push the knob past the edge - the bug

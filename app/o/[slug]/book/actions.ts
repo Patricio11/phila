@@ -272,10 +272,10 @@ export async function submitBooking(
       // Batch 2l - form automations on a public booking (e.g. auto-send intake).
       try {
         const { runFormAutomations } = await import("@/db/queries/form-automations");
-        const auto = await runFormAutomations(config.org.id, res.clientId, "on_booking", "public_booking", clockNow());
+        const auto = await runFormAutomations(config.org.id, res.clientId, "on_booking", "public_booking", clockNow(), { appointmentId: res.appointmentId, counsellorId: counsellor.id });
         if (auto.sent.length) {
           const { notifyFormSent } = await import("@/lib/messaging/notify-form");
-          await notifyFormSent(config.org.id, auto.sent[0]!.title, [{ clientId: res.clientId, token: auto.sent[0]!.token }]);
+          for (const s of auto.sent) await notifyFormSent(config.org.id, s.title, [{ clientId: res.clientId, token: s.token }]);
         }
       } catch { /* never break a booking */ }
       void recordPageEvent(config.org.id, "booked"); // PII-free conversion (Phase 17)

@@ -1167,6 +1167,10 @@ export const formAutomations = pgTable("form_automations", {
   threshold: integer("threshold"),
   /** Only fire for a client's FIRST booking (on_booking only). */
   firstBookingOnly: boolean("first_booking_only").default(false).notNull(),
+  /** Batch 4p - who fills it: client | counsellor | both. */
+  recipient: text("recipient").default("client").notNull(),
+  /** Batch 4p - `after_attended` only: fire after EVERY held session (ignores threshold). */
+  everySession: boolean("every_session").default(false).notNull(),
   active: boolean("active").default(true).notNull(),
   createdBy: text("created_by"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -1180,6 +1184,10 @@ export const formAssignments = pgTable("form_assignments", {
   orgId: text("org_id").notNull().references(() => orgs.id),
   formId: text("form_id").notNull(),
   clientId: text("client_id"), // null for open share-link submissions
+  /** Batch 4p - set when a COUNSELLOR must fill this (about `client_id`); null = the client fills. */
+  counsellorId: text("counsellor_id"),
+  /** Batch 4p - the session that triggered it (every-session automations: one fill per session). */
+  appointmentId: text("appointment_id"),
   /** Batch 2t - the employer whose link this response came through, if any. */
   companyId: text("company_id"),
   respondentName: text("respondent_name"), // captured name for share submissions

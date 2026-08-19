@@ -292,6 +292,9 @@ const autoInput = z.object({
   trigger: z.enum(["on_booking", "after_attended"]),
   threshold: z.number().int().min(1).max(50).nullable().optional(),
   firstBookingOnly: z.boolean().optional(),
+  /** Batch 4p - who fills it + "after every session". */
+  recipient: z.enum(["client", "counsellor", "both"]).optional(),
+  everySession: z.boolean().optional(),
 });
 
 /** "Send this form when X happens." */
@@ -304,9 +307,10 @@ export async function createFormAutomation(raw: z.infer<typeof autoInput>): Prom
   await createAutomationDb(membership.orgId, {
     formId: parsed.data.formId, trigger: parsed.data.trigger,
     threshold: parsed.data.threshold ?? null, firstBookingOnly: Boolean(parsed.data.firstBookingOnly),
+    recipient: parsed.data.recipient ?? "client", everySession: Boolean(parsed.data.everySession),
     createdBy: principal.userId,
   });
-  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `form:${parsed.data.formId}/automation`, reason: `create_automation_${parsed.data.trigger}` });
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `form:${parsed.data.formId}/automation`, reason: `create_automation_${parsed.data.trigger}_${parsed.data.recipient ?? "client"}${parsed.data.everySession ? "_every" : ""}` });
   revalidatePath(`/hub/forms/${parsed.data.formId}`);
   return { ok: true };
 }

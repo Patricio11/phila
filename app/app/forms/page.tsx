@@ -19,8 +19,10 @@ export default async function CounsellorFormsPage() {
   if (!me) notFound();
 
   const isDb = process.env.DATA_PROVIDER === "db";
-  const { formsForCounsellorDb, counsellorClientsDb, clientFormResponsesDb } = await import("@/db/queries/form-automations");
+  const { formsForCounsellorDb, counsellorClientsDb, clientFormResponsesDb, counsellorFillsDb } = await import("@/db/queries/form-automations");
   const forms = isDb ? await formsForCounsellorDb(membership.orgId, me.id) : [];
+  // Batch 4p - forms the practice asked ME to fill in (about my clients).
+  const toFill = isDb ? await counsellorFillsDb(membership.orgId, me.id) : [];
   const clients = isDb ? await counsellorClientsDb(membership.orgId, me.id) : [];
   // Responses across this counsellor's whole caseload, newest first.
   const responses = isDb
@@ -40,7 +42,7 @@ export default async function CounsellorFormsPage() {
   return (
     <div className="rise space-y-6">
       <PageHead title="Forms" summary="Forms the practice shared with you, and what your clients have sent back." />
-      <CounsellorForms forms={forms} clients={clients} responses={responses} />
+      <CounsellorForms forms={forms} clients={clients} responses={responses} toFill={toFill} />
     </div>
   );
 }

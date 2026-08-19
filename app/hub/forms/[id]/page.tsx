@@ -45,7 +45,7 @@ export default async function HubFormPage({ params }: { params: Promise<{ id: st
       form={result.form}
       responses={result.rows}
       clients={clients}
-      automations={automations.map((a) => ({ id: a.id, formId: a.formId, trigger: a.trigger, threshold: a.threshold, firstBookingOnly: a.firstBookingOnly, active: a.active }))}
+      automations={automations.map((a) => ({ id: a.id, formId: a.formId, trigger: a.trigger, threshold: a.threshold, firstBookingOnly: a.firstBookingOnly, active: a.active, recipient: a.recipient, everySession: a.everySession }))}
       counsellors={counsellors.map((c) => ({ id: c.id, name: c.name }))}
       sharedWithAll={sharedWithAll}
       sharedWith={sharedWith}

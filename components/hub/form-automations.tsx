@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarCheck, Plus, Trash2, Users, Zap } from "lucide-react";
+import { CalendarCheck, Plus, Trash2, UserRound, Users, UsersRound, Zap } from "lucide-react";
 import { Card, CardHead } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
@@ -14,7 +14,17 @@ import { cn } from "@/lib/utils";
 export interface AutomationRow {
   id: string; formId: string; trigger: "on_booking" | "after_attended";
   threshold: number | null; firstBookingOnly: boolean; active: boolean;
+  /** Batch 4p */
+  recipient?: "client" | "counsellor" | "both"; everySession?: boolean;
 }
+
+type Recipient = "client" | "counsellor" | "both";
+type When = "on_booking" | "every_session" | "after_n";
+const RECIPIENTS: { key: Recipient; label: string; hint: string; icon: typeof UserRound }[] = [
+  { key: "client", label: "The client", hint: "Their private link, on their preferred channel", icon: UserRound },
+  { key: "counsellor", label: "The counsellor", hint: "A task in Phila - bell + their Forms page", icon: Users },
+  { key: "both", label: "Both", hint: "Two separate fills, each their own", icon: UsersRound },
+];
 
 /**
  * Batch 2l - "send this form when X happens", and who on the team may send it.
@@ -37,20 +47,26 @@ export function FormAutomations({ formId, automations, counsellors, sharedWithAl
   const { toast } = useToast();
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [trigger, setTrigger] = useState<"on_booking" | "after_attended">("on_booking");
+  const [when, setWhen] = useState<When>("on_booking");
   const [threshold, setThreshold] = useState("5");
   const [firstOnly, setFirstOnly] = useState(true);
+  // Batch 4p - WHO fills it. The old card silently meant "the client"; now it says so and offers the rest.
+  const [recipient, setRecipient] = useState<Recipient>("client");
+  const trigger: "on_booking" | "after_attended" = when === "on_booking" ? "on_booking" : "after_attended";
   const [all, setAll] = useState(sharedWithAll);
   const [picked, setPicked] = useState<Set<string>>(new Set(sharedWith));
 
   const add = () => start(async () => {
     const res = await createFormAutomation({
       formId, trigger,
-      threshold: trigger === "after_attended" ? Math.max(1, Number(threshold) || 1) : null,
-      firstBookingOnly: trigger === "on_booking" ? firstOnly : false,
+      threshold: when === "after_n" ? Math.max(1, Number(threshold) || 1) : null,
+      firstBookingOnly: when === "on_booking" ? firstOnly : false,
+      recipient,
+      everySession: when === "every_session",
     });
     if (!res.ok) return toast({ tone: "error", title: res.error });
-    toast({ tone: "success", title: "Automation added", description: trigger === "on_booking" ? "It sends when a booking is made." : `It sends after session ${threshold}.` });
+    const who = recipient === "both" ? "the client and the counsellor" : recipient === "counsellor" ? "the counsellor" : "the client";
+    toast({ tone: "success", title: "Automation added", description: `${when === "on_booking" ? "When a booking is made" : when === "every_session" ? "After every session" : `After session ${threshold}`}, ${who} get${recipient === "both" ? "" : "s"} it.` });
     router.refresh();
   });
 
@@ -71,7 +87,11 @@ export function FormAutomations({ formId, automations, counsellors, sharedWithAl
   const label = (a: AutomationRow) =>
     a.trigger === "on_booking"
       ? `When a booking is made${a.firstBookingOnly ? " (first booking only)" : ""}`
-      : `After session ${a.threshold ?? 1} is attended`;
+      : a.everySession ? "After every session attended" : `After session ${a.threshold ?? 1} is attended`;
+  const whoLabel = (a: AutomationRow) => {
+    const r = a.recipient ?? "client";
+    return r === "both" ? "the client + the counsellor" : r === "counsellor" ? "the counsellor (a task in Phila)" : "the client (their preferred channel)";
+  };
 
   return (
     <>
@@ -79,13 +99,16 @@ export function FormAutomations({ formId, automations, counsellors, sharedWithAl
         <CardHead title={<span className="flex items-center gap-2"><Zap className="size-4 text-accent" strokeWidth={2} aria-hidden /> Send automatically</span>} count={automations.length} />
         <div className="space-y-3 px-[17px] pb-[17px]">
           <p className="text-[12.5px] leading-relaxed text-text-2">
-            The practice never has to remember: pick a moment and this form goes out on its own. Each client gets it once.
+            The practice never has to remember: pick a moment, say who fills it in, and this form goes out on its own - once per person (or once per session, if you choose that).
           </p>
 
           {automations.map((a) => (
-            <div key={a.id} className="flex items-center gap-2.5 rounded-control border border-border p-3">
+            <div key={a.id} className="flex items-center gap-2.5 rounded-control border border-border p-3" data-testid="automation-row">
               <CalendarCheck className="size-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
-              <span className="min-w-0 flex-1 text-[13px] text-text">{label(a)}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[13px] text-text">{label(a)}</span>
+                <span className="block text-[11.5px] text-text-3">→ {whoLabel(a)}</span>
+              </span>
               <button type="button" onClick={() => remove(a.id)} disabled={pending} aria-label="Remove automation" className="shrink-0 rounded p-1 text-text-3 transition-colors hover:bg-surface-hover hover:text-danger">
                 <Trash2 className="size-4" strokeWidth={2} aria-hidden />
               </button>
@@ -96,15 +119,43 @@ export function FormAutomations({ formId, automations, counsellors, sharedWithAl
             <div className="space-y-1.5">
               <Label className="text-[12px]">When should it send?</Label>
               <Select
-                value={trigger}
-                onChange={(v) => setTrigger(v as "on_booking" | "after_attended")}
+                value={when}
+                onChange={(v) => setWhen(v as When)}
                 options={[
                   { value: "on_booking", label: "When a booking is made" },
-                  { value: "after_attended", label: "After N sessions attended" },
+                  { value: "every_session", label: "After every session attended" },
+                  { value: "after_n", label: "After their Nth session" },
                 ]}
               />
             </div>
-            {trigger === "after_attended" ? (
+            {/* Batch 4p - who fills it in */}
+            <div className="space-y-1.5">
+              <Label className="text-[12px]">Who fills it in?</Label>
+              <div className="grid gap-1.5 sm:grid-cols-3" role="radiogroup" aria-label="Who fills it in" data-testid="automation-recipient">
+                {RECIPIENTS.map((r) => (
+                  <button
+                    key={r.key}
+                    type="button"
+                    role="radio"
+                    aria-checked={recipient === r.key}
+                    onClick={() => setRecipient(r.key)}
+                    className={cn("flex items-start gap-2 rounded-control border p-2.5 text-left transition-colors", recipient === r.key ? "border-accent bg-accent-soft/40" : "border-border hover:bg-surface-hover")}
+                  >
+                    <r.icon className={cn("mt-0.5 size-4 shrink-0", recipient === r.key ? "text-accent" : "text-text-3")} strokeWidth={2} aria-hidden />
+                    <span className="min-w-0">
+                      <span className="block text-[12.5px] font-medium text-text">{r.label}</span>
+                      <span className="block text-[11px] leading-snug text-text-3">{r.hint}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {recipient !== "client" && (
+                <p className="text-[11.5px] text-text-3">The counsellor is the one on the session (or the client&apos;s counsellor for a booking). They get a bell and a &quot;To fill&quot; item on their Forms page; the answers land on the client&apos;s record, marked as filled by them.</p>
+              )}
+            </div>
+            {when === "every_session" ? (
+              <p className="text-[12px] text-text-3">Sends the moment any session is marked held - one fill per session, so a post-session check-in never gets skipped.</p>
+            ) : when === "after_n" ? (
               <div className="flex items-end gap-2">
                 <div className="w-24 space-y-1.5">
                   <Label className="text-[12px]">Session</Label>

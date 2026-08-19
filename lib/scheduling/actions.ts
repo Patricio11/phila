@@ -219,10 +219,10 @@ export async function createAppointment(
     // Batch 2l - form automations: "send this form when a booking is made".
     try {
       const { runFormAutomations } = await import("@/db/queries/form-automations");
-      const res = await runFormAutomations(data.orgId, data.clientId, "on_booking", principal.userId, clockNow());
+      const res = await runFormAutomations(data.orgId, data.clientId, "on_booking", principal.userId, clockNow(), { appointmentId: firstId, counsellorId: data.counsellorId });
       if (res.sent.length) {
         const { notifyFormSent } = await import("@/lib/messaging/notify-form");
-        await notifyFormSent(data.orgId, res.sent[0]!.title, [{ clientId: data.clientId, token: res.sent[0]!.token }]);
+        for (const s of res.sent) await notifyFormSent(data.orgId, s.title, [{ clientId: data.clientId, token: s.token }]);
       }
     } catch { /* an automation never breaks a booking */ }
 

@@ -21,7 +21,11 @@ interface Response {
   snapshot: { title: string; fields: unknown[] };
   answers: Record<string, string> | null;
   clientId: string; clientName: string;
+  /** Batch 4p - set when a counsellor (not the client) filled / must fill it. */
+  filledBy?: string | null;
 }
+/** Batch 4p - a form waiting for THIS counsellor to fill, about one of their clients. */
+export interface ToFill { assignmentId: string; token: string; formTitle: string; clientId: string; clientName: string; sentAt: string }
 
 const DAY = (iso: string) => new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "numeric", month: "short", year: "numeric" }).format(new Date(iso));
 
@@ -30,10 +34,11 @@ const DAY = (iso: string) => new Intl.DateTimeFormat("en-ZA", { timeZone: "Afric
  * each with Send to my clients. Right: what their own clients have sent back,
  * openable in full. They never see another counsellor's clients.
  */
-export function CounsellorForms({ forms, clients, responses }: {
+export function CounsellorForms({ forms, clients, responses, toFill = [] }: {
   forms: SharedForm[];
   clients: { id: string; name: string }[];
   responses: Response[];
+  toFill?: ToFill[];
 }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -58,6 +63,24 @@ export function CounsellorForms({ forms, clients, responses }: {
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
+      {/* Batch 4p - forms the practice asked me to fill in */}
+      {toFill.length > 0 && (
+        <Card className="flex flex-col border-accent/30 lg:col-span-2" data-testid="to-fill">
+          <CardHead title="For you to fill in" count={toFill.length} />
+          <div className="grid gap-2 px-[17px] pb-[17px] sm:grid-cols-2">
+            {toFill.map((t) => (
+              <div key={t.assignmentId} className="flex items-center gap-3 rounded-control border border-accent/30 bg-accent-soft/20 p-3">
+                <ClipboardList className="size-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[13.5px] font-[600] text-text">{t.formTitle}</div>
+                  <div className="truncate text-[11.5px] text-text-3">about {t.clientName} · {DAY(t.sentAt)}</div>
+                </div>
+                <Button size="sm" asChild><a href={`/f/${t.token}`}>Fill in</a></Button>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
       {/* Shared with me */}
       <Card className="flex flex-col">
         <CardHead title="Shared with you" count={forms.length} />
@@ -83,7 +106,7 @@ export function CounsellorForms({ forms, clients, responses }: {
 
       {/* Responses from my clients */}
       <Card className="flex flex-col">
-        <CardHead title="From your clients" count={completed.length} />
+        <CardHead title="Responses" count={completed.length} />
         <div className="space-y-2 px-[17px] pb-[17px]">
           {responses.length === 0 ? (
             <EmptyState icon={ClipboardList} title="No responses yet" body="When a client completes a form, their answers appear here and on their record." />
@@ -102,7 +125,7 @@ export function CounsellorForms({ forms, clients, responses }: {
                     <CheckCircle2 className="size-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[13.5px] font-[600] text-text">{r.clientName}</div>
-                      <div className="truncate text-[11.5px] text-text-3">{r.title} · {DAY(r.submittedAt ?? r.sentAt)}</div>
+                      <div className="truncate text-[11.5px] text-text-3">{r.title} · {DAY(r.submittedAt ?? r.sentAt)}{r.filledBy ? ` · filled by ${r.filledBy}` : ""}</div>
                     </div>
                     {total && <span className="shrink-0 rounded-chip bg-surface-2 px-2 py-0.5 text-[11.5px] font-semibold tabular-nums text-text-2">Score {total.total}</span>}
                   </button>

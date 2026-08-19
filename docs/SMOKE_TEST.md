@@ -222,6 +222,11 @@ Sign in as **Thandeka**.
 - ☐ Delivery states on Billing → Recent messages never go backwards (a `Read` never becomes `Delivered`); a Meta failure shows its reason; **Failed after retries** lists dead letters with masked recipients
 - ☐ As the super admin, Integrations → **Org connections** ends with **WhatsApp numbers by org** (number, name, status, health chip); Billing shows "N message alerts this month" once any alert has actually gone out
 
+**Form automations: who fills it + after every session** (batch 4p)
+- ☐ Hub → Forms → a form → Send automatically: "When should it send?" offers booking / after every session / after Nth session; "Who fills it in?" offers client / counsellor / both; the added row reads "<when> → <who>"
+- ☐ Mark a session held (counsellor app) with a "counsellor" or "both" automation on: the counsellor gets a bell "Fill in: <form> for <client>" and a **For you to fill in** card on Forms; the fill page says "You're filling this in about <client>" (no SADAG line) and ends "Saved to <client>'s record"; the hub Responses row says "Filled by <name> (counsellor)"; the client dossier shows "filled by <name>"
+- ☐ With "client" / "both": the client still gets their link on their channel, one per session when "after every session" is chosen
+
 **Messages: Clients door + DSAR** (batch 4o)
 - ☐ Messages → New message → **Clients** tab: an org admin sees every active client, a counsellor only their caseload; rows say Conversation open / Has a portal login / No portal login yet; picking one opens the client thread (banner "<Name> can read this conversation")
 - ☐ Client → Data & privacy → Export (CSV): a **Messages with the practice** section lists the conversation; Erase blanks those messages

@@ -18,7 +18,7 @@ import { submitForm } from "@/app/f/[token]/actions";
  * the form (stacked on mobile). SADAG crisis line is always in reach.
  */
 export function FormFillView({
-  token, companyToken = null, orgName, snapshot, theme, imageUrl,
+  token, companyToken = null, orgName, snapshot, theme, imageUrl, counsellorFill = null,
 }: {
   token: string;
   /** Batch 2t - the employer link this form was opened from, if any. */
@@ -27,6 +27,8 @@ export function FormFillView({
   snapshot: FormSnapshot;
   theme?: FormTheme | null;
   imageUrl?: string | null;
+  /** Batch 4p - a counsellor fills this ABOUT a client: no crisis line, "back to Phila" after. */
+  counsellorFill?: { clientName: string } | null;
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
   const [showErrors, setShowErrors] = useState(false);
@@ -77,13 +79,27 @@ export function FormFillView({
   };
 
   const formBody = done ? (
+    counsellorFill ? (
+      <div className="space-y-2 px-6 py-12 text-center" data-testid="counsellor-fill-done">
+        <CheckCircle2 className="mx-auto size-11 text-accent" strokeWidth={1.7} aria-hidden />
+        <div className="text-[16px] font-[680] text-text">Saved to {counsellorFill.clientName.split(" ")[0]}&apos;s record</div>
+        <p className="mx-auto max-w-xs text-[13px] leading-relaxed text-text-2">Your answers sit on the client&apos;s record and in the form&apos;s responses, marked as filled by you.</p>
+        <a href="/app/forms" className="inline-flex h-9 items-center rounded-control bg-accent px-3 text-[13px] font-medium text-accent-ink hover:bg-accent-hover">Back to Phila</a>
+      </div>
+    ) : (
     <div className="space-y-2 px-6 py-12 text-center">
       <CheckCircle2 className="mx-auto size-11 text-accent" strokeWidth={1.7} aria-hidden />
       <div className="text-[16px] font-[680] text-text">Thank you  that&apos;s sent</div>
       <p className="mx-auto max-w-xs text-[13px] leading-relaxed text-text-2">{orgName} has your answers. You can close this page  there&apos;s nothing else to do.</p>
     </div>
+    )
   ) : (
     <div className="px-6 py-6 sm:px-7">
+      {counsellorFill && (
+        <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2.5 py-1 text-[11.5px] font-medium text-accent" data-testid="counsellor-fill-badge">
+          You&apos;re filling this in about {counsellorFill.clientName}
+        </div>
+      )}
       <div className="mb-4">
         <h1 className="text-[18px] font-[680] tracking-[-0.01em] text-text">{snapshot.title}</h1>
         {step === 0 && snapshot.intro && <p className="mt-1.5 text-[13px] leading-relaxed text-text-2">{snapshot.intro}</p>}
@@ -138,7 +154,7 @@ export function FormFillView({
             <div className="flex flex-col justify-center">{formBody}</div>
           </div>
         </div>
-        <FootLine />
+        {!counsellorFill && <FootLine />}
       </main>
     );
   }
@@ -156,7 +172,7 @@ export function FormFillView({
           )}
           {formBody}
         </div>
-        <FootLine />
+        {!counsellorFill && <FootLine />}
       </div>
     </main>
   );

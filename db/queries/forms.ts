@@ -33,11 +33,11 @@ function toSnapshot(v: unknown): FormSnapshot {
   return { kind: (s.kind ?? "custom") as FormKind, title: s.title ?? "Form", intro: s.intro, fields: (s.fields ?? []) as FormField[] };
 }
 
-function snapshotOf(f: Pick<Form, "kind" | "title" | "intro" | "fields">): FormSnapshot {
+export function snapshotOf(f: Pick<Form, "kind" | "title" | "intro" | "fields">): FormSnapshot {
   return { kind: f.kind, title: f.title, intro: f.intro, fields: f.fields };
 }
 
-const token = () => `f_${randomUUID().replace(/-/g, "")}`;
+export const token = () => `f_${randomUUID().replace(/-/g, "")}`;
 
 /* ── Reads ─────────────────────────────────────────────────────────────── */
 
@@ -88,9 +88,12 @@ export async function getFormResponsesDb(orgId: string, formId: string): Promise
     .map((a) => {
       const client = a.clientId ? orgClients.find((c) => c.id === a.clientId) : undefined;
       const clientName = client?.name ?? a.respondentName ?? "From share link";
+      // Batch 4p - a counsellor fill: the counsellor is the respondent, the client is the subject.
+      const filler = a.counsellorId ? orgCounsellors.find((c) => c.id === a.counsellorId) : undefined;
       return {
         assignmentId: a.id, clientId: a.clientId ?? "", clientName,
-        counsellorName: client ? (orgCounsellors.find((c) => c.id === client.primaryCounsellorId)?.name ?? "Unassigned") : "Shared link",
+        counsellorName: filler ? `Filled by ${filler.name} (counsellor)` : client ? (orgCounsellors.find((c) => c.id === client.primaryCounsellorId)?.name ?? "Unassigned") : "Shared link",
+        respondent: (a.counsellorId ? "counsellor" : "client") as "counsellor" | "client",
         status: a.status as FormAssignmentStatus, sentAt: a.sentAt.toISOString(),
         submittedAt: a.submittedAt ? a.submittedAt.toISOString() : null,
         answers: (a.answers as Record<string, string> | null) ?? null, snapshot: toSnapshot(a.snapshot),
@@ -112,10 +115,17 @@ export async function getFormByTokenDb(tok: string): Promise<FormTokenView | nul
   const [a] = await db.select().from(formAssignments).where(eq(formAssignments.token, tok)).limit(1);
   if (a && a.status !== "revoked") {
     const form = await getFormDb(a.orgId, a.formId);
+    // Batch 4p - a counsellor fill carries who it is about.
+    let aboutClientName: string | null = null;
+    if (a.counsellorId && a.clientId) {
+      const [c] = await db.select({ name: clients.name }).from(clients).where(eq(clients.id, a.clientId)).limit(1);
+      aboutClientName = c?.name ?? null;
+    }
     return {
       assignmentId: a.id, formId: a.formId, orgId: a.orgId, orgName: await orgName(a.orgId), mode: "assignment",
       status: a.status as FormAssignmentStatus, snapshot: toSnapshot(a.snapshot), theme: form?.theme ?? null,
       submittedAt: a.submittedAt ? a.submittedAt.toISOString() : null,
+      respondent: a.counsellorId ? "counsellor" : "client", aboutClientName,
     };
   }
   // 2) An open share link (form-level, still fillable each time).
@@ -125,6 +135,7 @@ export async function getFormByTokenDb(tok: string): Promise<FormTokenView | nul
     return {
       assignmentId: null, formId: form.id, orgId: form.orgId, orgName: await orgName(form.orgId), mode: "share",
       status: "sent", snapshot: snapshotOf(form), theme: form.theme ?? null, submittedAt: null,
+      respondent: "client", aboutClientName: null,
     };
   }
   return null;

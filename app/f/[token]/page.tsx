@@ -31,7 +31,7 @@ export default async function FormFillPage({ params, searchParams }: {
     } catch { imageUrl = null; }
   }
 
-  return <FormFillView token={token} companyToken={companyToken ?? null} orgName={view.orgName} snapshot={view.snapshot} theme={view.theme} imageUrl={imageUrl} />;
+  return <FormFillView token={token} companyToken={companyToken ?? null} orgName={view.orgName} snapshot={view.snapshot} theme={view.theme} imageUrl={imageUrl} counsellorFill={view.respondent === "counsellor" ? { clientName: view.aboutClientName ?? "your client" } : null} />;
 }
 
 function Notice({ icon: Icon, title, body, tone }: { icon: typeof Link2; title: string; body: string; tone?: "accent" }) {

@@ -478,6 +478,8 @@ export interface FormResponseRow {
   clientId: string;
   clientName: string;
   counsellorName: string;
+  /** Batch 4p - who filled / must fill it. */
+  respondent?: "client" | "counsellor";
   status: FormAssignmentStatus;
   sentAt: string;
   submittedAt: string | null;
@@ -504,6 +506,9 @@ export interface FormTokenView {
   snapshot: FormSnapshot;
   theme: FormTheme | null;
   submittedAt: string | null;
+  /** Batch 4p - a counsellor fills this ABOUT a client (no crisis line, "back to Phila" after). */
+  respondent?: "client" | "counsellor";
+  aboutClientName?: string | null;
 }
 
 /** A client's assigned forms (portal list in `/me`). */

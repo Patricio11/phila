@@ -103,11 +103,10 @@ export function buildResponsePdfHtml(input: ResponsePdfInput): string {
   table.frame { width: 100%; border-collapse: collapse; }
   table.frame > thead { display: table-header-group; }
   table.frame > tfoot { display: table-footer-group; }
-  td.head-space { height: 26mm; border: 0; padding: 0; }
+  td.head-space { height: 32mm; border: 0; padding: 0; }
   td.foot-space { height: 13mm; border: 0; padding: 0; }
-  /* The example layout: the title centred under the logo, a short accent rule beneath it. */
-  h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; color: ${accent}; margin: 0 0 4px; text-align: center; }
-  .rule { width: 34mm; height: 2.5px; background: ${accent}; border-radius: 2px; margin: 0 auto 14px; }
+  /* The example layout: the title centred, clear air between it and the logo. */
+  h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; color: ${accent}; margin: 0 0 14px; text-align: center; }
   table.qa { width: 100%; border-collapse: collapse; table-layout: fixed; border: 1.25px solid #2a3530; }
   table.qa > thead { display: table-header-group; }
   table.qa th, table.qa td { border: 0.75px solid #59635d; vertical-align: top; padding: 10px 12px; font-size: 11px; line-height: 1.5; word-wrap: break-word; }
@@ -126,7 +125,6 @@ export function buildResponsePdfHtml(input: ResponsePdfInput): string {
 <tfoot><tr><td class="foot-space"></td></tr></tfoot>
 <tbody><tr><td style="border:0;padding:0">
 <h1>${esc(input.formTitle)}</h1>
-<div class="rule"></div>
 <table class="qa">
 <thead><tr><th style="width:50%">Questions:</th><th style="width:50%">Answers:</th></tr></thead>
 <tbody>

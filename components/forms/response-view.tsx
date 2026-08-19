@@ -35,19 +35,14 @@ export function ResponseView({ fields, answers, formTitle, brand, respondent, su
       data-testid="response-document"
     >
       {brand && (
-        <div className="mb-4 flex justify-center">
+        <div className="mb-8 flex justify-center">
           {brand.logoUrl
             // eslint-disable-next-line @next/next/no-img-element
             ? <img src={brand.logoUrl} alt={brand.orgName} className="max-h-14 max-w-[200px] object-contain" />
             : <div className="text-[15px] font-[700]" style={{ color: accent }}>{brand.orgName}</div>}
         </div>
       )}
-      {formTitle && (
-        <>
-          <h3 className="text-center text-[18px] font-[700] leading-tight tracking-[-0.01em]" style={{ color: accent ?? "var(--color-accent)" }}>{formTitle}</h3>
-          <div className="mx-auto mb-4 mt-1.5 h-[2.5px] w-24 rounded-full" style={{ background: accent ?? "var(--color-accent)" }} />
-        </>
-      )}
+      {formTitle && <h3 className="mb-4 text-center text-[18px] font-[700] leading-tight tracking-[-0.01em]" style={{ color: accent ?? "var(--color-accent)" }}>{formTitle}</h3>}
       <table className="w-full table-fixed border-collapse text-[12px] leading-relaxed" style={{ border: "1.25px solid #2a3530" }}>
         <thead>
           <tr>

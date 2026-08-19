@@ -28,6 +28,7 @@ describe("buildResponsePdfHtml (batch 3w → 4q document layout)", () => {
     expect(html).toContain('<td class="a">4 / 5</td>');
     expect(html).not.toContain("Answered by"); // the example layout carries no meta line
     expect(html).toContain("text-align: center");
+    expect(html).not.toContain('class="rule"');
     // header/footer repeat per page
     expect(html).toContain('class="page-head"');
     expect(html).toContain('class="page-foot"');

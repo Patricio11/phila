@@ -428,6 +428,13 @@ export interface SharedFolderView {
   mine?: boolean;
 }
 
+/** Batch 4k - a supervisee's material as the supervisor sees it: their folder(s) + their clients' files. */
+export interface SuperviseeDocumentsView {
+  counsellor: { id: string; name: string };
+  folders: SharedFolderView[];
+  clientDocs: Document[];
+}
+
 /** Batch 2r - a file or link shared straight at a counsellor, with its note. */
 export interface SharedDocView {
   doc: Document;
@@ -440,7 +447,7 @@ export interface SharedDocView {
  * folder marked `submissionsPrivate` shows the org's source material plus ONLY
  * this counsellor's own submissions - never another counsellor's.
  */
-export async function listCounsellorDocumentsDb(counsellorId: string): Promise<{ own: Document[]; shared: Document[]; sharedNotes: Record<string, string>; sharedFolders: SharedFolderView[] }> {
+export async function listCounsellorDocumentsDb(counsellorId: string): Promise<{ own: Document[]; shared: Document[]; sharedNotes: Record<string, string>; sharedFolders: SharedFolderView[]; supervising: SuperviseeDocumentsView[] }> {
   const db = getDb();
   const ownRows = await db.select({ d: documents }).from(documents)
     .innerJoin(clients, eq(documents.clientId, clients.id))
@@ -497,8 +504,81 @@ export async function listCounsellorDocumentsDb(counsellorId: string): Promise<{
   const inFolders = new Set(sharedFolders.flatMap((f) => f.docs.map((d) => d.id)));
   const dedupedShared = shared.filter((d) => !inFolders.has(d.id));
 
-  return { own, shared: dedupedShared, sharedNotes, sharedFolders };
+  // Batch 4k - a SUPERVISOR sees everything their supervisees hold: each
+  // supervisee's folder(s) (no submission-privacy filter - supervision is the
+  // one role that must see the lot) and their clients' files.
+  const supervising: SuperviseeDocumentsView[] = [];
+  const supervisees = await db.select({ id: counsellors.id, name: counsellors.name }).from(counsellors).where(eq(counsellors.supervisorId, counsellorId));
+  for (const sv of supervisees) {
+    const fRows = await db.select().from(documentFolders)
+      .where(and(eq(documentFolders.scope, "counsellor"), eq(documentFolders.counsellorId, sv.id), isNull(documentFolders.deletedAt)));
+    const fIds = fRows.map((f) => f.id);
+    const fDocs = fIds.length
+      ? await db.select().from(documents).where(and(inArray(documents.folderId, fIds), isNull(documents.deletedAt)))
+      : [];
+    const cRows = await db.select({ d: documents }).from(documents)
+      .innerJoin(clients, eq(documents.clientId, clients.id))
+      .where(and(eq(clients.primaryCounsellorId, sv.id), isNull(documents.deletedAt)));
+    supervising.push({
+      counsellor: { id: sv.id, name: sv.name },
+      folders: fRows.map((f) => ({ folder: toFolder(f), docs: fDocs.filter((d) => d.folderId === f.id).map(toDocument).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) })),
+      clientDocs: cRows.map((r) => toDocument(r.d)),
+    });
+  }
+  supervising.sort((a, b) => a.counsellor.name.localeCompare(b.counsellor.name));
+
+  return { own, shared: dedupedShared, sharedNotes, sharedFolders, supervising };
 }
+
+/**
+ * Batch 4k - every document a counsellor may OPEN: their clients' files, files
+ * shared directly, files in folders shared with them, and everything their
+ * supervisees hold. (Fixes a gap where files inside a shared folder were
+ * unopenable - the dedupe had dropped them from the "shared" list the
+ * download check consulted.)
+ */
+export async function counsellorAccessibleDocumentDb(counsellorId: string, documentId: string): Promise<Document | null> {
+  const view = await listCounsellorDocumentsDb(counsellorId);
+  const all: Document[] = [
+    ...view.own, ...view.shared,
+    ...view.sharedFolders.flatMap((f) => f.docs),
+    ...view.supervising.flatMap((s) => [...s.clientDocs, ...s.folders.flatMap((f) => f.docs)]),
+  ];
+  return all.find((d) => d.id === documentId) ?? null;
+}
+
+/* ── Batch 4k - recalls ─────────────────────────────────────────────────── */
+
+/** Recall a share from the CLIENT: the file stays on the record but is no longer visible in their portal. */
+export async function recallFromClientDb(orgId: string, documentIds: string[]): Promise<number> {
+  if (!documentIds.length) return 0;
+  return runForOrg(orgId, async () => {
+    const rows = await activeDb().update(documents).set({ visibility: "internal" })
+      .where(and(eq(documents.orgId, orgId), inArray(documents.id, documentIds), eq(documents.visibility, "client_visible")))
+      .returning({ id: documents.id });
+    return rows.length;
+  });
+}
+
+/** Who a file / folder is currently shared with (counsellor ids + names) - for the recall UI. */
+export async function listSharesForTargetDb(orgId: string, targetType: "file" | "folder", targetId: string): Promise<{ counsellorId: string; name: string; note: string | null }[]> {
+  const db = getDb();
+  const rows = await db.select({ counsellorId: documentShares.sharedWith, note: documentShares.note, name: counsellors.name })
+    .from(documentShares)
+    .leftJoin(counsellors, eq(counsellors.id, documentShares.sharedWith))
+    .where(and(eq(documentShares.orgId, orgId), eq(documentShares.targetType, targetType), eq(documentShares.targetId, targetId)));
+  return rows.map((r) => ({ counsellorId: r.counsellorId, name: r.name ?? "Counsellor", note: r.note }));
+}
+
+/** Stop sharing a file / folder with specific counsellors. */
+export async function unshareWithCounsellorsDb(orgId: string, targetType: "file" | "folder", targetId: string, counsellorIds: string[]): Promise<number> {
+  if (!counsellorIds.length) return 0;
+  const rows = await getDb().delete(documentShares)
+    .where(and(eq(documentShares.orgId, orgId), eq(documentShares.targetType, targetType), eq(documentShares.targetId, targetId), inArray(documentShares.sharedWith, counsellorIds)))
+    .returning({ id: documentShares.id });
+  return rows.length;
+}
+
 
 /* ── Link documents + folder share meta (batch 2k) ─────────────────────── */
 

@@ -15,7 +15,7 @@ export default async function CounsellorDocumentsPage() {
   const me = (await provider.listCounsellors(membership.orgId)).find((c) => c.userId === principal.userId);
   if (!me) notFound();
 
-  const [{ own, shared, sharedNotes, sharedFolders }, clients, requests] = await Promise.all([
+  const [{ own, shared, sharedNotes, sharedFolders, supervising }, clients, requests] = await Promise.all([
     provider.listCounsellorDocuments(me.id),
     provider.listClients(membership.orgId),
     // Batch 2z - what the practice has asked this counsellor to upload.
@@ -29,14 +29,16 @@ export default async function CounsellorDocumentsPage() {
     actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
     orgId: membership.orgId,
     target: `counsellor:${me.id}/documents`,
-    reason: "own_documents",
+    reason: supervising && supervising.length ? `own_documents_supervising_${supervising.length}` : "own_documents",
   });
+  // Batch 4k - counsellors can upload when Phila Storage is live.
+  const storageOn = process.env.DATA_PROVIDER === "db" ? (await (await import("@/lib/storage")).getStorageProvider()).status === "live" : false;
 
   return (
     <div className="rise space-y-6">
       <PageHead title="Documents" summary="Your clients' files, plus anything the practice has shared with you." />
       <CounsellorRequests requests={requests} />
-      <CounsellorDocuments sharedNotes={sharedNotes} own={own} shared={shared} sharedFolders={sharedFolders} clients={clients.map((c) => ({ id: c.id, name: c.name }))} />
+      <CounsellorDocuments sharedNotes={sharedNotes} own={own} shared={shared} sharedFolders={sharedFolders} supervising={supervising ?? []} storageOn={storageOn} clients={clients.map((c) => ({ id: c.id, name: c.name }))} />
     </div>
   );
 }

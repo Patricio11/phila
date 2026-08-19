@@ -222,6 +222,11 @@ Sign in as **Thandeka**.
 - ☐ Delivery states on Billing → Recent messages never go backwards (a `Read` never becomes `Delivered`); a Meta failure shows its reason; **Failed after retries** lists dead letters with masked recipients
 - ☐ As the super admin, Integrations → **Org connections** ends with **WhatsApp numbers by org** (number, name, status, health chip); Billing shows "N message alerts this month" once any alert has actually gone out
 
+**Documents: supervisors, recall, counsellor upload** (batch 4k)
+- ☐ As a **supervisor** (Nomsa supervises Aisha / Thabo / Pieter), `/app/documents` ends with **Supervising · <name>** sections (Supervisee chip) showing each supervisee's folder + their clients' files; files open (audited); a non-supervisor sees no such section
+- ☐ As any counsellor, **Upload** sits on *Your folder*, on each folder the practice shared, and on each client section; a file lands in that folder / on that client as theirs; with storage unreachable the toast says so honestly
+- ☐ As the org admin, a client-visible file's menu has **Recall from client** (also on the selection bar) - the client's `/me/documents` no longer lists it, the file stays on the record; **Share with counsellors** shows **Already shared with … Stop sharing**; **Sent links** lists every emailed link with **Recall** - the public page then says the link isn't valid
+
 **Notes on invoices** (batch 4j)
 - ☐ Settings → Billing → **Invoicing & VAT** has **Note on invoices** (default text, 600 max); save it
 - ☐ **Create invoice** opens the sheet with that note already in the **Notes** area under the totals; edit it in place → Create → the board's preview prints it; the client sees the same on `/me/billing`

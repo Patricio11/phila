@@ -1,6 +1,6 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { documents, documentFolders, documentShareLinks, orgs } from "@/db/schema";
 
@@ -145,4 +145,26 @@ export async function recordShareDownloadDb(linkId: string): Promise<void> {
   await db.update(documentShareLinks)
     .set({ downloadCount: sql`${documentShareLinks.downloadCount} + 1`, lastDownloadAt: new Date() })
     .where(eq(documentShareLinks.id, linkId));
+}
+
+/** Batch 4k - the org's emailed links (newest first) so an accidental one can be recalled. */
+export async function listShareLinksDb(orgId: string, limit = 30): Promise<{ id: string; recipientEmail: string; folderName: string | null; docCount: number; createdAt: string; expiresAt: string; revokedAt: string | null; downloads: number }[]> {
+  const db = getDb();
+  const rows = await db.select().from(documentShareLinks).where(eq(documentShareLinks.orgId, orgId)).orderBy(desc(documentShareLinks.createdAt)).limit(limit);
+  const folderIds = Array.from(new Set(rows.map((r) => r.folderId).filter((f): f is string => Boolean(f))));
+  const folders = folderIds.length ? await db.select({ id: documentFolders.id, name: documentFolders.name }).from(documentFolders).where(inArray(documentFolders.id, folderIds)) : [];
+  const fname = new Map(folders.map((f) => [f.id, f.name]));
+  return rows.map((r) => ({
+    id: r.id, recipientEmail: r.recipientEmail, folderName: r.folderId ? (fname.get(r.folderId) ?? null) : null,
+    docCount: r.documentIds.length, createdAt: r.createdAt.toISOString(), expiresAt: r.expiresAt.toISOString(),
+    revokedAt: r.revokedAt ? r.revokedAt.toISOString() : null, downloads: r.downloadCount,
+  }));
+}
+
+/** Batch 4k - recall an emailed link: the public page refuses from now on. */
+export async function revokeShareLinkDb(orgId: string, linkId: string): Promise<boolean> {
+  const rows = await getDb().update(documentShareLinks).set({ revokedAt: new Date() })
+    .where(and(eq(documentShareLinks.id, linkId), eq(documentShareLinks.orgId, orgId)))
+    .returning({ id: documentShareLinks.id });
+  return rows.length > 0;
 }

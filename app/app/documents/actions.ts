@@ -18,8 +18,10 @@ export async function signCounsellorDownload(raw: { documentId: string }): Promi
 
   const documentId = String(raw?.documentId ?? "");
   if (!documentId) return { ok: false, error: "Not found." };
-  const { own, shared } = await provider.listCounsellorDocuments(me.id);
-  const doc = [...own, ...shared].find((d) => d.id === documentId);
+  // Batch 4k - one access rule: own clients' files, direct shares, files in
+  // shared folders, and everything a supervisee holds.
+  const { counsellorAccessibleDocumentDb } = await import("@/db/queries/documents");
+  const doc = await counsellorAccessibleDocumentDb(me.id, documentId);
   if (!doc || !doc.storageKey || doc.scanStatus !== "clean") return { ok: false, error: "That file isn't available to open." };
 
   const storage = await getStorageProvider(doc.storageProvider);
@@ -213,6 +215,109 @@ export async function confirmFulfilUpload(raw: { documentId: string; bytes: numb
     });
   } catch { /* the upload stands either way */ }
 
+  await logAccess({
+    action: "file.access",
+    actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
+    orgId: membership.orgId,
+    target: `document:${documentId}`,
+    reason: `counsellor_upload_${scan}`,
+  });
+  const { revalidatePath } = await import("next/cache");
+  revalidatePath("/app/documents");
+  revalidatePath("/hub/documents");
+  return { ok: true };
+}
+
+/* ── Batch 4k - counsellors upload files (not just links) ──────────────── */
+
+/**
+ * A counsellor uploads a file into their OWN folder, a folder the practice
+ * shared with them, or onto one of THEIR clients' records. Same quota, same
+ * scan, same honest states as the practice's uploads; the document is theirs
+ * (uploadedBy = their id) so a submissions-private folder keeps it private.
+ */
+export async function requestCounsellorUpload(raw: { folderId?: string | null; clientId?: string | null; name: string; contentType: string; bytes: number }): Promise<{ ok: true; uploadUrl: string; documentId: string } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg(["counsellor"]);
+  const provider = await getDataProvider();
+  const me = (await provider.listCounsellors(membership.orgId)).find((c) => c.userId === principal.userId);
+  if (!me) return { ok: false, error: "Not found." };
+
+  const name = String(raw?.name ?? "").trim().slice(0, 160);
+  const contentType = String(raw?.contentType ?? "").trim().slice(0, 120);
+  const bytes = Number(raw?.bytes ?? 0);
+  const clientId = raw?.clientId ? String(raw.clientId) : null;
+  let folderId = raw?.folderId ? String(raw.folderId) : null;
+  if (!name || !contentType || !(bytes > 0)) return { ok: false, error: "Check the file." };
+
+  const { validateUpload } = await import("@/lib/documents/quota");
+  const v = validateUpload({ contentType, bytes, name });
+  if (!v.ok) return v;
+
+  const q = await import("@/db/queries/documents");
+  if (clientId) {
+    // Only a client on MY caseload.
+    const mine = (await provider.listClients(membership.orgId)).find((c) => c.id === clientId && c.primaryCounsellorId === me.id);
+    if (!mine) return { ok: false, error: "You can only upload for clients on your caseload." };
+    folderId = null;
+  } else if (folderId) {
+    // My own folder, or one the practice shared with me.
+    const own = await q.ensureCounsellorFolderDb(membership.orgId, me, "system");
+    if (folderId !== own.folderId && !(await q.folderSharedWithDb(membership.orgId, folderId, me.id))) {
+      return { ok: false, error: "That folder isn't shared with you." };
+    }
+  } else {
+    // Nowhere named: it lands in my own folder.
+    ({ folderId } = await q.ensureCounsellorFolderDb(membership.orgId, me, "system"));
+  }
+
+  const { getStorageProvider: getStore, activeStorageBackend: backend, objectKey } = await import("@/lib/storage");
+  const storage = await getStore();
+  if (storage.status !== "live") return { ok: false, error: "Phila Storage isn't switched on yet." };
+  const { orgStorageLimitBytes } = await import("@/db/queries/resources");
+  if ((await q.currentStorageBytes(membership.orgId)) + bytes > (await orgStorageLimitBytes(membership.orgId)))
+    return { ok: false, error: "Your practice has reached its storage. Ask an admin to make room." };
+
+  const documentId = `doc_${crypto.randomUUID()}`;
+  const key = objectKey(membership.orgId, documentId, name);
+  let uploadUrl: string;
+  try {
+    ({ uploadUrl } = await storage.signedUploadUrl({ key, contentType }));
+  } catch {
+    return { ok: false, error: "Storage rejected the upload - check the Phila Storage configuration." };
+  }
+  await q.insertPendingDocument({
+    id: documentId, orgId: membership.orgId, folderId, clientId, name, contentType,
+    storageKey: key, storageBackend: await backend(), uploadedBy: me.id,
+    counsellorId: me.id, sharedBy: "counsellor", visibility: "internal",
+  });
+  await logAccess({
+    action: "file.access",
+    actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },
+    orgId: membership.orgId,
+    target: `document:${documentId}`,
+    reason: clientId ? "counsellor_upload_client" : "counsellor_upload_folder",
+  });
+  return { ok: true, uploadUrl, documentId };
+}
+
+export async function confirmCounsellorUpload(raw: { documentId: string; bytes: number }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireOrg(["counsellor"]);
+  const provider = await getDataProvider();
+  const me = (await provider.listCounsellors(membership.orgId)).find((c) => c.userId === principal.userId);
+  if (!me) return { ok: false, error: "Not found." };
+  const documentId = String(raw?.documentId ?? "");
+  const bytes = Number(raw?.bytes ?? 0);
+  if (!documentId || !(bytes > 0)) return { ok: false, error: "Could not finalise the upload." };
+
+  const { getDocumentRow, finalizeDocument, addStorageUsage } = await import("@/db/queries/documents");
+  const doc = await getDocumentRow(membership.orgId, documentId);
+  if (!doc || !doc.storageKey || doc.uploadedBy !== me.id) return { ok: false, error: "Upload not found." };
+
+  const { scanObject } = await import("@/lib/documents/scan");
+  const scan = await scanObject(doc.storageKey);
+  await finalizeDocument(membership.orgId, documentId, bytes, scan);
+  if (scan !== "clean") return { ok: false, error: "That file didn't pass the security scan." };
+  await addStorageUsage(membership.orgId, bytes);
   await logAccess({
     action: "file.access",
     actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole },

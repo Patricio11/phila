@@ -871,6 +871,8 @@ export interface DataProvider {
     /** Batch 2r - the instruction that came with each directly shared file. */
     sharedNotes?: Record<string, string>;
     sharedFolders: { folder: DocumentFolder; docs: Document[]; mine?: boolean }[];
+    /** Batch 4k - a supervisor also sees each supervisee's folders + their clients' files. */
+    supervising?: { counsellor: { id: string; name: string }; folders: { folder: DocumentFolder; docs: Document[]; mine?: boolean }[]; clientDocs: Document[] }[];
   }>;
 
   // Client portal (a client only ever sees their own data)

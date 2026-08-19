@@ -29,6 +29,9 @@ import {
   UsersRound,
   Building2,
   Mail,
+  Undo2,
+  EyeOff,
+  Send,
 } from "lucide-react";
 import type { Document, DocumentFolder, DocumentRequest, StorageUsage } from "@/lib/domain/types";
 import { sizeLabel } from "@/lib/documents/quota";
@@ -58,10 +61,17 @@ import {
   signDownload,
   generateCounsellorFolders,
   ensureClientFolders,
+  recallFromClient,
+  getShareState,
+  unshareWithCounsellors,
+  listShareLinks,
+  revokeShareLink,
 } from "@/app/hub/documents/actions";
 
 type Named = { id: string; name: string };
-type View = "folders" | "review" | "byClient";
+type View = "folders" | "review" | "byClient" | "links";
+/** Batch 4k - an emailed link as listed for recall. */
+type SentLink = { id: string; recipientEmail: string; folderName: string | null; docCount: number; createdAt: string; expiresAt: string; revokedAt: string | null; downloads: number };
 
 const fk = (id: string) => `f:${id}`;
 const dk = (id: string) => `d:${id}`;
@@ -136,6 +146,12 @@ export function DocumentManager({
   const [assignClient, setAssignClient] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareWith, setShareWith] = useState<Set<string>>(new Set());
+  // Batch 4k - who already has the (single) selected item, for "Stop sharing".
+  const [currentShares, setCurrentShares] = useState<{ counsellorId: string; name: string; note: string | null }[] | null>(null);
+  // Batch 4k - the org's emailed links, for recall.
+  const [links, setLinks] = useState<SentLink[]>([]);
+  const [linksLoaded, setLinksLoaded] = useState(false);
+  const [linksNow, setLinksNow] = useState(0);
   const [shareNote, setShareNote] = useState("");
   const [sharePrivate, setSharePrivate] = useState(false);
   // Batch 2k - link documents (a URL instead of bytes).
@@ -289,6 +305,45 @@ export function DocumentManager({
     router.refresh();
   }
 
+  // Batch 4k - recall a client share: the client's portal no longer shows it.
+  async function recallClient(documentIds: string[], label: string) {
+    const res = await recallFromClient({ documentIds });
+    if (!res.ok) return toast({ tone: "error", title: res.error });
+    toast({ tone: "success", title: res.recalled === 0 ? "Nothing to recall" : `Recalled from the client`, description: res.recalled === 0 ? "None of these were visible to a client." : `${label} no longer shows in their portal. The file stays on the record.` });
+    clearSel();
+    router.refresh();
+  }
+  async function loadShareState(keys?: string[]) {
+    const sel = keys ?? [...selected];
+    const docIds = sel.filter((k) => k.startsWith("d:")).map((k) => k.slice(2));
+    const folderIds = sel.filter((k) => k.startsWith("f:")).map((k) => k.slice(2));
+    if (docIds.length + folderIds.length !== 1) { setCurrentShares(null); return; }
+    const res = await getShareState(docIds.length ? { targetType: "file", targetId: docIds[0]! } : { targetType: "folder", targetId: folderIds[0]! });
+    setCurrentShares(res.ok ? res.shares : null);
+  }
+  async function stopSharing(counsellorId: string, name: string) {
+    const docIds = selectedDocIds();
+    const folderIds = selectedFolderIds();
+    const target = docIds.length ? { targetType: "file" as const, targetId: docIds[0]! } : { targetType: "folder" as const, targetId: folderIds[0]! };
+    const res = await unshareWithCounsellors({ ...target, counsellorIds: [counsellorId] });
+    if (!res.ok) return toast({ tone: "error", title: res.error });
+    setCurrentShares((prev) => (prev ?? []).filter((s) => s.counsellorId !== counsellorId));
+    toast({ tone: "default", title: `No longer shared with ${name}` });
+    router.refresh();
+  }
+  async function loadLinks() {
+    const res = await listShareLinks();
+    if (res.ok) setLinks(res.links);
+    setLinksNow(Date.now());
+    setLinksLoaded(true);
+  }
+  async function recallLink(id: string, email: string) {
+    const res = await revokeShareLink({ linkId: id });
+    if (!res.ok) return toast({ tone: "error", title: res.error });
+    setLinks((prev) => prev.map((l) => (l.id === id ? { ...l, revokedAt: new Date().toISOString() } : l)));
+    toast({ tone: "success", title: "Link recalled", description: `${email} can no longer open it.` });
+  }
+
   async function onShare() {
     const ids = [...shareWith];
     const docIds = selectedDocIds();
@@ -404,7 +459,14 @@ export function DocumentManager({
 
   /* Batch 2k - the three-dots menu drives single-item actions. */
   function kebabAssign(doc: Document) { setSelected(new Set([dk(doc.id)])); setAssignOpen(true); }
-  function kebabShare(key: string) { setSelected(new Set([key])); setShareOpen(true); }
+  function kebabShare(key: string) { setSelected(new Set([key])); openShare([key]); }
+  // Batch 4k - opening the share dialog also loads who already has the item (single selection).
+  function openShare(keys?: string[]) {
+    setCurrentShares(null);
+    setShareOpen(true);
+    void loadShareState(keys);
+  }
+  function closeShare() { setShareOpen(false); setCurrentShares(null); }
   async function kebabDelete(items: { documentIds: string[]; folderIds: string[] }, label: string) {
     setDocs((ds) => ds.filter((d) => !items.documentIds.includes(d.id)));
     setFolders((fs) => fs.filter((f) => !items.folderIds.includes(f.id)));
@@ -519,6 +581,7 @@ export function DocumentManager({
           <ViewButton active={view === "folders"} onClick={() => setView("folders")} icon={FolderClosed} label="All documents" />
           <ViewButton active={view === "review"} onClick={() => setView("review")} icon={Inbox} label="Needs review" badge={reviewDocs.length || undefined} />
           <ViewButton active={view === "byClient"} onClick={() => setView("byClient")} icon={Users} label="By client" />
+          <ViewButton active={view === "links"} onClick={() => { setView("links"); void loadLinks(); }} icon={Send} label="Sent links" />
         </nav>
 
         {view === "folders" && (
@@ -702,8 +765,41 @@ export function DocumentManager({
             ) : (
               <ul className="space-y-1.5">
                 {reviewDocs.map((d) => (
-                  <DocRow key={d.id} doc={d} clientName={d.clientId ? clientName.get(d.clientId) : undefined} selected={selected.has(dk(d.id))} onSelect={(additive) => toggle(dk(d.id), additive)} onDragStart={(e) => onDragStart(e, dk(d.id))} onDownload={() => downloadDoc(d.id)} onRename={() => { setRenameDoc(d); setRenameDocName(d.name); }} onAssign={() => kebabAssign(d)} onShare={() => kebabShare(dk(d.id))} onDelete={() => void kebabDelete({ documentIds: [d.id], folderIds: [] }, d.name)} />
+                  <DocRow key={d.id} doc={d} clientName={d.clientId ? clientName.get(d.clientId) : undefined} selected={selected.has(dk(d.id))} onSelect={(additive) => toggle(dk(d.id), additive)} onDragStart={(e) => onDragStart(e, dk(d.id))} onDownload={() => downloadDoc(d.id)} onRename={() => { setRenameDoc(d); setRenameDocName(d.name); }} onAssign={() => kebabAssign(d)} onRecall={() => void recallClient([d.id], d.name)} onShare={() => kebabShare(dk(d.id))} onDelete={() => void kebabDelete({ documentIds: [d.id], folderIds: [] }, d.name)} />
                 ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {view === "links" && (
+          <div className="min-h-[300px] rounded-card border border-border bg-surface p-3" data-testid="sent-links">
+            <p className="mb-3 text-[12.5px] text-text-2">Every link you&apos;ve emailed - who it went to, what it held, how often it was opened. <b>Recall</b> any link sent by mistake; the page it opens refuses from that moment.</p>
+            {!linksLoaded ? (
+              <p className="py-6 text-center text-[12.5px] text-text-3">Loading…</p>
+            ) : links.length === 0 ? (
+              <EmptyState icon={Send} title="No links sent yet" body="Select files and choose Email link to send a download link; it'll show here." />
+            ) : (
+              <ul className="divide-y divide-border">
+                {links.map((l) => {
+                  const expired = new Date(l.expiresAt).getTime() < linksNow;
+                  const dead = Boolean(l.revokedAt) || expired;
+                  return (
+                    <li key={l.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 text-[12.5px]">
+                      <span className="min-w-0 flex-1 truncate font-medium text-text">{l.recipientEmail}</span>
+                      <span className="text-text-2">{l.folderName ? `${l.folderName} · ` : ""}{l.docCount} file{l.docCount === 1 ? "" : "s"}</span>
+                      <span className="text-text-3">{l.downloads} download{l.downloads === 1 ? "" : "s"}</span>
+                      <span className={cn("rounded-full px-2 py-0.5 text-[10.5px] font-medium", l.revokedAt ? "bg-danger/10 text-danger" : expired ? "bg-surface-2 text-text-3" : "bg-accent/10 text-accent")}>
+                        {l.revokedAt ? "Recalled" : expired ? "Expired" : `Open until ${new Intl.DateTimeFormat("en-ZA", { day: "numeric", month: "short" }).format(new Date(l.expiresAt))}`}
+                      </span>
+                      {!dead && (
+                        <button type="button" onClick={() => void recallLink(l.id, l.recipientEmail)} className="inline-flex items-center gap-1 rounded-control border border-border px-2 py-1 text-[12px] font-medium text-danger hover:bg-danger/10" aria-label={`Recall link to ${l.recipientEmail}`}>
+                          <Undo2 className="size-3.5" strokeWidth={2} aria-hidden /> Recall
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
@@ -721,7 +817,7 @@ export function DocumentManager({
                     <div className="mb-1.5 px-1 text-[12.5px] font-semibold text-text">{c.name}</div>
                     <ul className="space-y-1.5">
                       {docs.filter((d) => d.clientId === c.id).map((d) => (
-                        <DocRow key={d.id} doc={d} selected={selected.has(dk(d.id))} onSelect={(additive) => toggle(dk(d.id), additive)} onDragStart={(e) => onDragStart(e, dk(d.id))} onDownload={() => downloadDoc(d.id)} onRename={() => { setRenameDoc(d); setRenameDocName(d.name); }} onAssign={() => kebabAssign(d)} onShare={() => kebabShare(dk(d.id))} onDelete={() => void kebabDelete({ documentIds: [d.id], folderIds: [] }, d.name)} />
+                        <DocRow key={d.id} doc={d} selected={selected.has(dk(d.id))} onSelect={(additive) => toggle(dk(d.id), additive)} onDragStart={(e) => onDragStart(e, dk(d.id))} onDownload={() => downloadDoc(d.id)} onRename={() => { setRenameDoc(d); setRenameDocName(d.name); }} onAssign={() => kebabAssign(d)} onRecall={() => void recallClient([d.id], d.name)} onShare={() => kebabShare(dk(d.id))} onDelete={() => void kebabDelete({ documentIds: [d.id], folderIds: [] }, d.name)} />
                       ))}
                     </ul>
                   </div>
@@ -739,8 +835,11 @@ export function DocumentManager({
             <span className="px-2.5 text-[13px] font-medium text-text">{selCount} selected</span>
             <span className="mx-0.5 h-5 w-px bg-border" />
             <ActionChip icon={UserPlus} label="Assign" onClick={() => setAssignOpen(true)} disabled={selectedDocIds().length === 0} />
+            {docs.some((d) => selectedDocIds().includes(d.id) && d.visibility === "client_visible") && (
+              <ActionChip icon={Undo2} label="Recall from client" onClick={() => void recallClient(docs.filter((d) => selectedDocIds().includes(d.id) && d.visibility === "client_visible").map((d) => d.id), `${selectedDocIds().length} item${selectedDocIds().length === 1 ? "" : "s"}`)} />
+            )}
             <ActionChip icon={Download} label="Download" onClick={downloadSelection} />
-            <ActionChip icon={Share2} label="Share" onClick={() => setShareOpen(true)} />
+            <ActionChip icon={Share2} label="Share" onClick={() => openShare()} />
             <ActionChip icon={Mail} label="Email link" onClick={() => setEmailShareOpen(true)} />
             <ActionChip icon={Trash2} label="Delete" onClick={onDelete} />
             <button type="button" onClick={clearSel} className="ml-1 inline-flex size-8 items-center justify-center rounded-full text-text-3 transition-colors hover:bg-surface-hover hover:text-text" aria-label="Clear selection">
@@ -794,16 +893,31 @@ export function DocumentManager({
 
       <Dialog
         open={shareOpen}
-        onClose={() => setShareOpen(false)}
+        onClose={closeShare}
         title="Share with counsellors"
         description="They'll see these in their own workspace, on top of their own clients' files."
         footer={
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setShareOpen(false)}>Cancel</Button>
+            <Button variant="ghost" size="sm" onClick={closeShare}>Cancel</Button>
             <Button size="sm" onClick={onShare} disabled={shareWith.size === 0}>Share</Button>
           </div>
         }
       >
+        {currentShares && currentShares.length > 0 && (
+          <div className="mb-3 rounded-control border border-border bg-surface-2/40 p-2.5" data-testid="current-shares">
+            <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-text-3">Already shared with</div>
+            <ul className="space-y-1">
+              {currentShares.map((s) => (
+                <li key={s.counsellorId} className="flex items-center gap-2 text-[12.5px]">
+                  <span className="min-w-0 flex-1 truncate text-text">{s.name}</span>
+                  <button type="button" onClick={() => void stopSharing(s.counsellorId, s.name)} className="inline-flex items-center gap-1 rounded-control px-2 py-1 text-[12px] font-medium text-danger hover:bg-danger/10" aria-label={`Stop sharing with ${s.name}`}>
+                    <EyeOff className="size-3.5" strokeWidth={2} aria-hidden /> Stop sharing
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <div className="space-y-1">
           {counsellors.length === 0 ? (
             <p className="text-[13px] text-text-3">No counsellors to share with yet.</p>
@@ -1119,12 +1233,14 @@ function FolderCard({ folder, count, selected, dropping, renaming, onOpen, onSel
   );
 }
 
-function DocRow({ doc, clientName, where, selected, onSelect, onDragStart, onDownload, onRename, onAssign, onShare, onDelete }: {
+function DocRow({ doc, clientName, where, selected, onSelect, onDragStart, onDownload, onRename, onAssign, onShare, onDelete, onRecall }: {
   doc: Document; clientName?: string;
   /** Batch 2r - which folder this lives in; shown only in search results. */
   where?: string;
   selected: boolean; onSelect: (additive: boolean) => void; onDragStart: (e: React.DragEvent) => void; onDownload: () => void;
   onRename?: () => void; onAssign?: () => void; onShare?: () => void; onDelete?: () => void;
+  /** Batch 4k - recall a client share (shown only while the client can see it). */
+  onRecall?: () => void;
 }) {
   const isLink = Boolean(doc.externalUrl);
   const openable = isLink || (doc.scanStatus === "clean" && Boolean(doc.storageKey));
@@ -1173,6 +1289,7 @@ function DocRow({ doc, clientName, where, selected, onSelect, onDragStart, onDow
               ...(openable ? [{ label: isLink ? "Open link" : "Download", icon: isLink ? ExternalLink : Download, onClick: onDownload }] : []),
               { label: "Rename", icon: Pencil, onClick: onRename },
               ...(onAssign ? [{ label: "Assign to client", icon: UserPlus, onClick: onAssign }] : []),
+              ...(onRecall && doc.visibility === "client_visible" ? [{ label: "Recall from client", icon: Undo2, onClick: onRecall }] : []),
               ...(onShare ? [{ label: "Share with counsellors", icon: Share2, onClick: onShare }] : []),
               ...(onDelete ? [{ label: "Delete", icon: Trash2, onClick: onDelete, danger: true }] : []),
             ]}

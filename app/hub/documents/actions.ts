@@ -470,3 +470,66 @@ export async function createShareEmailLink(
 
   return { ok: true, url, count: res.docs.length, emailed };
 }
+
+/* ── Batch 4k - recalls ─────────────────────────────────────────────────── */
+
+/** Shared with a client by accident? Recall it: the file stays on the record, the client's portal no longer shows it. */
+export async function recallFromClient(raw: { documentIds: string[] }): Promise<{ ok: true; recalled: number } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const parsed = idList.safeParse(raw?.documentIds);
+  if (!parsed.success || parsed.data.length === 0) return { ok: false, error: "Pick at least one document." };
+  let recalled = 0;
+  if (isDb()) {
+    const { recallFromClientDb } = await import("@/db/queries/documents");
+    recalled = await recallFromClientDb(membership.orgId, parsed.data);
+  }
+  await audit(membership.orgId, principal.userId, `org:${membership.orgId}/documents`, `recall_client_share_${recalled}`);
+  revalidatePath("/hub/documents");
+  return { ok: true, recalled };
+}
+
+/** Who currently has a file / folder (for the share dialog's "Shared with" list). */
+export async function getShareState(raw: { targetType: "file" | "folder"; targetId: string }): Promise<{ ok: true; shares: { counsellorId: string; name: string; note: string | null }[] } | { ok: false; error: string }> {
+  const { membership } = await requireHub();
+  if (!raw?.targetId) return { ok: false, error: "Not found." };
+  if (!isDb()) return { ok: true, shares: [] };
+  const { listSharesForTargetDb } = await import("@/db/queries/documents");
+  return { ok: true, shares: await listSharesForTargetDb(membership.orgId, raw.targetType === "folder" ? "folder" : "file", raw.targetId) };
+}
+
+/** Stop sharing a file / folder with specific counsellors. */
+export async function unshareWithCounsellors(raw: { targetType: "file" | "folder"; targetId: string; counsellorIds: string[] }): Promise<{ ok: true; removed: number } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  if (!raw?.targetId || !Array.isArray(raw.counsellorIds) || raw.counsellorIds.length === 0) return { ok: false, error: "Pick who to stop sharing with." };
+  let removed = 0;
+  if (isDb()) {
+    const { unshareWithCounsellorsDb } = await import("@/db/queries/documents");
+    removed = await unshareWithCounsellorsDb(membership.orgId, raw.targetType === "folder" ? "folder" : "file", raw.targetId, raw.counsellorIds.map(String));
+  }
+  await audit(membership.orgId, principal.userId, `${raw.targetType}:${raw.targetId}`, `unshare_counsellors_${removed}`);
+  revalidatePath("/hub/documents");
+  revalidatePath("/app/documents");
+  return { ok: true, removed };
+}
+
+/** The org's emailed links - newest first. */
+export async function listShareLinks(): Promise<{ ok: true; links: Awaited<ReturnType<typeof import("@/db/queries/share-links").listShareLinksDb>> } | { ok: false; error: string }> {
+  const { membership } = await requireHub();
+  if (!isDb()) return { ok: true, links: [] };
+  const { listShareLinksDb } = await import("@/db/queries/share-links");
+  return { ok: true, links: await listShareLinksDb(membership.orgId) };
+}
+
+/** Recall an emailed link - the public page refuses from now on. */
+export async function revokeShareLink(raw: { linkId: string }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { principal, membership } = await requireHub();
+  const linkId = String(raw?.linkId ?? "");
+  if (!linkId) return { ok: false, error: "Not found." };
+  if (isDb()) {
+    const { revokeShareLinkDb } = await import("@/db/queries/share-links");
+    if (!(await revokeShareLinkDb(membership.orgId, linkId))) return { ok: false, error: "That link wasn't found." };
+  }
+  await audit(membership.orgId, principal.userId, `share_link:${linkId}`, "revoke_share_link");
+  revalidatePath("/hub/documents");
+  return { ok: true };
+}

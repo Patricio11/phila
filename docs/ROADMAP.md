@@ -1933,6 +1933,26 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   first behind a swappable adapter so other providers can be switched on/off later; includes the
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).
 
+- [x] **Documents: supervisors see supervisees · recall a share · counsellors upload** *(2026-08-19,
+  batch 4k)*: (1) a **supervisor** now sees each supervisee's folder(s) and their clients' files in
+  their own Documents page ("Supervising · Aisha Patel", Supervisee chip, read-only, every open
+  audited) - `listCounsellorDocumentsDb` returns `supervising[]`; one access helper
+  (`counsellorAccessibleDocumentDb`) now governs downloads, which also **fixed a latent bug**: files
+  inside a folder shared with a counsellor were unopenable (the list dedupe had dropped them from the
+  set the download check consulted). (2) **Recall a share** - "Recall from client" on any
+  client-visible file (row menu + bulk bar; the file stays on the record, the client's portal no
+  longer shows it; audited), "Already shared with … · Stop sharing" inside the Share-with-counsellors
+  dialog (`document_shares` row removed), and a **Sent links** view listing every emailed link
+  (recipient · files · downloads · open-until) with **Recall** (`revoked_at`; the public page then
+  refuses). (3) **Counsellors upload** - an Upload button on their own folder, on every folder the
+  practice shared with them, and on each client section (caseload only): same quota, scan and honest
+  states as the practice's uploads; the file is theirs (`uploaded_by`, `shared_by = counsellor`) so a
+  submissions-private folder keeps it private; a network failure is a clear "Couldn't reach Phila
+  Storage" toast. Proven live (supervisee sections, upload accepted + placed in her folder with the
+  honest toast - the bytes leg to Supabase can't leave this machine, the hub's upload fails the same
+  way here; recall hid the file from Lerato's portal; stop-sharing removed Thabo; link recalled and
+  `/share/<token>` refused).
+
 - [x] **Notes on invoices** *(2026-08-18, batch 4j)*: `invoices.notes` (migration 0083) - a note printed
   under the totals on the A4 sheet (payment terms, the reference to use, account notes). Settings →
   Billing → Invoicing gained **Note on invoices** (the default every new invoice starts with; also

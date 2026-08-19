@@ -320,7 +320,10 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
   modelling, inbound media labels, mirrored inbox (34.6), Embedded Signup (34.7).
 - **4j Notes on invoices** (2026-08-18): `invoices.notes` + the org's default note (Settings → Invoicing);
   typed on the A4 sheet, edited on the board, printed on every preview.
-- **Numbers at 2026-08-18:** migrations through **0083**; **308** unit tests; every batch / task
+- **4k Documents trio** (2026-08-19): supervisors see supervisees' folders + files (audited, read-only);
+  recall a share (from a client / from a counsellor / an emailed link); counsellors upload (own
+  folder, shared folders, their clients). `counsellorAccessibleDocumentDb` is the one download rule.
+- **Numbers at 2026-08-19:** migrations through **0083**; **308** unit tests; every batch / task
   proven live on `npm run build && npm run start` with screenshots.
 - **The messaging shell rule (34.1):** `lib/messaging/principal.ts` - messaging actions accept a
   STAFF (org membership) or a CLIENT (their linked `user.client_id`) principal; the client rules are

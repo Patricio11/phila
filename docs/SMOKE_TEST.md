@@ -222,6 +222,10 @@ Sign in as **Thandeka**.
 - ☐ Delivery states on Billing → Recent messages never go backwards (a `Read` never becomes `Delivered`); a Meta failure shows its reason; **Failed after retries** lists dead letters with masked recipients
 - ☐ As the super admin, Integrations → **Org connections** ends with **WhatsApp numbers by org** (number, name, status, health chip); Billing shows "N message alerts this month" once any alert has actually gone out
 
+**Messages: Clients door + DSAR** (batch 4o)
+- ☐ Messages → New message → **Clients** tab: an org admin sees every active client, a counsellor only their caseload; rows say Conversation open / Has a portal login / No portal login yet; picking one opens the client thread (banner "<Name> can read this conversation")
+- ☐ Client → Data & privacy → Export (CSV): a **Messages with the practice** section lists the conversation; Erase blanks those messages
+
 **Messages: @mentions + give the words back** (batch 4n)
 - ☐ In a group (or any thread) type `@nom` → a list of the people in the conversation appears; Enter inserts `@Nomsa Dlamini ` plain; send → the bubble shows an **@Nomsa** chip, the list preview shows plain text, Nomsa's bell says "<You> mentioned you in <group>"
 - ☐ Edit a message with a mention - the edit box shows plain `@Name`, saving keeps the chip

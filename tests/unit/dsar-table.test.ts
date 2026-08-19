@@ -21,6 +21,8 @@ const SAMPLE = {
   consents: [{ purpose: "care", state: "granted", at: "2026-01-04" }],
   documents: [{ name: "intake.pdf", bytes: 4096 }],
   invoices: [{ number: "INV-0007", amountCents: 45000, status: "paid" }],
+  // Batch 4o - the conversation with the practice rides along.
+  messages: [{ id: "tm_1", from: "practice", sender: "Nomsa Dlamini", text: "Hi Sipho, see you Thursday.", attachment: null, at: "2026-08-11T10:00:00.000Z", edited: false, deleted: false }],
   accessAudit: [{ at: "2026-08-12T10:00:00.000Z", actorName: "Thandeka Mbeki", action: "pii.read", reason: "hub_oversight" }],
   retention: { label: "Kept until 2036", rule: "hpcsa_adult", retainUntil: "2036-08-12", legalHold: false },
 };
@@ -39,7 +41,7 @@ describe("the POPIA export as a table", () => {
 
   it("loses nothing: every field of every record survives", () => {
     // Count the fields the source holds, then the rows the table produced.
-    const sections = ["client", "demographics", "appointments", "clinicalNotes", "outcomes", "consents", "documents", "invoices", "accessAudit"] as const;
+    const sections = ["client", "demographics", "appointments", "clinicalNotes", "outcomes", "consents", "documents", "invoices", "messages", "accessAudit"] as const;
     let expected = 0;
     for (const key of sections) {
       const v = SAMPLE[key] as unknown;
@@ -55,6 +57,7 @@ describe("the POPIA export as a table", () => {
     expect(sessions.every((r) => r[1] === "2026-08-12T08:00:00.000Z" || r[1] === "2026-08-19T08:00:00.000Z")).toBe(true);
     expect(find("Invoices", "Status")[0]?.[1]).toBe("INV-0007");
     expect(find("Outcome measures", "Score")[0]?.[1]).toBe("PHQ-9");
+    expect(find("Messages with the practice", "Text")[0]?.[3]).toBe("Hi Sipho, see you Thursday.");
   });
 
   it("keeps nested structures verbatim instead of dropping them", () => {

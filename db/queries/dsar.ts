@@ -1,10 +1,13 @@
 import "server-only";
-import { and, desc, eq, like, max } from "drizzle-orm";
+import { and, desc, eq, inArray, like, max } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import {
   clients, appointments, sessionNotes, carePlans, consents, demographics,
   outcomeMeasures, clientDocuments, invoices, auditLog, counsellors, services, orgs,
+  messageThreads, teamMessages,
 } from "@/db/schema";
+import { user } from "@/db/auth-schema";
+import { stripMentionTokens } from "@/lib/messaging/mentions";
 import { retentionClock, erasureDecision, retentionLabel, type RetentionClock } from "@/lib/compliance/retention";
 
 /**
@@ -30,6 +33,8 @@ export interface DsarExport {
   invoices: Record<string, unknown>[];
   /** Who accessed this person's record, when, and why (their POPIA right to know). */
   accessAudit: Record<string, unknown>[];
+  /** Batch 4o - the client's conversation with the practice (Phase 34.1): every message, both ways. */
+  messages: Record<string, unknown>[];
   retention: { label: string; rule: string; retainUntil: string | null; legalHold: boolean };
 }
 
@@ -85,6 +90,16 @@ export async function exportDataSubjectDb(orgId: string, clientId: string, nowIS
 
   const retention = await clientRetentionDb(orgId, clientId, nowISO);
 
+  // Batch 4o - the practice <-> client conversation belongs to the subject too.
+  const threadRows = await db.select({ id: messageThreads.id }).from(messageThreads)
+    .where(and(eq(messageThreads.orgId, orgId), eq(messageThreads.kind, "client"), eq(messageThreads.clientId, clientId)));
+  const threadIds = threadRows.map((t) => t.id);
+  const msgs = threadIds.length
+    ? await db.select({ id: teamMessages.id, threadId: teamMessages.threadId, senderId: teamMessages.senderUserId, senderName: user.name, senderClientId: user.clientId, body: teamMessages.body, createdAt: teamMessages.createdAt, editedAt: teamMessages.editedAt, deletedAt: teamMessages.deletedAt, attachmentName: teamMessages.attachmentName })
+        .from(teamMessages).leftJoin(user, eq(user.id, teamMessages.senderUserId))
+        .where(inArray(teamMessages.threadId, threadIds)).orderBy(teamMessages.createdAt)
+    : [];
+
   return {
     generatedAt: nowISO,
     organisation: { id: org?.id ?? orgId, name: org?.name ?? orgId },
@@ -101,6 +116,16 @@ export async function exportDataSubjectDb(orgId: string, clientId: string, nowIS
     documents: docs.map((d) => ({ name: d.name, size: d.sizeLabel, uploadedAt: d.uploadedAt.toISOString() })),
     invoices: invs.map((i) => ({ number: i.number, amountCents: i.amountCents, status: i.status, issuedAt: i.issuedAt.toISOString(), dueAt: i.dueAt.toISOString() })),
     accessAudit: access.map((a) => ({ action: a.action, actor: a.actorUserId, reason: a.reason, at: a.at.toISOString() })),
+    messages: msgs.map((m) => ({
+      id: m.id,
+      from: m.senderClientId === clientId ? "client" : "practice",
+      sender: m.senderClientId === clientId ? client.name : (m.senderName ?? "Practice"),
+      text: m.deletedAt ? null : stripMentionTokens(m.body),
+      attachment: m.attachmentName ?? null,
+      at: m.createdAt.toISOString(),
+      edited: Boolean(m.editedAt),
+      deleted: Boolean(m.deletedAt),
+    })),
     retention: {
       label: retention?.label ?? "Unknown",
       rule: retention?.clock.rule ?? "standard",
@@ -137,6 +162,16 @@ export async function eraseDataSubjectDb(orgId: string, clientId: string, nowISO
 
   // Special-category demographics are removed outright - never needed for the clinical record.
   await db.delete(demographics).where(eq(demographics.clientId, clientId));
+
+  // Batch 4o - the conversation with the practice is the subject's words: blank every message in
+  // the client thread(s) (body + attachment pointer), mark them deleted, keep the rows for counts.
+  const erasedThreads = await db.select({ id: messageThreads.id }).from(messageThreads)
+    .where(and(eq(messageThreads.orgId, orgId), eq(messageThreads.kind, "client"), eq(messageThreads.clientId, clientId)));
+  if (erasedThreads.length) {
+    await db.update(teamMessages)
+      .set({ body: "", deletedAt: new Date(nowISO), attachmentKey: null, attachmentName: null, attachmentType: null })
+      .where(inArray(teamMessages.threadId, erasedThreads.map((t) => t.id)));
+  }
 
   return { ok: true, decision };
 }

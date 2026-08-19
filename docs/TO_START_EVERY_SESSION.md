@@ -334,6 +334,8 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
 - **4n @mentions + give-words-back** (2026-08-19): `lib/messaging/mentions.ts` (token
   `@[Name](userId)` in bodies, plain in the box, sanitised server-side on send + edit, chips in
   bubbles, mentioned members always nudged); failed sends hand the draft + reply target back.
+- **4o Clients door + DSAR** (2026-08-19): New message → Clients tab (`listMessageableClientsDb`,
+  caseload rule); DSAR export "Messages with the practice" + erasure blanks the client thread.
 - **Numbers at 2026-08-19:** migrations through **0086**; **317** unit tests; every batch / task
   proven live on `npm run build && npm run start` with screenshots.
 - **The messaging shell rule (34.1):** `lib/messaging/principal.ts` - messaging actions accept a

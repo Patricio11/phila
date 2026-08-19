@@ -567,3 +567,37 @@ export async function typingNowDb(userId: string, orgId: string): Promise<Record
   for (const r of rows.rows) (out[r.thread_id] ??= []).push(r.name);
   return out;
 }
+
+/* ── Batch 4o - the third door: New message → Clients ─────────────────────── */
+
+export interface MessageableClient { id: string; name: string; hasLogin: boolean; counsellorName: string | null; threadId: string | null }
+
+/**
+ * Clients this staff member may open a conversation with: an org admin / front
+ * desk sees every active client, a counsellor only their own caseload (the same
+ * rule `findOrCreateClientThreadDb` enforces on the way in). Carries whether the
+ * client has a portal login yet and whether a conversation already exists.
+ */
+export async function listMessageableClientsDb(orgId: string, userId: string, role: string, query = "", limit = 60): Promise<MessageableClient[]> {
+  const db = getDb();
+  if (role !== "org_admin" && role !== "front_desk" && role !== "counsellor") return [];
+  let mineIds: string[] | null = null;
+  if (role === "counsellor") {
+    const mine = await db.select({ id: counsellors.id }).from(counsellors).where(and(eq(counsellors.userId, userId), eq(counsellors.orgId, orgId)));
+    mineIds = mine.map((c) => c.id);
+    if (!mineIds.length) return [];
+  }
+  const q = query.trim().toLowerCase();
+  const conds = [eq(clients.orgId, orgId), sql`${clients.deletedAt} is null`];
+  if (mineIds) conds.push(inArray(clients.primaryCounsellorId, mineIds));
+  if (q) conds.push(sql`lower(${clients.name}) like ${"%" + q + "%"}`);
+  const rows = await db.select({ id: clients.id, name: clients.name, primary: clients.primaryCounsellorId, counsellorName: counsellors.name, loginId: user.id, threadId: messageThreads.id })
+    .from(clients)
+    .leftJoin(counsellors, eq(counsellors.id, clients.primaryCounsellorId))
+    .leftJoin(user, eq(user.clientId, clients.id))
+    .leftJoin(messageThreads, and(eq(messageThreads.clientId, clients.id), eq(messageThreads.kind, "client"), eq(messageThreads.orgId, orgId)))
+    .where(and(...conds))
+    .orderBy(clients.name)
+    .limit(limit);
+  return rows.map((r) => ({ id: r.id, name: r.name, hasLogin: Boolean(r.loginId), counsellorName: r.counsellorName ?? null, threadId: r.threadId ?? null }));
+}

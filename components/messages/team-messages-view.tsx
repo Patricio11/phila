@@ -12,7 +12,8 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { createGroup, deleteMessage, editMessage, getRealtimeToken, markThreadRead, refreshThreads, requestChatUpload, sendTeamMessage, signChatAttachment, toggleReaction } from "@/app/app/messages/actions";
+import { createGroup, deleteMessage, editMessage, getRealtimeToken, markThreadRead, refreshThreads, requestChatUpload, sendTeamMessage, signChatAttachment, toggleReaction, listMessageableClients, startClientThread } from "@/app/app/messages/actions";
+import type { MessageableClient } from "@/db/queries/messages";
 import { EmojiPicker, QUICK_REACTIONS } from "@/components/messages/emoji-picker";
 import { ThreadInfo } from "@/components/messages/thread-info";
 import { FullPage, FullPageToggle } from "@/components/ui/full-page";
@@ -106,7 +107,7 @@ export function TeamMessagesView({
     () => threads.filter((t) => t.otherName.toLowerCase().includes(query.trim().toLowerCase())),
     [threads, query],
   );
-  const matchName = (q: string) => (m: Teammate) => m.name.toLowerCase().includes(q.trim().toLowerCase());
+  const matchName = (q: string) => (m: { name: string }) => m.name.toLowerCase().includes(q.trim().toLowerCase());
 
   // Keep the active thread readable inside the (stable) realtime handler.
   useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
@@ -315,6 +316,36 @@ export function TeamMessagesView({
     setMobileThread(true);
     setThreads((prev) => prev.map((t) => (t.id === id ? { ...t, unread: 0 } : t)));
     void markThreadRead(id);
+  };
+
+  // Batch 4o - New message → Clients: the third door (loaded when the tab opens).
+  const [newTab, setNewTab] = useState<"team" | "clients">("team");
+  const [clientList, setClientList] = useState<MessageableClient[] | null>(null);
+  const [clientBusy, setClientBusy] = useState<string | null>(null);
+  useEffect(() => {
+    if (!newOpen || newTab !== "clients" || isClient) return;
+    let alive = true;
+    listMessageableClients().then((res) => { if (alive) setClientList(res.ok ? res.clients : []); }).catch(() => { if (alive) setClientList([]); });
+    return () => { alive = false; };
+  }, [newOpen, newTab, isClient]);
+  const startWithClient = async (c: MessageableClient) => {
+    setClientBusy(c.id);
+    try {
+      const res = await startClientThread({ clientId: c.id });
+      if (!res.ok) return toast({ tone: "error", title: "Can't open a conversation", description: res.error });
+      const fresh = await refreshThreads().catch(() => null);
+      if (fresh?.ok) {
+        setThreads((prev) => {
+          const mine = new Map(prev.map((t) => [t.id, t]));
+          return fresh.threads.map((sv) => mine.get(sv.id) ?? sv);
+        });
+      }
+      setNewOpen(false); setNewQuery(""); setNewTab("team");
+      openThread(res.threadId);
+      if (res.created) toast({ tone: "success", title: `Conversation with ${c.name.split(" ")[0]} opened`, description: c.hasLogin ? "They can read and reply in their portal." : "They'll get an activation link with your first message." });
+    } finally {
+      setClientBusy(null);
+    }
   };
 
   // Broadcast a throttled "typing" ping on the active thread's channel.
@@ -912,9 +943,50 @@ export function TeamMessagesView({
         open={newOpen}
         onClose={() => { setNewOpen(false); setNewQuery(""); }}
         title="New message"
-        description="Search your team and tap someone to start."
+        description={newTab === "clients" ? "Clients you may message - they read and reply in their portal." : "Search your team and tap someone to start."}
       >
-        <MemberSearch query={newQuery} onQuery={setNewQuery} placeholder="Search colleagues…" />
+        {!isClient && (
+          <div className="mb-2 inline-flex rounded-control border border-border bg-surface p-0.5" role="tablist" aria-label="Who to message">
+            {(["team", "clients"] as const).map((k) => (
+              <button key={k} type="button" role="tab" aria-selected={newTab === k} onClick={() => { setNewTab(k); setNewQuery(""); }} className={cn("rounded-[calc(var(--radius-control)-2px)] px-3 py-1 text-[12.5px] font-medium transition-colors", newTab === k ? "bg-accent text-accent-ink" : "text-text-2 hover:text-text")}>
+                {k === "team" ? "Team" : "Clients"}
+              </button>
+            ))}
+          </div>
+        )}
+        <MemberSearch query={newQuery} onQuery={setNewQuery} placeholder={newTab === "clients" ? "Search clients…" : "Search colleagues…"} />
+        {newTab === "clients" ? (
+          <div className="mt-2 max-h-72 space-y-0.5 overflow-y-auto" data-testid="clients-door">
+            {clientList === null ? (
+              <p className="py-8 text-center text-[12.5px] text-text-3">Loading clients…</p>
+            ) : clientList.filter(matchName(newQuery)).length === 0 ? (
+              <p className="py-8 text-center text-[12.5px] text-text-3">{clientList.length === 0 ? (myRole === "counsellor" ? "No clients on your caseload yet." : "No clients yet.") : "No clients match."}</p>
+            ) : (
+              clientList.filter(matchName(newQuery)).map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => void startWithClient(c)}
+                  disabled={clientBusy !== null}
+                  className="flex w-full items-center gap-3 rounded-control px-2.5 py-2.5 text-left transition-colors hover:bg-surface-hover disabled:opacity-60"
+                >
+                  <Avatar name={c.name} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 truncate text-[13.5px] font-medium text-text">
+                      {c.name}
+                      <span className="shrink-0 rounded-full bg-sky-100 px-1.5 text-[10px] font-semibold text-sky-800 dark:bg-sky-900/40 dark:text-sky-200">Client</span>
+                    </div>
+                    <div className="truncate text-[11px] text-text-3">
+                      {c.threadId ? "Conversation open" : c.hasLogin ? "Has a portal login" : "No portal login yet - your first message carries the activation link"}
+                      {c.counsellorName ? ` · ${c.counsellorName.split(" ")[0]}` : ""}
+                    </div>
+                  </div>
+                  {clientBusy === c.id && <span className="text-[11px] text-text-3">Opening…</span>}
+                </button>
+              ))
+            )}
+          </div>
+        ) : (
         <div className="mt-2 max-h-72 space-y-0.5 overflow-y-auto">
           {teammates.filter(matchName(newQuery)).length === 0 ? (
             <p className="py-8 text-center text-[12.5px] text-text-3">No colleagues found.</p>
@@ -938,6 +1010,7 @@ export function TeamMessagesView({
             ))
           )}
         </div>
+        )}
       </Dialog>
 
       <Dialog

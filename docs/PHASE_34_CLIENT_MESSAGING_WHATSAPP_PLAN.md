@@ -8,7 +8,7 @@ Phila - open it". Underneath, harden the WhatsApp rail with what Thola does well
 retries + dead letters, webhook idempotency, delivery ticks that never regress, and a proper
 Integrations home for the connection.*
 
-> **Status:** ✅ 34.1 - 34.5 shipped 2026-08-18; batch 4m (2026-08-19) added the web push lane to the nudge rail, the DB typing indicator, and the opt-in crisis support rule in client conversations (see ROADMAP).
+> **Status:** ✅ 34.1 - 34.5 shipped 2026-08-18; batch 4m (2026-08-19) added the web push lane to the nudge rail, the DB typing indicator, and the platform-switched crisis support rule in client conversations; batch 4n @mentions + give-words-back; batch 4o closed the two deferred 34.1 items (Clients tab door, DSAR inclusion). Still deferred: Meta template modelling, inbound media labels, cost hint, 34.6 / 34.7 on request (see ROADMAP).
 > ✅ 34.1 - 34.5 shipped 2026-08-18. Remaining: the deferred bits inside 34.1/34.3 (Clients tab door, DSAR inclusion, Meta template modelling, inbound media labels, cost hint) and the on-request 34.6 (mirrored inbox) / 34.7 (Embedded Signup). Written after reading Phila's messaging + WhatsApp stack end to end
 > and a deep read of Thola v2 (`C:\Users\patri\Downloads\thola\thola_v2` - its WhatsApp transport,
 > webhook, number-health, inbox, follow-up engine and readiness docs).
@@ -71,10 +71,11 @@ Integrations home for the connection.*
   `client_id = me`.
 - [x] **Staff can start it** from the client page (Hub + counsellor app) - a **Message** button - and
   the appointment modal ("Message client"). *Shipped 34.1.*
-- [ ] A third door - the Messages page **New message → Clients** tab (searchable, only clients the
-  person may see: an org admin / front desk sees all, a counsellor their own caseload) - **deferred**
-  to a follow-up; the two shipped doors cover the real workflows (you're on the client, or on the
-  session). If the client has **no portal account yet** the message still saves and the
+- [x] A third door - the Messages page **New message → Clients** tab (searchable, only clients the
+  person may see: an org admin / front desk sees all, a counsellor their own caseload) - *shipped
+  batch 4o (2026-08-19)*: `listMessageableClientsDb` (same caseload rule as the thread creator),
+  rows say "Conversation open" / "Has a portal login" / "No portal login yet - your first message
+  carries the activation link"; picking opens (or creates) the thread in place. If the client has **no portal account yet** the message still saves and the
   nudge carries the **activation link** (existing invite flow) so the first thing they see after
   setting a password is the message. Honest empty state when the client has no phone/email at all.
 - [x] **In the staff Messages page** client threads sit in their own **Clients** section of the list
@@ -91,8 +92,10 @@ Integrations home for the connection.*
   "your care team". Unread badge on the nav item; the bell gets a notification per new staff message.
 - [x] **Audit + POPIA:** opening a client thread logs `pii.read` (Thola does the same on inbox open);
   every send is audited as today; the messages never leave the org's tenant.
-- [ ] **DSAR + erasure + retention** (Phase 31) must include the client thread's messages - to wire
-  and prove in a follow-up (today the export covers the client record, sessions, documents).
+- [x] **DSAR + erasure + retention** (Phase 31) include the client thread's messages - *shipped
+  batch 4o*: the export gains a **Messages with the practice** section (from / sender / text /
+  attachment / at / edited / deleted, mention tokens flattened); erasure blanks every message in the
+  client thread(s) (body + attachment pointer, marked deleted, rows kept for counts).
 - [x] **Rules the server enforces:** a client cannot create a thread (`sendTeamMessage` refuses a
   client principal without an existing thread id), cannot address anyone but "the practice", cannot
   add members, cannot attach; a counsellor can only open threads for clients on their caseload; a

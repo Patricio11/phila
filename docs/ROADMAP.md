@@ -1933,6 +1933,19 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   first behind a swappable adapter so other providers can be switched on/off later; includes the
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).
 
+- [x] **Messages: the Clients door + DSAR includes the conversation** *(2026-08-19, batch 4o - the
+  two deferred 34.1 items)*: (1) **New message → Clients** tab in the Messages page (staff only):
+  searchable list of the clients this person may message - org admin / front desk see every active
+  client, a counsellor their own caseload (`listMessageableClientsDb`, the same rule
+  `findOrCreateClientThreadDb` enforces); each row says "Conversation open" / "Has a portal login" /
+  "No portal login yet - your first message carries the activation link"; picking opens (or
+  creates) the thread in place. (2) **DSAR** - the export gains **Messages with the practice** (from
+  / sender / text / attachment / at / edited / deleted; mention tokens flattened) and **erasure**
+  blanks every message in the client thread(s) (body + attachment pointer, marked deleted, rows kept
+  for counts). Proven live: admin sees 44 clients, Nomsa sees her 7; a pick opened a fresh client
+  thread with the "can read this conversation" banner; the CSV export of Lerato carries the
+  conversation rows.
+
 - [x] **Messages: @mentions + give-the-words-back** *(2026-08-19, batch 4n - the two mycatfish
   borrows)*: (1) **@mentions** - type `@` in any conversation and a small list of the people in it
   appears (name + role, arrow keys, Enter / Tab, click); the box stays plain (`@Nomsa Dlamini`), and

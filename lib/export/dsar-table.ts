@@ -22,6 +22,8 @@ const SECTIONS: { key: string; title: string }[] = [
   { key: "consents", title: "Consents" },
   { key: "documents", title: "Documents" },
   { key: "invoices", title: "Invoices" },
+  // Batch 4o - the conversation with the practice (Phase 34.1 client messaging).
+  { key: "messages", title: "Messages with the practice" },
   { key: "accessAudit", title: "Who accessed this record" },
 ];
 

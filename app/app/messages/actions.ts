@@ -12,7 +12,7 @@ import { after } from "next/server";
 import { runForOrg } from "@/lib/db/scoped";
 import { getDataProvider, type TeamThread } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
-import { sendTeamMessageDb, sendToThreadDb, createGroupThreadDb, markThreadReadDb, getUserName, editMessageDb, deleteMessageDb, getAttachmentAccess, listMemberThreadIds, quotedMessageDb, toggleReactionDb, canManageGroupDb, renameGroupDb, addGroupMembersDb, removeGroupMemberDb, threadMembersDb, groupMembershipDb, findOrCreateClientThreadDb, threadKindDb, listTeamThreadsDb, isClientUserDb } from "@/db/queries/messages";
+import { sendTeamMessageDb, sendToThreadDb, createGroupThreadDb, markThreadReadDb, getUserName, editMessageDb, deleteMessageDb, getAttachmentAccess, listMemberThreadIds, quotedMessageDb, toggleReactionDb, canManageGroupDb, renameGroupDb, addGroupMembersDb, removeGroupMemberDb, threadMembersDb, groupMembershipDb, findOrCreateClientThreadDb, threadKindDb, listTeamThreadsDb, isClientUserDb, listMessageableClientsDb, type MessageableClient } from "@/db/queries/messages";
 import { currentStorageBytes, addStorageUsage } from "@/db/queries/documents";
 import { broadcastToThread, broadcastThreadAdded, broadcastMessageUpdate, broadcastReaction, broadcastThreadUpdated, broadcastThreadRemoved, getRealtimeAuthSecret, signRealtimeToken } from "@/lib/messaging/realtime";
 import { getStorageProvider, activeStorageBackend, objectKey } from "@/lib/storage";
@@ -405,4 +405,13 @@ export async function leaveGroup(raw: { threadId: string }): Promise<{ ok: true 
   await broadcastThreadUpdated(threadId, { members, memberCount: members.length });
   await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: null, teamRole: membership.teamRole }, orgId: membership.orgId, target: `team_group:${threadId}`, reason: "leave_group" });
   return { ok: true };
+}
+
+/* ── Batch 4o - New message → Clients (the third door) ───────────────────── */
+export async function listMessageableClients(raw?: { query?: string }): Promise<{ ok: true; clients: MessageableClient[] } | { ok: false; error: string }> {
+  const me = await requireMessagingPrincipal();
+  if (me.kind !== "staff") return { ok: false, error: "Your practice starts the conversation." };
+  if (!isDb()) return { ok: true, clients: [] };
+  const clients = await listMessageableClientsDb(me.orgId, me.userId, me.teamRole, String(raw?.query ?? ""));
+  return { ok: true, clients };
 }

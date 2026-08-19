@@ -19,9 +19,8 @@ export async function setPlatformCrisisSupportDb(enabled: boolean): Promise<void
     .onConflictDoUpdate({ target: platformSettings.id, set: { crisisSupportEnabled: enabled } });
 }
 
-/** Is the function on for this org right now? Phila's switch first, then the practice's own. */
-export async function crisisSupportActiveDb(orgCrisisSupport: boolean): Promise<boolean> {
-  if (!orgCrisisSupport) return false;
+/** Is crisis support on right now? Phila's (platform admin's) switch alone decides - for every org. */
+export async function crisisSupportActiveDb(): Promise<boolean> {
   const p = await getPlatformSettingsDb();
   return p.crisisSupportEnabled;
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "org_messaging_settings" DROP COLUMN "crisis_support";

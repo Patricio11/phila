@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  * Batch 4m - "Platform functions": things Phila switches ON for practices (the
  * feature matrix above is the other way round - kill-switches over features orgs
  * choose themselves). Off until the super admin decides; every org follows
- * instantly; a practice may still switch it off for itself.
+ * instantly; there is no org-level switch.
  */
 export function PlatformFunctions({ crisisSupportEnabled }: { crisisSupportEnabled: boolean }) {
   const { toast } = useToast();
@@ -23,7 +23,7 @@ export function PlatformFunctions({ crisisSupportEnabled }: { crisisSupportEnabl
     start(async () => {
       const res = await setPlatformCrisisSupport({ enabled: next });
       if (!res.ok) { setOn(!next); return toast({ tone: "error", title: res.error }); }
-      toast({ tone: next ? "success" : "default", title: next ? "Crisis support switched on for practices" : "Crisis support switched off", description: next ? "Every practice has it now; each can switch it off for itself under Settings → Messaging → Notifications." : "Nothing is read and nothing is shown, anywhere." });
+      toast({ tone: next ? "success" : "default", title: next ? "Crisis support switched on for practices" : "Crisis support switched off", description: next ? "Every practice has it now." : "Nothing is read and nothing is shown, anywhere." });
     });
   };
 
@@ -31,7 +31,7 @@ export function PlatformFunctions({ crisisSupportEnabled }: { crisisSupportEnabl
     <section className="space-y-3">
       <div>
         <h2 className="text-[15px] font-[660] text-text">Platform functions</h2>
-        <p className="text-[12.5px] text-text-2">Off until you switch them on. Once on, every practice has the function (and may switch it off for itself).</p>
+        <p className="text-[12.5px] text-text-2">Off until you switch them on. Once on, every practice has the function - practices don&apos;t see a switch for it.</p>
       </div>
       <div className={cn("rounded-card border p-4 transition-colors", on ? "border-accent/40 bg-accent-soft/20" : "border-border bg-surface")} data-testid="platform-crisis-support">
         <div className="flex items-start gap-3">

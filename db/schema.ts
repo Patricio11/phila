@@ -551,10 +551,6 @@ export const orgMessagingSettings = pgTable("org_messaging_settings", {
   /** Phase 34.2 - "X sent you a message on Phila" alerts (WhatsApp / SMS / email) for offline recipients. */
   messageAlertsStaff: boolean("message_alerts_staff").default(true).notNull(),
   messageAlertsClients: boolean("message_alerts_clients").default(true).notNull(),
-  /** Batch 4m - the practice's own say once Phila has switched crisis support on (platform_settings):
-   *  a client-visible message that reads as self-harm still sends, the practice is quietly told,
-   *  and SADAG / Lifeline are shown to the author only. ON by default; a practice may switch it off. */
-  crisisSupport: boolean("crisis_support").default(true).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 });
 

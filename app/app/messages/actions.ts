@@ -5,7 +5,6 @@ import { requireOrg } from "@/lib/auth/guard";
 import { requireMessagingPrincipal } from "@/lib/messaging/principal";
 import { readsAsCrisis, CRISIS_LINES, type CrisisLine } from "@/lib/messaging/crisis";
 import { mentionedUserIds, sanitiseMentions } from "@/lib/messaging/mentions";
-import { getMessagingSettings } from "@/db/queries/messaging";
 import { createNotification } from "@/db/queries/notifications";
 import { nudgeThreadMembers } from "@/lib/messaging/nudge";
 import { after } from "next/server";
@@ -124,9 +123,8 @@ export async function sendTeamMessage(
     // Now: quietly bell the staff in the thread + the org's admins (never the text),
     // and hand SADAG / Lifeline back to the author alone.
     if (me.kind === "client" && d.text.trim() && readsAsCrisis(d.text)) {
-      const settings = await getMessagingSettings(me.orgId).catch(() => null);
       const { crisisSupportActiveDb } = await import("@/db/queries/settings");
-      if (settings && (await crisisSupportActiveDb(settings.crisisSupport).catch(() => false))) {
+      if (await crisisSupportActiveDb().catch(() => false)) {
         support = CRISIS_LINES;
         const crisisThreadId = sent.threadId;
         after(async () => {

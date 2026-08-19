@@ -234,8 +234,8 @@ Sign in as **Thandeka**.
 **Messages: typing, composer, crisis support, web push** (batch 4m)
 - ☐ Two browsers (staff + client): while one types, the other's thread shows the dots bubble + "X is typing…" in the header within ~3 s, gone ~6 s after the last keystroke - with Supabase unconfigured
 - ☐ The composer is 44 px tall empty (also under a reply bar) and grows with a multi-line draft; editing a message gets the same roomy box
-- ☐ As the **platform admin**, Feature control → **Platform functions** → "Crisis support in client conversations" is OFF by default; an org's Settings → Messaging → Notifications card says "Not switched on by Phila yet" and a client message such as "I don't want to be here anymore" sends with no card
-- ☐ Switch it ON at the platform → the org card shows its own switch (on) → the same client message sends as written, the client alone sees the SADAG / Lifeline card under it, staff see the message with no card and a bell "<Name>'s message may need you now"; the org may switch it off for itself; switch the platform OFF again
+- ☐ As the **platform admin**, Feature control → **Platform functions** → "Crisis support in client conversations" is OFF by default; a client message such as "I don't want to be here anymore" sends with no card; an org's Settings → Messaging → Notifications page has NO crisis toggle
+- ☐ Switch it ON at the platform → the same client message sends as written, the client alone sees the SADAG / Lifeline card under it, staff see the message with no card and a bell "<Name>'s message may need you now"; switch the platform OFF again
 - ☐ Admin → Integrations → **Web push**: Generate keys + switch on → Live + public key + **Notifications on this device** row; in a real browser **Turn on** → permission prompt → "Notifications on" toast → **Send me a test** shows a card; Messages shows the one-line banner only while permission is undecided; "Not now" hides it for 14 days
 - ☐ With a subscribed device away from Phila, a message to that person lands as ONE push card per conversation (never the text); clicking it opens the conversation; WhatsApp / SMS / email alert is skipped for them
 

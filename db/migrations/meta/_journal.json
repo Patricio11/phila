@@ -610,6 +610,13 @@
       "when": 1787164510058,
       "tag": "0086_tense_tusk",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1787168642272,
+      "tag": "0087_pretty_kate_bishop",
+      "breakpoints": true
     }
   ]
 }

@@ -1971,8 +1971,8 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   slit under the reply bar), grows with the text to ~6 lines, same for editing a message.
   (3) **Crisis support in client conversations - the PLATFORM admin's switch** (Admin → Feature
   control → **Platform functions**; `platform_settings.crisis_support_enabled`, OFF until Phila turns
-  it on; every practice then has it and may switch it off for itself under Settings → Messaging →
-  Notifications, where the card says "Not switched on by Phila yet" until then): when ON and a
+  it on; every practice then has it - there is NO org-level switch, the practice's Notifications
+  settings don't mention it; migration 0087 dropped the short-lived org column): when ON and a
   client's message reads as self-harm (`lib/messaging/
   crisis.ts`, a short conservative phrase list, unit-tested, no AI), the message still sends exactly
   as written, the staff in that conversation + the org's admins get a quiet bell (never the text;
@@ -1997,9 +1997,9 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   normal external lane. Headless Chromium has no push service (permission reads "denied"), so the
   device-side subscribe is proven by its honest "Blocked" state here and by the server lane - a
   real browser completes it. Migrations 0084 (`typing_at`) + 0085 (`crisis_support`,
-  `push_subscriptions`), 0086 (platform switch; org column now defaults ON = "opt out"). Proven live:
-  platform OFF → org card honest + a distress message sends with no card; platform ON → org card shows
-  its own switch on + the client's card appears; switched back OFF after.
+  `push_subscriptions`), 0086 + 0087 (platform switch only). Proven live: platform OFF → a distress
+  message sends with no card; platform ON → the client's card appears; switched back OFF after; the
+  org Notifications page carries no crisis toggle.
 
 - [x] **S3 browser uploads - the bucket's CORS rule, diagnosed and fixable from Phila** *(2026-08-19,
   batch 4l)*: the practice's uploads to the org's Amazon S3 bucket were dying on the browser's

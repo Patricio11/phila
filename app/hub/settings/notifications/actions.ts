@@ -18,7 +18,6 @@ const settingsInput = z.object({
   quietEnd: time,
   messageAlertsStaff: z.boolean().default(true),
   messageAlertsClients: z.boolean().default(true),
-  crisisSupport: z.boolean().default(true),
 });
 
 export async function saveNotificationSettings(
@@ -33,7 +32,6 @@ export async function saveNotificationSettings(
     emailReplyTo: d.emailReplyTo || null, emailFromName: d.emailFromName || null,
     quietStart: d.quietStart || null, quietEnd: d.quietEnd || null,
     messageAlertsStaff: d.messageAlertsStaff, messageAlertsClients: d.messageAlertsClients,
-    crisisSupport: d.crisisSupport,
   });
   await logAccess({ action: "admin.action", actor: { userId: "hub", platformRole: null, teamRole: "org_admin" }, orgId: membership.orgId, target: `org:${membership.orgId}/messaging`, reason: "update_notification_settings" });
   return { ok: true };

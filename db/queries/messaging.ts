@@ -17,21 +17,18 @@ export interface MessagingSettings {
   /** Phase 34.2 - "X sent you a message on Phila" alerts for offline staff / clients. */
   messageAlertsStaff: boolean;
   messageAlertsClients: boolean;
-  /** Batch 4m - the practice's say on crisis support in client conversations (Phila's platform switch must be on too). */
-  crisisSupport: boolean;
 }
 
 const DEFAULT_SETTINGS: MessagingSettings = {
   whatsappEnabled: false, smsEnabled: false, emailEnabled: false,
   emailReplyTo: null, emailFromName: null, quietStart: null, quietEnd: null,
   messageAlertsStaff: true, messageAlertsClients: true,
-  crisisSupport: true,
 };
 
 export async function getMessagingSettings(orgId: string): Promise<MessagingSettings> {
   const [row] = await getDb().select().from(orgMessagingSettings).where(eq(orgMessagingSettings.orgId, orgId)).limit(1);
   if (!row) return DEFAULT_SETTINGS;
-  return { whatsappEnabled: row.whatsappEnabled, smsEnabled: row.smsEnabled, emailEnabled: row.emailEnabled, emailReplyTo: row.emailReplyTo, emailFromName: row.emailFromName, quietStart: row.quietStart, quietEnd: row.quietEnd, messageAlertsStaff: row.messageAlertsStaff, messageAlertsClients: row.messageAlertsClients, crisisSupport: row.crisisSupport };
+  return { whatsappEnabled: row.whatsappEnabled, smsEnabled: row.smsEnabled, emailEnabled: row.emailEnabled, emailReplyTo: row.emailReplyTo, emailFromName: row.emailFromName, quietStart: row.quietStart, quietEnd: row.quietEnd, messageAlertsStaff: row.messageAlertsStaff, messageAlertsClients: row.messageAlertsClients };
 }
 
 export async function saveMessagingSettings(orgId: string, s: MessagingSettings): Promise<void> {

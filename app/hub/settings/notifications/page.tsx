@@ -32,10 +32,6 @@ export default async function NotificationsSettingsPage() {
   const health = process.env.DATA_PROVIDER === "db" && whatsapp.status !== "off"
     ? await (await import("@/db/queries/whatsapp-health")).readNumberHealth(membership.orgId)
     : null;
-  // Batch 4m - crisis support is Phila's function to switch on for practices.
-  const crisisPlatformOn = process.env.DATA_PROVIDER === "db"
-    ? (await (await import("@/db/queries/settings")).getPlatformSettingsDb()).crisisSupportEnabled
-    : false;
 
   return (
     <div className="rise space-y-6">
@@ -50,7 +46,7 @@ export default async function NotificationsSettingsPage() {
             whatsapp={whatsapp}
             credits={credits}
             practiceName={org.name}
-            health={health} crisisPlatformOn={crisisPlatformOn} />
+            health={health} />
         </div>
       </Card>
 

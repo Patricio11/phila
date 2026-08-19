@@ -1,8 +1,7 @@
 /**
- * Batch 4m - crisis support in client conversations. OFF until Phila's super
+ * Batch 4m - crisis support in client conversations. OFF until Phila's platform
  * admin switches the function on for practices (Admin → Feature control →
- * Platform functions); every practice then has it and may switch it off for
- * itself under Settings → Messaging → Notifications.
+ * Platform functions); every practice then has it - there is no org-level switch.
  *
  * The rule never blocks and never punishes: the message is saved and delivered
  * exactly as written. When it reads as self-harm, two quiet things happen:

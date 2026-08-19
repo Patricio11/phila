@@ -35,7 +35,7 @@ export function ResponseView({ fields, answers, formTitle, brand, respondent, su
       data-testid="response-document"
     >
       {brand && (
-        <div className="mb-12 flex justify-center">
+        <div className="mb-16 flex justify-center">
           {brand.logoUrl
             // eslint-disable-next-line @next/next/no-img-element
             ? <img src={brand.logoUrl} alt={brand.orgName} className="max-h-14 max-w-[200px] object-contain" />

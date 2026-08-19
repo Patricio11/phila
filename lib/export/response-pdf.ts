@@ -103,7 +103,7 @@ export function buildResponsePdfHtml(input: ResponsePdfInput): string {
   table.frame { width: 100%; border-collapse: collapse; }
   table.frame > thead { display: table-header-group; }
   table.frame > tfoot { display: table-footer-group; }
-  td.head-space { height: 38mm; border: 0; padding: 0; }
+  td.head-space { height: 44mm; border: 0; padding: 0; }
   td.foot-space { height: 13mm; border: 0; padding: 0; }
   /* The example layout: the title centred, clear air between it and the logo. */
   h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; color: ${accent}; margin: 0 0 14px; text-align: center; }

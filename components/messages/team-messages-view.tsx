@@ -94,6 +94,9 @@ export function TeamMessagesView({
   const [creating, setCreating] = useState(false);
   // Batch 4g - reply, reactions, emoji, thread info.
   const [replyTo, setReplyTo] = useState<{ id: string; senderName: string; text: string } | null>(null);
+  // Batch 4s - a picked file waits in a tray above the composer so a caption can ride along (the WhatsApp shape).
+  const [staged, setStaged] = useState<{ file: File; url: string; isImage: boolean } | null>(null);
+  const clearStaged = () => setStaged((s) => { if (s) URL.revokeObjectURL(s.url); return null; });
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [reactFor, setReactFor] = useState<string | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
@@ -312,6 +315,7 @@ export function TeamMessagesView({
   const openThread = (id: string) => {
     setActiveId(id);
     setReplyTo(null);
+    clearStaged();
     setEmojiOpen(false);
     setMobileThread(true);
     setThreads((prev) => prev.map((t) => (t.id === id ? { ...t, unread: 0 } : t)));
@@ -450,7 +454,7 @@ export function TeamMessagesView({
   };
 
   // Send text and/or a file; optimistic, then reconcile the local ids with the real ones.
-  const dispatch = (text: string, attachment?: { key: string; name: string; contentType: string; bytes: number }) => {
+  const dispatch = (text: string, attachment?: { key: string; name: string; contentType: string; bytes: number }, localUrl?: string) => {
     if (!active || (!text && !attachment)) return;
     const wasThreadId = active.id;
     const localId = `local_${(localSeq.current += 1)}`;
@@ -458,7 +462,7 @@ export function TeamMessagesView({
     setReplyTo(null);
     // Batch 4n - "@Thabo Mokoena" typed plain becomes a mention token the server can trust.
     const body = tokeniseMentions(text, mentionMembers);
-    const optimistic = { id: localId, from: "me" as const, text: body, at: new Date().toISOString(), senderId: myUserId, attachment: attachment ? { name: attachment.name, contentType: attachment.contentType, bytes: attachment.bytes } : undefined, replyTo: quoted };
+    const optimistic = { id: localId, from: "me" as const, text: body, at: new Date().toISOString(), senderId: myUserId, attachment: attachment ? { name: attachment.name, contentType: attachment.contentType, bytes: attachment.bytes, localUrl } : undefined, replyTo: quoted };
     setThreads((prev) => prev.map((t) => (t.id === wasThreadId ? { ...t, messages: [...t.messages, optimistic], lastAt: optimistic.at } : t)));
     // Batch 4n - give the words back: a failed send returns the draft + the reply target to the box.
     const giveBack = (reason: string) => {
@@ -489,12 +493,19 @@ export function TeamMessagesView({
 
   const send = () => {
     const text = draft.trim();
+    if (staged) {
+      const s = staged;
+      setStaged(null); // keep the object URL alive for the optimistic bubble
+      setDraft("");
+      void uploadAndSend(s.file, text, s.url);
+      return;
+    }
     if (!text) return;
     setDraft("");
     dispatch(text);
   };
 
-  const uploadAndSend = async (file: File) => {
+  const uploadAndSend = async (file: File, caption: string, localUrl?: string) => {
     if (!active) return;
     setUploading((u) => u + 1);
     try {
@@ -503,8 +514,7 @@ export function TeamMessagesView({
       if (!req.ok) return toast({ tone: "error", title: "Couldn't attach", description: req.error });
       const put = await fetch(req.uploadUrl, { method: "PUT", headers: { "Content-Type": type }, body: file });
       if (!put.ok) return toast({ tone: "error", title: "Upload failed", description: "Please try again." });
-      dispatch(draft.trim(), { key: req.key, name: file.name, contentType: type, bytes: file.size });
-      setDraft("");
+      dispatch(caption, { key: req.key, name: file.name, contentType: type, bytes: file.size }, localUrl);
     } finally {
       setUploading((u) => Math.max(0, u - 1));
     }
@@ -742,7 +752,9 @@ export function TeamMessagesView({
                                   <span className={cn("block truncate text-[12px]", m.from === "me" ? "text-accent-ink/80" : "text-text-2")}>{stripMentionTokens(m.replyTo.text) || "Message"}</span>
                                 </button>
                               )}
-                              {!m.deleted && m.attachment && (
+                              {!m.deleted && m.attachment && (m.attachment.contentType ?? "").startsWith("image/") ? (
+                                <ChatImage messageId={m.id} name={m.attachment.name} localUrl={m.attachment.localUrl} onOpen={() => openAttachment(m.id)} />
+                              ) : !m.deleted && m.attachment ? (
                                 <button
                                   type="button"
                                   onClick={() => openAttachment(m.id)}
@@ -757,7 +769,7 @@ export function TeamMessagesView({
                                   </span>
                                   <Download className={cn("size-4 shrink-0", m.from === "me" ? "text-accent-ink/80" : "text-text-3")} aria-hidden />
                                 </button>
-                              )}
+                              ) : null}
                               {m.deleted ? "This message was deleted" : <span className="whitespace-pre-wrap break-words"><MessageBody text={m.text} myUserId={myUserId} mine={m.from === "me"} /></span>}
                               {!m.deleted && (
                                 <div className={cn("mt-1 flex items-center gap-1 text-[10px]", m.from === "me" ? "text-accent-ink/70" : "text-text-3")}>
@@ -865,6 +877,21 @@ export function TeamMessagesView({
                     </div>
                   </div>
                 )}
+                {staged && (
+                  <div className="mb-2 flex items-center gap-2.5 rounded-control border border-border bg-surface-2/60 p-2" data-testid="attachment-tray">
+                    {staged.isImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={staged.url} alt="" className="size-14 shrink-0 rounded-lg object-cover" />
+                    ) : (
+                      <span className="inline-flex size-14 shrink-0 items-center justify-center rounded-lg bg-surface text-text-3"><FileText className="size-6" strokeWidth={1.8} aria-hidden /></span>
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[12.5px] font-medium text-text">{staged.file.name}</span>
+                      <span className="block text-[11px] text-text-3">{sizeLabel(staged.file.size)}{staged.isImage ? " · sends with your caption" : ""}</span>
+                    </span>
+                    <button type="button" onClick={clearStaged} aria-label="Remove attachment" className="inline-flex size-7 shrink-0 items-center justify-center rounded-control text-text-3 hover:bg-surface-hover hover:text-text"><X className="size-3.5" aria-hidden /></button>
+                  </div>
+                )}
                 {emojiOpen && (
                   <div className="absolute bottom-full left-3 z-30 mb-1">
                     <EmojiPicker onPick={(e) => { insertEmoji(e); }} onClose={() => setEmojiOpen(false)} />
@@ -873,7 +900,7 @@ export function TeamMessagesView({
                 <div className="flex items-end gap-1.5 sm:gap-2">
                   {!isClient && (
                     <>
-                      <input ref={attachInput} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadAndSend(f); e.target.value = ""; }} aria-hidden />
+                      <input ref={attachInput} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { clearStaged(); setStaged({ file: f, url: URL.createObjectURL(f), isImage: (f.type || "").startsWith("image/") }); requestAnimationFrame(() => composerRef.current?.focus()); } e.target.value = ""; }} aria-hidden />
                       <button
                         type="button"
                         onClick={() => attachInput.current?.click()}
@@ -904,12 +931,12 @@ export function TeamMessagesView({
                     onKeyUp={(e) => { if (e.key.startsWith("Arrow") || e.key === "Home" || e.key === "End") updateMention(e.currentTarget); }}
                     onClick={(e) => updateMention(e.currentTarget)}
                     onBlur={() => setTimeout(() => setMention(null), 150)}
-                    placeholder={uploading > 0 ? "Uploading…" : isClient ? "Message your practice…" : `Message ${active.otherName.split(" ")[0]}…`}
+                    placeholder={uploading > 0 ? "Sending…" : staged ? (staged.isImage ? "Add a caption…" : "Add a note…") : isClient ? "Message your practice…" : `Message ${active.otherName.split(" ")[0]}…`}
                     rows={1}
                     onInput={(e) => autoGrow(e.currentTarget)}
                     className="max-h-44 min-h-[44px] flex-1 resize-none rounded-control border border-border bg-surface px-3 py-2.5 text-[14px] leading-[1.45] text-text placeholder:text-text-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
                   />
-                  <button type="button" onClick={send} disabled={!draft.trim()} aria-label="Send" className="inline-flex size-10 shrink-0 items-center justify-center rounded-control bg-accent text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-50">
+                  <button type="button" onClick={send} disabled={!draft.trim() && !staged} aria-label="Send" className="inline-flex size-10 shrink-0 items-center justify-center rounded-control bg-accent text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-50">
                     <Send className="size-4" strokeWidth={2} aria-hidden />
                   </button>
                 </div>
@@ -1140,5 +1167,36 @@ function MessageBody({ text, myUserId, mine }: { text: string; myUserId: string;
           >@{seg.name.split(" ")[0]}</span>
         ))}
     </>
+  );
+}
+
+/* Batch 4s - inline chat images. Signed URLs are short-lived, so each image signs
+ * itself once on mount (cached per message for the session) - the optimistic
+ * sender shows the local file instantly instead. Click opens the full image. */
+const imageUrlCache = new Map<string, string>();
+
+function ChatImage({ messageId, name, localUrl, onOpen }: { messageId: string; name: string; localUrl?: string; onOpen: () => void }) {
+  const [url, setUrl] = useState<string | null>(localUrl ?? imageUrlCache.get(messageId) ?? null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    if (url || messageId.startsWith("local_")) return;
+    let alive = true;
+    void signChatAttachment({ messageId }).then((res) => {
+      if (!alive) return;
+      if (res.ok) { imageUrlCache.set(messageId, res.url); setUrl(res.url); }
+      else setFailed(true);
+    }).catch(() => { if (alive) setFailed(true); });
+    return () => { alive = false; };
+  }, [messageId, url]);
+  if (failed) return null;
+  return (
+    <button type="button" onClick={onOpen} className="mb-1 block w-full overflow-hidden rounded-xl" aria-label={`Open ${name}`}>
+      {url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={url} alt={name} className="max-h-80 w-full rounded-xl object-cover" onError={() => { imageUrlCache.delete(messageId); setUrl(null); }} />
+      ) : (
+        <span className="block h-44 w-full animate-pulse rounded-xl bg-surface-2" />
+      )}
+    </button>
   );
 }

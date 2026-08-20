@@ -260,7 +260,7 @@ export interface TeamMessage {
   edited?: boolean;
   deleted?: boolean;
   /** A file attached to the message (opened via a signed URL by message id). */
-  attachment?: { name: string; contentType: string; bytes: number };
+  attachment?: { name: string; contentType: string; bytes: number; /** Batch 4s - the sender's optimistic local preview (object URL); never persisted. */ localUrl?: string };
   /** Batch 4g - who sent it (for avatars + "you reacted"). */
   senderId?: string;
   /** Batch 4g - emoji reactions, grouped: who reacted with what. */

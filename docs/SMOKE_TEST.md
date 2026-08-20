@@ -222,6 +222,11 @@ Sign in as **Thandeka**.
 - ☐ Delivery states on Billing → Recent messages never go backwards (a `Read` never becomes `Delivered`); a Meta failure shows its reason; **Failed after retries** lists dead letters with masked recipients
 - ☐ As the super admin, Integrations → **Org connections** ends with **WhatsApp numbers by org** (number, name, status, health chip); Billing shows "N message alerts this month" once any alert has actually gone out
 
+**Messages: image with caption** (batch 4s)
+- ☐ Attach an image → it stages in a tray above the composer ("Add a caption…"); Send → one bubble, picture on top, caption below; tap the picture to open it full
+- ☐ The client portal shows the same bubble inline and can open the image (the old build refused clients the download)
+- ☐ A non-image file still shows the name-size row; X on the tray discards before sending
+
 **Session notes filed + counsellor Documents layout** (batch 4r)
 - ☐ With a "counsellor" automation on the session-note form: mark a session held → the counsellor fills their task → a letterhead PDF named "<Form> <REF> - <Client> - <date>.pdf" appears in the client's folder (Documents → Counsellors → <counsellor> → <client>), clinical, downloadable
 - ☐ The counsellor's /app/documents is a tree: Your folder (their clients' folders inside, with counts), Shared with you, Files shared with you, Supervising; breadcrumb + folder cards + Upload / Download all in context

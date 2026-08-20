@@ -1933,6 +1933,19 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   first behind a swappable adapter so other providers can be switched on/off later; includes the
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).
 
+- [x] **Messages: send an image with a caption - the WhatsApp shape** *(2026-08-20, batch 4s)*:
+  picking a file no longer fires it off instantly - it waits in a **tray above the composer**
+  (thumbnail for images, name + size, X to remove), the box becomes "Add a caption…", and Send
+  ships image + caption as ONE message. In the thread an image attachment renders **inline** -
+  picture on top (rounded, tap to open full), caption below in the same bubble - for staff AND in
+  the client portal; non-image files keep the file row. The sender sees their local preview
+  instantly (object URL) while the upload runs; receivers sign a short-lived URL per image (cached
+  per session; `ChatImage`). Also fixed a latent bug on the way: `signChatAttachment` required an
+  org membership, so a CLIENT could never open an attachment staff sent them - it now accepts the
+  messaging principal (staff or client; thread membership still enforced by
+  `getAttachmentAccess`). Proven live: staged tray + caption → one bubble with the picture and
+  caption on the hub, and the same bubble inline in Lerato's portal.
+
 - [x] **Landing refreshed to today's product** *(2026-08-20)*: the hero's "system image"
   (`DashboardPreview`, still built from the real app's primitives) is now the ORG ADMIN's hub at
   `philasa.com/hub` - practice-level stats (18 sessions across 5 counsellors, attendance, paid this

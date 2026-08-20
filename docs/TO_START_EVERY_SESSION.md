@@ -354,6 +354,9 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
 - **One Switch + Classroom rename** (2026-08-19): every on/off control renders through
   `components/ui/switch.tsx` (never hand-roll a toggle); the counsellor nav item for
   `/app/supervision` is labelled **Classroom** (matches the hub).
+- **4s Image + caption in chat** (2026-08-20): staged attachment tray → one message; inline image
+  bubbles via `ChatImage` (signed URL per message, session cache, sender's local preview);
+  `signChatAttachment` now accepts the messaging principal so clients can open attachments.
 - **Numbers at 2026-08-20:** migrations through **0089**; **324** tests green (`npx vitest run`,
   unit + integration); every batch / task proven live on `npm run build && npm run start` with
   screenshots.

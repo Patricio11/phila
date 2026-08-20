@@ -221,7 +221,10 @@ export async function getRealtimeToken(): Promise<{ token: string } | null> {
 
 /** A short-TTL signed URL to open a chat attachment  members only. */
 export async function signChatAttachment(raw: { messageId: string }): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
-  const { principal, membership } = await requireOrg();
+  // Batch 4s - staff OR the client: getAttachmentAccess enforces thread membership either way.
+  const me = await requireMessagingPrincipal();
+  const principal = { userId: me.userId };
+  const membership = { orgId: me.orgId, teamRole: me.kind === "staff" ? me.teamRole : null };
   const messageId = String(raw?.messageId ?? "");
   if (!messageId) return { ok: false, error: "Not found." };
   const acc = await getAttachmentAccess(messageId, principal.userId);

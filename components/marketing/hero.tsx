@@ -66,7 +66,7 @@ export function Hero() {
         {/* The real product */}
         <div className="rise lg:col-span-7" style={{ animationDelay: "0.12s" }}>
           <div className="float">
-            <ProductFrame className="mx-auto max-w-[640px] lg:ml-auto lg:mr-0">
+            <ProductFrame url="philasa.com/hub" className="mx-auto max-w-[640px] lg:ml-auto lg:mr-0">
               <DashboardPreview />
             </ProductFrame>
           </div>

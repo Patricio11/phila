@@ -1934,10 +1934,11 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).
 
 - [x] **Landing refreshed to today's product** *(2026-08-20)*: the hero's "system image"
-  (`DashboardPreview`, still built from the real app's primitives) now shows the 2026-08 build - the
-  fuller nav rail (Forms, Documents, Messages with an unread badge, Classroom), a phone session on
-  the day (VoicePhila), the client conversation with its live typing indicator, and a "Session note
-  SN-... filed to Lerato's folder" line (4r). Hero copy adds messaging + self-filing documents; the
+  (`DashboardPreview`, still built from the real app's primitives) is now the ORG ADMIN's hub at
+  `philasa.com/hub` - practice-level stats (18 sessions across 5 counsellors, attendance, paid this
+  month), "Across the practice" with the counsellor on every row, a phone session (VoicePhila), the
+  client conversation with its live typing indicator, a **Team** presence card (in session / online
+  / next at ...), and a "Session note SN-... filed to Lerato's folder" line (4r). Hero copy adds messaging + self-filing documents; the
   One-calm-place grid updated: "Forms that send themselves" (4p), "WhatsApp, SMS & push" (4m),
   "Documents that file themselves" (4r), "Messaging - team & clients" (34.1/4n), "Video & phone
   sessions" (33), waitlist + invoice notes mentions; client-experience adds messages to the private

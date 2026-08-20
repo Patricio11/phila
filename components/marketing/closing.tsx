@@ -4,7 +4,7 @@ import { PhilaMark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/marketing/reveal";
 
-/** Calm close  one CTA, no pressure. */
+/** Calm close - one CTA, no pressure. */
 export function ClosingCta() {
   return (
     <section id="contact" className="scroll-mt-20 px-4 pb-20 pt-8 sm:px-6">

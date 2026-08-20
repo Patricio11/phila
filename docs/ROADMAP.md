@@ -1933,6 +1933,18 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   first behind a swappable adapter so other providers can be switched on/off later; includes the
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).
 
+- [x] **Landing refreshed to today's product** *(2026-08-20)*: the hero's "system image"
+  (`DashboardPreview`, still built from the real app's primitives) now shows the 2026-08 build - the
+  fuller nav rail (Forms, Documents, Messages with an unread badge, Classroom), a phone session on
+  the day (VoicePhila), the client conversation with its live typing indicator, and a "Session note
+  SN-... filed to Lerato's folder" line (4r). Hero copy adds messaging + self-filing documents; the
+  One-calm-place grid updated: "Forms that send themselves" (4p), "WhatsApp, SMS & push" (4m),
+  "Documents that file themselves" (4r), "Messaging - team & clients" (34.1/4n), "Video & phone
+  sessions" (33), waitlist + invoice notes mentions; client-experience adds messages to the private
+  space. Also fixed a long-standing copy bug: the landing's double-space-as-dash convention
+  collapsed in HTML ("One calm place not seven tools") - 76 lines across the marketing components
+  now use a real hyphen and render as written.
+
 - [x] **Counsellor nav: Supervision renamed Classroom** *(2026-08-19)*: the counsellor sidebar item
   and page (`/app/supervision`) now read **Classroom** with the GraduationCap icon - matching the
   hub, which renamed in 2p. Same page, same behaviour (supervisors: sign-off queue + classrooms;

@@ -19,7 +19,7 @@ function features(p: Plan): string[] {
   ];
 }
 
-/** Pricing  the subscription tiers (Phase 15A catalogue). Visibility is gated by a
+/** Pricing - the subscription tiers (Phase 15A catalogue). Visibility is gated by a
  * super-admin switch (Plans & billing), so it stays hidden until pricing is final. */
 export function Pricing({ plans }: { plans: Plan[] }) {
   return (
@@ -27,7 +27,7 @@ export function Pricing({ plans }: { plans: Plan[] }) {
       <div className="mx-auto w-full max-w-[1120px] px-4 sm:px-6">
         <SectionHeading
           eyebrow="Simple, honest pricing"
-          title="One plan per practice  no per-seat surprises"
+          title="One plan per practice - no per-seat surprises"
           lead="Pick the tier that fits your team. Variable costs (AI, SMS, video) are metered with a hard cap, so a bill never runs away from you."
         />
 

@@ -13,7 +13,7 @@ const TRUST = [
 export function Hero() {
   return (
     <section className="relative overflow-hidden">
-      {/* On-brand glow  opacity/transform only, drifts slowly. */}
+      {/* On-brand glow - opacity/transform only, drifts slowly. */}
       <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
         <div className="drift absolute left-1/2 top-[-12%] h-[520px] w-[820px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,var(--accent-soft),transparent)] opacity-80 blur-2xl" />
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,var(--bg))]" />
@@ -34,9 +34,9 @@ export function Hero() {
           </h1>
 
           <p className="mt-5 max-w-md text-[15.5px] leading-relaxed text-text-2">
-            The calm operating system for counselling teams  booking, sessions, the team and its
-            documents, invoicing, and funder reporting in one place. The reporting falls out of the
-            work instead of being a second job.
+            The calm operating system for counselling teams - booking, sessions, messaging with
+            the team and with clients, documents that file themselves, invoicing, and funder
+            reporting in one place. The reporting falls out of the work instead of being a second job.
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-3">

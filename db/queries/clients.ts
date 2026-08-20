@@ -174,6 +174,8 @@ export async function reassignClientDb(orgId: string, clientId: string, counsell
     .update(clients)
     .set({ primaryCounsellorId: counsellorId })
     .where(and(eq(clients.id, clientId), eq(clients.orgId, orgId))));
+  // Batch 4r - the client's folder (and everything in it) follows them to the new counsellor.
+  try { await (await import("@/db/queries/documents")).rehomeClientFoldersDb(orgId, [clientId]); } catch { /* the folder heals on next touch */ }
   if (!row?.prev || row.prev === counsellorId) return { moved: 0, skipped: 0 };
   return moveFutureSessions(orgId, { clientId, fromCounsellorId: row.prev }, counsellorId);
 }
@@ -191,6 +193,8 @@ export async function transferCaseloadDb(orgId: string, fromCounsellorId: string
     .where(and(eq(clients.orgId, orgId), eq(clients.primaryCounsellorId, fromCounsellorId), isNull(clients.deletedAt)))
     .returning({ id: clients.id }));
   const sessions = await moveFutureSessions(orgId, { fromCounsellorId }, toCounsellorId);
+  // Batch 4r - every transferred client's folder moves under the new counsellor.
+  try { await (await import("@/db/queries/documents")).rehomeClientFoldersDb(orgId, reassigned.map((r) => r.id)); } catch { /* heals on next touch */ }
   return { clients: reassigned.length, ...sessions };
 }
 
@@ -205,5 +209,7 @@ export async function unassignCaseloadDb(orgId: string, fromCounsellorId: string
     .set({ primaryCounsellorId: null })
     .where(and(eq(clients.orgId, orgId), eq(clients.primaryCounsellorId, fromCounsellorId), isNull(clients.deletedAt)))
     .returning({ id: clients.id }));
+  // Batch 4r - unassigned clients' folders go back under "Clients".
+  try { await (await import("@/db/queries/documents")).rehomeClientFoldersDb(orgId, rows.map((r) => r.id)); } catch { /* heals on next touch */ }
   return rows.length;
 }

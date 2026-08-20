@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { getDataProvider } from "@/lib/data-provider";
 import { logAccess } from "@/lib/audit";
 import { now as clockNow } from "@/lib/clock";
@@ -27,6 +28,16 @@ export async function submitForm(raw: { token: string; answers: Record<string, s
   const now = clockNow();
   const res = await provider.submitFormResponse(token, answers, now);
   if (!res.ok) return res;
+
+  // Batch 4r - a COUNSELLOR-filled response (the session note) is filed into the
+  // client's folder as the practice's letterhead PDF, after the response returns.
+  if (process.env.DATA_PROVIDER === "db" && view.mode === "assignment" && view.respondent === "counsellor") {
+    const assignmentId = view.assignmentId ?? res.assignmentId;
+    after(async () => {
+      const { fileCounsellorFormResponse } = await import("@/lib/documents/file-form-response");
+      await fileCounsellorFormResponse(assignmentId);
+    });
+  }
 
   await logAccess({
     action: "admin.action",

@@ -222,6 +222,11 @@ Sign in as **Thandeka**.
 - ☐ Delivery states on Billing → Recent messages never go backwards (a `Read` never becomes `Delivered`); a Meta failure shows its reason; **Failed after retries** lists dead letters with masked recipients
 - ☐ As the super admin, Integrations → **Org connections** ends with **WhatsApp numbers by org** (number, name, status, health chip); Billing shows "N message alerts this month" once any alert has actually gone out
 
+**Session notes filed + counsellor Documents layout** (batch 4r)
+- ☐ With a "counsellor" automation on the session-note form: mark a session held → the counsellor fills their task → a letterhead PDF named "<Form> <REF> - <Client> - <date>.pdf" appears in the client's folder (Documents → Counsellors → <counsellor> → <client>), clinical, downloadable
+- ☐ The counsellor's /app/documents is a tree: Your folder (their clients' folders inside, with counts), Shared with you, Files shared with you, Supervising; breadcrumb + folder cards + Upload / Download all in context
+- ☐ Reassign the client (hub) → their folder, with everything inside, now sits under the new counsellor's folder; reassign back and it returns
+
 **Form documents: letterhead PDF + A4 view + configurable footer** (batch 4q)
 - ☐ Settings → Organisation → Branding: **Document footer** saves (blank = the line composed from the profile, shown as the placeholder)
 - ☐ Hub → Forms → View answers: the response reads as an A4 sheet - logo centred, title in the practice colour with a rule, Questions | Answers table, footer line at the sheet's foot; **Download PDF** prints the same document with the logo on top and the footer at the true bottom of EVERY page

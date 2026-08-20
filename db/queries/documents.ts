@@ -240,31 +240,66 @@ export async function ensureCounsellorFolderDb(
   });
 }
 
-/* ── Client folders (batch 3g) - one per client, under "Clients" ─────────── */
+/* ── Client folders (batch 3g → 4r) - one per client, under their counsellor ── */
 
 /**
- * Find-or-create a client's folder: "Clients" at the root, theirs inside,
- * named after them. Idempotent; `created` tells the caller whether anything
- * actually happened, so the UI can say "already had one" honestly.
+ * Where a client's folder LIVES (batch 4r): inside the folder of the counsellor
+ * they are assigned to - so a counsellor's folder holds all their clients, well
+ * organised - or under the org's "Clients" root while unassigned.
  */
-export async function ensureClientFolderDb(orgId: string, client: { id: string; name: string }): Promise<{ folderId: string; created: boolean }> {
+async function clientFolderHomeDb(orgId: string, clientId: string): Promise<string> {
+  const db = getDb();
+  const [c] = await db.select({ primary: clients.primaryCounsellorId }).from(clients)
+    .where(and(eq(clients.id, clientId), eq(clients.orgId, orgId))).limit(1);
+  if (c?.primary) {
+    const [co] = await db.select({ id: counsellors.id, userId: counsellors.userId, name: counsellors.name }).from(counsellors)
+      .where(and(eq(counsellors.id, c.primary), eq(counsellors.orgId, orgId))).limit(1);
+    if (co?.userId) return (await ensureCounsellorFolderDb(orgId, co, "system")).folderId;
+  }
+  return runForOrg(orgId, () => findOrCreateFolder(activeDb(), orgId, "Clients", null, "org", null));
+}
+
+/**
+ * Find-or-create a client's folder, named after them, HOMED under their
+ * assigned counsellor's folder (or "Clients" while unassigned). Idempotent and
+ * self-healing: if the client was reassigned since the folder was made, the
+ * folder MOVES to the new counsellor - with everything inside it - the next
+ * time anything touches it.
+ */
+export async function ensureClientFolderDb(orgId: string, client: { id: string; name: string }): Promise<{ folderId: string; created: boolean; moved: boolean }> {
+  const homeId = await clientFolderHomeDb(orgId, client.id);
   return runForOrg(orgId, async () => {
     const db = activeDb();
-    const rootId = await findOrCreateFolder(db, orgId, "Clients", null, "org", null);
-    const [existing] = await db.select({ id: documentFolders.id }).from(documentFolders)
+    const [existing] = await db.select({ id: documentFolders.id, parentId: documentFolders.parentId }).from(documentFolders)
       .where(and(
         eq(documentFolders.orgId, orgId), eq(documentFolders.clientId, client.id),
-        eq(documentFolders.parentId, rootId), isNull(documentFolders.deletedAt),
+        eq(documentFolders.scope, "client"), isNull(documentFolders.deletedAt),
       ))
       .limit(1);
-    if (existing) return { folderId: existing.id, created: false };
+    if (existing) {
+      if (existing.parentId !== homeId) {
+        await db.update(documentFolders).set({ parentId: homeId }).where(eq(documentFolders.id, existing.id));
+        return { folderId: existing.id, created: false, moved: true };
+      }
+      return { folderId: existing.id, created: false, moved: false };
+    }
     const id = `fold_${randomUUID()}`;
     await db.insert(documentFolders).values({
-      id, orgId, name: client.name, parentId: rootId, scope: "client",
+      id, orgId, name: client.name, parentId: homeId, scope: "client",
       clientId: client.id, createdBy: "system", createdAt: new Date(),
     });
-    return { folderId: id, created: true };
+    return { folderId: id, created: true, moved: false };
   });
+}
+
+/** Batch 4r - after a reassignment / transfer / unassign: move each client's folder to its new home. */
+export async function rehomeClientFoldersDb(orgId: string, clientIds: string[]): Promise<number> {
+  if (!clientIds.length) return 0;
+  const rows = await getDb().select({ id: clients.id, name: clients.name }).from(clients)
+    .where(and(eq(clients.orgId, orgId), inArray(clients.id, clientIds)));
+  let moved = 0;
+  for (const c of rows) if ((await ensureClientFolderDb(orgId, c)).moved) moved++;
+  return moved;
 }
 
 /** Folders for many clients (or the whole practice) in one go. */
@@ -544,7 +579,52 @@ export async function counsellorAccessibleDocumentDb(counsellorId: string, docum
     ...view.sharedFolders.flatMap((f) => f.docs),
     ...view.supervising.flatMap((s) => [...s.clientDocs, ...s.folders.flatMap((f) => f.docs)]),
   ];
-  return all.find((d) => d.id === documentId) ?? null;
+  const hit = all.find((d) => d.id === documentId);
+  if (hit) return hit;
+  // Batch 4r - anything inside their own folder subtree (their clients' folders).
+  const [row] = await getDb().select({ orgId: documents.orgId }).from(documents)
+    .where(and(eq(documents.id, documentId), isNull(documents.deletedAt))).limit(1);
+  if (!row) return null;
+  const sub = await counsellorSubtreeDb(row.orgId, counsellorId);
+  return sub.docs.find((d) => d.id === documentId) ?? null;
+}
+
+/* ── Batch 4r - the counsellor's folder subtree (their clients live inside) ── */
+
+export interface CounsellorSubtree {
+  rootId: string | null;
+  folders: DocumentFolder[];
+  /** Docs inside any subtree folder, keyed nowhere - filter by folderId. */
+  docs: Document[];
+}
+
+/** The counsellor's own folder + every folder inside it (their clients' folders) + the files within. */
+export async function counsellorSubtreeDb(orgId: string, counsellorId: string): Promise<CounsellorSubtree> {
+  const db = getDb();
+  const [own] = await db.select().from(documentFolders)
+    .where(and(eq(documentFolders.orgId, orgId), eq(documentFolders.counsellorId, counsellorId), isNull(documentFolders.deletedAt))).limit(1);
+  if (!own) return { rootId: null, folders: [], docs: [] };
+  const all = await db.select().from(documentFolders)
+    .where(and(eq(documentFolders.orgId, orgId), isNull(documentFolders.deletedAt)));
+  const byParent = new Map<string, typeof all>();
+  for (const f of all) { const k = f.parentId ?? ""; const a = byParent.get(k); if (a) a.push(f); else byParent.set(k, [f]); }
+  const picked: typeof all = [own];
+  const queue = [own.id];
+  while (queue.length) {
+    const pid = queue.shift()!;
+    for (const child of byParent.get(pid) ?? []) { picked.push(child); queue.push(child.id); }
+  }
+  const ids = picked.map((f) => f.id);
+  const docRows = ids.length
+    ? await db.select().from(documents).where(and(inArray(documents.folderId, ids), isNull(documents.deletedAt)))
+    : [];
+  return { rootId: own.id, folders: picked.map(toFolder), docs: docRows.map(toDocument) };
+}
+
+/** Is this folder the counsellor's own folder or inside it? (Guards uploads into client folders.) */
+export async function folderInCounsellorSubtreeDb(orgId: string, counsellorId: string, folderId: string): Promise<boolean> {
+  const sub = await counsellorSubtreeDb(orgId, counsellorId);
+  return sub.folders.some((f) => f.id === folderId);
 }
 
 /* ── Batch 4k - recalls ─────────────────────────────────────────────────── */

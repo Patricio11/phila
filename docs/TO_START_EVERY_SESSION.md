@@ -345,7 +345,13 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
   letterhead); `ResponseView` renders the same as an A4 sheet everywhere answers are read;
   `orgs.document_footer` + `theme.printFooter` (form override) + `composeDocumentFooter` fallback;
   `db/queries/doc-brand.ts` (`getDocBrandDb`) is the one brand read.
-- **Numbers at 2026-08-20:** migrations through **0089**; **218** unit tests (unit suite); **317** unit tests; every batch / task
+- **4r Session-note filing + counsellor folder tree** (2026-08-20): client folders live under the
+  assigned counsellor (`ensureClientFolderDb` self-heals; `rehomeClientFoldersDb` on reassign /
+  transfer / unassign); a counsellor-filled form is filed as the letterhead PDF via `pdf-lib`
+  (`lib/export/response-pdf-server.ts`, `lib/documents/file-form-response.ts`, ref
+  `formReference()`), idempotent per fill; counsellor /app/documents is an org-style tree
+  (`counsellorSubtreeDb`).
+- **Numbers at 2026-08-20:** migrations through **0089**; **220** unit tests (unit suite); **317** unit tests; every batch / task
   proven live on `npm run build && npm run start` with screenshots.
 - **The messaging shell rule (34.1):** `lib/messaging/principal.ts` - messaging actions accept a
   STAFF (org membership) or a CLIENT (their linked `user.client_id`) principal; the client rules are

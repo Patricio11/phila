@@ -15,6 +15,17 @@ export default async function CounsellorDocumentsPage() {
   const me = (await provider.listCounsellors(membership.orgId)).find((c) => c.userId === principal.userId);
   if (!me) notFound();
 
+  // Batch 4r - every caseload client has a folder inside this counsellor's folder
+  // (created if missing, MOVED here if the client was reassigned since).
+  let tree: import("@/db/queries/documents").CounsellorSubtree = { rootId: null, folders: [], docs: [] };
+  if (process.env.DATA_PROVIDER === "db") {
+    const q = await import("@/db/queries/documents");
+    await q.ensureCounsellorFolderDb(membership.orgId, me, "system");
+    const caseload = (await provider.listClients(membership.orgId)).filter((c) => c.primaryCounsellorId === me.id).map((c) => c.id);
+    await q.rehomeClientFoldersDb(membership.orgId, caseload).catch(() => 0);
+    tree = await q.counsellorSubtreeDb(membership.orgId, me.id);
+  }
+
   const [{ own, shared, sharedNotes, sharedFolders, supervising }, clients, requests] = await Promise.all([
     provider.listCounsellorDocuments(me.id),
     provider.listClients(membership.orgId),
@@ -38,7 +49,7 @@ export default async function CounsellorDocumentsPage() {
     <div className="rise space-y-6">
       <PageHead title="Documents" summary="Your clients' files, plus anything the practice has shared with you." />
       <CounsellorRequests requests={requests} />
-      <CounsellorDocuments sharedNotes={sharedNotes} own={own} shared={shared} sharedFolders={sharedFolders} supervising={supervising ?? []} storageOn={storageOn} clients={clients.map((c) => ({ id: c.id, name: c.name }))} />
+      <CounsellorDocuments sharedNotes={sharedNotes} own={own} shared={shared} sharedFolders={sharedFolders} supervising={supervising ?? []} storageOn={storageOn} clients={clients.map((c) => ({ id: c.id, name: c.name }))} tree={tree} />
     </div>
   );
 }

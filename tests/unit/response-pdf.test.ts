@@ -93,3 +93,29 @@ describe("document footer", () => {
     expect(effectiveDocumentFooter(null, null, "composed")).toBe("composed");
   });
 });
+
+describe("batch 4r - filed session notes", () => {
+  it("formReference: initials + session date + stable suffix", async () => {
+    const { formReference, filedResponseName } = await import("@/lib/forms/reference");
+    expect(formReference("Session Note", "2026-08-06T12:00:00Z", "fa_b5c1386c-0e5")).toMatch(/^SN-20260806-[A-Z0-9]{6}$/);
+    expect(formReference("After your session", "2026-08-06T23:30:00Z", "x")).toMatch(/^AY-20260807-/); // SAST rolls the date
+    expect(formReference("K10", "bad-date", "abc")).toMatch(/^K1-00000000-/);
+    const name = filedResponseName("Session Note", "SN-20260806-ABC123", "Johan Botha", "2026-08-06T12:00:00Z");
+    expect(name).toMatch(/^Session Note SN-20260806-ABC123 - Johan Botha - 0?6 Aug 2026\.pdf$/);
+  });
+
+  it("buildResponsePdfBytes produces a real multi-page PDF", async () => {
+    const { buildResponsePdfBytes } = await import("@/lib/export/response-pdf-server");
+    const fields = Array.from({ length: 40 }, (_, i) => ({ id: `q${i}`, label: `${i + 1}. In the past 4 weeks, about how often did you feel tired for no good reason?`, type: "text", required: false })) as import("@/lib/domain/types").FormField[];
+    const answers = Object.fromEntries(fields.map((f) => [f.id, "Some of the time - though it varies week to week."]));
+    const bytes = await buildResponsePdfBytes({
+      formTitle: "Session Note", fields, answers, reference: "SN-20260806-ABC123",
+      brand: { orgName: "Masizakhe Counselling", logoUrl: null, accent: "#1C7D58", footer: "174-733 NPO | Soweto | hello@masizakhe.org.za" },
+    });
+    expect(bytes.length).toBeGreaterThan(4000);
+    expect(String.fromCharCode(...bytes.slice(0, 5))).toBe("%PDF-");
+    const { PDFDocument } = await import("pdf-lib");
+    const parsed = await PDFDocument.load(bytes);
+    expect(parsed.getPageCount()).toBeGreaterThan(1); // 40 rows must paginate
+  });
+});

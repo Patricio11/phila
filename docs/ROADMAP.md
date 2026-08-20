@@ -1933,6 +1933,31 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   first behind a swappable adapter so other providers can be switched on/off later; includes the
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).
 
+- [x] **Session notes file themselves + client folders live under their counsellor** *(2026-08-20,
+  batch 4r)*: the practice's session-note flow closed end to end. (1) **Client folders moved home**:
+  a client's Documents folder now lives INSIDE the folder of the counsellor they're assigned to
+  (Counsellors → Nomsa Dlamini → Johan Botha) - `ensureClientFolderDb` is self-healing (finds the
+  folder anywhere, moves it to the right home on every touch) and `rehomeClientFoldersDb` fires on
+  reassign / caseload transfer / unassign, so **when a client is reassigned their whole folder -
+  with everything inside - moves to the new counsellor** (unassigned clients go back under
+  "Clients"). (2) **The session note files itself**: when a COUNSELLOR-filled form (the session-note
+  form, 4p) is submitted, the server builds the SAME letterhead PDF as 4q (`pdf-lib`,
+  `lib/export/response-pdf-server.ts`: real logo embedded, accent title, a centred **Reference
+  SN-YYYYMMDD-XXXXXX** line, Q|A table, footer + "Page n of N" on every page) and files it into the
+  client's folder - `kind report`, `visibility clinical`, tied to the session
+  (`documents.session_id`), idempotent per fill (`doc_fr_<assignmentId>`; a resubmission overwrites),
+  audited `response_filed_<ref>`; storage-off is skipped honestly. (3) **The counsellor's Documents
+  page rebuilt in the practice's layout**: a folder tree on the left (Your folder with every
+  assigned client's folder inside, folders the practice shared, files shared with you, Supervising),
+  breadcrumb + folder cards + file rows on the right - same capabilities (open, upload into any of
+  their folders, download all, add / edit / remove links, supervising read-only), one smooth flow.
+  Access + upload guards follow the subtree (`counsellorSubtreeDb`,
+  `folderInCounsellorSubtreeDb`); a client-targeted upload now lands IN the client's folder.
+  Proven live: automation → session held → Nomsa's task → she fills it → the PDF sits in Your
+  folder → Johan Botha (13.8 KB, fetched from S3, letterhead + reference verified); reassigning
+  Johan moved the folder (note inside) to Thabo and back. 2 new unit tests (reference format +
+  multi-page server PDF; suite 220).
+
 - [x] **Form responses as the practice's own document - on screen and in PDF** *(2026-08-20, batch
   4q)*: every completed form now reads and prints as a real letterhead document (the "Form
   Publisher" layout the practice asked for). (1) **The document**: the practice's logo centred at

@@ -255,14 +255,16 @@ export async function requestCounsellorUpload(raw: { folderId?: string | null; c
 
   const q = await import("@/db/queries/documents");
   if (clientId) {
-    // Only a client on MY caseload.
+    // Only a client on MY caseload - and the file lands in THEIR folder (batch 4r).
     const mine = (await provider.listClients(membership.orgId)).find((c) => c.id === clientId && c.primaryCounsellorId === me.id);
     if (!mine) return { ok: false, error: "You can only upload for clients on your caseload." };
-    folderId = null;
+    ({ folderId } = await q.ensureClientFolderDb(membership.orgId, { id: mine.id, name: mine.name }));
   } else if (folderId) {
-    // My own folder, or one the practice shared with me.
+    // My own folder (or any folder inside it - my clients'), or one the practice shared with me.
     const own = await q.ensureCounsellorFolderDb(membership.orgId, me, "system");
-    if (folderId !== own.folderId && !(await q.folderSharedWithDb(membership.orgId, folderId, me.id))) {
+    if (folderId !== own.folderId
+      && !(await q.folderInCounsellorSubtreeDb(membership.orgId, me.id, folderId))
+      && !(await q.folderSharedWithDb(membership.orgId, folderId, me.id))) {
       return { ok: false, error: "That folder isn't shared with you." };
     }
   } else {

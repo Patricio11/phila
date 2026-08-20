@@ -351,8 +351,12 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
   (`lib/export/response-pdf-server.ts`, `lib/documents/file-form-response.ts`, ref
   `formReference()`), idempotent per fill; counsellor /app/documents is an org-style tree
   (`counsellorSubtreeDb`).
-- **Numbers at 2026-08-20:** migrations through **0089**; **220** unit tests (unit suite); **317** unit tests; every batch / task
-  proven live on `npm run build && npm run start` with screenshots.
+- **One Switch + Classroom rename** (2026-08-19): every on/off control renders through
+  `components/ui/switch.tsx` (never hand-roll a toggle); the counsellor nav item for
+  `/app/supervision` is labelled **Classroom** (matches the hub).
+- **Numbers at 2026-08-20:** migrations through **0089**; **324** tests green (`npx vitest run`,
+  unit + integration); every batch / task proven live on `npm run build && npm run start` with
+  screenshots.
 - **The messaging shell rule (34.1):** `lib/messaging/principal.ts` - messaging actions accept a
   STAFF (org membership) or a CLIENT (their linked `user.client_id`) principal; the client rules are
   enforced there, never in the UI alone.

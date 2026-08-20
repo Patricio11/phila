@@ -146,7 +146,7 @@ summary on the left, primary actions on the right) sits above the work.
 
 ### 5.4 Role scoping
 Same shell, different nav and home. The source of truth is `components/shell/nav-config.ts`; keep this list in sync with it.
-- **Counsellor (`/app`):** Dashboard · Appointments · Clients · Sessions · Documents · Messages · Supervision · Rooms.
+- **Counsellor (`/app`):** Dashboard · Calendar · Clients · Sessions · Forms · Documents · Messages · Classroom · Rooms.
 - **Org admin (Hub, `/hub`):** *Oversight* - Overview · Appointments · Clients · Insights · Funders & grants. *Run the practice* - Team · Messages · Rooms · Services · Documents · Booking · Forms · Invoicing · Billing & usage · Verification.
 - **Super-admin (`/admin`):** *Platform* - Overview · Organisations · Users · Onboarding · Plans & billing. *Rails & trust* - Feature control · AI rail · Integrations · Audit. (2FA nudge banner.)
 - **Funder (external, `/funder`):** a pared shell  only their grant(s); read-only; an "aggregate, anonymised" banner.

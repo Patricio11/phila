@@ -1933,6 +1933,11 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   first behind a swappable adapter so other providers can be switched on/off later; includes the
   admin credit-pricing catalogue that un-hardcodes ALL pack prices (SMS/Email/LivePhila too).
 
+- [x] **Counsellor nav: Supervision renamed Classroom** *(2026-08-19)*: the counsellor sidebar item
+  and page (`/app/supervision`) now read **Classroom** with the GraduationCap icon - matching the
+  hub, which renamed in 2p. Same page, same behaviour (supervisors: sign-off queue + classrooms;
+  supervisees: "Your supervision" content now titled Classroom).
+
 - [x] **Session notes file themselves + client folders live under their counsellor** *(2026-08-20,
   batch 4r)*: the practice's session-note flow closed end to end. (1) **Client folders moved home**:
   a client's Documents folder now lives INSIDE the folder of the counsellor they're assigned to
@@ -1961,8 +1966,8 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
 - [x] **Form responses as the practice's own document - on screen and in PDF** *(2026-08-20, batch
   4q)*: every completed form now reads and prints as a real letterhead document (the "Form
   Publisher" layout the practice asked for). (1) **The document**: the practice's logo centred at
-  the top of EVERY page, the form title centred beneath it in the practice's accent with a short
-  rule, one bordered table - **Questions** left, **Answers** right (accent header band, tinted
+  the top of EVERY page (44 mm of air under the letterhead, tuned with the practice), the form
+  title centred beneath it in the practice's accent (no rule, no meta line), one bordered table - **Questions** left, **Answers** right (accent header band, tinted
   question column, section titles as accent rows, statements in italics, "-" for unanswered) - and
   the practice's one-line **footer pinned to the true bottom of every page** (thead/tfoot spacer
   rows reserve the room per page; fixed elements pin the letterhead - survives every browser's real

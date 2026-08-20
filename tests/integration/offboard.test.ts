@@ -19,6 +19,10 @@ const ORG = "org_offboard_probe";
 
 afterAll(async () => {
   await sql`DELETE FROM appointments WHERE org_id=${ORG}`;
+  // Batch 4r - caseload transfer rehomes client folders, which creates folder rows.
+  await sql`DELETE FROM document_shares WHERE org_id=${ORG}`;
+  await sql`DELETE FROM documents WHERE org_id=${ORG}`;
+  await sql`DELETE FROM document_folders WHERE org_id=${ORG}`;
   await sql`DELETE FROM clients WHERE org_id=${ORG}`;
   await sql`DELETE FROM services WHERE org_id=${ORG}`;
   await sql`DELETE FROM counsellors WHERE org_id=${ORG}`;

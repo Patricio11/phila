@@ -247,6 +247,9 @@ Sign in as **Thandeka**.
 - ☐ Edit a message with a mention - the edit box shows plain `@Name`, saving keeps the chip
 - ☐ Go offline (or block the request) and send - the bubble disappears again, the draft and the reply bar come back, and the toast says "Couldn't send - your words are back in the box"
 
+**One Switch everywhere** (2026-08-19)
+- ☐ Any toggle on any page (form share link, business hours, invoicing, platform features, notifications, admin feature control) is the same 44 x 24 switch - knob inside the track, accent (or danger) when on, visible focus ring
+
 **Messages: typing, composer, crisis support, web push** (batch 4m)
 - ☐ Two browsers (staff + client): while one types, the other's thread shows the dots bubble + "X is typing…" in the header within ~3 s, gone ~6 s after the last keystroke - with Supabase unconfigured
 - ☐ The composer is 44 px tall empty (also under a reply bar) and grows with a multi-line draft; editing a message gets the same roomy box
@@ -558,7 +561,7 @@ Sign in as **ops@philasa.com**.
 
 - ☐ `npx tsc --noEmit` clean
 - ☐ `npm run lint` clean
-- ☐ `npx vitest run`  all green (**308** unit/integration at 2026-08-18)
+- ☐ `npx vitest run`  all green (**324** unit/integration at 2026-08-20)
 - ☐ `npm run build` clean, then `npm run start`  the paths above still work on the production build
 - ☐ Dark mode looks right across Hub, the public site, and the funder portal
 - ☐ Mobile (360 px): no horizontal scroll on `/o/masizakhe`, `/hub/insights`, `/funder`

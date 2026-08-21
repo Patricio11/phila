@@ -71,9 +71,17 @@ export default async function IntegrationConfigPage({ params }: { params: Promis
       />
     );
   } else if (slug === "voice") {
-    const raw = await getPlatformIntegration("voice");
-    const mode = raw?.enabled ? (raw.creds.mode === "live" ? "live" as const : "mock" as const) : "off" as const;
-    card = <PlatformVoiceCard initial={{ mode, configured: Boolean(raw?.creds.accountSid || raw?.creds.mode === "mock"), callerNumber: raw?.creds.callerNumber ?? "" }} />;
+    const { getSwitchboard } = await import("@/lib/voice");
+    const sb = await getSwitchboard();
+    card = (
+      <PlatformVoiceCard
+        initial={{
+          active: sb.active,
+          twilio: { accountSid: sb.twilio.accountSid, callerNumber: sb.twilio.callerNumber, configured: Boolean(sb.twilio.accountSid && sb.twilio.authToken), tested: sb.twilio.tested },
+          at: { username: sb.at.username, callerNumber: sb.at.callerNumber, configured: Boolean(sb.at.username && sb.at.apiKey), tested: sb.at.tested, webhookPath: sb.at.webhookToken ? `/api/webhooks/voice-at/${sb.at.webhookToken}` : null },
+        }}
+      />
+    );
   } else if (slug === "bulksms") {
     card = <PlatformSmsCard initial={await getPlatformIntegrationStatus("bulksms")} />;
   } else if (slug === "resend") {

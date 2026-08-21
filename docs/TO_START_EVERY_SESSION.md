@@ -357,7 +357,11 @@ When I give you a Phase: pull screen/design detail from `DESIGN.md` and task det
 - **4s Image + caption in chat** (2026-08-20): staged attachment tray → one message; inline image
   bubbles via `ChatImage` (signed URL per message, session cache, sender's local preview);
   `signChatAttachment` now accepts the messaging principal so clients can open attachments.
-- **Numbers at 2026-08-20:** migrations through **0089**; **324** tests green (`npx vitest run`,
+- **33.9 VoicePhila switchboard** (2026-08-21): providers Mock / Twilio / Africa's Talking, one
+  active, test-gated, audited; `lib/voice/switchboard.ts` (pure rules) + `africastalking.ts` +
+  `settle.ts` (one money path); legs carry `provider` + `bridge_to` (0090); AT webhook door
+  `/api/webhooks/voice-at/<token>`. AT inactive until the 33.9c SA checklist passes.
+- **Numbers at 2026-08-21:** migrations through **0090**; **223** unit tests green; **324** tests green (`npx vitest run`,
   unit + integration); every batch / task proven live on `npm run build && npm run start` with
   screenshots.
 - **The messaging shell rule (34.1):** `lib/messaging/principal.ts` - messaging actions accept a

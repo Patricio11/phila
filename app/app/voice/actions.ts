@@ -8,7 +8,7 @@ import { getDb } from "@/db/client";
 import { appointments, clients, counsellors, teamProfiles, voiceCallLegs } from "@/db/schema";
 import { legsForAppointmentDb, legActive, type VoiceLegView } from "@/db/queries/voice";
 import { getCreditBalances } from "@/db/queries/messaging";
-import { getVoiceConfig, adapterFor } from "@/lib/voice";
+import { getActiveVoice, voiceConfigured } from "@/lib/voice";
 import { toE164 } from "@/lib/voice/phone";
 
 /**
@@ -37,8 +37,7 @@ export interface CallPanelState {
 }
 
 async function panelState(orgId: string, appointmentId: string, isAdmin: boolean): Promise<CallPanelState> {
-  const cfg = await getVoiceConfig();
-  if (!cfg) return { railOn: false, blocked: "Voice calls aren't switched on.", balanceMin: null, legs: [], totalSec: 0, activeLegId: null };
+  if (!(await voiceConfigured())) return { railOn: false, blocked: "Voice calls aren't switched on.", balanceMin: null, legs: [], totalSec: 0, activeLegId: null };
 
   const db = getDb();
   const [appt] = await db.select({ id: appointments.id, clientId: appointments.clientId, counsellorId: appointments.counsellorId })
@@ -99,8 +98,8 @@ export async function startClientCall(
   if (!parsed.success) return { ok: false, error: "Invalid request" };
   const appointmentId = parsed.data.appointmentId;
 
-  const cfg = await getVoiceConfig();
-  if (!cfg) return { ok: false, error: "Voice calls aren't switched on." };
+  const voice = await getActiveVoice();
+  if (!voice) return { ok: false, error: "Voice calls aren't switched on." };
 
   const db = getDb();
   const [appt] = await db.select({ id: appointments.id, clientId: appointments.clientId, counsellorId: appointments.counsellorId })
@@ -136,10 +135,10 @@ export async function startClientCall(
   };
 
   const base = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
-  const placed = await adapterFor(cfg).placeBridgedCall({
+  const placed = await voice.adapter.placeBridgedCall({
     counsellorNumber,
     clientNumber,
-    callerNumber: cfg.callerNumber,
+    callerNumber: voice.callerNumber,
     statusCallbackUrl: `${base}/api/webhooks/voice`,
     ref: { orgId: membership.orgId, appointmentId },
   });
@@ -150,6 +149,10 @@ export async function startClientCall(
     orgId: membership.orgId,
     appointmentId,
     placedBy: principal.userId,
+    // 33.9 - the leg remembers its carrier; AT bridges from the number-level
+    // callback, so it also carries the client number until the call ends.
+    provider: voice.provider,
+    bridgeTo: voice.provider === "africastalking" ? clientNumber : null,
     status: "initiated",
   });
   await logAccess({

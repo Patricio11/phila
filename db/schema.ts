@@ -828,10 +828,16 @@ export const creditBundles = pgTable("credit_bundles", {
  * exactly once (idempotency key = the leg id). No audio is ever stored.
  */
 export const voiceCallLegs = pgTable("voice_call_legs", {
-  id: text("id").primaryKey(), // provider call sid (or mock_...)
+  id: text("id").primaryKey(), // provider call sid / session id (or mock_...)
   orgId: text("org_id").notNull().references(() => orgs.id),
   appointmentId: text("appointment_id").notNull(),
   placedBy: text("placed_by").notNull(), // user id of the counsellor/admin
+  /** 33.9 - which provider carries THIS leg. A provider switch applies to new calls only:
+   *  each provider's webhook route settles its own legs, whatever is active now. */
+  provider: text("provider").default("twilio").notNull(), // mock | twilio | africastalking
+  /** 33.9 - Africa's Talking configures its callback per NUMBER, not per call, so the
+   *  bridge target (the client's E.164) rides on the leg until the call ends, then clears. */
+  bridgeTo: text("bridge_to"),
   status: text("status").default("initiated").notNull(), // initiated | ringing | answered | completed | failed | no_answer | busy | canceled
   durationSec: integer("duration_sec").default(0).notNull(),
   billedMin: integer("billed_min").default(0).notNull(),

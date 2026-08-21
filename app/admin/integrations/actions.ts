@@ -261,50 +261,102 @@ export async function testResendConnection(raw: { apiKey: string; from: string }
  * Phase 33.2 - the VoicePhila rail (Twilio first, provider-swappable).
  * Mock mode needs no carrier credentials; live mode requires the full set.
  */
-const voiceInput = z.object({
-  accountSid: z.string().trim().max(64).default(""),
-  authToken: z.string().trim().max(128).default(""),
-  callerNumber: z.string().trim().max(20).default(""),
-  mode: z.enum(["off", "mock", "live"]),
-});
-export async function saveVoiceConfig(raw: z.infer<typeof voiceInput>): Promise<{ ok: true } | { ok: false; error: string }> {
-  const principal = await requireSuperAdmin();
-  const parsed = voiceInput.safeParse(raw);
-  if (!parsed.success) return { ok: false, error: "Check the voice settings." };
-  const d = parsed.data;
+/* ── Phase 33.9 - the VoicePhila provider switchboard ─────────────────────── */
 
-  const existing = (await getPlatformIntegration("voice"))?.creds ?? {};
-  const creds: Record<string, string> = {
-    provider: "twilio",
-    mode: d.mode,
-    accountSid: d.accountSid || existing.accountSid || "",
-    authToken: d.authToken || existing.authToken || (d.mode === "mock" ? existing.authToken || "mock-secret" : ""),
-    callerNumber: d.callerNumber || existing.callerNumber || "",
-  };
-  if (d.mode === "live" && (!creds.accountSid || !creds.authToken || !creds.callerNumber)) {
-    return { ok: false, error: "Live mode needs the Account SID, auth token and the shared caller number." };
-  }
-  await savePlatformIntegration("voice", creds, d.mode !== "off");
-  await logAccess({
-    action: "admin.action",
-    actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null },
-    orgId: null,
-    target: "integration:voice",
-    reason: `voice_${d.mode}`,
-  });
-  revalidatePath("/admin/integrations");
-  return { ok: true };
+const providerName = z.enum(["mock", "twilio", "africastalking"]);
+const voiceCredsInput = z.object({
+  provider: providerName,
+  // Twilio fields
+  accountSid: z.string().trim().max(120).optional(),
+  authToken: z.string().trim().max(200).optional(),
+  // Africa's Talking fields
+  username: z.string().trim().max(120).optional(),
+  apiKey: z.string().trim().max(300).optional(),
+  // Shared per-provider caller id
+  callerNumber: z.string().trim().max(30).optional(),
+});
+
+async function readSwitchboard() {
+  const { getSwitchboard } = await import("@/lib/voice");
+  return getSwitchboard();
 }
 
-export async function testVoiceConnection(raw: { accountSid: string; authToken: string; mode: "off" | "mock" | "live" }): Promise<{ ok: boolean; detail: string }> {
-  await requireSuperAdmin();
-  if (raw.mode === "mock") return { ok: true, detail: "Mock mode - calls simulate instantly, nothing dials out." };
-  const existing = (await getPlatformIntegration("voice"))?.creds ?? {};
-  const sid = raw.accountSid || existing.accountSid || "";
-  const token = raw.authToken || existing.authToken || "";
-  if (!sid || !token) return { ok: false, detail: "Enter the Twilio Account SID and auth token first." };
-  const { twilioAdapter } = await import("@/lib/voice/twilio");
-  return twilioAdapter({ provider: "twilio", mode: "live", accountSid: sid, authToken: token, callerNumber: "" }).testConnection();
+async function writeSwitchboard(sb: import("@/lib/voice/switchboard").Switchboard) {
+  const { encodeSwitchboard } = await import("@/lib/voice/switchboard");
+  await savePlatformIntegration("voice", encodeSwitchboard(sb), sb.active !== null);
+}
+
+/** Save one provider's credentials. Changing credentials clears its "tested" flag - retest before it can go (or stay) active. */
+export async function saveVoiceProviderConfig(raw: z.infer<typeof voiceCredsInput>): Promise<{ ok: true; atWebhookPath?: string } | { ok: false; error: string }> {
+  const principal = await requireSuperAdmin();
+  const parsed = voiceCredsInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Check the provider settings." };
+  const d = parsed.data;
+  const sb = await readSwitchboard();
+  let atWebhookPath: string | undefined;
+  if (d.provider === "twilio") {
+    const changed = Boolean(d.accountSid || d.authToken);
+    sb.twilio = {
+      accountSid: d.accountSid || sb.twilio.accountSid,
+      authToken: d.authToken || sb.twilio.authToken,
+      callerNumber: d.callerNumber ?? sb.twilio.callerNumber,
+      tested: changed ? false : sb.twilio.tested,
+    };
+  } else if (d.provider === "africastalking") {
+    const changed = Boolean(d.username || d.apiKey);
+    sb.at = {
+      username: d.username || sb.at.username,
+      apiKey: d.apiKey || sb.at.apiKey,
+      callerNumber: d.callerNumber ?? sb.at.callerNumber,
+      tested: changed ? false : sb.at.tested,
+      webhookToken: sb.at.webhookToken || `at_${crypto.randomUUID().replace(/-/g, "")}`,
+    };
+    atWebhookPath = `/api/webhooks/voice-at/${sb.at.webhookToken}`;
+  }
+  // An active provider whose test flag just cleared falls back to inactive - honest, never silently broken.
+  if (sb.active === "twilio" && !sb.twilio.tested) sb.active = null;
+  if (sb.active === "africastalking" && !sb.at.tested) sb.active = null;
+  await writeSwitchboard(sb);
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: null, target: "integration:voice", reason: `voice_save_${d.provider}` });
+  revalidatePath("/admin/integrations");
+  return { ok: true, atWebhookPath };
+}
+
+/** Test one provider's credentials; a pass is remembered (the switchboard's gate to going active). */
+export async function testVoiceProvider(raw: { provider: "mock" | "twilio" | "africastalking" }): Promise<{ ok: boolean; detail: string }> {
+  const principal = await requireSuperAdmin();
+  const provider = providerName.safeParse(raw?.provider);
+  if (!provider.success) return { ok: false, detail: "Unknown provider." };
+  const sb = await readSwitchboard();
+  const { adapterForProvider } = await import("@/lib/voice");
+  const { providerConfigured } = await import("@/lib/voice/switchboard");
+  if (!providerConfigured(sb, provider.data)) return { ok: false, detail: "Fill in the provider's details first." };
+  const res = await adapterForProvider(sb, provider.data).testConnection();
+  if (provider.data === "twilio") sb.twilio.tested = res.ok;
+  if (provider.data === "africastalking") sb.at.tested = res.ok;
+  await writeSwitchboard(sb);
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: null, target: "integration:voice", reason: `voice_test_${provider.data}_${res.ok ? "ok" : "fail"}` });
+  revalidatePath("/admin/integrations");
+  return res;
+}
+
+/** Make exactly one provider active (or none = the rail off). Guarded: untested providers refuse. Audited from → to. */
+export async function setActiveVoiceProvider(raw: { provider: "mock" | "twilio" | "africastalking" | null }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const principal = await requireSuperAdmin();
+  const target = raw?.provider === null ? null : providerName.safeParse(raw?.provider).success ? raw.provider : undefined;
+  if (target === undefined) return { ok: false, error: "Unknown provider." };
+  const sb = await readSwitchboard();
+  const from = sb.active ?? "off";
+  if (target !== null) {
+    const { canActivate } = await import("@/lib/voice/switchboard");
+    const gate = canActivate(sb, target);
+    if (!gate.ok) return { ok: false, error: gate.reason };
+  }
+  sb.active = target;
+  await writeSwitchboard(sb);
+  await logAccess({ action: "admin.action", actor: { userId: principal.userId, platformRole: "super_admin", teamRole: null }, orgId: null, target: "integration:voice", reason: `voice_switch_${from}_to_${target ?? "off"}` });
+  revalidatePath("/admin/integrations");
+  return { ok: true };
 }
 
 /* ── Batch 4l - browser uploads need the S3 bucket's CORS rule ─────────────── */

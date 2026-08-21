@@ -1946,6 +1946,20 @@ Closeout: `docs/completed/PHASE_31_COMPLETE.md`.*
   `getAttachmentAccess`). Proven live: staged tray + caption → one bubble with the picture and
   caption on the hub, and the same bubble inline in Lerato's portal.
 
+- [x] **Phase 33.9 - VoicePhila provider switchboard + Africa's Talking adapter** *(2026-08-21)*:
+  the Twilio-only rail became a switchboard - Mock (dry run) / Twilio / Africa's Talking as config
+  cards under Admin -> Integrations -> VoicePhila; exactly ONE active (or none = rail off); a
+  provider can't go active until its Test passes; every switch audited from -> to; orgs and
+  counsellors never see any of it. Every leg records its provider and each provider keeps its own
+  webhook door (Twilio signature-verified; AT token-in-URL - AT doesn't sign), so a switch applies
+  to NEW calls only and in-flight calls still settle. One shared settle path
+  (`lib/voice/settle.ts`): billing is ALWAYS the system-measured duration, never the provider's
+  amount. The AT adapter is code-complete (bridge Dial XML with the 3600 s runaway cap, sandbox
+  hosts via username "sandbox", Test shows the wallet currency) but stays INACTIVE until the 33.9c
+  SA validation checklist (rate / number / quality / ZAR) is confirmed by the super-admin -
+  runnable through Phila itself. Migration 0090; legacy 33.2 configs decode transparently.
+  See `docs/completed/PHASE_33_9_COMPLETE.md`.
+
 - [x] **Landing refreshed to today's product** *(2026-08-20)*: the hero's "system image"
   (`DashboardPreview`, still built from the real app's primitives) is now the ORG ADMIN's hub at
   `philasa.com/hub` - practice-level stats (18 sessions across 5 counsellors, attendance, paid this

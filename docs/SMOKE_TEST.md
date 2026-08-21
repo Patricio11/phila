@@ -222,6 +222,11 @@ Sign in as **Thandeka**.
 - ☐ Delivery states on Billing → Recent messages never go backwards (a `Read` never becomes `Delivered`); a Meta failure shows its reason; **Failed after retries** lists dead letters with masked recipients
 - ☐ As the super admin, Integrations → **Org connections** ends with **WhatsApp numbers by org** (number, name, status, health chip); Billing shows "N message alerts this month" once any alert has actually gone out
 
+**VoicePhila switchboard** (33.9)
+- ☐ Admin -> Integrations -> VoicePhila: three provider cards; the active one wears "Active - all calls route here"; an untested provider's Make active is disabled ("run the Test first"); switching is one click + audited; Switch off removes the call button everywhere
+- ☐ Africa's Talking card: saving generates the callback URL (Copy button) for the AT number; Test with sandbox credentials reads the wallet; the provider stays inactive until 33.9c is confirmed
+- ☐ A call placed on one provider still settles after switching to another (the leg remembers its provider)
+
 **Messages: image with caption** (batch 4s)
 - ☐ Attach an image → it stages in a tray above the composer ("Add a caption…"); Send → one bubble, picture on top, caption below; tap the picture to open it full
 - ☐ The client portal shows the same bubble inline and can open the image (the old build refused clients the download)

@@ -122,7 +122,23 @@ serverless instances (it is the platform's shared data cache, not per-process me
 - [ ] **D4. Honest load numbers** in the proof: bytes and queries per minute per idle Messages
   tab, before/after (today: full history every 5 s + typing every 2.5 s; target: one open
   stream, ~0 bytes when quiet).
-- [ ] **D5. Cost note, named**: on serverless, an open SSE stream holds a function invocation
+- [ ] **D5. Transport decision, recorded (2026-08-21)**: WebSockets and WebRTC were considered
+  and set aside deliberately - not for lack of ambition.
+  - *WebRTC*: peer-to-peer media transport (it already powers LiveKit video). Chat on it means
+    building signalling + TURN to arrive at a worse WebSocket. Not a chat tool.
+  - *WebSocket*: also a held-open connection (nothing push-based avoids that); its one extra
+    power - client -> server push - is something chat does not need (a human typing sends a
+    normal POST, which exists). Its costs are real: Vercel cannot host long-lived sockets, so
+    it means either a dedicated realtime server to run and monitor 24/7, or a managed broker
+    (Ably / Pusher / Supabase) - through which MESSAGE BODIES TRANSIT A THIRD PARTY. First-party
+    SSE keeps every byte on Phila's own domain: better POPIA posture, one less vendor, one less
+    outage source at launch.
+  - *Revisit triggers*, so this is a decision and not a dead end: sustained tens of thousands of
+    concurrent Messages tabs, per-connection compute cost dominating the bill, or a product need
+    for sub-100 ms fan-out. Every send already flows through `broadcastToThread(...)` - the same
+    seam that once drove Supabase Realtime and will now drive SSE - so a later swap to a managed
+    or self-run socket layer is a contained transport change, not a rewrite.
+- [ ] **D6. Cost note, named**: on serverless, an open SSE stream holds a function invocation
   for its lifetime. With Vercel's Fluid compute idle streams are cheap (billed on active CPU),
   but this is a per-connection cost the delta-poll fallback does not have - both are built, so
   the dial can be turned per environment. (mycatfish's own roadmap note - "never for 500 people

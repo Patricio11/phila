@@ -98,18 +98,36 @@ serverless instances (it is the platform's shared data cache, not per-process me
 
 ### Phase D - put messaging on a diet *(the national-scale fix)*
 
+> **Model (verified 2026-08-21): the mycatfish room transport.** Their chat "just works" not
+> because they avoid polling but because the POLL LIVES ON THE SERVER behind one SSE stream:
+> the browser holds a single `EventSource`; the server ticks every ~1.5 s asking the DB only
+> `messagesSince(cursor)`; nothing new = nothing on the wire; presence is diffed and sent only
+> on change; the cursor rides the reconnect so a dying serverless stream is invisible (client
+> dedupes by id). Phila adopts that exact shape - it slots into the seam Supabase Realtime
+> left behind (`broadcast` callers stay; the transport underneath changes).
+
 - [ ] **D1. Cap the payload**: `listTeamThreadsDb` returns the last **30 messages per thread**;
   the thread view gains "Load earlier" (fetches older pages on demand). Full history stays in
   the DB - only the wire payload shrinks.
-- [ ] **D2. Delta polling**: the 5 s refresh becomes `?since=<cursor>` returning ONLY new/changed
-  messages, reactions, edits and thread membership changes (the client already merges by id -
-  the merge logic keeps working unchanged). Typical poll drops from the full history to <2 KB.
-- [ ] **D3. One heartbeat instead of five**: a single light endpoint returns
-  `{unread, notifications, typing, presence}` on one timer (5 s on the Messages page, 30 s
-  elsewhere, paused when the tab is hidden - hidden-tab pausing exists, it becomes universal).
-  Push (4m) already covers the away case.
-- [ ] **D4. Honest load numbers** in the proof: bytes per poll before/after, queries per poll
-  before/after.
+- [ ] **D2. One SSE stream per open Messages tab** (`/api/messages/stream?since=<cursor>`),
+  mycatfish-shaped: server-side ~2 s tick, cursor deltas only (new/edited/deleted messages,
+  reactions, thread membership, typing, presence-diff), `maxDuration`-bounded with auto-reconnect
+  carrying the cursor; the client's existing merge-by-id logic consumes it unchanged. Fallback
+  when SSE cannot connect: the same wire shape as a `?since=` delta poll every 10 s (the
+  self-healing full refresh every Nth poll stays as the backstop).
+- [ ] **D3. One heartbeat instead of five** for the REST of the app (any page that is not
+  Messages): a single light endpoint returns `{unread, notifications, presence}` on one 30 s
+  timer, paused when the tab is hidden (hidden-tab pausing exists, it becomes universal).
+  On the Messages page all of it rides the D2 stream; push (4m) covers the away case.
+- [ ] **D4. Honest load numbers** in the proof: bytes and queries per minute per idle Messages
+  tab, before/after (today: full history every 5 s + typing every 2.5 s; target: one open
+  stream, ~0 bytes when quiet).
+- [ ] **D5. Cost note, named**: on serverless, an open SSE stream holds a function invocation
+  for its lifetime. With Vercel's Fluid compute idle streams are cheap (billed on active CPU),
+  but this is a per-connection cost the delta-poll fallback does not have - both are built, so
+  the dial can be turned per environment. (mycatfish's own roadmap note - "never for 500 people
+  at nine" on a DB poll - is about one room with hundreds of writers; Phila's threads are small,
+  so the DB-tick model holds far longer here. A socket fan-out layer stays the future option.)
 
 ### Phase E - hotspots and indexes
 
